@@ -28,18 +28,28 @@
         </small>
       </div>
 
-      <!-- Campo Contraseña -->
+<!-- Campo Contraseña -->
       <div class="form-group">
         <label for="TituloContraseña">Contraseña</label>
         <div class="input-container">
           <span class="input-icon">
             <svg xmlns="http://w3.org" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           </span>
-          <!-- type="password" asegura el ocultamiento de caracteres (Requerimiento No Funcional) -->
-          <input type="password" class="form-control" id="TituloContraseña" formControlName="password" placeholder="Ingresá tu contraseña">
-          <span class="eye-icon">
-            <svg xmlns="http://w3.org" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          
+          <input 
+            [type]="mostrarPassword ? 'text' : 'password'" 
+            class="form-control" 
+            id="TituloContraseña" 
+            formControlName="password" 
+            placeholder="Ingresá tu contraseña">
+            
+          <span class="eye-icon" (click)="togglePasswordVisibility()" style="cursor: pointer;" title="Mostrar/Ocultar contraseña">
+            <svg xmlns="http://w3.org" viewBox="0 0 24 24" width="20" height="20" fill="none" [attr.stroke]="mostrarPassword ? '#007F3E' : '#666'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
           </span>
+
         </div>
         <small *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error" style="color: red; font-size: 12px; margin-top: 4px; display: block;">
           El campo contraseña es requerido.
