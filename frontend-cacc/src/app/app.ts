@@ -1,12 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, NgModule, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Login } from './login/login'; // <--- 1. Importamos tu componente de login
+import { Login } from './login/login';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, Login], // <--- 2. Lo agregamos a los imports
-  // 3. Indicamos que cargue la etiqueta de tu login en la pantalla principal
+  imports: [RouterOutlet, Login],
   template: `
     <app-login></app-login>
   `,
