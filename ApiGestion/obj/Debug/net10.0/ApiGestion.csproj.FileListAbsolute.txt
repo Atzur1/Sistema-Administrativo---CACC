@@ -36,3 +36,6 @@ C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\ApiGestion\obj\De
 C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\ApiGestion\obj\Debug\net10.0\ApiGestion.pdb
 C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\ApiGestion\obj\Debug\net10.0\ApiGestion.genruntimeconfig.cache
 C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\ApiGestion\obj\Debug\net10.0\ref\ApiGestion.dll
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\ApiGestion\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\ApiGestion\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\ApiGestion\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
