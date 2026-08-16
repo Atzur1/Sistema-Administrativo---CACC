@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DaoLibrary")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a71af72d2ae78feb7fd78c63444cf48c4e0e8e93")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+460454e5475164b27845924b50d5ee8b9d4f68bc")]
 [assembly: System.Reflection.AssemblyProductAttribute("DaoLibrary")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DaoLibrary")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
