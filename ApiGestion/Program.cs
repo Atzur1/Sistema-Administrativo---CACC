@@ -5,6 +5,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddScoped<DaoLibrary.AuthDao>(provider => 
+    new DaoLibrary.AuthDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ApiGestion.Models;
+using DaoLibrary;
 
 namespace ApiGestion.Controllers
 {
@@ -7,18 +8,39 @@ namespace ApiGestion.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
+        private readonly AuthDao _authDao;
+
+        // Inyectamos el AuthDao que configuramos en el Program.cs
+        public AuthController(AuthDao authDao)
+        {
+            _authDao = authDao;
+        }
+
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
-            // Validación temporal hasta que conectemos la Base de Datos real (HU-031) en la capa DAO
-            if (request.Usuario == "super@admin.com" && request.Contrasena == "admin123")
+            try
             {
-                // Si está todo bien, devolvemos un estado 200 (OK)
-                return Ok(new { mensaje = "¡Bienvenido al Portal Administrativo del CACC!" });
+                // Consultamos directamente a la base de datos usando nuestra capa DAO
+                var usuarioEncontrado = _authDao.ValidarLogin(request.Usuario, request.Contrasena);
+
+                if (usuarioEncontrado != null)
+                {
+                    // Si la base de datos lo devuelve, el login es exitoso
+                    return Ok(new { 
+                        mensaje = "¡Bienvenido al Portal Administrativo del CACC!",
+                        email = usuarioEncontrado.Email,
+                        rol = usuarioEncontrado.IdRol 
+                    });
+                }
+                
+                // Si devuelve null, las credenciales no coinciden con la BD
+                return Unauthorized(new { mensaje = "Usuario o contraseña incorrectos." });
             }
-            
-            // Si las credenciales fallan, devolvemos un estado 401 (No autorizado)
-            return Unauthorized(new { mensaje = "Usuario o contraseña incorrectos." });
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error interno en el servidor", error = ex.Message });
+            }
         }
     }
 }
