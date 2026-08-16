@@ -1,11 +1,8 @@
 <main class="main">
-  <img src="https://lh3.googleusercontent.com/d/1Sb41DEbJTkmKLEkTOo5gnpRaVjQkXiV8" class="flecha-left" alt="Flecha decorativa izquierda">
-  <img src="https://lh3.googleusercontent.com/d/1Sb41DEbJTkmKLEkTOo5gnpRaVjQkXiV8" class="flecha-right" alt="Flecha decorativa derecha">
-
   <div class="content-wrapper">
 
     <div class="top-bar">
-      <button type="button" class="btn-logout" routerLink="/login">
+      <button type="button" class="btn-logout" (click)="cerrarSesion()">
         <svg xmlns="http://w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
           <polyline points="16 17 21 12 16 7"></polyline>
@@ -20,8 +17,7 @@
       <h1 class="main-title">Sistema de Gestión Integral</h1>
       
       <div class="logo-container">
-        <img src="https://lh3.googleusercontent.com/d/1ks4XZpl0lhDvSHK32od7gQ0hufkfUVj4" class="logo" alt="Logo del Club Atlético Camioneros">
-       
+        <h2 style="color: #007f3e; font-size: 28px; margin: 0;">CACC</h2>
       </div>
     </header>
 
@@ -32,7 +28,7 @@
 
     <div class="cards-container">
 
-      <div class="card-portal card-portal-administrativo">
+      <div class="card-portal card-portal-administrativo" (click)="ingresarPortalAdministrativo()">
         <div class="card-top">
           <div class="icon-circle">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007f3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -64,10 +60,10 @@
           </div>
         </div>
 
-        <button class="btn-portal">Ingresar al Portal Administrativo ›</button>
+        <button class="btn-portal" (click)="ingresarPortalAdministrativo(); $event.stopPropagation()">Ingresar al Portal Administrativo ›</button>
       </div>
 
-      <div class="card-portal card-portal-deportivo">
+      <div class="card-portal card-portal-deportivo" (click)="ingresarPortalDeportivo()">
         <div class="card-top">
           <div class="icon-circle">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007f3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10"></path><path d="M17 4v8a5 5 0 0 1-10 0V4"></path><path d="M7 4H3v3a2 2 0 0 0 2 2h2"></path><path d="M17 4h4v3a2 2 0 0 1-2 2h-2"></path></svg>
@@ -99,13 +95,13 @@
           </div>
         </div>
 
-        <button class="btn-portal">Ingresar al Portal Deportivo ›</button>
+        <button class="btn-portal" (click)="ingresarPortalDeportivo(); $event.stopPropagation()">Ingresar al Portal Deportivo ›</button>
       </div>
 
     </div>
 
     <footer class="footer-bottom">
-      <p>CACC © 2026 — Todos los derechos reservados</p>
+      <p>CACC &copy; 2026 — Todos los derechos reservados</p>
     </footer>
 
   </div>

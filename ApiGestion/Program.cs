@@ -2,6 +2,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+// 1. AGREGA ESTA POLÍTICA DE CORS (Permite conexiones desde Angular)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -17,6 +29,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// 2. ACTIVA EL CORS AQUÍ (Antes de UseAuthorization y MapControllers)
+app.UseCors("AllowAngular");
 
 app.UseAuthorization();
 

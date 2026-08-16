@@ -1,9 +1,28 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-portales',
-  imports: [],
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './portales.html',
   styleUrl: './portales.css',
 })
-export class Portales {}
+export class Portales {
+  constructor(private router: Router) {}
+
+  ingresarPortalAdministrativo() {
+    alert('Ingresando al Portal Administrativo...');
+    // this.router.navigate(['/admin/dashboard']);
+  }
+
+  ingresarPortalDeportivo() {
+    alert('Ingresando al Portal Deportivo...');
+    // this.router.navigate(['/deportivo/dashboard']);
+  }
+
+  cerrarSesion() {
+    this.router.navigate(['/']);
+  }
+}
