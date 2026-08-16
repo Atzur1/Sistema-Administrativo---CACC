@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ApiGestion/ApiGestion.csproj" />
+  <Project Path="DaoLibrary/DaoLibrary.csproj" />
+  <Project Path="EntityLibrary/EntityLibrary.csproj" />
+</Solution>
