@@ -37,4 +37,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// 3. SEED: crea el usuario Admin si no existe (una sola vez al arrancar)
+string cadenaConexion = builder.Configuration.GetConnectionString("ConexionSQL") ?? "";
+DaoLibrary.SeedAdmin.CrearAdminSiNoExiste(cadenaConexion);
+
 app.Run();
+
+
