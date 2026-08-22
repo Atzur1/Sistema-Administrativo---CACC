@@ -42,3 +42,11 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# .NET Compiled / Build output
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.lock.json
+project.lock.json

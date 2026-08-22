@@ -22,6 +22,11 @@ export class Portales {
     // this.router.navigate(['/deportivo/dashboard']);
   }
 
+  ingresarPortalPersonas() {
+    alert('Ingresando al Portal de Personas (Alta de Usuarios)...');
+    // this.router.navigate(['/personas/alta']); // Ajusta la ruta cuando esté lista
+  }
+
   cerrarSesion() {
     this.router.navigate(['/']);
   }
