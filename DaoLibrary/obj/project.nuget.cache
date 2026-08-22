@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "jKrfOxTJ+R0=",
+  "dgSpecHash": "KK5ILWmJ74A=",
   "success": true,
   "projectFilePath": "C:\\Users\\Bjqy\\Desktop\\Proyecto - Sistema Administrativo - CACC\\DaoLibrary\\DaoLibrary.csproj",
   "expectedPackageFiles": [
@@ -11,8 +11,8 @@
     "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.data.sqlclient.sni.runtime\\6.0.2\\microsoft.data.sqlclient.sni.runtime.6.0.2.nupkg.sha512",
     "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\9.0.13\\microsoft.extensions.caching.abstractions.9.0.13.nupkg.sha512",
     "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.extensions.caching.memory\\9.0.13\\microsoft.extensions.caching.memory.9.0.13.nupkg.sha512",
-    "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
-    "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.0\\microsoft.extensions.logging.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.13\\microsoft.extensions.dependencyinjection.abstractions.9.0.13.nupkg.sha512",
+    "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\9.0.13\\microsoft.extensions.logging.abstractions.9.0.13.nupkg.sha512",
     "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.extensions.options\\9.0.13\\microsoft.extensions.options.9.0.13.nupkg.sha512",
     "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.extensions.primitives\\9.0.13\\microsoft.extensions.primitives.9.0.13.nupkg.sha512",
     "C:\\Users\\Bjqy\\.nuget\\packages\\microsoft.identitymodel.abstractions\\8.16.0\\microsoft.identitymodel.abstractions.8.16.0.nupkg.sha512",
