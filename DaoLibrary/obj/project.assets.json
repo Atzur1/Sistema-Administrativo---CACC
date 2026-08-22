@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "targets": {
     "net9.0": {
       "Microsoft.Bcl.Cryptography/9.0.13": {
@@ -1194,23 +1194,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Computadora01\\.nuget\\packages\\": {},
+    "C:\\Users\\FramD\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Computadora01\\Desktop\\sistema-CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\DaoLibrary.csproj",
+      "projectUniqueName": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\DaoLibrary.csproj",
       "projectName": "DaoLibrary",
-      "projectPath": "C:\\Users\\Computadora01\\Desktop\\sistema-CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\DaoLibrary.csproj",
-      "packagesPath": "C:\\Users\\Computadora01\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Computadora01\\Desktop\\sistema-CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\obj\\",
+      "projectPath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\DaoLibrary.csproj",
+      "packagesPath": "C:\\Users\\FramD\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\Computadora01\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\FramD\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -1219,14 +1219,16 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net9.0": {
+          "framework": "net9.0",
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\Computadora01\\Desktop\\sistema-CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj": {
-              "projectPath": "C:\\Users\\Computadora01\\Desktop\\sistema-CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj"
+            "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj": {
+              "projectPath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj"
             }
           }
         }
@@ -1241,10 +1243,11 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "10.0.400"
     },
     "frameworks": {
       "net9.0": {
+        "framework": "net9.0",
         "targetAlias": "net9.0",
         "dependencies": {
           "Microsoft.Data.SqlClient": {
@@ -1263,12 +1266,26 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[9.0.19, 9.0.19]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[9.0.19, 9.0.19]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[9.0.19, 9.0.19]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.400/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
