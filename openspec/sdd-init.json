@@ -1,0 +1,74 @@
+{
+  "project": "sistema-administrativo-cacc",
+  "initialized_at": "2026-08-19",
+  "stack": {
+    "backend": {
+      "framework": ".NET 10 Web API",
+      "language": "C#",
+      "solution": "SistemaCamionerosBackend.slnx",
+      "projects": [
+        {
+          "name": "ApiGestion",
+          "type": "ASP.NET Web API",
+          "packages": ["Microsoft.AspNetCore.OpenApi 10.0.11", "Swashbuckle.AspNetCore 10.2.3"]
+        },
+        {
+          "name": "DaoLibrary",
+          "type": "Data Access (raw ADO.NET)",
+          "packages": ["Microsoft.Data.SqlClient 7.0.2"]
+        },
+        {
+          "name": "EntityLibrary",
+          "type": "Entity POCOs",
+          "packages": []
+        }
+      ],
+      "database": {
+        "engine": "SQL Server",
+        "auth": "Windows (Trusted_Connection)",
+        "name": "ClubCamionerosPRUEBA"
+      }
+    },
+    "frontend": {
+      "framework": "Angular 22",
+      "language": "TypeScript 6",
+      "components": "standalone (no NgModules)",
+      "testing": "Vitest 4.x via @angular/build:unit-test",
+      "formatting": "Prettier (no ESLint)",
+      "package_manager": "npm 11.17.0"
+    }
+  },
+  "conventions": {
+    "language": "Spanish (Argentina)",
+    "component_pattern": "name.ts / name.html / name.css / name.spec.ts in same dir",
+    "api_pattern": "api/[controller] routes",
+    "data_access": "raw SQL with parameterized queries via ADO.NET"
+  },
+  "architecture": {
+    "backend": "Classic 3-tier: Controllers → DAOs → Entities, no ORM",
+    "frontend": "Angular 22 standalone SPA, services pattern"
+  },
+  "testing": {
+    "frontend": {
+      "framework": "Vitest 4.x",
+      "runner": "npm test",
+      "spec_files": 5,
+      "spec_quality": "boilerplate (should create only)",
+      "config": "uses Angular builder defaults, no vitest.config.ts"
+    },
+    "backend": {
+      "framework": "none",
+      "test_projects": 0,
+      "test_files": 0
+    },
+    "strict_tdd": false,
+    "strict_tdd_reasoning": "Backend has no test infrastructure; frontend has Vitest but tests are boilerplate. Strict TDD viable for frontend only."
+  },
+  "artifact_store": "both",
+  "session_preflight": {
+    "execution_mode": "interactive",
+    "artifact_store": "both",
+    "delivery_strategy": "ask-on-risk",
+    "review_budget_lines": 400
+  }
+}
