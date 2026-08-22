@@ -3,9 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
 export interface UsuarioLogueado {
-  idUsuario: number;
   email: string;
-  idRol: number;
+  rol: number;
 }
 
 @Injectable({
@@ -16,10 +15,10 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(email: string, contrasenia: string): Observable<UsuarioLogueado> {
-    return this.http.post<UsuarioLogueado>(this.apiUrl, { email, contrasenia }).pipe(
-      tap(usuario => {
-        localStorage.setItem('usuario', JSON.stringify(usuario));
+  login(usuario: string, contrasena: string): Observable<UsuarioLogueado> {
+    return this.http.post<UsuarioLogueado>(this.apiUrl, { usuario, contrasena }).pipe(
+      tap(respuesta => {
+        localStorage.setItem('usuario', JSON.stringify(respuesta));
       })
     );
   }
@@ -30,7 +29,7 @@ export class AuthService {
   }
 
   getRol(): number | null {
-    return this.getUsuario()?.idRol ?? null;
+    return this.getUsuario()?.rol ?? null;
   }
 
   logout() {
