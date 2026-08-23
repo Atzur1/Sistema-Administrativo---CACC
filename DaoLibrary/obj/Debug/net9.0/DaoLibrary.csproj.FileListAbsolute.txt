@@ -1,0 +1,32 @@
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\DaoLibrary.deps.json
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\DaoLibrary.dll
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\DaoLibrary.pdb
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\EntityLibrary.dll
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\EntityLibrary.pdb
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.csproj.AssemblyReference.cache
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.AssemblyInfoInputs.cache
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.AssemblyInfo.cs
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.csproj.CoreCompileInputs.cache
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.sourcelink.json
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.csproj.Up2Date
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.dll
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\refint\DaoLibrary.dll
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.pdb
+C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\ref\DaoLibrary.dll
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\DaoLibrary.deps.json
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\DaoLibrary.dll
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\DaoLibrary.pdb
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\EntityLibrary.dll
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\EntityLibrary.pdb
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.csproj.AssemblyReference.cache
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.AssemblyInfoInputs.cache
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.AssemblyInfo.cs
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.csproj.CoreCompileInputs.cache
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.sourcelink.json
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.csproj.Up2Date
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.dll
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\refint\DaoLibrary.dll
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\DaoLibrary.pdb
+C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\obj\Debug\net9.0\ref\DaoLibrary.dll

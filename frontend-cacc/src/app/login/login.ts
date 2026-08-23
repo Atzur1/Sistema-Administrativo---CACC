@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../services/auth';
 
 @Component({
   selector: 'app-login',
@@ -15,17 +15,12 @@ export class Login {
   loginForm: FormGroup;
   mensajeError: string = '';
   mensajeExito: string = '';
-  
-  // Propiedad para controlar la visibilidad de la contraseña
   mostrarPassword: boolean = false;
 
-  // URL de tu API en C# (ajustá el puerto según el que te devuelva `dotnet run`)
-  private apiUrl = 'http://localhost:5118/api/auth/login';
-
   constructor(
-    private fb: FormBuilder, 
+    private fb: FormBuilder,
     private router: Router,
-    private http: HttpClient
+    private authService: AuthService
   ) {
     this.loginForm = this.fb.group({
       usuario: ['', [Validators.required]],
@@ -44,17 +39,14 @@ export class Login {
       return;
     }
 
-    const credentials = this.loginForm.value;
+    const { usuario, contrasena } = this.loginForm.value;
 
-    // Petición HTTP POST hacia el backend para validar contra la Base de Datos
-    this.http.post<any>(this.apiUrl, credentials).subscribe({
-      next: (response) => {
+    this.authService.login(usuario, contrasena).subscribe({
+      next: () => {
         this.mensajeExito = `¡Bienvenido al sistema del CACC!`;
         this.mensajeError = '';
-        
-        // Redirección exitosa a la pantalla de portales
         setTimeout(() => {
-          this.router.navigate(['/portales']); 
+          this.router.navigate(['/portales']);
         }, 1500);
       },
       error: (err) => {

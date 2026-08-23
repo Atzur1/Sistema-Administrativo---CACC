@@ -1,6 +1,10 @@
 {
   "version": 2,
+<<<<<<< HEAD
   "dgSpecHash": "UdJIRkB5xXA=",
+=======
+  "dgSpecHash": "V5sHBDolUC8=",
+>>>>>>> modificaciones-varias-carpetas-Front/Back
   "success": true,
   "projectFilePath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj",
   "expectedPackageFiles": [],
