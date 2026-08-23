@@ -40,12 +40,12 @@
   position: relative;
   z-index: 2; 
   width: 100%;
-  max-width: 1200px;
+  max-width: 1350px; /* Ampliamos el contenedor principal */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
+  padding: 40px 10px; /* Reducimos el padding lateral para ganar espacio */
   box-sizing: border-box;
 }
 
@@ -92,7 +92,6 @@
   color: var(--text-dark);
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  
 }
 
 .main-title {
@@ -114,7 +113,6 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  
 }
 
 .logo {
@@ -125,26 +123,27 @@
 
 .cards-container {
   display: flex;
-  gap: 30px;
+  gap: 20px;            /* Reducimos ligeramente el espacio entre tarjetas */
   width: 100%;
-  max-width: 900px;
+  max-width: 1250px;    /* Límite ajustado */
   justify-content: center;
   margin-bottom: 40px;
+  flex-wrap: nowrap;    /* Evitamos que bajen de línea por fuerza mayor */
 }
 
 .card-portal {
   background: #ffffff;
-  width: 100%;
-  max-width: 400px;
-  padding: 35px;
+  width: 340px;          /* Reducimos el ancho a 340px para que las tres entren cómodamente */
+  min-width: 340px;
+  padding: 30px 25px;    /* Padding ligeramente más compacto */
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
 .card-portal:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
@@ -154,7 +153,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .icon-circle {
@@ -175,6 +174,10 @@
   font-weight: 300;
 }
 
+.card-body {
+  margin-bottom: 20px;
+}
+
 .card-body h3 {
   font-size: 20px;
   font-weight: 700;
@@ -186,16 +189,15 @@
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.6;
-  margin: 0 0 30px 0;
+  margin: 0;
+  min-height: 65px; /* Altura mínima reservada para los párrafos para que no desnivelen la tarjeta */
 }
-
 
 .tags-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 30px;
-  flex-grow: 1; 
+  margin-bottom: 25px;
 }
 
 .tag {
@@ -215,20 +217,22 @@
   color: var(--primary-green);
 }
 
-
 .btn-portal {
   width: 100%;
   background-color: var(--primary-green);
   color: white;
   border: none;
-  padding: 16px;
+  padding: 14px 10px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px;       /* Tamaño optimizado para que quepa en una sola línea holgadamente */
   font-weight: 600;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
+  text-align: center;
+  min-height: 48px;      /* Altura uniforme para todos los botones */
+  box-sizing: border-box;
   transition: background-color 0.2s;
 }
 
@@ -244,7 +248,6 @@
   color: var(--text-dark);
 }
 
-
 @media (max-width: 992px) {
   .flecha-left, .flecha-right {
     display: none; 
@@ -257,6 +260,7 @@
 
   .card-portal {
     max-width: 100%;
+    min-width: 100%;
   }
 
   .top-bar {

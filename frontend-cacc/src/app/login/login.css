@@ -22,11 +22,10 @@
   position: absolute;
   top: 0;
   left: 0;
+  width: calc(100% - 420px); /* Ajustado exactamente al ancho del espacio izquierdo */
   height: 100%;
-  width: auto; 
-  max-width: calc(100% - 550px); /* Límite dinámico para no pisar la tarjeta */
-  object-fit: cover;
-  object-position: left center;
+  object-fit: contain;       /* Muestra la imagen completa sin recortarla ni deformarla */
+  object-position: center left; /* Alinea la ilustración hacia la izquierda */
   z-index: 1;
 }
 
@@ -209,7 +208,7 @@
 }
 
 /* =========================================
-   REGLAS RESPONSIVE (Móviles y Tablets)
+    REGLAS RESPONSIVE (Móviles y Tablets)
    ========================================= */
 @media (max-width: 992px) {
   .main {
