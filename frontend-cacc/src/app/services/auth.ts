@@ -6,6 +6,7 @@ import { Observable, tap } from 'rxjs';
 export interface UsuarioLogueado {
   email: string;
   rol: number;
+  token: string;
 }
 
 @Injectable({
@@ -31,6 +32,10 @@ export class AuthService {
 
   getRol(): number | null {
     return this.getUsuario()?.rol ?? null;
+  }
+
+  getToken(): string | null {
+    return this.getUsuario()?.token ?? null;
   }
 
   isAuthenticated(): boolean {
@@ -65,9 +70,3 @@ export const adminGuard: CanActivateFn = () => {
   return true;
 };
 
-/*/Si el usuario tiene permisos de admin, entra a portales
-Si no, muestra un alert('No tienes permisos para acceder a esta sección.')
-y lo manda al login con router.navigate(['/'])
-Esto cumple lo que pediste sin crear una página extra de “No autorizado”.
-
-Si querés, ahora te ayudo a ponerle el rol real del usuario cuando haga login y que isAdmin() dependa de ese valor concreto./*/
