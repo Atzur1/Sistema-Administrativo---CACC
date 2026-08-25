@@ -43,8 +43,18 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
+<<<<<<< HEAD
 # .NET
 bin/
 obj/
 *.user
 appsettings.Development.json
+=======
+# .NET Compiled / Build output
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.lock.json
+project.lock.json
+>>>>>>> d6a4d082d61e3e8039d4034e26a0178442acf374

@@ -5,28 +5,47 @@
   --text-muted: #757575;
   --bg-light: #f5f5f5;
 
-  background-color: var(--bg-light);
+  background-color: var(--primary-green);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   position: relative;
   min-height: 100vh;
   margin: 0;
+  overflow: hidden; 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
+}
+
+.flecha-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%; 
+  width: auto;
+  transform: rotate(180deg);
+  z-index: 0;
+}
+
+.flecha-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%; 
+  width: auto;
+  z-index: 1;
 }
 
 .content-wrapper {
   position: relative;
   z-index: 2; 
   width: 100%;
-  max-width: 1200px;
+  max-width: 1350px; /* Ampliamos el contenedor principal */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
+  padding: 40px 10px; /* Reducimos el padding lateral para ganar espacio */
   box-sizing: border-box;
 }
 
@@ -70,7 +89,7 @@
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--text-dark);
   text-transform: uppercase;
   letter-spacing: 1.5px;
 }
@@ -96,29 +115,35 @@
   width: 100%;
 }
 
+.logo {
+  width: 140px;
+  height: auto;
+  display: block;
+}
+
 .cards-container {
   display: flex;
-  gap: 30px;
+  gap: 20px;            /* Reducimos ligeramente el espacio entre tarjetas */
   width: 100%;
-  max-width: 900px;
+  max-width: 1250px;    /* Límite ajustado */
   justify-content: center;
   margin-bottom: 40px;
+  flex-wrap: nowrap;    /* Evitamos que bajen de línea por fuerza mayor */
 }
 
 .card-portal {
   background: #ffffff;
-  width: 100%;
-  max-width: 400px;
-  padding: 35px;
+  width: 340px;          /* Reducimos el ancho a 340px para que las tres entren cómodamente */
+  min-width: 340px;
+  padding: 30px 25px;    /* Padding ligeramente más compacto */
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
 }
-
 .card-portal:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
@@ -128,7 +153,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .icon-circle {
@@ -149,6 +174,10 @@
   font-weight: 300;
 }
 
+.card-body {
+  margin-bottom: 20px;
+}
+
 .card-body h3 {
   font-size: 20px;
   font-weight: 700;
@@ -160,15 +189,15 @@
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.6;
-  margin: 0 0 30px 0;
+  margin: 0;
+  min-height: 65px; /* Altura mínima reservada para los párrafos para que no desnivelen la tarjeta */
 }
 
 .tags-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 30px;
-  flex-grow: 1; 
+  margin-bottom: 25px;
 }
 
 .tag {
@@ -193,14 +222,17 @@
   background-color: var(--primary-green);
   color: white;
   border: none;
-  padding: 16px;
+  padding: 14px 10px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px;       /* Tamaño optimizado para que quepa en una sola línea holgadamente */
   font-weight: 600;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
+  text-align: center;
+  min-height: 48px;      /* Altura uniforme para todos los botones */
+  box-sizing: border-box;
   transition: background-color 0.2s;
 }
 
@@ -213,10 +245,14 @@
   text-align: center;
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--text-dark);
 }
 
 @media (max-width: 992px) {
+  .flecha-left, .flecha-right {
+    display: none; 
+  }
+
   .cards-container {
     flex-direction: column;
     align-items: center;
@@ -224,6 +260,7 @@
 
   .card-portal {
     max-width: 100%;
+    min-width: 100%;
   }
 
   .top-bar {

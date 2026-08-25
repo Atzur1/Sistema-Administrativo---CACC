@@ -7,8 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+<<<<<<< HEAD
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+=======
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+>>>>>>> d6a4d082d61e3e8039d4034e26a0178442acf374
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
