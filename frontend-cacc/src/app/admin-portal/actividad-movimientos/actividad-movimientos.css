@@ -1,0 +1,430 @@
+/* ===== ANIMATIONS ===== */
+/* Blocks fade in while sliding up on load */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== LAYOUT ===== */
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    min-height: 100%;
+    box-sizing: border-box;
+    background: #f1f5f1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #000000;
+    /* Never scroll sideways, no matter how narrow the viewport gets */
+    overflow-x: hidden;
+}
+
+/* ===== BANNER ===== */
+.banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 12px;
+    padding: 18px 24px;
+    background: #ffffff;
+    border-left: 5px solid #00a651;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.banner-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.banner-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.banner-date {
+    font-size: 12px;
+    color: #555a55;
+}
+
+.banner-metrics {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.banner-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0 22px;
+}
+
+/* Divider between the banner and its metrics, and between metrics */
+.banner-metric {
+    border-left: 1px solid #e4e7e4;
+}
+
+.banner-metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #00a651;
+    line-height: 1.1;
+}
+
+.banner-metric-label {
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #555a55;
+    white-space: nowrap;
+}
+
+/* ===== MAIN GRID ===== */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 12px;
+    /* Fills the remaining height so nothing is left empty below */
+    flex: 1;
+    min-height: 0;
+}
+
+.side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* ===== PANELS ===== */
+.panel {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    min-width: 0;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+/* Stagger the panels as they come in */
+.panel-payments {
+    animation-delay: 80ms;
+}
+
+.panel-activity {
+    animation-delay: 160ms;
+}
+
+.panel-quick {
+    animation-delay: 240ms;
+}
+
+.panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.panel-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.panel-subtitle {
+    font-size: 11px;
+    color: #555a55;
+}
+
+.panel-link {
+    color: #00a651;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+}
+
+.panel-link:hover {
+    opacity: 0.7;
+}
+
+/* ===== PAYMENTS TABLE ===== */
+/* Only the table scrolls sideways if the viewport gets too narrow */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payments-table th {
+    padding: 0 10px 8px;
+    border-bottom: 1px solid #e4e7e4;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.payments-table td {
+    padding: 10px;
+    border-bottom: 1px solid #f1f5f1;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.payments-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.payments-table tbody tr:hover {
+    background: #f9faf9;
+}
+
+.payments-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.align-right {
+    text-align: right;
+}
+
+.cell-player {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.player-name {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.player-category {
+    font-size: 11px;
+    color: #555a55;
+    white-space: nowrap;
+}
+
+.cell-muted {
+    color: #555a55;
+    white-space: nowrap;
+}
+
+.cell-amount {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-paid {
+    background: #e7f4ea;
+    color: #00a651;
+}
+
+.status-partial {
+    background: #fef4e3;
+    color: #8a5a0b;
+}
+
+/* ===== ACTIVITY FEED ===== */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.activity-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.activity-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* Icon tone per event type */
+.event-payment {
+    background: #e7f4ea;
+    color: #00a651;
+}
+
+.event-partial {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.event-debt {
+    background: #fef4e3;
+    color: #eba83a;
+}
+
+.event-suspended {
+    background: #fbeae8;
+    color: #c0392b;
+}
+
+.activity-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0;
+}
+
+.activity-title {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.activity-badge {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+/* Badge tone matches its event type */
+.badge-payment {
+    background: #e7f4ea;
+    color: #00a651;
+}
+
+.badge-partial {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.badge-debt {
+    background: #fef4e3;
+    color: #8a5a0b;
+}
+
+.badge-suspended {
+    background: #fbeae8;
+    color: #c0392b;
+}
+
+.activity-elapsed {
+    font-size: 10px;
+    color: #555a55;
+}
+
+/* ===== QUICK ACCESS ===== */
+.quick-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.quick-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 14px;
+    background: #f1f5f1;
+    border: 1px solid #e4e7e4;
+    border-radius: 10px;
+    color: #000000;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.quick-btn:hover {
+    background: #e7f4ea;
+    border-color: #00a651;
+}
+
+.quick-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00a651;
+    flex-shrink: 0;
+}
+
+.quick-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.quick-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Drop the divider once the metrics sit under the title */
+    .banner-metric {
+        padding: 0 22px 0 0;
+        border-left: none;
+    }
+}

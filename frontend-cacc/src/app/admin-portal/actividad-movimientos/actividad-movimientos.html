@@ -1,2 +1,171 @@
-<h1>Actividad y Movimientos</h1>
-<p>Contenido del dashboard de Actividad y Movimientos.</p>
+<!-- Actividad y Movimientos dashboard: banner, payments table, activity feed and shortcuts -->
+<div class="dashboard">
+
+  <!-- ===== BANNER ===== -->
+  <section class="banner">
+    <div class="banner-intro">
+      <h1 class="banner-title">Actividad y Movimientos</h1>
+      <span class="banner-date">{{ currentDate }}</span>
+    </div>
+
+    <div class="banner-metrics">
+      @for (metric of bannerMetrics; track metric.label) {
+        <div class="banner-metric">
+          <span class="banner-metric-value">{{ metric.display() }}</span>
+          <span class="banner-metric-label">{{ metric.label }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ===== MAIN GRID ===== -->
+  <section class="main-grid">
+
+    <!-- Latest registered payments -->
+    <article class="panel panel-payments">
+      <header class="panel-head">
+        <div class="panel-head-text">
+          <h2 class="panel-title">Últimos pagos registrados</h2>
+          <span class="panel-subtitle">Movimientos de las últimas horas</span>
+        </div>
+        <a class="panel-link" routerLink="/admin/portal/cuotas-pagos">Ver todos →</a>
+      </header>
+
+      <div class="table-wrapper">
+        <table class="payments-table">
+          <thead>
+            <tr>
+              <th>Jugador</th>
+              <th>Período</th>
+              <th class="align-right">Monto</th>
+              <th>Método</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payment of payments; track payment.player) {
+              <tr>
+                <td>
+                  <div class="cell-player">
+                    <span class="player-name">{{ payment.player }}</span>
+                    <span class="player-category">{{ payment.category }}</span>
+                  </div>
+                </td>
+                <td class="cell-muted">{{ payment.period }}</td>
+                <td class="align-right cell-amount">{{ payment.amount }}</td>
+                <td class="cell-muted">{{ payment.method }}</td>
+                <td>
+                  <span class="status-pill"
+                        [ngClass]="'status-' + payment.status">{{ payment.statusLabel }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <!-- Right column: activity feed on top, shortcuts below -->
+    <div class="side-column">
+
+      <!-- Recent activity -->
+      <article class="panel panel-activity">
+        <header class="panel-head">
+          <div class="panel-head-text">
+            <h2 class="panel-title">Actividad reciente</h2>
+            <span class="panel-subtitle">Últimos eventos del sistema</span>
+          </div>
+        </header>
+
+        <div class="activity-list">
+          @for (event of activity; track event.title; let i = $index) {
+            <div class="activity-item" [style.animation-delay.ms]="320 + i * 50">
+
+              <span class="activity-icon" [ngClass]="'event-' + event.type">
+                @switch (event.type) {
+                  @case ('payment') {
+                    <!-- Invoice -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                  }
+                  @case ('partial') {
+                    <!-- Trend -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                      <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                  }
+                  @case ('debt') {
+                    <!-- Circular alert -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="9"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12.5"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                  }
+                  @default {
+                    <!-- Triangular alert -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                      <line x1="12" y1="9" x2="12" y2="13"></line>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                  }
+                }
+              </span>
+
+              <div class="activity-text">
+                <span class="activity-title">{{ event.title }}</span>
+                <span class="activity-badge" [ngClass]="'badge-' + event.type">{{ event.badge }}</span>
+                <span class="activity-elapsed">{{ event.elapsed }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </article>
+
+      <!-- Quick access shortcuts -->
+      <article class="panel panel-quick">
+        <header class="panel-head">
+          <div class="panel-head-text">
+            <h2 class="panel-title">Accesos rápidos</h2>
+            <span class="panel-subtitle">Acciones frecuentes</span>
+          </div>
+        </header>
+
+        <div class="quick-list">
+          @for (action of quickActions; track action.label) {
+            <a class="quick-btn" [routerLink]="action.link">
+              <span class="quick-icon">
+                @if (action.icon === 'card') {
+                  <!-- Card -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                  </svg>
+                } @else {
+                  <!-- Bar chart -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                }
+              </span>
+              <span class="quick-label">{{ action.label }}</span>
+            </a>
+          }
+        </div>
+      </article>
+
+    </div>
+  </section>
+</div>
