@@ -104,6 +104,22 @@
     </div>
 </aside>
 
+<!-- ===== TOPBAR ===== -->         
+<div class="admin-topbar">
+    <div class="topbar-breadcrumb">
+    <span class="breadcrumb-portal">Portal administrativo</span>
+    <span class="breadcrumb-separator">·</span>
+    <span class="breadcrumb-current">{{ currentPageTitle }}</span>
+    </div>
+    <div class="topbar-user">
+    <div class="user-info">
+        <span class="user-name">{{ userName }}</span>
+        <span class="user-email">{{ userEmail }}</span>
+    </div>
+    <div class="user-avatar">{{ userInitials }}</div>
+    </div>
+</div>
+
 <!-- ===== CONTENT AREA ===== -->
 <!-- Each dashboard renders here through the router -->
 <main class="admin-content">
