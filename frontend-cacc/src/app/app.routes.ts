@@ -9,4 +9,4 @@ export const routes: Routes = [
   { path: 'portales', component: Portales },
   { path: 'admin/dashboard', component: Dashboard, canActivate: [adminGuard] },
   { path: '**', redirectTo: '' }
-];
+];    

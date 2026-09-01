@@ -1,10 +1,6 @@
 {
   "version": 2,
-<<<<<<< HEAD
-  "dgSpecHash": "X10qYZcCJEo=",
-=======
   "dgSpecHash": "DRkwV2kIAXs=",
->>>>>>> modificaciones-varias-carpetas-Front/Back
   "success": true,
   "projectFilePath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\DaoLibrary.csproj",
   "expectedPackageFiles": [
@@ -15,13 +11,8 @@
     "C:\\Users\\FramD\\.nuget\\packages\\microsoft.data.sqlclient.sni.runtime\\6.0.2\\microsoft.data.sqlclient.sni.runtime.6.0.2.nupkg.sha512",
     "C:\\Users\\FramD\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\9.0.13\\microsoft.extensions.caching.abstractions.9.0.13.nupkg.sha512",
     "C:\\Users\\FramD\\.nuget\\packages\\microsoft.extensions.caching.memory\\9.0.13\\microsoft.extensions.caching.memory.9.0.13.nupkg.sha512",
-<<<<<<< HEAD
-    "C:\\Users\\FramD\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
-    "C:\\Users\\FramD\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.0\\microsoft.extensions.logging.abstractions.10.0.0.nupkg.sha512",
-=======
     "C:\\Users\\FramD\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.13\\microsoft.extensions.dependencyinjection.abstractions.9.0.13.nupkg.sha512",
     "C:\\Users\\FramD\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\9.0.13\\microsoft.extensions.logging.abstractions.9.0.13.nupkg.sha512",
->>>>>>> modificaciones-varias-carpetas-Front/Back
     "C:\\Users\\FramD\\.nuget\\packages\\microsoft.extensions.options\\9.0.13\\microsoft.extensions.options.9.0.13.nupkg.sha512",
     "C:\\Users\\FramD\\.nuget\\packages\\microsoft.extensions.primitives\\9.0.13\\microsoft.extensions.primitives.9.0.13.nupkg.sha512",
     "C:\\Users\\FramD\\.nuget\\packages\\microsoft.identitymodel.abstractions\\8.16.0\\microsoft.identitymodel.abstractions.8.16.0.nupkg.sha512",
@@ -37,5 +28,15 @@
     "C:\\Users\\FramD\\.nuget\\packages\\system.security.cryptography.pkcs\\9.0.13\\system.security.cryptography.pkcs.9.0.13.nupkg.sha512",
     "C:\\Users\\FramD\\.nuget\\packages\\system.security.cryptography.protecteddata\\9.0.13\\system.security.cryptography.protecteddata.9.0.13.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "message": "Problema al leer el archivo de caché C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\obj\\project.nuget.cache : '<' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 2 | BytePositionInLine: 0.",
+      "projectPath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\DaoLibrary.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\DaoLibrary.csproj",
+      "targetGraphs": []
+    }
+  ]
 }
