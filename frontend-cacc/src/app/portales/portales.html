@@ -3,7 +3,7 @@
 
     <div class="top-bar">
       <button type="button" class="btn-logout" (click)="cerrarSesion()">
-        <svg xmlns="http://w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
           <polyline points="16 17 21 12 16 7"></polyline>
           <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -17,7 +17,7 @@
       <h1 class="main-title">Sistema de Gestión Integral</h1>
       
       <div class="logo-container">
-        <h2 style="color: #007f3e; font-size: 28px; margin: 0;">CACC</h2>
+        <h2 style="color: #ffffff; font-size: 28px; margin: 0;">CACC</h2>
       </div>
     </header>
 
@@ -28,6 +28,7 @@
 
     <div class="cards-container">
 
+      <!-- Portal Administrativo -->
       <div class="card-portal card-portal-administrativo" (click)="ingresarPortalAdministrativo()">
         <div class="card-top">
           <div class="icon-circle">
@@ -63,6 +64,7 @@
         <button class="btn-portal" (click)="ingresarPortalAdministrativo(); $event.stopPropagation()">Ingresar al Portal Administrativo ›</button>
       </div>
 
+      <!-- Portal Deportivo -->
       <div class="card-portal card-portal-deportivo" (click)="ingresarPortalDeportivo()">
         <div class="card-top">
           <div class="icon-circle">
@@ -96,6 +98,38 @@
         </div>
 
         <button class="btn-portal" (click)="ingresarPortalDeportivo(); $event.stopPropagation()">Ingresar al Portal Deportivo ›</button>
+      </div>
+
+      <!-- NUEVO: Portal de Personas (Alta de Usuarios) -->
+      <div class="card-portal card-portal-personas" (click)="ingresarPortalPersonas()">
+        <div class="card-top">
+          <div class="icon-circle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007f3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="11" x2="19" y2="17"></line><line x1="22" y1="14" x2="16" y2="14"></line></svg>
+          </div>
+          <span class="arrow-right">›</span>
+        </div>
+        
+        <div class="card-body">
+          <h3>Portal de Personas</h3>
+          <p>Módulo de gestión de altas, registros y control centralizado de usuarios e individuos del sistema.</p>
+        </div>
+
+        <div class="tags-grid">
+          <div class="tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></svg> 
+            Alta de usuarios
+          </div>
+          <div class="tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> 
+            Edición de datos
+          </div>
+          <div class="tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> 
+            Consultas
+          </div>
+        </div>
+
+        <button class="btn-portal" (click)="ingresarPortalPersonas(); $event.stopPropagation()">Ingresar al Portal de Personas ›</button>
       </div>
 
     </div>

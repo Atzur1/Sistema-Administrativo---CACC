@@ -1,24 +1,12 @@
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.deps.json
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.dll
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.pdb
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.AssemblyInfoInputs.cache
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.AssemblyInfo.cs
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.csproj.CoreCompileInputs.cache
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.sourcelink.json
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.dll
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\refint\EntityLibrary.dll
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.pdb
-C:\Users\Computadora01\Desktop\sistema-CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\ref\EntityLibrary.dll
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.deps.json
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.dll
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.pdb
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.AssemblyInfoInputs.cache
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.AssemblyInfo.cs
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.csproj.CoreCompileInputs.cache
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.sourcelink.json
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.dll
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\refint\EntityLibrary.dll
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.pdb
-C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\obj\Debug\net9.0\ref\EntityLibrary.dll
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.deps.json
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.dll
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.pdb
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.AssemblyInfoInputs.cache
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.AssemblyInfo.cs
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.csproj.CoreCompileInputs.cache
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.sourcelink.json
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.dll
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\refint\EntityLibrary.dll
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\EntityLibrary.pdb
+C:\Users\Bjqy\Desktop\Proyecto - Sistema Administrativo - CACC\EntityLibrary\obj\Debug\net9.0\ref\EntityLibrary.dll

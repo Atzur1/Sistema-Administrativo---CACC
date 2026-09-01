@@ -1,32 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj": {}
+    "C:\\Users\\Bjqy\\Desktop\\Proyecto - Sistema Administrativo - CACC\\EntityLibrary\\EntityLibrary.csproj": {}
   },
   "projects": {
-    "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj": {
+    "C:\\Users\\Bjqy\\Desktop\\Proyecto - Sistema Administrativo - CACC\\EntityLibrary\\EntityLibrary.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj",
+        "projectUniqueName": "C:\\Users\\Bjqy\\Desktop\\Proyecto - Sistema Administrativo - CACC\\EntityLibrary\\EntityLibrary.csproj",
         "projectName": "EntityLibrary",
-        "projectPath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\EntityLibrary.csproj",
-        "packagesPath": "C:\\Users\\FramD\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\EntityLibrary\\obj\\",
+        "projectPath": "C:\\Users\\Bjqy\\Desktop\\Proyecto - Sistema Administrativo - CACC\\EntityLibrary\\EntityLibrary.csproj",
+        "packagesPath": "C:\\Users\\Bjqy\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Bjqy\\Desktop\\Proyecto - Sistema Administrativo - CACC\\EntityLibrary\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\FramD\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Bjqy\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {

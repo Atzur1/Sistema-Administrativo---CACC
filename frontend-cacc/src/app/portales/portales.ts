@@ -28,13 +28,17 @@ export class Portales {
       return;
     }
 
-    alert('Ingresando al Portal Administrativo...');
-    this.router.navigate(['/admin/dashboard']);
+    this.router.navigate(['/admin/portal']);
   }
 
   ingresarPortalDeportivo() {
     alert('Ingresando al Portal Deportivo...');
     // this.router.navigate(['/deportivo/dashboard']);
+  }
+
+  ingresarPortalPersonas() {
+    alert('Ingresando al Portal de Personas (Alta de Usuarios)...');
+    // this.router.navigate(['/personas/alta']); // Ajusta la ruta cuando esté lista
   }
 
   cerrarSesion() {

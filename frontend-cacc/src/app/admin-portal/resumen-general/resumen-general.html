@@ -1,0 +1,160 @@
+<!-- Resumen General dashboard: banner, KPI cards and a bottom row with chart + eligibility -->
+<div class="dashboard">
+
+  <!-- ===== BANNER ===== -->
+  <section class="banner">
+    <div class="banner-intro">
+      <span class="banner-greeting">Buenos días, Admin</span>
+      <h1 class="banner-title">Resumen General</h1>
+      <span class="banner-date">{{ currentDate }}</span>
+    </div>
+
+    <div class="banner-stats">
+      @for (stat of bannerStats; track stat.label) {
+        <div class="banner-stat">
+          <span class="banner-stat-value">{{ stat.value }}</span>
+          <span class="banner-stat-label">{{ stat.label }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ===== KPI CARDS ===== -->
+  <section class="cards">
+    <!-- animation-delay staggers the entrance of each card -->
+    @for (card of cards; track card.label; let i = $index) {
+      <article class="card" [style.animation-delay.ms]="i * 80">
+
+        <div class="card-head">
+          <span class="card-badge" [ngClass]="'badge-' + card.badgeTone">{{ card.badge }}</span>
+        </div>
+
+        <div class="card-body">
+          <span class="card-value">{{ card.value }}</span>
+          <span class="card-label">{{ card.label }}</span>
+          <span class="card-detail">{{ card.detail }}</span>
+        </div>
+
+        <div class="card-progress">
+          <div class="card-progress-fill"
+              [style.width.%]="card.progress"
+              [style.background]="card.progressColor"
+              [style.animation-delay.ms]="240 + i * 80"></div>
+        </div>
+      </article>
+    }
+  </section>
+
+  <!-- ===== BOTTOM ROW ===== -->
+  <section class="bottom-row">
+
+    <!-- Monthly revenue chart, built with plain CSS bars -->
+    <article class="panel panel-chart">
+      <header class="panel-head">
+        <h2 class="panel-title">Recaudación mensual</h2>
+        <span class="panel-subtitle">Ingresos por cuotas — temporada 2026</span>
+      </header>
+
+      <div class="chart">
+        @for (bar of monthlyRevenue; track bar.month; let i = $index) {
+          <div class="chart-column">
+            <span class="chart-amount">{{ bar.amount }}</span>
+            <div class="chart-track">
+              <div class="chart-bar"
+                  [class.current]="bar.current"
+                  [style.height.%]="bar.height"
+                  [style.animation-delay.ms]="320 + i * 60"></div>
+            </div>
+            <span class="chart-month" [class.current]="bar.current">{{ bar.month }}</span>
+          </div>
+        }
+      </div>
+    </article>
+
+    <!-- Squad eligibility breakdown -->
+    <article class="panel panel-eligibility">
+      <header class="panel-head">
+        <h2 class="panel-title">Estado de habilitación</h2>
+        <span class="panel-subtitle">Situación deportiva del plantel</span>
+      </header>
+
+      <div class="eligibility-list">
+        @for (item of eligibility; track item.title; let i = $index) {
+          <div class="eligibility-item"
+              [ngClass]="'tone-' + item.tone"
+              [style.animation-delay.ms]="320 + i * 80">
+
+            <span class="eligibility-icon">
+              @switch (item.tone) {
+                @case ('success') {
+                  <!-- Check -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                }
+                @case ('warning') {
+                  <!-- Warning -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                }
+                @default {
+                  <!-- Blocked -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line>
+                  </svg>
+                }
+              }
+            </span>
+
+            <!-- Icon, count and description all sit on a single row -->
+            <span class="eligibility-title">{{ item.title }}</span>
+            <span class="eligibility-description">{{ item.description }}</span>
+
+            <span class="eligibility-variation"
+                  [ngClass]="'variation-' + item.variationTone">{{ item.variation }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Eligibility trend over the season (Chart.js line chart) -->
+      <div class="trend">
+        <div class="trend-head">
+          <h3 class="trend-title">Evolución de habilitados — 2026</h3>
+          <span class="trend-badge">↑ Tendencia positiva</span>
+        </div>
+
+        <div class="trend-canvas">
+          <canvas baseChart
+                  type="line"
+                  [data]="trendData"
+                  [options]="trendOptions"></canvas>
+        </div>
+      </div>
+
+      <!-- Recently suspended players -->
+      <div class="suspended">
+        <h3 class="suspended-title">Últimos inhabilitados</h3>
+
+        <div class="suspended-list">
+          @for (player of suspendedPlayers; track player.name; let i = $index) {
+            <div class="suspended-item" [style.animation-delay.ms]="640 + i * 80">
+              <div class="suspended-info">
+                <span class="suspended-name">{{ player.name }}</span>
+                <span class="suspended-category">{{ player.category }}</span>
+              </div>
+              <span class="suspended-badge">{{ player.debtLabel }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </article>
+
+  </section>
+</div>
