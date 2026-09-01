@@ -28,8 +28,7 @@ export class Portales {
       return;
     }
 
-    alert('Ingresando al Portal Administrativo...');
-    this.router.navigate(['/admin/dashboard']);
+    this.router.navigate(['/admin/portal']);
   }
 
   ingresarPortalDeportivo() {

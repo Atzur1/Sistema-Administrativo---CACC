@@ -1,0 +1,130 @@
+<!-- Deudas y Morosidad dashboard: banner, debtors ranking, newly suspended and debt age -->
+<div class="dashboard">
+
+  <!-- ===== BANNER ===== -->
+  <section class="banner">
+    <div class="banner-intro">
+      <span class="banner-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </span>
+
+      <div class="banner-text">
+        <h1 class="banner-title">Deudas y Morosidad</h1>
+        <span class="banner-subtitle">Control de jugadores con cuotas impagas · Temporada 2026</span>
+      </div>
+    </div>
+
+    <div class="banner-metrics">
+      @for (metric of bannerMetrics; track metric.label) {
+        <div class="banner-metric">
+          <span class="banner-metric-value">{{ metric.value }}</span>
+          <span class="banner-metric-label">{{ metric.label }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ===== MAIN GRID ===== -->
+  <section class="main-grid">
+
+    <!-- Debtors ranked by outstanding amount -->
+    <article class="panel panel-ranking">
+      <header class="panel-head">
+        <h2 class="panel-title">Ranking de morosos</h2>
+        <span class="panel-subtitle">Jugadores ordenados por monto adeudado</span>
+      </header>
+
+      <div class="table-wrapper">
+        <table class="debtors-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th>Jugador</th>
+              <th>Categoría</th>
+              <th class="align-right">Cuotas</th>
+              <th class="align-right">Deuda</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (debtor of debtors; track debtor.rank) {
+              <tr>
+                <td class="col-rank">
+                  <span class="rank-badge" [class.rank-top]="isTopRank(debtor.rank)">
+                    {{ debtor.rank }}
+                  </span>
+                </td>
+                <td class="cell-player">{{ debtor.player }}</td>
+                <td class="cell-muted">{{ debtor.category }}</td>
+                <td class="align-right cell-muted">{{ debtor.instalments }}</td>
+                <td class="align-right cell-debt">{{ debtor.debt }}</td>
+                <td>
+                  <span class="status-pill"
+                        [ngClass]="'status-' + debtor.status">{{ debtor.statusLabel }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <!-- Right column: newly suspended on top, debt age below -->
+    <div class="side-column">
+
+      <!-- Players who crossed the two-instalment threshold -->
+      <article class="panel panel-suspended">
+        <header class="panel-head">
+          <h2 class="panel-title">Pasaron a inhabilitados</h2>
+          <span class="panel-subtitle">Cruzaron las 2 cuotas este mes</span>
+        </header>
+
+        <div class="suspended-list">
+          @for (player of newlySuspended; track player.player; let i = $index) {
+            <div class="suspended-item" [style.animation-delay.ms]="320 + i * 80">
+              <span class="suspended-avatar">{{ player.initials }}</span>
+
+              <div class="suspended-info">
+                <span class="suspended-name">{{ player.player }}</span>
+                <span class="suspended-detail">{{ player.detail }}</span>
+              </div>
+
+              <span class="suspended-amount">{{ player.amount }}</span>
+            </div>
+          }
+        </div>
+      </article>
+
+      <!-- Debt age distribution -->
+      <article class="panel panel-distribution">
+        <header class="panel-head">
+          <h2 class="panel-title">Distribución por antigüedad</h2>
+          <span class="panel-subtitle">Jugadores según cuotas adeudadas</span>
+        </header>
+
+        <div class="distribution-list">
+          @for (bar of distribution; track bar.label; let i = $index) {
+            <div class="distribution-row">
+              <span class="distribution-label">{{ bar.label }}</span>
+
+              <div class="distribution-track">
+                <div class="distribution-bar"
+                    [style.width.%]="bar.width"
+                    [style.background]="bar.color"
+                    [style.animation-delay.ms]="i * 100">
+                  <span class="distribution-count">{{ bar.players }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </article>
+
+    </div>
+  </section>
+</div>
