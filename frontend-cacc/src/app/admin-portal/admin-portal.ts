@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../services/auth';
@@ -29,6 +30,8 @@ private pageTitles: Record<string, string> = {
     'reportes':               'Reportes',
 };
 
+private destroyRef = inject(DestroyRef);
+
 constructor(
     private router: Router,
     private authService: AuthService
@@ -44,9 +47,14 @@ ngOnInit() {
     this.userInitials = this.userName.slice(0, 2).toUpperCase();
     }
 
-    // Update page title on every navigation event
+    // Update page title on every navigation event.
+    // takeUntilDestroyed unsubscribes when the shell is destroyed, so leaving
+    // and re-entering the portal does not stack one live subscription per visit.
 this.router.events
-    .pipe(filter(event => event instanceof NavigationEnd))
+    .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+    )
     .subscribe(() => {
         this.updatePageTitle();
     });
