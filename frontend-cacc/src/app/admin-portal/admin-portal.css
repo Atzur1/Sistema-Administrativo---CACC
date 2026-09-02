@@ -130,6 +130,54 @@
     text-align: left;
 }
 
+/* ===== SIDEBAR TOGGLE (mobile only) ===== */
+/* Hidden on desktop, where the sidebar is always visible */
+.sidebar-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-right: 12px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: #555a55;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+    background: #f1f5f1;
+    color: #00a651;
+}
+
+.sidebar-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Backdrop behind the open drawer */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, 0.4);
+    animation: backdropFadeIn 0.25s ease both;
+}
+
+@keyframes backdropFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 /* ===== TOPBAR ===== */
 .admin-topbar {
     grid-area: topbar;
@@ -153,6 +201,18 @@
 .breadcrumb-portal {
     color: #555a55;
     font-size: 12px;
+    /* Reset button chrome so it reads as breadcrumb text */
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-portal:hover {
+    color: #00a651;
+    text-decoration: underline;
 }
 
 .breadcrumb-separator {
@@ -212,4 +272,90 @@
     grid-area: content;
     background: #f5f5f5;
     overflow-y: auto;
+}
+/* ===== RESPONSIVE ===== */
+
+/* Tablet: the fixed sidebar takes too big a share, so give it less room */
+@media (max-width: 1100px) {
+    .admin-layout {
+        grid-template-columns: 200px 1fr;
+    }
+
+    .admin-topbar {
+        padding: 0 16px;
+    }
+}
+
+/* Mobile: the sidebar leaves the grid and becomes an off-canvas drawer */
+@media (max-width: 768px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+        "topbar"
+        "content";
+    }
+
+    /* Pulled out of the flow and parked off-screen until opened */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 50;
+        width: 240px;
+        max-width: 82vw;
+        height: 100vh;
+        transform: translateX(-100%);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.18);
+        transition: transform 0.28s ease;
+    }
+
+    .sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    .sidebar-toggle,
+    .sidebar-backdrop {
+        display: flex;
+    }
+
+    /* Keeps the breadcrumb beside the hamburger instead of centred between it
+       and the user block, which is how space-between would lay out 3 children */
+    .topbar-breadcrumb {
+        margin-right: auto;
+        min-width: 0;
+    }
+
+    .breadcrumb-current {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+/* Small mobile: the topbar keeps only the avatar and the current page */
+@media (max-width: 520px) {
+    .admin-topbar {
+        padding: 0 12px;
+    }
+
+    .user-info,
+    .breadcrumb-portal,
+    .breadcrumb-separator {
+        display: none;
+    }
+
+    .breadcrumb-current {
+        font-size: 12px;
+    }
+}
+
+/* Respect users who ask for reduced motion: the drawer snaps instead of sliding */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar {
+        transition: none;
+    }
+
+    .sidebar-backdrop {
+        animation: none;
+    }
 }

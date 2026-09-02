@@ -416,7 +416,7 @@
     }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
     .banner {
         flex-direction: column;
         align-items: flex-start;
@@ -426,5 +426,24 @@
     .banner-metric {
         padding: 0 22px 0 0;
         border-left: none;
+    }
+}
+
+/* Small mobile: tighter padding and a scrollable table that never overflows */
+@media (max-width: 520px) {
+    .dashboard {
+        padding: 14px;
+    }
+
+    /* Metrics wrap instead of forcing the banner wider than the screen */
+    .banner-metrics {
+        flex-wrap: wrap;
+        row-gap: 10px;
+    }
+
+    /* The link drops under the panel title once the row gets too tight */
+    .panel-head {
+        flex-wrap: wrap;
+        row-gap: 6px;
     }
 }

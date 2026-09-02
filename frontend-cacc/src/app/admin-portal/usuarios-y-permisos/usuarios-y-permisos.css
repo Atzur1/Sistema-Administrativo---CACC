@@ -399,7 +399,7 @@
     }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
     .page-header {
         flex-wrap: wrap;
     }
@@ -416,5 +416,17 @@
 
     .header-metric + .header-metric {
         padding-left: 18px;
+    }
+}
+
+/* Small mobile: tighter padding and wrapping header metrics */
+@media (max-width: 520px) {
+    .dashboard {
+        padding: 14px;
+    }
+
+    .header-metrics {
+        flex-wrap: wrap;
+        row-gap: 10px;
     }
 }

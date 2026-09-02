@@ -20,6 +20,9 @@ userName: string = '';
 userEmail: string = '';
 userInitials: string = '';
 
+// Off-canvas sidebar state, only meaningful under the 768px breakpoint
+sidebarOpen: boolean = false;
+
 // Maps each route segment to its display name
 private pageTitles: Record<string, string> = {
     'resumen-general':        'Resumen General',
@@ -57,6 +60,8 @@ this.router.events
     )
     .subscribe(() => {
         this.updatePageTitle();
+        // Tapping a link on mobile navigates and closes the drawer
+        this.sidebarOpen = false;
     });
 
     // Set initial title on load
@@ -68,6 +73,15 @@ private updatePageTitle() {
     const urlSegments = this.router.url.split('/');
     const lastSegment = urlSegments[urlSegments.length - 1];
     this.currentPageTitle = this.pageTitles[lastSegment] ?? '';
+}
+
+// Open/close the mobile sidebar drawer
+toggleSidebar() {
+    this.sidebarOpen = !this.sidebarOpen;
+}
+
+closeSidebar() {
+    this.sidebarOpen = false;
 }
 
 // Go back to the portals selection screen

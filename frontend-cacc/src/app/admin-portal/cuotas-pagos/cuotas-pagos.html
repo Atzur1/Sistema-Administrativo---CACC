@@ -1,2 +1,161 @@
-<h1>Cuotas y Pagos</h1>
-<p>Contenido del dashboard de Cuotas y Pagos.</p>
+<!-- Cuotas y Pagos dashboard: header stamp, payment form, pending fees and latest payments -->
+<div class="dashboard">
+
+  <!-- ===== HEADER ===== -->
+  <header class="page-header">
+    <span class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+        <path d="M2 10h20"></path>
+        <path d="M6 15h4"></path>
+      </svg>
+    </span>
+
+    <div class="header-text">
+      <h1 class="header-title">Cuotas y Pagos</h1>
+      <span class="header-subtitle">Registro y control de la recaudación del club</span>
+    </div>
+
+    <div class="header-metrics">
+      @for (metric of headerMetrics; track metric.label) {
+        <div class="header-metric">
+          <span class="header-metric-value">{{ metric.value }}</span>
+          <span class="header-metric-label">{{ metric.label }}</span>
+        </div>
+      }
+    </div>
+  </header>
+
+  <div class="header-divider"></div>
+
+  <!-- ===== PAYMENT FORM ===== -->
+  <section class="form-panel">
+    <header class="form-head">
+      <span class="form-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14"></path>
+          <path d="M5 12h14"></path>
+        </svg>
+      </span>
+      <div class="form-head-text">
+        <h2 class="form-title">Registrar pago</h2>
+        <span class="form-subtitle">Cargá un nuevo pago en segundos</span>
+      </div>
+    </header>
+
+    <form class="form-grid" [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+
+      <!-- Single unified lookup: matches both name and document number -->
+      <div class="field field-player">
+        <label class="field-label" for="player">Jugador</label>
+        <input id="player" type="text" class="field-input" formControlName="player"
+               placeholder="Buscar por nombre o DNI..." autocomplete="off"
+               (input)="onPlayerSearch($any($event.target).value)"
+               (keydown.escape)="hideSuggestions()" />
+
+        @if (showSuggestions) {
+          <ul class="suggestions">
+            @for (player of matchingPlayers; track player.id) {
+              <li>
+                <button type="button" class="suggestion" (click)="selectPlayer(player)">
+                  <span class="suggestion-name">{{ player.name }}</span>
+                  <span class="suggestion-meta">DNI {{ player.document }} · {{ player.category }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="period">Período</label>
+        <select id="period" class="field-input" formControlName="period">
+          <option value="" disabled>Seleccionar mes</option>
+          @for (period of periods; track period) {
+            <option [value]="period">{{ period }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="amount">Monto</label>
+        <input id="amount" type="number" class="field-input" formControlName="amount"
+               placeholder="$85.000" min="1" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="method">Método</label>
+        <select id="method" class="field-input" formControlName="method">
+          <option value="" disabled>Seleccionar método</option>
+          @for (method of methods; track method) {
+            <option [value]="method">{{ method }}</option>
+          }
+        </select>
+      </div>
+
+      <button type="submit" class="submit-button" [disabled]="paymentForm.invalid">
+        Registrar pago
+      </button>
+
+      @if (successMessage) {
+        <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
+      }
+    </form>
+  </section>
+
+  <!-- ===== MAIN GRID ===== -->
+  <section class="main-grid">
+
+    <!-- Fees waiting to be collected -->
+    <article class="panel panel-pending">
+      <header class="panel-head">
+        <span class="panel-dot dot-pending"></span>
+        <h2 class="panel-title">Pendientes de cobro</h2>
+        <span class="panel-count">65</span>
+      </header>
+
+      <ul class="row-list">
+        @for (row of pendingRows; track row.name) {
+          <li class="row">
+            <span class="row-avatar avatar-pending">{{ row.initials }}</span>
+            <div class="row-identity">
+              <span class="row-name">{{ row.name }}</span>
+              <span class="row-meta">{{ row.category }}</span>
+            </div>
+            <div class="row-figures">
+              <span class="row-amount amount-pending">{{ row.amount }}</span>
+              <span class="row-meta">{{ row.installments }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    </article>
+
+    <!-- Most recent payments -->
+    <article class="panel panel-payments">
+      <header class="panel-head">
+        <span class="panel-dot dot-paid"></span>
+        <h2 class="panel-title">Últimos pagos</h2>
+        <span class="panel-count">126</span>
+      </header>
+
+      <ul class="row-list">
+        @for (row of paymentRows; track row.name) {
+          <li class="row">
+            <span class="row-avatar avatar-paid">{{ row.initials }}</span>
+            <div class="row-identity">
+              <span class="row-name">{{ row.name }}</span>
+              <span class="row-meta">{{ row.method }}</span>
+            </div>
+            <div class="row-figures">
+              <span class="row-amount amount-paid">{{ row.amount }}</span>
+              <span class="row-meta">{{ row.elapsed }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    </article>
+  </section>
+</div>
