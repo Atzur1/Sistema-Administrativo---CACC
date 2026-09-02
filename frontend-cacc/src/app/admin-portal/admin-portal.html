@@ -2,7 +2,7 @@
 <div class="admin-layout">
 
 <!-- ===== SIDEBAR ===== -->
-<aside class="sidebar">
+<aside class="sidebar" [class.is-open]="sidebarOpen">
 
     <!-- Club logo and current user role -->
     <div class="sidebar-header">
@@ -104,8 +104,23 @@
     </div>
 </aside>
 
+<!-- Dims the content behind the open drawer and closes it on tap -->
+@if (sidebarOpen) {
+<div class="sidebar-backdrop" (click)="closeSidebar()"></div>
+}
+
 <!-- ===== TOPBAR ===== -->         
 <div class="admin-topbar">
+    <!-- Only visible under the mobile breakpoint; opens the sidebar drawer -->
+    <button type="button" class="sidebar-toggle" (click)="toggleSidebar()"
+            [attr.aria-expanded]="sidebarOpen" aria-label="Abrir menú">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+    </button>
+
     <div class="topbar-breadcrumb">
     <button type="button" class="breadcrumb-portal" (click)="cambiarPortal()">Portal administrativo</button>
     <span class="breadcrumb-separator">·</span>
