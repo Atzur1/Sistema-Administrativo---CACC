@@ -6,9 +6,9 @@
 
     <!-- Club logo and current user role -->
     <div class="sidebar-header">
-    <img src="/logo-cacc.ico" alt="Club CACC" class="sidebar-logo" />
+    <img src="/logo-cacc.ico" alt="Club ACC" class="sidebar-logo" />
     <div class="sidebar-brand">
-        <span class="brand-name">Club CACC</span>
+        <span class="brand-name">Club ACC</span>
         <span class="brand-role">Superadmin</span>
     </div>
     </div>
@@ -107,7 +107,7 @@
 <!-- ===== TOPBAR ===== -->         
 <div class="admin-topbar">
     <div class="topbar-breadcrumb">
-    <span class="breadcrumb-portal">Portal administrativo</span>
+    <button type="button" class="breadcrumb-portal" (click)="cambiarPortal()">Portal administrativo</button>
     <span class="breadcrumb-separator">·</span>
     <span class="breadcrumb-current">{{ currentPageTitle }}</span>
     </div>
