@@ -1,0 +1,514 @@
+/* ===== ANIMATIONS ===== */
+/* Blocks fade in while sliding up on load */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Chart bars grow from the baseline up */
+@keyframes columnGrow {
+    from {
+        transform: scaleY(0);
+    }
+    to {
+        transform: scaleY(1);
+    }
+}
+
+/* Horizontal bars grow from the left edge */
+@keyframes barGrow {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+/* The average line only fades in, so it does not slide over the bars */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ===== LAYOUT ===== */
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    min-height: 100%;
+    box-sizing: border-box;
+    background: #f1f5f1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #000000;
+    /* Never scroll sideways, no matter how narrow the viewport gets */
+    overflow-x: hidden;
+}
+
+/* ===== HEADER ===== */
+/* Sits directly on the page background, with no card of its own */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
+.header-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.header-title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    font-size: 12px;
+    color: #555a55;
+}
+
+.header-metrics {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.header-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0 18px;
+}
+
+/* Separator between metrics */
+.header-metric + .header-metric {
+    border-left: 1px solid #e4e7e4;
+}
+
+.header-metric-value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.header-metric-label {
+    font-size: 9.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #555a55;
+    white-space: nowrap;
+}
+
+.header-divider {
+    height: 1px;
+    margin: 18px 0;
+    background: #e4e7e4;
+}
+
+/* ===== PANELS ===== */
+.panel {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    min-width: 0;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+/* Stagger the panels as they come in */
+.panel-revenue {
+    margin-bottom: 16px;
+    animation-delay: 60ms;
+}
+
+.panel-unpaid {
+    animation-delay: 140ms;
+}
+
+.panel-trend {
+    animation-delay: 220ms;
+}
+
+.panel-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 14px;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.panel-subtitle {
+    font-size: 11px;
+    color: #555a55;
+}
+
+/* ===== MONTHLY REVENUE CHART ===== */
+/* The label bands are declared once here and consumed by both the labels and
+   the average layer, so the line can never drift out of the bar band */
+.chart {
+    --amount-height: 13px;
+    --month-height: 15px;
+    --label-gap: 5px;
+
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    /* Tall enough that the chart panel carries real visual weight on the page */
+    height: 190px;
+    /* Breathing room under the panel subtitle */
+    margin-top: 14px;
+}
+
+/* Inset to the bar band: the label rows above and below are excluded, so a
+   percentage inside this layer is a real percentage of the bars themselves */
+.chart-average-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(var(--amount-height) + var(--label-gap));
+    bottom: calc(var(--month-height) + var(--label-gap));
+    pointer-events: none;
+}
+
+.chart-average {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 2px dashed #3b82f6;
+    animation: fadeIn 0.5s ease 0.5s both;
+}
+
+.chart-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--label-gap);
+    flex: 1;
+    min-width: 0;
+}
+
+/* Fixed label heights keep the average layer aligned with the bar band */
+.chart-amount {
+    height: var(--amount-height);
+    line-height: var(--amount-height);
+    font-size: 10px;
+    font-weight: 500;
+    color: #555a55;
+}
+
+.chart-month {
+    height: var(--month-height);
+    line-height: var(--month-height);
+    font-size: 11px;
+    color: #555a55;
+}
+
+.chart-amount.is-empty,
+.chart-month.is-empty {
+    color: #c4c7c4;
+}
+
+/* The track holds the bar, anchors it to the bottom and draws the baseline */
+.chart-track {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    flex: 1;
+    border-bottom: 1px solid #e4e7e4;
+}
+
+.chart-bar {
+    width: 100%;
+    max-width: 44px;
+    border-radius: 6px 6px 0 0;
+    transform-origin: bottom center;
+    animation: columnGrow 0.5s ease both;
+    transition: filter 0.2s ease;
+}
+
+.chart-column:hover .chart-bar {
+    filter: brightness(0.94);
+}
+
+/* Bar tones, in order of precedence */
+/* January is called out as a loss, matching the red used for debt elsewhere
+   in this dashboard, so it reads as a warning at a glance */
+.bar-loss {
+    background: #c0392b;
+}
+
+.bar-normal {
+    background: #8dd49d;
+}
+
+.bar-best {
+    background: #00a651;
+}
+
+/* The month in progress gets its own colour instead of borrowing the best-
+   month green, so it never reads as a top performer it hasn't earned yet */
+.bar-current {
+    background: #3b82f6;
+}
+
+/* The weakest month of the season overrides the current-month highlight */
+.bar-low {
+    background: #eba83a;
+}
+
+/* Months of the season still to be collected */
+.bar-empty {
+    background: #f1f5f1;
+}
+
+/* ===== BOTTOM GRID ===== */
+.bottom-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
+    /* Claims the leftover vertical space so the dashboard hugs the viewport,
+       but align-items: start keeps each panel at its own content height
+       instead of stretching the shorter one into a hollow card */
+    flex: 1;
+    min-height: 0;
+    align-items: start;
+}
+
+/* ===== UNPAID FEES ===== */
+.unpaid-total {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    margin-bottom: 16px;
+}
+
+.unpaid-total-value {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    color: #c0392b;
+}
+
+.unpaid-total-label {
+    font-size: 12px;
+    color: #555a55;
+}
+
+.unpaid-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.unpaid-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.unpaid-label {
+    width: 34px;
+    font-size: 11px;
+    color: #555a55;
+    flex-shrink: 0;
+}
+
+.unpaid-track {
+    flex: 1;
+    min-width: 0;
+    height: 18px;
+    border-radius: 5px;
+    background: #f9faf9;
+}
+
+.unpaid-bar {
+    display: block;
+    height: 100%;
+    border-radius: 5px;
+    background: #c0392b;
+    transform-origin: left center;
+    animation: barGrow 0.6s ease backwards;
+}
+
+.unpaid-count {
+    width: 24px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #c0392b;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* ===== TREND CARDS ===== */
+.trend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.trend-card {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px;
+    border: 1px solid #e4e7e4;
+    border-radius: 10px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.trend-card:hover {
+    background: #f9faf9;
+    border-color: #d7dcd7;
+}
+
+.trend-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.trend-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.icon-average {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.icon-best {
+    background: #e7f4ea;
+    color: #00a651;
+}
+
+.icon-low {
+    background: #fef4e3;
+    color: #eba83a;
+}
+
+.trend-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.trend-value {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.trend-label {
+    font-size: 11px;
+    color: #555a55;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablet: the two bottom panels stack */
+@media (max-width: 1100px) {
+    .bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile: metrics drop to their own line under the title */
+@media (max-width: 768px) {
+    .page-header {
+        flex-wrap: wrap;
+    }
+
+    .header-metrics {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .header-metric {
+        padding: 0 18px 0 0;
+    }
+
+    .header-metric + .header-metric {
+        padding-left: 18px;
+    }
+
+    /* Twelve amount labels no longer fit, so only the months stay */
+    .chart-amount {
+        visibility: hidden;
+    }
+}
+
+/* Small mobile: tighter padding and a narrower chart */
+@media (max-width: 520px) {
+    .dashboard {
+        padding: 14px;
+    }
+
+    .header-metrics {
+        flex-wrap: wrap;
+        row-gap: 10px;
+    }
+
+    .chart {
+        gap: 4px;
+        height: 160px;
+    }
+
+    .chart-month {
+        font-size: 9px;
+    }
+}
