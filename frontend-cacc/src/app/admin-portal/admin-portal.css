@@ -1,361 +1,389 @@
 /* ===== LAYOUT ===== */
 /* Grid: fixed sidebar spanning both rows on the left; topbar over content on the right */
 .admin-layout {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    grid-template-rows: 52px 1fr;
-    grid-template-areas:
+  --primary-green: #007f3e;
+  --primary-light: #00b355;
+  --primary-hover: #00994c;
+  --primary-dark: #004d25;
+
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 56px 1fr;
+  grid-template-areas:
     "sidebar topbar"
     "sidebar content";
-    height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* ===== SIDEBAR ===== */
+/* ===== SIDEBAR (DEGRADÉ INSTITUCIONAL) ===== */
 .sidebar {
-    grid-area: sidebar;
-    background: #00a651;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
+  grid-area: sidebar;
+  /* Degradé continuo: arranca en verde institucional y desciende al negro profundo */
+  background: linear-gradient(
+    180deg,
+    #007f3e 0%,
+    #0d4223 35%,
+    #082414 70%,
+    #030d07 100%
+  );
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
 }
 
 /* Logo + brand block at the top */
 .sidebar-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 18px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-logo {
-    width: 38px;
-    height: 38px;
-    object-fit: contain;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
 }
 
 .sidebar-brand {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .brand-name {
-    color: #ffffff;
-    font-size: 15px;
-    font-weight: 600;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
 }
 
 .brand-role {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 11px;
+  color: #8edeb1;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 /* ===== NAVIGATION ===== */
 .sidebar-nav {
-    flex: 1;
-    padding: 12px 0;
-    overflow-y: auto;
+  flex: 1;
+  padding: 14px 0;
+  overflow-y: auto;
 }
 
 .nav-group {
-    padding: 8px 0;
+  padding: 6px 0;
 }
 
-/* Small uppercase title above each group of links */
+/* Títulos de sección (MONITOREO, GESTIÓN) */
 .nav-group-title {
-    display: block;
-    padding: 0 16px;
-    margin-bottom: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.5);
+  display: block;
+  padding: 0 16px;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #7ee0a6;
+  opacity: 0.85;
 }
 
-/* Each navigation link */
+/* Enlaces de navegación */
 .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 16px;
-    color: rgba(255, 255, 255, 0.75);
-    font-size: 13px;
-    text-decoration: none;
-    border-left: 3px solid transparent;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s ease;
 }
 
 .nav-item:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-    padding-left: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  padding-left: 20px;
 }
 
-/* Active link: lighter background + white left border */
+/* Ítem activo: brillo verde esmeralda y borde iluminado */
 .nav-item.active {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-    border-left: 3px solid #ffffff;
+  background: linear-gradient(90deg, rgba(0, 179, 85, 0.35) 0%, rgba(0, 127, 62, 0.08) 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border-left: 3px solid #00d666;
+  box-shadow: inset 0 0 15px rgba(0, 214, 102, 0.12);
 }
 
 .nav-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    transition: transform 0.2s ease;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
-.nav-item:hover .nav-icon {
-    transform: scale(1.1);
+.nav-item:hover .nav-icon,
+.nav-item.active .nav-icon {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
-/* ===== FOOTER (bottom actions) ===== */
+/* ===== FOOTER (ACCIONES INFERIORES) ===== */
 .sidebar-footer {
-    margin-top: auto;
-    padding: 10px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: auto;
+  padding: 12px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Buttons reuse the nav-item look but reset native button styles */
+/* Botones translúcidos de pie */
 .nav-action {
-    width: 100%;
-    background: none;
-    border: none;
-    border-left: 3px solid transparent;
-    font-family: inherit;
-    text-align: left;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  text-align: left;
+  box-sizing: border-box;
+  transition: all 0.25s ease;
 }
 
-/* ===== SIDEBAR TOGGLE (mobile only) ===== */
-/* Hidden on desktop, where the sidebar is always visible */
+.nav-action:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding-left: 16px;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== SIDEBAR TOGGLE (MÓVILES) ===== */
 .sidebar-toggle {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    margin-right: 12px;
-    padding: 0;
-    background: none;
-    border: none;
-    border-radius: 8px;
-    color: #555a55;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background 0.2s ease, color 0.2s ease;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-right: 12px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: #555a55;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-toggle:hover {
-    background: #f1f5f1;
-    color: #00a651;
+  background: #f1f5f1;
+  color: #007f3e;
 }
 
 .sidebar-toggle svg {
-    width: 20px;
-    height: 20px;
+  width: 20px;
+  height: 20px;
 }
 
-/* Backdrop behind the open drawer */
 .sidebar-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    background: rgba(0, 0, 0, 0.4);
-    animation: backdropFadeIn 0.25s ease both;
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: backdropFadeIn 0.25s ease both;
 }
 
 @keyframes backdropFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ===== TOPBAR ===== */
 .admin-topbar {
-    grid-area: topbar;
-    background: #ffffff;
-    border-bottom: 1px solid #e4e7e4;
-    padding: 0 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    /* Subtle shadow to separate topbar from content */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  grid-area: topbar;
+  background: #ffffff;
+  border-bottom: 1px solid #e4e7e4;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-/* Breadcrumb (left) */
 .topbar-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .breadcrumb-portal {
-    color: #555a55;
-    font-size: 12px;
-    /* Reset button chrome so it reads as breadcrumb text */
-    background: none;
-    border: none;
-    padding: 0;
-    font-family: inherit;
-    cursor: pointer;
-    transition: color 0.2s ease;
+  color: #6b7280;
+  font-size: 12.5px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s ease;
 }
 
 .breadcrumb-portal:hover {
-    color: #00a651;
-    text-decoration: underline;
+  color: #007f3e;
+  text-decoration: underline;
 }
 
 .breadcrumb-separator {
-    color: #c4c7c4;
-    font-size: 14px;
+  color: #c4c7c4;
+  font-size: 14px;
 }
 
 .breadcrumb-current {
-    color: #000000;
-    font-size: 13px;
-    font-weight: 500;
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-/* User block (right) */
 .topbar-user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .user-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .user-name {
-    color: #000000;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.3;
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .user-email {
-    color: #555a55;
-    font-size: 11px;
-    line-height: 1.3;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
+/* Avatar con degradé corporativo */
 .user-avatar {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: #00a651;
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Subtle ring around avatar */
-    box-shadow: 0 0 0 2px rgba(0, 166, 81, 0.2);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00994c 0%, #007f3e 100%);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 127, 62, 0.35);
+  border: 2px solid #ffffff;
 }
 
 /* ===== CONTENT AREA ===== */
 .admin-content {
-    grid-area: content;
-    background: #f5f5f5;
-    overflow-y: auto;
+  grid-area: content;
+  background: #f4f7f4;
+  overflow-y: auto;
 }
+
 /* ===== RESPONSIVE ===== */
-
-/* Tablet: the fixed sidebar takes too big a share, so give it less room */
 @media (max-width: 1100px) {
-    .admin-layout {
-        grid-template-columns: 200px 1fr;
-    }
+  .admin-layout {
+    grid-template-columns: 210px 1fr;
+  }
 
-    .admin-topbar {
-        padding: 0 16px;
-    }
+  .admin-topbar {
+    padding: 0 16px;
+  }
 }
 
-/* Mobile: the sidebar leaves the grid and becomes an off-canvas drawer */
 @media (max-width: 768px) {
-    .admin-layout {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-        "topbar"
-        "content";
-    }
+  .admin-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "content";
+  }
 
-    /* Pulled out of the flow and parked off-screen until opened */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 50;
-        width: 240px;
-        max-width: 82vw;
-        height: 100vh;
-        transform: translateX(-100%);
-        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.18);
-        transition: transform 0.28s ease;
-    }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    width: 240px;
+    max-width: 82vw;
+    height: 100vh;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.4);
+    transition: transform 0.28s ease;
+  }
 
-    .sidebar.is-open {
-        transform: translateX(0);
-    }
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
 
-    .sidebar-toggle,
-    .sidebar-backdrop {
-        display: flex;
-    }
+  .sidebar-toggle,
+  .sidebar-backdrop {
+    display: flex;
+  }
 
-    /* Keeps the breadcrumb beside the hamburger instead of centred between it
-       and the user block, which is how space-between would lay out 3 children */
-    .topbar-breadcrumb {
-        margin-right: auto;
-        min-width: 0;
-    }
+  .topbar-breadcrumb {
+    margin-right: auto;
+    min-width: 0;
+  }
 
-    .breadcrumb-current {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+  .breadcrumb-current {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
-/* Small mobile: the topbar keeps only the avatar and the current page */
 @media (max-width: 520px) {
-    .admin-topbar {
-        padding: 0 12px;
-    }
+  .admin-topbar {
+    padding: 0 12px;
+  }
 
-    .user-info,
-    .breadcrumb-portal,
-    .breadcrumb-separator {
-        display: none;
-    }
+  .user-info,
+  .breadcrumb-portal,
+  .breadcrumb-separator {
+    display: none;
+  }
 
-    .breadcrumb-current {
-        font-size: 12px;
-    }
+  .breadcrumb-current {
+    font-size: 12px;
+  }
 }
 
-/* Respect users who ask for reduced motion: the drawer snaps instead of sliding */
 @media (prefers-reduced-motion: reduce) {
-    .sidebar {
-        transition: none;
-    }
+  .sidebar {
+    transition: none;
+  }
 
-    .sidebar-backdrop {
-        animation: none;
-    }
+  .sidebar-backdrop {
+    animation: none;
+  }
 }

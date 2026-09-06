@@ -1,43 +1,58 @@
 .main {
   --primary-green: #007f3e;
-  --text-dark: #111111;
-  --text-muted: #757575;
-  --border-light: #e0e0e0;
+  --primary-light: #00b355;
+  --primary-dark: #004d25;
+  --text-dark: #1a1a1a;
+  --text-muted: #6b7280;
+  --border-light: #dcdfe4;
 
-  background-color: #f5f5f5;
+  /* Degradé diagonal institucional continuo */
+  background: linear-gradient(
+    135deg,
+    #007f3e 0%,
+    #0d4223 35%,
+    #082414 60%,
+    #030d07 85%,
+    #000000 100%
+  );
+
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   position: relative;
   min-height: 100vh;
-  
-  /* Flexbox se encarga de alinear todo */
   display: flex;
-  align-items: center; 
-  justify-content: flex-end; 
-  padding: 40px 10%; /* Cambiado a porcentaje (10%) para que se adapte mejor a distintos monitores */
+  align-items: center;
+  justify-content: flex-end;
+  padding: 40px 8%;
   box-sizing: border-box;
   overflow: hidden;
 }
 
+/* Imagen izquierda completa */
 .img-fluid {
   position: absolute;
   top: 0;
   left: 0;
-  width: calc(100% - 420px); /* Ajustado exactamente al ancho del espacio izquierdo */
   height: 100%;
-  object-fit: contain;       /* Muestra la imagen completa sin recortarla ni deformarla */
-  object-position: center left; /* Alinea la ilustración hacia la izquierda */
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  object-position: left center;
   z-index: 1;
+  pointer-events: none;
 }
 
+/* Tarjeta con acabado Glassmorphism de alta definición */
 .login-card {
-  position: relative; /* Quitamos el absolute para que fluya con el Flexbox */
-  background: #ffffff;
+  position: relative;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   width: 100%;
-  max-width: 420px; 
-  /* Eliminamos el height fijo para que el contenedor crezca según el contenido interno */
+  max-width: 420px;
   padding: 40px 35px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 127, 62, 0.15);
   box-sizing: border-box;
   z-index: 2;
 }
@@ -47,27 +62,31 @@
   margin-bottom: 30px;
 }
 
+/* Círculo de ícono con degradé suave */
 .user-icon {
-  width: 50px;
-  height: 50px;
-  border: 1px solid var(--border-light);
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(0, 127, 62, 0.25);
+  background: linear-gradient(135deg, #eaf6ef 0%, #d4ede0 100%);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   margin: 0 auto 15px auto;
+  box-shadow: 0 4px 12px rgba(0, 127, 62, 0.12);
 }
 
 .login-header h2 {
   color: var(--text-dark);
-  font-size: 22px;
+  font-size: 23px;
   font-weight: 700;
+  letter-spacing: -0.3px;
   margin: 0 0 8px 0;
 }
 
 .login-header p {
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 13.5px;
   margin: 0;
 }
 
@@ -102,6 +121,11 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.eye-icon:hover {
+  transform: scale(1.1);
 }
 
 .form-control {
@@ -109,18 +133,21 @@
   padding: 14px 15px 14px 45px;
   font-size: 14px;
   border: 1px solid var(--border-light);
-  border-radius: 6px;
+  border-radius: 10px;
   outline: none;
+  background: #fdfdfd;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition: all 0.25s ease;
 }
 
 .form-control:focus {
   border-color: var(--primary-green);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 127, 62, 0.15);
 }
 
 .form-control::placeholder {
-  color: #b3b3b3;
+  color: #adb5bd;
 }
 
 .form-check {
@@ -133,7 +160,7 @@
   width: 18px;
   height: 18px;
   border: 1px solid var(--border-light);
-  border-radius: 4px;
+  border-radius: 5px;
   margin-right: 10px;
   cursor: pointer;
   accent-color: var(--primary-green);
@@ -141,33 +168,43 @@
 
 .form-check-label {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13.5px;
   cursor: pointer;
   user-select: none;
 }
 
+/* Botón principal con degradé dinámico y micro-interacción */
 .btn-primary {
   width: 100%;
-  background-color: var(--primary-green);
-  color: white;
+  background: linear-gradient(135deg, #00994c 0%, #007f3e 50%, #005a2b 100%);
+  background-size: 200% auto;
+  color: #ffffff;
   border: none;
   padding: 14px;
   font-size: 15px;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  box-shadow: 0 8px 20px rgba(0, 127, 62, 0.35);
+  transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
-  background-color: #006631;
+  background-position: right center;
+  box-shadow: 0 10px 25px rgba(0, 127, 62, 0.45);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(0, 127, 62, 0.25);
 }
 
 .divider {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 30px 0 25px 0;
+  margin: 28px 0 22px 0;
   position: relative;
 }
 
@@ -176,7 +213,7 @@
   position: absolute;
   width: 100%;
   height: 1px;
-  background-color: #e8e8e8;
+  background: linear-gradient(to right, transparent, #e2e5e9, transparent);
   z-index: 1;
 }
 
@@ -185,7 +222,7 @@
   height: 6px;
   border: 1px solid #dcdcdc;
   border-radius: 50%;
-  background: white;
+  background: #ffffff;
   z-index: 2;
 }
 
@@ -201,26 +238,27 @@
   text-decoration: none;
   font-size: 13px;
   font-weight: 600;
+  transition: color 0.2s ease;
 }
 
 .login-footer a:hover {
+  color: var(--primary-light);
   text-decoration: underline;
 }
 
-/* =========================================
-    REGLAS RESPONSIVE (Móviles y Tablets)
-   ========================================= */
+/* Responsive */
 @media (max-width: 992px) {
   .main {
-    justify-content: center; /* Centramos la tarjeta en la pantalla */
-    padding: 20px;           /* Reducimos el espacio a los bordes */
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(180deg, #007f3e 0%, #082414 60%, #000000 100%);
   }
 
   .img-fluid {
-    display: none; /* Ocultamos la imagen porque en celulares no hay espacio y chocaría con el login */
+    display: none;
   }
 
   .login-card {
-    max-width: 100%; /* Permite que la tarjeta ocupe el ancho disponible del celular */
+    max-width: 100%;
   }
 }
