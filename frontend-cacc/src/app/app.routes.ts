@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { Login } from './login/login';
 import { Portales } from './portales/portales';
-import { Dashboard } from './dashboard/dashboard';
 import { AdminPortal } from './admin-portal/admin-portal';
 import { ResumenGeneral } from './admin-portal/resumen-general/resumen-general';
 import { adminGuard } from './services/auth';
@@ -14,7 +13,6 @@ import { Reportes } from './admin-portal/reportes/reportes';
 export const routes: Routes = [
   { path: '', component: Login },
   { path: 'portales', component: Portales },
-  { path: 'admin/dashboard', component: Dashboard, canActivate: [adminGuard] },
 
   // Admin portal (parent) with its dashboards as children
   {
