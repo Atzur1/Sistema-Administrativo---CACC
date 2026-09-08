@@ -1,0 +1,51 @@
+using EntityLibrary;
+
+namespace ServiceLibrary
+{
+    public class RegistrarPagoRequest
+    {
+        public int IdJugador { get; set; }
+        public string Periodo { get; set; } = string.Empty; // nombre de mes: "Marzo"
+        public decimal Monto { get; set; }
+        public string MetodoPago { get; set; } = string.Empty;
+    }
+
+    public class RegistrarPagoResultado
+    {
+        public int IdPago { get; set; }
+        public int IdJugador { get; set; }
+        public string Periodo { get; set; } = string.Empty;
+        public decimal Monto { get; set; }
+        public string MetodoPago { get; set; } = string.Empty;
+        public DateTime FechaPago { get; set; }
+    }
+
+    public class CobrarPagosPendientesRequest
+    {
+        public List<int> IdsPago { get; set; } = new();
+        public string MetodoPago { get; set; } = string.Empty;
+    }
+
+    public class CobrarPagosPendientesResultado
+    {
+        public List<int> PagosAbonados { get; set; } = new();
+        public decimal MontoTotal { get; set; }
+        public DateTime FechaPago { get; set; }
+    }
+
+    public interface IPagosService
+    {
+        // Backea el form "Registrar pago": crea un nuevo PAGOS ya abonado para jugador+período+monto.
+        // Lanza CobroInvalidoException si ese jugador ya tiene un pago abonado para ese período (re-cobro).
+        RegistrarPagoResultado RegistrarPago(RegistrarPagoRequest request);
+
+        // Cobro en lote de filas PAGOS preexistentes con estado pendiente (Estado = false).
+        CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request);
+
+        IReadOnlyList<PendienteJugador> ObtenerPendientes();
+
+        IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top);
+
+        ResumenPagos ObtenerResumen();
+    }
+}

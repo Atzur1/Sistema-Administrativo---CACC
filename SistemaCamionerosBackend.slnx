@@ -3,4 +3,6 @@
   <Project Path="ApiGestion/ApiGestion.csproj" />
   <Project Path="DaoLibrary/DaoLibrary.csproj" />
   <Project Path="EntityLibrary/EntityLibrary.csproj" />
+  <Project Path="ServiceLibrary/ServiceLibrary.csproj" />
+  <Project Path="ApiGestion.Tests/ApiGestion.Tests.csproj" />
 </Solution>

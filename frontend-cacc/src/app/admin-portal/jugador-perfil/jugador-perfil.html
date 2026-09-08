@@ -1,0 +1,67 @@
+<!-- Perfil de jugador: datos básicos + historial de pagos paginado -->
+<div class="dashboard">
+
+  <!-- ===== HEADER ===== -->
+  <header class="page-header">
+    <button type="button" class="back-button" (click)="volver()">← Volver a Cuotas y Pagos</button>
+  </header>
+
+  @if (cargandoJugador) {
+    <p class="loading-text">Cargando jugador...</p>
+  } @else if (jugador) {
+    <div class="profile-header">
+      <span class="profile-avatar">{{ iniciales }}</span>
+      <div class="profile-info">
+        <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
+        <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+      </div>
+    </div>
+  } @else if (errorMessage) {
+    <p class="error-text">{{ errorMessage }}</p>
+  }
+
+  <div class="header-divider"></div>
+
+  <!-- ===== HISTORIAL DE PAGOS ===== -->
+  <section class="panel panel-historial">
+    <header class="panel-head">
+      <span class="panel-dot dot-paid"></span>
+      <h2 class="panel-title">Historial de Pagos</h2>
+      @if (historial) {
+        <span class="panel-count">{{ historial.total }}</span>
+      }
+    </header>
+
+    @if (cargandoHistorial) {
+      <p class="historial-empty">Cargando historial...</p>
+    } @else if (!historial || historial.items.length === 0) {
+      <p class="historial-empty">No se registran pagos realizados para este jugador.</p>
+    } @else {
+      <ul class="row-list">
+        @for (item of historial.items; track item.idPago) {
+          <li class="row">
+            <div class="row-identity">
+              <span class="row-name">{{ item.periodo }}</span>
+              <span class="row-meta">{{ item.metodoPago }} · {{ formatFecha(item.fechaPago) }}</span>
+            </div>
+            <div class="row-figures">
+              <span class="row-amount amount-paid">{{ formatMonto(item.monto) }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+
+      @if (totalPaginas > 1) {
+        <div class="pagination">
+          <button type="button" class="pagination-button" (click)="irAPagina(page - 1)" [disabled]="page <= 1">
+            ← Anterior
+          </button>
+          <span class="pagination-status">Página {{ page }} de {{ totalPaginas }}</span>
+          <button type="button" class="pagination-button" (click)="irAPagina(page + 1)" [disabled]="page >= totalPaginas">
+            Siguiente →
+          </button>
+        </div>
+      }
+    }
+  </section>
+</div>

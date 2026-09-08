@@ -68,10 +68,18 @@ this.router.events
     this.updatePageTitle();
     }
 
-  // Reads the last URL segment and maps it to a display name
+  // Reads the last URL segment and maps it to a display name.
+  // "jugadores/:id" has a numeric id as its last segment, so it's matched by the
+  // second-to-last segment instead — otherwise the topbar would show a raw id.
 private updatePageTitle() {
     const urlSegments = this.router.url.split('/');
     const lastSegment = urlSegments[urlSegments.length - 1];
+
+    if (urlSegments[urlSegments.length - 2] === 'jugadores') {
+        this.currentPageTitle = 'Perfil de Jugador';
+        return;
+    }
+
     this.currentPageTitle = this.pageTitles[lastSegment] ?? '';
 }
 
