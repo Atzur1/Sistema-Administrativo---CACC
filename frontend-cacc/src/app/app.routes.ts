@@ -9,6 +9,8 @@ import { DeudasMorosidad } from './admin-portal/deudas-morosidad/deudas-morosida
 import { Usuarios } from './admin-portal/usuarios-y-permisos/usuarios-y-permisos';
 import { CuotasPagos } from './admin-portal/cuotas-pagos/cuotas-pagos';
 import { Reportes } from './admin-portal/reportes/reportes';
+import { BecadosDescuentos } from './admin-portal/becados-descuentos/becados-descuentos';
+import { ActualizacionAranceles } from './admin-portal/actualizacion-aranceles/actualizacion-aranceles';
 
 export const routes: Routes = [
   { path: '', component: Login },
@@ -27,6 +29,8 @@ export const routes: Routes = [
       { path: 'usuarios', component: Usuarios },
       { path: 'cuotas-pagos', component: CuotasPagos },
       { path: 'reportes', component: Reportes },
+      { path: 'becados-descuentos', component: BecadosDescuentos },
+      { path: 'actualizacion-aranceles', component: ActualizacionAranceles },
     ],
   },
 
