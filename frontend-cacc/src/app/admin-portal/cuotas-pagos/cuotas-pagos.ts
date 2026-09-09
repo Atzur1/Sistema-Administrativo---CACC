@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { retry } from 'rxjs';
+import { timeout } from 'rxjs';
 import {
   JugadorResumen,
   PagoReciente,
@@ -198,11 +198,9 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.cargandoJugadores = true;
     this.jugadoresError = false;
 
-    // retry: si la pestaña estaba en segundo plano cuando arrancó la carga, Chrome puede
-    // posponer/cortar ese pedido de red (no pasa con las otras llamadas porque son más chicas
-    // y casi siempre ganan la carrera antes de que el navegador empiece a frenar la pestaña).
-    // Sin esto, los buscadores se quedaban pegados en "sin resultados" para siempre y sin avisar nada.
-    this.pagosService.getJugadores().pipe(retry({ count: 2, delay: 1000 })).subscribe({
+    // timeout: si el pedido no responde en 2s (colgado, sin éxito ni error), se lo trata como
+    // falla y se muestra el aviso directo — un solo intento, sin reintento automático.
+    this.pagosService.getJugadores().pipe(timeout(2000)).subscribe({
       next: (jugadores) => {
         this.jugadores = jugadores;
         this.cargandoJugadores = false;
