@@ -1,0 +1,553 @@
+/* ===== ANIMATIONS ===== */
+/* Blocks fade in while sliding up on load */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* The confirmation message fades in on its own, without moving the layout */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ===== LAYOUT ===== */
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    min-height: 100%;
+    box-sizing: border-box;
+    background: #f1f5f1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #000000;
+    /* Never scroll sideways, no matter how narrow the viewport gets */
+    overflow-x: hidden;
+}
+
+/* ===== HEADER ===== */
+/* Sits directly on the page background, with no card of its own */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #e7f4ea;
+    color: #00a651;
+    flex-shrink: 0;
+}
+
+.header-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.header-title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    font-size: 12px;
+    color: #555a55;
+}
+
+.header-metrics {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.header-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0 18px;
+}
+
+/* Separator between metrics */
+.header-metric + .header-metric {
+    border-left: 1px solid #e4e7e4;
+}
+
+.header-metric-value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.header-metric-label {
+    font-size: 9.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #555a55;
+    white-space: nowrap;
+}
+
+.header-divider {
+    height: 1px;
+    margin: 14px 0;
+    background: #e4e7e4;
+}
+
+/* ===== ASSIGNMENT FORM ===== */
+/* The action panel of the dashboard, so it carries a heavier green frame */
+.form-panel {
+    padding: 16px;
+    margin-bottom: 14px;
+    background: #ffffff;
+    border: 2px solid #00a651;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0, 166, 81, 0.12);
+    animation: fadeSlideUp 0.4s ease both;
+    animation-delay: 60ms;
+}
+
+.form-head {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+}
+
+.form-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #00a651;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.form-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.form-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.form-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form-subtitle {
+    font-size: 11px;
+    color: #555a55;
+}
+
+/* Five fields: the player lookup takes the extra room */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+/* Anchor for the suggestions dropdown */
+.field-player {
+    position: relative;
+}
+
+.field-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+}
+
+.field-input {
+    width: 100%;
+    padding: 9px 11px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12px;
+    color: #000000;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field-input::placeholder {
+    color: #555a55;
+    opacity: 0.7;
+}
+
+.field-input:hover {
+    border-color: #c9d3c9;
+}
+
+.field-input:focus {
+    border-color: #00a651;
+    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
+}
+
+/* ===== PLAYER SUGGESTIONS ===== */
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    margin: 4px 0 0;
+    padding: 4px;
+    list-style: none;
+    max-height: 180px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 9px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.15s ease both;
+}
+
+.suggestion {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    padding: 7px 9px;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.suggestion:hover,
+.suggestion:focus-visible {
+    background: #f9faf9;
+    outline: none;
+}
+
+.suggestion-name {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.suggestion-meta {
+    font-size: 10.5px;
+    color: #555a55;
+}
+
+/* ===== SUBMIT ===== */
+.submit-button {
+    grid-column: span 5;
+    padding: 11px;
+    background: #00a651;
+    border: none;
+    border-radius: 9px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+    background: #009148;
+}
+
+.submit-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Simulated confirmation: fades in, then fades out before being removed */
+.form-feedback {
+    grid-column: span 5;
+    margin: 0;
+    padding: 9px 11px;
+    background: #e7f4ea;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #00a651;
+    animation: fadeIn 0.3s ease both;
+    transition: opacity 0.3s ease;
+}
+
+.form-feedback.is-leaving {
+    opacity: 0;
+}
+
+/* ===== MAIN GRID ===== */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    /* Fills the remaining height so nothing is left empty below */
+    flex: 1;
+    min-height: 0;
+}
+
+/* ===== PANELS ===== */
+.panel {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    min-width: 0;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.panel-benefits {
+    animation-delay: 140ms;
+}
+
+.panel-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 14px;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.panel-subtitle {
+    font-size: 11px;
+    color: #555a55;
+}
+
+/* ===== BENEFITS TABLE ===== */
+/* Only the table scrolls sideways if the viewport gets too narrow */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.benefits-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.benefits-table th {
+    padding: 0 10px 8px;
+    border-bottom: 1px solid #e4e7e4;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.benefits-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #f1f5f1;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.benefits-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.benefits-table tbody tr:hover {
+    background: #f9faf9;
+}
+
+.benefits-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.cell-player {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* Avatar background per benefit type */
+.avatar-scholarship {
+    background: #8b5cf6;
+}
+
+.avatar-discount {
+    background: #3b82f6;
+}
+
+.player-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.player-name {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.player-category {
+    font-size: 11px;
+    color: #555a55;
+    white-space: nowrap;
+}
+
+.cell-benefit {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cell-muted {
+    color: #555a55;
+    white-space: nowrap;
+}
+
+/* ===== PILLS ===== */
+.type-pill,
+.status-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.type-scholarship {
+    background: #f3eeff;
+    color: #8b5cf6;
+}
+
+.type-discount {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+/* A benefit still inside its range reads as valid, an old one as neutral */
+.status-active {
+    background: #e7f4ea;
+    color: #00a651;
+}
+
+.status-expired {
+    background: #f1f5f1;
+    color: #555a55;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablet: the form drops to two fields per row */
+@media (max-width: 1100px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* The button and the message still span the whole form */
+    .submit-button,
+    .form-feedback {
+        grid-column: span 2;
+    }
+}
+
+/* Mobile: metrics drop to their own line under the title */
+@media (max-width: 768px) {
+    .page-header {
+        flex-wrap: wrap;
+    }
+
+    .header-metrics {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .header-metric {
+        padding: 0 18px 0 0;
+    }
+
+    .header-metric + .header-metric {
+        padding-left: 18px;
+    }
+}
+
+/* Small mobile: one field per row, tighter padding */
+@media (max-width: 520px) {
+    .dashboard {
+        padding: 14px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .submit-button,
+    .form-feedback {
+        grid-column: span 1;
+    }
+
+    .header-metrics {
+        flex-wrap: wrap;
+        row-gap: 10px;
+    }
+}

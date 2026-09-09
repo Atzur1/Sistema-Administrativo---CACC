@@ -1,0 +1,160 @@
+<!-- Becados y Descuentos dashboard: header stamp, assignment form and granted benefits table -->
+<div class="dashboard">
+
+  <!-- ===== HEADER ===== -->
+  <header class="page-header">
+    <span class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.59 13.41 12 22l-9-9V4a1 1 0 0 1 1-1h9l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+        <circle cx="7.5" cy="7.5" r="1.5"></circle>
+      </svg>
+    </span>
+
+    <div class="header-text">
+      <h1 class="header-title">Becados y Descuentos</h1>
+      <span class="header-subtitle">Asignación y control de beneficios otorgados por el club</span>
+    </div>
+
+    <div class="header-metrics">
+      @for (metric of headerMetrics; track metric.label) {
+        <div class="header-metric">
+          <span class="header-metric-value">{{ metric.value }}</span>
+          <span class="header-metric-label">{{ metric.label }}</span>
+        </div>
+      }
+    </div>
+  </header>
+
+  <div class="header-divider"></div>
+
+  <!-- ===== ASSIGNMENT FORM ===== -->
+  <section class="form-panel">
+    <header class="form-head">
+      <span class="form-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14"></path>
+          <path d="M5 12h14"></path>
+        </svg>
+      </span>
+      <div class="form-head-text">
+        <h2 class="form-title">Asignar beneficio</h2>
+        <span class="form-subtitle">Otorgá una beca o descuento a un jugador · acción reservada al Administrador</span>
+      </div>
+    </header>
+
+    <form class="form-grid" [formGroup]="benefitForm" (ngSubmit)="onSubmit()">
+
+      <!-- Single unified lookup: matches both name and document number -->
+      <div class="field field-player">
+        <label class="field-label" for="player">Jugador</label>
+        <input id="player" type="text" class="field-input" formControlName="player"
+               placeholder="Buscar por nombre o DNI..." autocomplete="off"
+               (input)="onPlayerSearch($any($event.target).value)"
+               (keydown.escape)="hideSuggestions()" />
+
+        @if (showSuggestions) {
+          <ul class="suggestions">
+            @for (player of matchingPlayers; track player.id) {
+              <li>
+                <button type="button" class="suggestion" (click)="selectPlayer(player)">
+                  <span class="suggestion-name">{{ player.name }}</span>
+                  <span class="suggestion-meta">DNI {{ player.document }} · {{ player.category }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="type">Tipo de beneficio</label>
+        <select id="type" class="field-input" formControlName="type">
+          <option value="" disabled>Seleccionar tipo</option>
+          @for (type of benefitTypes; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Free text on purpose: the value can be a percentage or a fixed amount -->
+      <div class="field">
+        <label class="field-label" for="benefit">Monto o porcentaje</label>
+        <input id="benefit" type="text" class="field-input" formControlName="benefit"
+               placeholder="50% o $30.000" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="validFrom">Vigente desde</label>
+        <input id="validFrom" type="date" class="field-input" formControlName="validFrom" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="validTo">Vigente hasta</label>
+        <input id="validTo" type="date" class="field-input" formControlName="validTo" />
+      </div>
+
+      <button type="submit" class="submit-button" [disabled]="benefitForm.invalid">
+        Asignar beneficio
+      </button>
+
+      @if (successMessage) {
+        <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
+      }
+    </form>
+  </section>
+
+  <!-- ===== GRANTED BENEFITS ===== -->
+  <section class="main-grid">
+    <article class="panel panel-benefits">
+      <header class="panel-head">
+        <h2 class="panel-title">Beneficios asignados</h2>
+        <span class="panel-subtitle">Becas y descuentos vigentes e históricos</span>
+      </header>
+
+      <div class="table-wrapper">
+        <table class="benefits-table">
+          <thead>
+            <tr>
+              <th>Jugador</th>
+              <th>Tipo</th>
+              <th>Beneficio</th>
+              <th>Vigente desde</th>
+              <th>Vigente hasta</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of benefitRows; track row.id) {
+              <tr>
+                <td>
+                  <div class="cell-player">
+                    <span class="player-avatar" [ngClass]="'avatar-' + row.type">
+                      {{ row.initials }}
+                    </span>
+                    <div class="player-identity">
+                      <span class="player-name">{{ row.name }}</span>
+                      <span class="player-category">{{ row.category }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="type-pill" [ngClass]="'type-' + row.type">{{ row.typeLabel }}</span>
+                </td>
+                <td class="cell-benefit">{{ row.benefit }}</td>
+                <td class="cell-muted">{{ formatDate(row.validFrom) }}</td>
+                <td class="cell-muted">{{ formatDate(row.validTo) }}</td>
+                <td>
+                  <span class="status-pill" [ngClass]="isActive(row) ? 'status-active' : 'status-expired'">
+                    {{ isActive(row) ? 'Activo' : 'Vencido' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+</div>
