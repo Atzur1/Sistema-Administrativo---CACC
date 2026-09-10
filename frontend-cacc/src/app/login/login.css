@@ -123,7 +123,7 @@
   align-items: center;
   transition: transform 0.2s ease;
   /* Sits above the browser's own inline icons (Chrome's saved-password key,
-     Edge's reveal button) so our click always wins over theirs */
+  Edge's reveal button) so our click always wins over theirs */
   z-index: 2;
 }
 
@@ -134,7 +134,7 @@
 .form-control {
   width: 100%;
   /* Right padding reserves room for the custom eye icon so typed text never
-     runs under it */
+  runs under it */
   padding: 14px 42px 14px 45px;
   font-size: 14px;
   border: 1px solid var(--border-light);
@@ -146,9 +146,9 @@
 }
 
 /* Some browsers draw their own icon inside password fields, in the same
-   spot as our custom eye icon (Chrome's saved-password key/autofill icon,
-   Edge/legacy IE's built-in reveal-and-clear buttons). Hiding all of them
-   keeps the toggle working the same way for everyone, regardless of browser. */
+  spot as our custom eye icon (Chrome's saved-password key/autofill icon,
+  Edge/legacy IE's built-in reveal-and-clear buttons). Hiding all of them
+  keeps the toggle working the same way for everyone, regardless of browser. */
 .form-control::-webkit-credentials-auto-fill-button,
 .form-control::-webkit-strong-password-auto-fill-button,
 .form-control::-webkit-contacts-auto-fill-button {
