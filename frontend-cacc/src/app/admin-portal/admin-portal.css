@@ -137,6 +137,23 @@
   transform: scale(1.1);
 }
 
+/* Ítem sin implementar: solo marca la posición futura, no navega a nada */
+.nav-item-disabled {
+  color: #ff6b6b;
+  cursor: default;
+  opacity: 0.7;
+}
+
+.nav-item-disabled:hover {
+  background: transparent;
+  color: #ff6b6b;
+  padding-left: 16px;
+}
+
+.nav-item-disabled .nav-icon {
+  opacity: 0.7;
+}
+
 /* ===== FOOTER (ACCIONES INFERIORES) ===== */
 .sidebar-footer {
   margin-top: auto;

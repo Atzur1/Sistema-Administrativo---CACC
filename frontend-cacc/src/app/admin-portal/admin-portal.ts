@@ -31,6 +31,7 @@ private pageTitles: Record<string, string> = {
     'usuarios':               'Usuarios y Permisos',
     'cuotas-pagos':           'Cuotas y Pagos',
     'reportes':               'Reportes',
+    'actualizacion-aranceles': 'Actualización de Aranceles',
 };
 
 private destroyRef = inject(DestroyRef);

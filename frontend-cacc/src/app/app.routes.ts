@@ -10,6 +10,7 @@ import { Usuarios } from './admin-portal/usuarios-y-permisos/usuarios-y-permisos
 import { CuotasPagos } from './admin-portal/cuotas-pagos/cuotas-pagos';
 import { Reportes } from './admin-portal/reportes/reportes';
 import { JugadorPerfil } from './admin-portal/jugador-perfil/jugador-perfil';
+import { ActualizacionAranceles } from './admin-portal/actualizacion-aranceles/actualizacion-aranceles';
 
 export const routes: Routes = [
   { path: '', component: Login },
@@ -29,6 +30,7 @@ export const routes: Routes = [
       { path: 'cuotas-pagos', component: CuotasPagos },
       { path: 'jugadores/:id', component: JugadorPerfil },
       { path: 'reportes', component: Reportes },
+      { path: 'actualizacion-aranceles', component: ActualizacionAranceles },
     ],
   },
 
