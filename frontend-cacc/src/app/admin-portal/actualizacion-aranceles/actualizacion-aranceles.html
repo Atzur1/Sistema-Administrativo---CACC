@@ -58,29 +58,29 @@
 
       <div class="field">
         <label class="field-label" for="amount">Nuevo monto</label>
-        <input id="amount" type="number" class="field-input" formControlName="amount"
-               placeholder="$92.000" min="1" />
+        <div class="amount-wrapper">
+          <span class="amount-prefix">$</span>
+          <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
+                 [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
+                 placeholder="92.000" />
+        </div>
       </div>
 
       <div class="field">
         <label class="field-label" for="validFrom">Entra en vigencia desde</label>
-        <!-- [min] blocks past dates in the native picker; the form validates it again -->
-        <input id="validFrom" type="date" class="field-input" formControlName="validFrom"
-               [min]="today" />
-
-        @if (validFromHasPastError) {
-          <span class="field-error">No se pueden programar fechas anteriores a hoy</span>
-        } @else {
-          <span class="field-hint">Podés elegir el mes actual o una fecha futura</span>
-        }
+        <input id="validFrom" type="date" class="field-input" formControlName="validFrom" />
+        <span class="field-hint">Podés elegir cualquier fecha, pasada, actual o futura</span>
       </div>
 
-      <button type="submit" class="submit-button" [disabled]="feeForm.invalid">
+      <button type="submit" class="submit-button" [disabled]="feeForm.invalid || enviando">
         Programar actualización
       </button>
 
       @if (successMessage) {
         <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
+      }
+      @if (errorMessage) {
+        <p class="form-feedback form-feedback-error">{{ errorMessage }}</p>
       }
     </form>
   </section>

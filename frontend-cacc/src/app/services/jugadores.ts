@@ -3,12 +3,16 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { JugadorResumen } from './pagos';
 
-export interface PagoHistorialItem {
-  idPago: number;
-  fechaPago: string;
-  periodo: string;
+export interface PagoHistorialAbono {
   monto: number;
   metodoPago: string;
+  fechaPago: string;
+}
+
+export interface PagoHistorialItem {
+  periodo: string;
+  montoTotal: number;
+  abonos: PagoHistorialAbono[];
 }
 
 export interface HistorialPagosResultado {

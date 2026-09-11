@@ -11,6 +11,16 @@ namespace DaoLibrary
         // del mismo período). WITH (UPDLOCK) para que dos requests concurrentes no pasen ambos la validación.
         Pago? ObtenerPagoAbonadoDeJugadorEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio);
 
+        // Busca la cuota PENDIENTE (Estado = false) del jugador para ese mes/año, si existe, para
+        // registrar un abono (total o parcial) contra ella. WITH (UPDLOCK) como la de arriba.
+        Pago? ObtenerPagoPendienteDeJugadorEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio);
+
+        // Reduce el saldo de una cuota pendiente tras un abono parcial (sigue con Estado = false).
+        void ActualizarSaldoPendiente(SqlConnection conexion, SqlTransaction transaccion, int idPago, decimal nuevoMonto);
+
+        // Borra la cuota pendiente cuando un abono la termina de cubrir (ya no queda saldo).
+        void EliminarPago(SqlConnection conexion, SqlTransaction transaccion, int idPago);
+
         // PAGOS.PK_id_pago no tiene IDENTITY: el id se calcula a mano dentro de la propia transacción.
         int InsertarPago(SqlConnection conexion, SqlTransaction transaccion, Pago pago);
 
@@ -27,5 +37,16 @@ namespace DaoLibrary
         ResumenPagos ObtenerResumen();
 
         HistorialPagosResultado ObtenerHistorialPagos(int idJugador, int page, int pageSize);
+
+        // Detalle de deuda: cada cuota pendiente del jugador, con sus abonos parciales (si tiene)
+        // y el saldo que le sigue faltando.
+        IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador);
+
+        // Genera la cuota pendiente (PAGOS con Estado = false) de cada jugador que todavía no
+        // tiene ninguna fila para ese período, usando el arancel vigente de su género (según su
+        // categoría) y el descuento activo si tiene uno. Si un jugador no tiene arancel vigente
+        // para su género (nadie cargó ninguno todavía), no se le genera nada. Se puede llamar
+        // repetidas veces sin duplicar: solo inserta para quien no tenga ya una fila ese período.
+        void GenerarCuotasPendientesDelMes(int mes, int anio);
     }
 }

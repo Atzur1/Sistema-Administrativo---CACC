@@ -39,6 +39,13 @@ namespace ApiGestion.Controllers
             return Ok(_pagosService.ObtenerUltimosPagos(top));
         }
 
+        // GET api/pagos/deuda/5 -> detalle de deuda de un jugador (cuotas pendientes + abonos parciales)
+        [HttpGet("deuda/{idJugador}")]
+        public IActionResult ObtenerDeudaDetalle(int idJugador)
+        {
+            return Ok(_pagosService.ObtenerDeudaDetalle(idJugador));
+        }
+
         // POST api/pagos/registrar -> form "Registrar pago" (jugador + período + monto + método)
         // Body:  { "idJugador": 12, "periodo": "Marzo", "monto": 85000, "metodoPago": "Transferencia" }
         // 200:   { exito, idPago, idJugador, periodo, monto, metodoPago, fechaPago, mensaje }

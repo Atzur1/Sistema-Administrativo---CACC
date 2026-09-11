@@ -17,7 +17,7 @@ namespace EntityLibrary
 
     public static class MetodosPago
     {
-        public static readonly string[] Validos = { "Transferencia", "Efectivo", "Débito" };
+        public static readonly string[] Validos = { "Transferencia", "Efectivo" };
 
         public static bool EsValido(string metodo) =>
             Validos.Any(m => string.Equals(m, metodo, StringComparison.OrdinalIgnoreCase));

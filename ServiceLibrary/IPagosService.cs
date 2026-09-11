@@ -44,6 +44,8 @@ namespace ServiceLibrary
 
         IReadOnlyList<PendienteJugador> ObtenerPendientes();
 
+        IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador);
+
         IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top);
 
         ResumenPagos ObtenerResumen();

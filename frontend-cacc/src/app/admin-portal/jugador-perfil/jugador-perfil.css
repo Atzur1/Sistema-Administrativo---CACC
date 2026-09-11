@@ -151,7 +151,46 @@
     color: #555a55;
 }
 
-.row-list {
+/* ===== PERÍODOS PAGADOS ===== */
+/* Cada período es una tarjeta con el total arriba y, adentro, TODOS los abonos que lo
+   componen (puede ser uno solo, o varios si se pagó de a partes) */
+.periodo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.periodo-card {
+    padding: 12px;
+    background: #f6fbf7;
+    border: 1px solid #cdeada;
+    border-radius: 10px;
+}
+
+.periodo-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.periodo-nombre {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.periodo-total {
+    font-size: 14px;
+    font-weight: 700;
+    color: #00a651;
+}
+
+/* ===== ABONOS DENTRO DE CADA PERÍODO ===== */
+.abono-list {
     display: flex;
     flex-direction: column;
     margin: 0;
@@ -159,53 +198,27 @@
     list-style: none;
 }
 
-.row {
+.abono-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
-    padding: 10px;
-    border-radius: 9px;
-    border-bottom: 1px solid #f1f5f1;
-    transition: background 0.2s ease;
+    padding: 5px 0;
+    border-top: 1px dashed #cdeada;
 }
 
-.row:hover {
-    background: #f9faf9;
+.abono-row:first-child {
+    border-top: none;
 }
 
-.row:last-child {
-    border-bottom: none;
-}
-
-.row-identity {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-}
-
-.row-name {
-    font-size: 12.5px;
-    font-weight: 600;
-}
-
-.row-meta {
+.abono-meta {
     font-size: 11px;
     color: #555a55;
-    white-space: nowrap;
 }
 
-.row-figures {
-    margin-left: auto;
-    flex-shrink: 0;
-}
-
-.row-amount {
-    font-size: 12.5px;
-    font-weight: 700;
-}
-
-.amount-paid {
+.abono-monto {
+    font-size: 12px;
+    font-weight: 600;
     color: #00a651;
 }
 

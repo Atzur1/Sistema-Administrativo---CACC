@@ -17,7 +17,7 @@ namespace DaoLibrary
             var resultado = new List<JugadorResumen>();
 
             string query = @"
-                SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria
+                SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, p.genero, c.nombre_categoria
                 FROM JUGADORES j
                 JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
@@ -36,6 +36,7 @@ namespace DaoLibrary
                     Nombre = reader["nombre"].ToString()?.Trim() ?? "",
                     Apellido = reader["apellido"].ToString()?.Trim() ?? "",
                     Dni = reader["Dni"].ToString()?.Trim() ?? "",
+                    Genero = reader["genero"].ToString()?.Trim() ?? "",
                     Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? ""
                 });
             }
@@ -46,7 +47,7 @@ namespace DaoLibrary
         public JugadorResumen? ObtenerJugadorPorId(int idJugador)
         {
             string query = @"
-                SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria
+                SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, p.genero, c.nombre_categoria
                 FROM JUGADORES j
                 JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
@@ -70,6 +71,7 @@ namespace DaoLibrary
                 Nombre = reader["nombre"].ToString()?.Trim() ?? "",
                 Apellido = reader["apellido"].ToString()?.Trim() ?? "",
                 Dni = reader["Dni"].ToString()?.Trim() ?? "",
+                Genero = reader["genero"].ToString()?.Trim() ?? "",
                 Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? ""
             };
         }

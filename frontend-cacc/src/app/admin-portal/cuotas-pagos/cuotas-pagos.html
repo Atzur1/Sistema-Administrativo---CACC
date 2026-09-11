@@ -85,7 +85,7 @@
           <span class="amount-prefix">$</span>
           <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
                  [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
-                 placeholder="85.000" />
+                 [placeholder]="montoPlaceholder" />
         </div>
       </div>
 
@@ -125,7 +125,7 @@
 
       <ul class="row-list">
         @for (row of pendingRows; track row.id) {
-          <li class="row row-clickable" (click)="irAJugador(row.id)">
+          <li class="row row-clickable" (click)="irADeuda(row.id)">
             <span class="row-avatar avatar-pending">{{ row.initials }}</span>
             <div class="row-identity">
               <span class="row-name">{{ row.name }}</span>
