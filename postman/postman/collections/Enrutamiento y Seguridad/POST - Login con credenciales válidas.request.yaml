@@ -1,0 +1,36 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/Auth/login"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"Usuario\": \"admin@cacc.com\",\r
+
+    \  \"Contrasena\": \"admin123\"\r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "const data = pm.response.json();\r
+
+      pm.environment.set(\"authToken\", data.token);\r
+
+      \r
+
+      pm.test(\"Status code es 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"La respuesta incluye un token\", function () {\r
+
+      \    pm.expect(pm.response.json()).to.have.property(\"token\");\r
+
+      });"
+    language: text/javascript
+order: 1789148372857

@@ -1,0 +1,30 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/Auth/login"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"Usuario\": \"admin@cacc.com\",\r
+
+    \  \"Contrasena\": \"password_incorrecta\"\r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 401\", function () {\r
+
+      \    pm.response.to.have.status(401);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"No devuelve token\", function () {\r
+
+      \    pm.expect(pm.response.json()).to.not.have.property(\"token\");\r
+
+      });"
+    language: text/javascript
+order: 1789148372858

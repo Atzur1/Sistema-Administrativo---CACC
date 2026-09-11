@@ -1,0 +1,6 @@
+name: Local
+values:
+  - key: baseUrl
+    value: ''
+  - key: authToken
+    value: ''
