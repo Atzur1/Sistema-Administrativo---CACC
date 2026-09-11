@@ -194,48 +194,6 @@
     position: relative;
 }
 
-.jugadores-error {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 6px 0 0;
-    font-size: 11px;
-    color: #b3261e;
-}
-
-.jugadores-error-compact {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    left: auto;
-    z-index: 6;
-    width: 260px;
-    margin: 4px 0 0;
-    padding: 8px 10px;
-    background: #ffffff;
-    border: 1px solid #f6c8c3;
-    border-radius: 9px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-    flex-wrap: wrap;
-}
-
-.jugadores-retry {
-    padding: 3px 9px;
-    background: #fdecea;
-    border: 1px solid #f6c8c3;
-    border-radius: 7px;
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 600;
-    color: #b3261e;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.jugadores-retry:hover {
-    background: #fadbd8;
-}
-
 .field-label {
     font-size: 10px;
     font-weight: 600;

@@ -55,13 +55,6 @@
                (input)="onPlayerSearch($any($event.target).value)"
                (keydown.escape)="hideSuggestions()" />
 
-        @if (jugadoresError) {
-          <p class="jugadores-error">
-            No se pudo cargar la lista de jugadores, por eso el buscador no encuentra nada.
-            <button type="button" class="jugadores-retry" (click)="reintentarCargarJugadores()">Reintentar</button>
-          </p>
-        }
-
         @if (showSuggestions) {
           <ul class="suggestions">
             @for (jugador of matchingPlayers; track jugador.idJugador) {
@@ -166,13 +159,6 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
           </span>
-
-          @if (jugadoresError) {
-            <div class="jugadores-error jugadores-error-compact">
-              No se pudo cargar la lista de jugadores.
-              <button type="button" class="jugadores-retry" (click)="reintentarCargarJugadores()">Reintentar</button>
-            </div>
-          }
 
           @if (showPanelSearchResults) {
             <ul class="suggestions panel-suggestions">

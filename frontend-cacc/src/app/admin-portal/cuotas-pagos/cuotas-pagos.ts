@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { timeout } from 'rxjs';
 import {
   JugadorResumen,
   PagoReciente,
@@ -92,7 +91,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   cargandoJugadores = false;
   cargandoListas = false;
-  jugadoresError = false;
 
   pendingRows: PendingRow[] = [];
   paymentRows: PaymentRow[] = [];
@@ -190,17 +188,9 @@ export class CuotasPagos implements OnInit, OnDestroy {
     clearTimeout(this.clearTimer);
   }
 
-  reintentarCargarJugadores() {
-    this.cargarJugadores();
-  }
-
   private cargarJugadores() {
     this.cargandoJugadores = true;
-    this.jugadoresError = false;
-
-    // timeout: si el pedido no responde en 2s (colgado, sin éxito ni error), se lo trata como
-    // falla y se muestra el aviso directo — un solo intento, sin reintento automático.
-    this.pagosService.getJugadores().pipe(timeout(2000)).subscribe({
+    this.pagosService.getJugadores().subscribe({
       next: (jugadores) => {
         this.jugadores = jugadores;
         this.cargandoJugadores = false;
@@ -208,7 +198,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
       },
       error: () => {
         this.cargandoJugadores = false;
-        this.jugadoresError = true;
         this.cdr.detectChanges();
       },
     });
