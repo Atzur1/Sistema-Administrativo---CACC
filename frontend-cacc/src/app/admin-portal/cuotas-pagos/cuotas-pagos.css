@@ -79,6 +79,32 @@
     color: #555a55;
 }
 
+/* Mismos colores que ya se usan para Masculino/Femenino en Actualización de Aranceles */
+.header-aranceles-vigentes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.arancel-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.arancel-badge-masculino {
+    background: #00a651;
+}
+
+.arancel-badge-femenino {
+    background: #555a55;
+}
+
 .header-metrics {
     display: flex;
     align-items: center;
@@ -590,6 +616,12 @@
     .header-metrics {
         width: 100%;
         margin-left: 0;
+    }
+
+    .header-aranceles-vigentes {
+        width: 100%;
+        margin-left: 0;
+        flex-wrap: wrap;
     }
 
     .header-metric {

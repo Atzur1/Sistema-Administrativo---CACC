@@ -82,11 +82,12 @@ namespace DaoLibrary
         }
 
         // Genera la cuota de UN mes puntual (el que se le pida — típicamente el de vigente_desde
-        // del arancel recién cargado), para cada jugador que no tenga ya una fila para ese
-        // período. Es 100% manual: no hay ninguna noción de "mes actual" acá adentro — quien
-        // llama a esto decide de qué mes es la cuota. Se puede llamar repetidas veces sin
-        // duplicar nada (por el NOT EXISTS).
-        public void GenerarCuotasPendientesDelMes(int mes, int anio)
+        // del arancel recién cargado), pero SOLO para los jugadores del género de ese arancel —
+        // cargar un arancel Masculino nunca debe tocar a las jugadoras Femenino, ni viceversa,
+        // aunque ambos géneros compartan el mismo mes. Es 100% manual: no hay ninguna noción de
+        // "mes actual" acá adentro — quien llama a esto decide de qué mes es la cuota. Se puede
+        // llamar repetidas veces sin duplicar nada (por el NOT EXISTS).
+        public void GenerarCuotasPendientesDelMes(string genero, int mes, int anio)
         {
             // Autocontenido (abre su propia transacción): se llama desde ArancelesService justo
             // después de programar un arancel, no desde un flujo que ya tenga una transacción abierta.
@@ -114,13 +115,13 @@ namespace DaoLibrary
                         @primerDiaMes,
                         0
                     FROM JUGADORES j
-                    JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                    JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona AND LTRIM(RTRIM(p.genero)) = @genero
                     CROSS APPLY (
                         -- Un arancel cargado el 5 de enero cubre igual TODO enero, no solo desde
                         -- el día 5: por eso se compara contra el último día del mes del período
                         -- (EOMONTH), no contra el día 1 (@primerDiaMes).
                         SELECT TOP (1) monto FROM ARANCELES
-                        WHERE genero = LTRIM(RTRIM(p.genero))
+                        WHERE genero = @genero
                           AND vigente_desde <= EOMONTH(@primerDiaMes)
                         ORDER BY vigente_desde DESC
                     ) AS arancel
@@ -140,6 +141,7 @@ namespace DaoLibrary
                     );";
 
                 using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+                comando.Parameters.AddWithValue("@genero", genero);
                 comando.Parameters.AddWithValue("@primerDiaMes", new DateTime(anio, mes, 1));
                 comando.Parameters.AddWithValue("@mes", mes);
                 comando.Parameters.AddWithValue("@anio", anio);
@@ -449,7 +451,7 @@ namespace DaoLibrary
                 SELECT COUNT(*) OVER() AS total_count, clave_periodo, monto_grupo, fecha_grupo, fecha_vencimiento
                 FROM Agrupado
                 WHERE rn = 1
-                ORDER BY fecha_grupo DESC
+                ORDER BY fecha_grupo DESC, clave_periodo DESC
                 OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY";
 
             // (clave_periodo, PagoHistorialItem) en el orden en que vinieron, para después

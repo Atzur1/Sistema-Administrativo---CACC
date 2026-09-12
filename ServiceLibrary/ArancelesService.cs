@@ -37,9 +37,11 @@ namespace ServiceLibrary
             _arancelesDao.ProgramarArancel(request.Genero, request.Monto, request.VigenteDesde);
 
             // Manual: se genera la cuota justo del mes de este arancel (nada de meses intermedios
-            // ni nada atado a la fecha de hoy). Si ya existiera una fila para ese jugador+período,
-            // GenerarCuotasPendientesDelMes la deja como está (no duplica ni pisa nada).
-            _pagosDao.GenerarCuotasPendientesDelMes(request.VigenteDesde.Month, request.VigenteDesde.Year);
+            // ni nada atado a la fecha de hoy), y SOLO para los jugadores del género de este
+            // arancel — cargar un Masculino nunca debe generar ni tocar cuotas Femenino. Si ya
+            // existiera una fila para ese jugador+período, GenerarCuotasPendientesDelMes la deja
+            // como está (no duplica ni pisa nada).
+            _pagosDao.GenerarCuotasPendientesDelMes(request.Genero, request.VigenteDesde.Month, request.VigenteDesde.Year);
         }
     }
 }

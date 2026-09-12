@@ -176,6 +176,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
         this.metodoPago = '';
         this.mostrarExito(`Pago de ${this.formatMonto(monto)} registrado correctamente.`);
         this.cargarDeuda(); // refresca saldos/abonos (y hace desaparecer la cuota si quedó completa)
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.enviandoPago = false;

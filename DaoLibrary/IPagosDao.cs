@@ -42,11 +42,11 @@ namespace DaoLibrary
         // y el saldo que le sigue faltando.
         IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador);
 
-        // Genera la cuota pendiente (PAGOS con Estado = false) de cada jugador que todavía no
-        // tiene ninguna fila para ese período, usando el arancel vigente de su género (según su
-        // categoría) y el descuento activo si tiene uno. Si un jugador no tiene arancel vigente
-        // para su género (nadie cargó ninguno todavía), no se le genera nada. Se puede llamar
-        // repetidas veces sin duplicar: solo inserta para quien no tenga ya una fila ese período.
-        void GenerarCuotasPendientesDelMes(int mes, int anio);
+        // Genera la cuota pendiente (PAGOS con Estado = false) de cada jugador de ESE género que
+        // todavía no tiene ninguna fila para ese período, usando el arancel de ese género/mes y
+        // el descuento activo si tiene uno. Cargar un arancel de un género nunca toca a los
+        // jugadores del otro género. Se puede llamar repetidas veces sin duplicar: solo inserta
+        // para quien no tenga ya una fila ese período.
+        void GenerarCuotasPendientesDelMes(string genero, int mes, int anio);
     }
 }

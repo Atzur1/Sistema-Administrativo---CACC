@@ -87,17 +87,26 @@ namespace DaoLibrary
         }
 
         // Últimos 8 meses con recaudación real (PAGOS.estado = 1), en orden cronológico.
-        // "fecha_pago <= GETDATE()": un pago no puede estar fechado en el futuro. Sin este filtro,
-        // una fila con un año mal cargado (ej. un typo "2926" en vez de "2026") se cuela como el
-        // mes "más reciente" y desplaza meses reales del gráfico.
+        // Se agrupa por PERÍODO de la cuota (fecha_vencimiento), no por cuándo se registró el
+        // pago: si alguien paga en septiembre una cuota atrasada de enero, esa plata cuenta para
+        // "enero" en el gráfico, no para "septiembre". Los pagos históricos previos a este sistema
+        // nunca tuvieron fecha_vencimiento cargada, así que caen a fecha_pago como respaldo (sin
+        // esto, esos ~1258 pagos reales desaparecerían del gráfico).
+        // "periodo <= GETDATE()": no puede estar fechado en el futuro. Sin este filtro, una fila
+        // con un año mal cargado (ej. un typo "2926" en vez de "2026") se cuela como el mes "más
+        // reciente" y desplaza meses reales del gráfico.
         private static List<PuntoRecaudacionMensual> ObtenerRecaudacionMensual(SqlConnection conexion)
         {
             string query = @"
-                SELECT TOP (8) YEAR(fecha_pago) AS anio, MONTH(fecha_pago) AS mes, SUM(monto_final) AS monto
-                FROM PAGOS
-                WHERE estado = 1 AND fecha_pago IS NOT NULL AND fecha_pago <= GETDATE()
-                GROUP BY YEAR(fecha_pago), MONTH(fecha_pago)
-                ORDER BY YEAR(fecha_pago) DESC, MONTH(fecha_pago) DESC";
+                SELECT TOP (8) YEAR(periodo) AS anio, MONTH(periodo) AS mes, SUM(monto_final) AS monto
+                FROM (
+                    SELECT monto_final, COALESCE(fecha_vencimiento, fecha_pago) AS periodo
+                    FROM PAGOS
+                    WHERE estado = 1
+                ) x
+                WHERE periodo IS NOT NULL AND periodo <= GETDATE()
+                GROUP BY YEAR(periodo), MONTH(periodo)
+                ORDER BY YEAR(periodo) DESC, MONTH(periodo) DESC";
 
             var puntos = new List<PuntoRecaudacionMensual>();
             using (SqlCommand comando = new SqlCommand(query, conexion))
@@ -120,14 +129,20 @@ namespace DaoLibrary
         }
 
         // Últimos 6 meses: % de jugadores que registraron al menos un pago abonado ese mes.
+        // Mismo criterio que ObtenerRecaudacionMensual: por período de la cuota, con fecha_pago
+        // como respaldo para los pagos históricos sin fecha_vencimiento cargada.
         private static List<PuntoCoberturaMensual> ObtenerCoberturaMensual(SqlConnection conexion, int totalJugadores)
         {
             string query = @"
-                SELECT TOP (6) YEAR(fecha_pago) AS anio, MONTH(fecha_pago) AS mes, COUNT(DISTINCT FK_id_jugador) AS jugadores_que_pagaron
-                FROM PAGOS
-                WHERE estado = 1 AND fecha_pago IS NOT NULL AND fecha_pago <= GETDATE()
-                GROUP BY YEAR(fecha_pago), MONTH(fecha_pago)
-                ORDER BY YEAR(fecha_pago) DESC, MONTH(fecha_pago) DESC";
+                SELECT TOP (6) YEAR(periodo) AS anio, MONTH(periodo) AS mes, COUNT(DISTINCT FK_id_jugador) AS jugadores_que_pagaron
+                FROM (
+                    SELECT FK_id_jugador, COALESCE(fecha_vencimiento, fecha_pago) AS periodo
+                    FROM PAGOS
+                    WHERE estado = 1
+                ) x
+                WHERE periodo IS NOT NULL AND periodo <= GETDATE()
+                GROUP BY YEAR(periodo), MONTH(periodo)
+                ORDER BY YEAR(periodo) DESC, MONTH(periodo) DESC";
 
             var puntos = new List<PuntoCoberturaMensual>();
             using (SqlCommand comando = new SqlCommand(query, conexion))
