@@ -1,1 +1,2 @@
 $kind: collection
+description: "Pruebas de integración de la autenticación contra /api/Auth/login: el caso correcto, que devuelve el token JWT y lo guarda en la variable de entorno authToken, y el caso de contraseña incorrecta, que debe rechazarse con 401 sin devolver token. Correr primero el login válido, porque el resto de las requests que necesiten sesión dependen de ese token. Requiere la API corriendo en {{baseUrl}}."

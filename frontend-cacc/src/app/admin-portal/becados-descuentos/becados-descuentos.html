@@ -17,7 +17,7 @@
     </div>
 
     <div class="header-metrics">
-      @for (metric of headerMetrics; track metric.label) {
+      @for (metric of headerMetrics(); track metric.label) {
         <div class="header-metric">
           <span class="header-metric-value">{{ metric.value }}</span>
           <span class="header-metric-label">{{ metric.label }}</span>
@@ -59,7 +59,7 @@
             @for (player of matchingPlayers; track player.id) {
               <li>
                 <button type="button" class="suggestion" (click)="selectPlayer(player)">
-                  <span class="suggestion-name">{{ player.name }}</span>
+                  <span class="suggestion-name">{{ player.fullName }}</span>
                   <span class="suggestion-meta">DNI {{ player.document }} · {{ player.category }}</span>
                 </button>
               </li>
@@ -126,34 +126,41 @@
             </tr>
           </thead>
           <tbody>
-            @for (row of benefitRows; track row.id) {
+            @for (row of benefitRows(); track row.id) {
               <tr>
                 <td>
                   <div class="cell-player">
-                    <span class="player-avatar" [ngClass]="'avatar-' + row.type">
-                      {{ row.initials }}
+                    <span class="player-avatar avatar-benefit">
+                      {{ initialsOf(row.playerName) }}
                     </span>
                     <div class="player-identity">
-                      <span class="player-name">{{ row.name }}</span>
+                      <span class="player-name">
+                        {{ row.playerName }}
+                        <app-discount-badge [discount]="getDiscount(row.playerId)" />
+                      </span>
                       <span class="player-category">{{ row.category }}</span>
                     </div>
                   </div>
                 </td>
                 <td>
-                  <span class="type-pill" [ngClass]="'type-' + row.type">{{ row.typeLabel }}</span>
+                  <span class="type-pill type-benefit">{{ row.type }}</span>
                 </td>
-                <td class="cell-benefit">{{ row.benefit }}</td>
-                <td class="cell-muted">{{ formatDate(row.validFrom) }}</td>
-                <td class="cell-muted">{{ formatDate(row.validTo) }}</td>
+                <td class="cell-benefit">{{ row.percentage }}%</td>
+                <td class="cell-muted">{{ formatDate(row.startDate) }}</td>
+                <td class="cell-muted">{{ formatDate(row.endDate) }}</td>
                 <td>
                   <span class="status-pill" [ngClass]="isActive(row) ? 'status-active' : 'status-expired'">
-                    {{ isActive(row) ? 'Activo' : 'Vencido' }}
+                    {{ isActive(row) ? 'Vigente' : 'No vigente' }}
                   </span>
                 </td>
               </tr>
             }
           </tbody>
         </table>
+
+        @if (benefitsLoaded() && benefitRows().length === 0) {
+          <p class="panel-empty">No hay beneficios asignados.</p>
+        }
       </div>
     </article>
   </section>

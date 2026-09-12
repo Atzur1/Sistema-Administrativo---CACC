@@ -1,5 +1,5 @@
 $kind: http-request
-description: ""
+description: "Autenticación, caso negativo. Con un usuario existente y una contraseña incorrecta la API debe responder 401 y no incluir ningún token en la respuesta: una contraseña errónea no puede devolver credenciales de acceso."
 url: "{{baseUrl}}/api/Auth/login"
 method: POST
 body:

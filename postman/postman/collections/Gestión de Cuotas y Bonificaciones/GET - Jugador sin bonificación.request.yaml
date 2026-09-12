@@ -1,0 +1,9 @@
+$kind: http-request
+description: "HU-014. Un jugador válido que nunca tuvo una bonificación asignada no debe mostrar ninguna etiqueta en el frontend."
+url: "{{baseUrl}}/api/Players/999/discount"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 404\", function () {\n    pm.response.to.have.status(404);\n});"
+    language: text/javascript
+order: 1789148372905

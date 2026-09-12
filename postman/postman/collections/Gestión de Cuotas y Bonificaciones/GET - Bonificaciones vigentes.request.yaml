@@ -1,0 +1,9 @@
+$kind: http-request
+description: "HU-014. Devuelve todas las bonificaciones vigentes (no vencidas y no dadas de baja) para alimentar la grilla de tesorería."
+url: "{{baseUrl}}/api/Players/discounts"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"Devuelve un array\", function () {\n    pm.expect(pm.response.json()).to.be.an(\"array\");\n});\n\npm.test(\"Todas las bonificaciones devueltas están vigentes\", function () {\n    const discounts = pm.response.json();\n    discounts.forEach((discount) => {\n        pm.expect(discount.isActive).to.be.true;\n    });\n});"
+    language: text/javascript
+order: 1789148372900
