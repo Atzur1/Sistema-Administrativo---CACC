@@ -269,6 +269,9 @@
 }
 
 .suggestion-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 12px;
     font-weight: 600;
 }
@@ -443,9 +446,18 @@
     min-width: 0;
 }
 
+/* Contenedor flexible: el recorte con puntos suspensivos queda en el texto para
+   que el globo de la insignia no se corte contra el borde de la fila. */
 .row-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 12px;
     font-weight: 600;
+    min-width: 0;
+}
+
+.row-name-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -542,4 +554,14 @@
         align-items: flex-start;
         margin-left: 42px;
     }
+}
+
+/* Empty state for a panel whose data source is genuinely empty, so nobody reads
+   a blank panel as a loading failure. */
+.panel-empty {
+    margin: 0;
+    padding: 1.25rem 0.25rem;
+    color: #64748b;
+    font-size: 0.8rem;
+    text-align: center;
 }

@@ -1,98 +1,71 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
+import { DiscountService } from '../../services/discounts';
+import { DiscountModel } from '../../models/DiscountModel';
+import { PlayerService } from '../../services/players';
+import { PlayerModel } from '../../models/PlayerModel';
+import { normalizeText } from '../../shared/normalize-text';
 
-// A player that can be picked in the benefit form
-interface Player {
-    id: number;
-    name: string;
-    document: string;
-    category: string;
-}
-
-// One row in the "Beneficios asignados" table
-interface BenefitRow {
-    id: number;
-    initials: string;
-    name: string;
-    category: string;
-    // 'scholarship' renders the "Beca" pill, 'discount' the "Descuento" one
-    type: 'scholarship' | 'discount';
-    typeLabel: string;
-    // Free text: the administrator decides whether it is a percentage or a fixed amount
-    benefit: string;
-    // Stored as ISO so the dates compare and sort directly
-    validFrom: string;
-    validTo: string;
+// One counter on the page header
+interface HeaderMetric {
+    value: string;
+    label: string;
 }
 
 @Component({
     selector: 'app-becados-descuentos',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [CommonModule, ReactiveFormsModule, DiscountBadge],
     templateUrl: './becados-descuentos.html',
     styleUrl: './becados-descuentos.css',
 })
-export class BecadosDescuentos implements OnDestroy {
+export class BecadosDescuentos implements OnInit, OnDestroy {
 
-    // Header
-    headerMetrics = [
-        { value: '18', label: 'Beneficios activos' },
-        { value: '7', label: 'Becas activas' },
-        { value: '11', label: 'Descuentos activos' },
-    ];
+    // Header counters, derived from what the API returns. They start as dashes
+    // so the screen never shows a made-up number while the request is in flight.
+    headerMetrics = signal<HeaderMetric[]>([
+        { value: '—', label: 'Beneficios asignados' },
+        { value: '—', label: 'Vigentes' },
+        { value: '—', label: 'No vigentes' },
+    ]);
 
     // Assignment form
     benefitForm: FormGroup;
 
     benefitTypes = ['Beca', 'Descuento'];
 
-    // Squad the search field looks up — fictional demo data
-    private players: Player[] = [
-        { id: 1, name: 'Sánchez, Bautista D.', document: '48.221.107', category: 'Pt preAFA 2015' },
-        { id: 2, name: 'Sánchez, Thiago N.', document: '47.903.612', category: 'Pt AFA 2013' },
-        { id: 3, name: 'Correas, Juan V.', document: '48.310.564', category: 'Pt preAFA 2015' },
-        { id: 4, name: 'Guzmán, Tomás V.', document: '46.902.338', category: 'Pt AFA 2012' },
-        { id: 5, name: 'Guzmán, Lautaro I.', document: '48.455.019', category: 'Pt preAFA 2015' },
-        { id: 6, name: 'Aliendro, Brian E.', document: '46.115.720', category: 'Pt AFA 2011' },
-        { id: 7, name: 'Acosta, Ciro F.', document: '47.508.291', category: 'Pt AFA 2013' },
-        { id: 8, name: 'Baigorrí, Ángel A.', document: '47.664.183', category: 'Pt AFA 2013' },
-        { id: 9, name: 'López, Tobías A.', document: '46.740.955', category: 'Pt AFA 2012' },
-        { id: 10, name: 'López, Valentín R.', document: '47.221.884', category: 'Pt AFA 2013' },
-        { id: 11, name: 'Cuqueio, Juan C.', document: '45.988.402', category: 'Pt AFA 2010' },
-        { id: 12, name: 'Peralta, Ignacio M.', document: '46.377.145', category: 'Pt AFA 2011' },
-    ];
+    // Squad the lookup searches, loaded from the API on entry
+    private players = signal<PlayerModel[]>([]);
 
     // Suggestions shown under the search field
-    matchingPlayers: Player[] = [];
+    matchingPlayers: PlayerModel[] = [];
     showSuggestions = false;
 
     // Inline confirmation shown after a simulated submit
     successMessage = '';
     successLeaving = false;
 
-    // Every benefit ever granted: the table mixes current and expired ones
-    benefitRows: BenefitRow[] = [
-        { id: 1, initials: 'SB', name: 'Sánchez, Bautista D.', category: 'Pt preAFA 2015', type: 'discount', typeLabel: 'Descuento', benefit: '30%', validFrom: '2026-03-01', validTo: '2026-12-31' },
-        { id: 2, initials: 'ST', name: 'Sánchez, Thiago N.', category: 'Pt AFA 2013', type: 'discount', typeLabel: 'Descuento', benefit: '30%', validFrom: '2026-03-01', validTo: '2026-12-31' },
-        { id: 3, initials: 'GT', name: 'Guzmán, Tomás V.', category: 'Pt AFA 2012', type: 'scholarship', typeLabel: 'Beca', benefit: '100%', validFrom: '2026-02-01', validTo: '2026-12-31' },
-        { id: 4, initials: 'GL', name: 'Guzmán, Lautaro I.', category: 'Pt preAFA 2015', type: 'discount', typeLabel: 'Descuento', benefit: '$25.000', validFrom: '2026-02-01', validTo: '2026-12-31' },
-        { id: 5, initials: 'AB', name: 'Aliendro, Brian E.', category: 'Pt AFA 2011', type: 'scholarship', typeLabel: 'Beca', benefit: '50%', validFrom: '2026-04-01', validTo: '2026-11-30' },
-        { id: 6, initials: 'AC', name: 'Acosta, Ciro F.', category: 'Pt AFA 2013', type: 'discount', typeLabel: 'Descuento', benefit: '$40.000', validFrom: '2025-03-01', validTo: '2025-12-31' },
-        { id: 7, initials: 'BA', name: 'Baigorrí, Ángel A.', category: 'Pt AFA 2013', type: 'scholarship', typeLabel: 'Beca', benefit: '100%', validFrom: '2025-02-15', validTo: '2025-12-15' },
-        { id: 8, initials: 'LT', name: 'López, Tobías A.', category: 'Pt AFA 2012', type: 'discount', typeLabel: 'Descuento', benefit: '20%', validFrom: '2026-01-15', validTo: '2026-12-31' },
-        { id: 9, initials: 'LV', name: 'López, Valentín R.', category: 'Pt AFA 2013', type: 'discount', typeLabel: 'Descuento', benefit: '20%', validFrom: '2026-01-15', validTo: '2026-12-31' },
-        { id: 10, initials: 'CJ', name: 'Cuqueio, Juan C.', category: 'Pt AFA 2010', type: 'scholarship', typeLabel: 'Beca', benefit: '75%', validFrom: '2025-06-01', validTo: '2026-05-31' },
-        { id: 11, initials: 'PI', name: 'Peralta, Ignacio M.', category: 'Pt AFA 2011', type: 'discount', typeLabel: 'Descuento', benefit: '$30.000', validFrom: '2026-05-01', validTo: '2027-04-30' },
-        { id: 12, initials: 'CJ', name: 'Correas, Juan V.', category: 'Pt preAFA 2015', type: 'scholarship', typeLabel: 'Beca', benefit: '100%', validFrom: '2024-03-01', validTo: '2024-12-31' },
-    ];
+    // Every benefit ever granted: the table mixes current and expired ones.
+    // benefitsLoaded tells "still loading" apart from "there is nothing to show".
+    benefitRows = signal<DiscountModel[]>([]);
+    benefitsLoaded = signal(false);
 
     // Timers for the confirmation message, cleared on destroy so leaving the
     // dashboard mid-animation never fires a callback on a dead component
     private fadeTimer?: ReturnType<typeof setTimeout>;
     private clearTimer?: ReturnType<typeof setTimeout>;
 
-    constructor(private fb: FormBuilder) {
+    // Active discounts indexed by player, resolved by the backend.
+    // Held in a signal so the table repaints when the response arrives.
+    private discounts = signal(new Map<number, DiscountModel>());
+
+    constructor(
+        private fb: FormBuilder,
+        private discountService: DiscountService,
+        private playerService: PlayerService
+    ) {
         this.benefitForm = this.fb.group({
             player: ['', [Validators.required, this.knownPlayerValidator]],
             type: ['', [Validators.required]],
@@ -100,6 +73,50 @@ export class BecadosDescuentos implements OnDestroy {
             validFrom: ['', [Validators.required]],
             validTo: ['', [Validators.required]],
         });
+    }
+
+    ngOnInit() {
+        this.discountService.getDiscountMap().subscribe({
+            next: (discountMap) => this.discounts.set(discountMap),
+            // If the API fails the table still renders, just without badges
+            error: () => this.discounts.set(new Map<number, DiscountModel>()),
+        });
+
+        this.playerService.getPlayers().subscribe({
+            next: (players) => this.players.set(players),
+            error: () => this.players.set([]),
+        });
+
+        this.discountService.getAllDiscounts().subscribe({
+            next: (benefits) => {
+                this.benefitRows.set(benefits);
+                this.benefitsLoaded.set(true);
+                this.headerMetrics.set(this.buildHeaderMetrics(benefits));
+            },
+            error: () => {
+                this.benefitRows.set([]);
+                this.benefitsLoaded.set(true);
+            },
+        });
+    }
+
+    private buildHeaderMetrics(benefits: DiscountModel[]): HeaderMetric[] {
+        const active = benefits.filter(benefit => benefit.isActive).length;
+        return [
+            { value: benefits.length.toString(), label: 'Beneficios asignados' },
+            { value: active.toString(), label: 'Vigentes' },
+            { value: (benefits.length - active).toString(), label: 'No vigentes' },
+        ];
+    }
+
+    initialsOf(fullName: string): string {
+        const [lastName = '', firstName = ''] = fullName.split(',').map(part => part.trim());
+        return ((lastName.charAt(0) || '') + (firstName.charAt(0) || '')).toUpperCase();
+    }
+
+    // Null cuando el jugador no tiene beneficio vigente: el badge no se dibuja
+    getDiscount(playerId: number): DiscountModel | null {
+        return this.discounts().get(playerId) ?? null;
     }
 
     ngOnDestroy() {
@@ -116,15 +133,19 @@ export class BecadosDescuentos implements OnDestroy {
         return this.findPlayer(value) ? null : { unknownPlayer: true };
     };
 
-    private findPlayer(value: string): Player | undefined {
-        const needle = value.toLowerCase();
-        return this.players.find(player => player.name.toLowerCase() === needle);
+    private findPlayer(value: string): PlayerModel | undefined {
+        const needle = normalizeText(value);
+        return this.players().find(player => normalizeText(player.fullName) === needle);
     }
+
+    // Minimum length before suggesting: below this, a single letter like "s"
+    // matches half the squad and the dropdown is more noise than help.
+    private static readonly MIN_SEARCH_LENGTH = 3;
 
     // One unified field: the same term is matched against name and document
     onPlayerSearch(term: string) {
-        const needle = term.trim().toLowerCase();
-        if (!needle) {
+        const needle = normalizeText(term.trim());
+        if (needle.length < BecadosDescuentos.MIN_SEARCH_LENGTH) {
             this.matchingPlayers = [];
             this.showSuggestions = false;
             return;
@@ -132,15 +153,15 @@ export class BecadosDescuentos implements OnDestroy {
 
         // Digits are compared without dots so "48221" also finds "48.221.107"
         const digits = needle.replace(/\D/g, '');
-        this.matchingPlayers = this.players.filter(player =>
-            player.name.toLowerCase().includes(needle) ||
+        this.matchingPlayers = this.players().filter(player =>
+            normalizeText(player.fullName).includes(needle) ||
             (digits.length > 0 && player.document.replace(/\D/g, '').includes(digits))
         );
         this.showSuggestions = this.matchingPlayers.length > 0;
     }
 
-    selectPlayer(player: Player) {
-        this.benefitForm.patchValue({ player: player.name });
+    selectPlayer(player: PlayerModel) {
+        this.benefitForm.patchValue({ player: player.fullName });
         this.matchingPlayers = [];
         this.showSuggestions = false;
     }
@@ -149,10 +170,10 @@ export class BecadosDescuentos implements OnDestroy {
         this.showSuggestions = false;
     }
 
-    // A benefit is current while today still falls inside its validity range
-    isActive(row: BenefitRow): boolean {
-        const today = new Date().toISOString().slice(0, 10);
-        return row.validFrom <= today && today <= row.validTo;
+    // Validity is resolved by the backend, with the same criteria as the badge:
+    // not deactivated and today inside the date range.
+    isActive(row: DiscountModel): boolean {
+        return row.isActive;
     }
 
     // ISO dates are shown the way they are read locally

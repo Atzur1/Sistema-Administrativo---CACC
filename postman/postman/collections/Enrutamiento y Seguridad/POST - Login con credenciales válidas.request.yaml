@@ -1,5 +1,5 @@
 $kind: http-request
-description: ""
+description: "Autenticación. Con credenciales correctas la API debe responder 200 y devolver un token JWT. El script posterior guarda ese token en la variable de entorno authToken, que reutilizan las requests que necesitan una sesión iniciada, así que esta request debe correrse antes que las demás de la colección."
 url: "{{baseUrl}}/api/Auth/login"
 method: POST
 body:

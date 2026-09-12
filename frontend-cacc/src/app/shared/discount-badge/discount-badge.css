@@ -1,0 +1,73 @@
+/* Purple on purpose: overdue states already use green and red, so the discount
+   has to read as a different category of information. */
+
+.discount-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid #c4b5fd;
+    border-radius: 999px;
+    background: #ede9fe;
+    color: #5b21b6;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    cursor: default;
+    vertical-align: middle;
+}
+
+.discount-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: #7c3aed;
+    flex-shrink: 0;
+}
+
+.discount-label {
+    letter-spacing: 0.01em;
+}
+
+.discount-tooltip {
+    position: absolute;
+    bottom: calc(100% + 0.45rem);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.35rem;
+    background: #312e81;
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+/* Bottom arrow of the bubble */
+.discount-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 0.3rem solid transparent;
+    border-top-color: #312e81;
+}
+
+.discount-badge:hover .discount-tooltip,
+.discount-badge:focus-visible .discount-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.discount-badge:focus-visible {
+    outline: 2px solid #7c3aed;
+    outline-offset: 2px;
+}

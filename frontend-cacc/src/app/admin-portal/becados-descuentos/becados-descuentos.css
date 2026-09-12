@@ -368,8 +368,12 @@
 
 /* ===== BENEFITS TABLE ===== */
 /* Only the table scrolls sideways if the viewport gets too narrow */
+/* overflow-x fuerza a recortar también en vertical, así que se reserva espacio
+   arriba para que el globo de la insignia de la primera fila no quede cortado. */
 .table-wrapper {
     overflow-x: auto;
+    padding-top: 34px;
+    margin-top: -34px;
 }
 
 .benefits-table {
@@ -444,6 +448,9 @@
 }
 
 .player-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-weight: 600;
     white-space: nowrap;
 }
@@ -550,4 +557,25 @@
         flex-wrap: wrap;
         row-gap: 10px;
     }
+}
+
+/* Neutral pill and avatar: the database has no column that classifies a benefit
+   as scholarship or discount, so the real discount type name is shown instead
+   of inventing that distinction in the front end. */
+.avatar-benefit {
+    background: #8b5cf6;
+}
+
+.type-benefit {
+    background: #f3eeff;
+    color: #8b5cf6;
+}
+
+/* Empty state, so nobody reads a blank table as a loading failure. */
+.panel-empty {
+    margin: 0;
+    padding: 1.25rem 0.25rem;
+    color: #64748b;
+    font-size: 0.8rem;
+    text-align: center;
 }
