@@ -261,7 +261,7 @@
     cursor: not-allowed;
 }
 
-/* Simulated confirmation: fades in, then fades out before being removed */
+/* Confirmation after a successful POST: fades in, then fades out before being removed */
 .form-feedback {
     grid-column: span 3;
     margin: 0;
@@ -277,6 +277,12 @@
 
 .form-feedback.is-leaving {
     opacity: 0;
+}
+
+/* Shown when the API rejects the scheduling (e.g. a non-retroactive date) */
+.form-feedback-error {
+    background: #fdecea;
+    color: #c0392b;
 }
 
 /* ===== MAIN GRID ===== */

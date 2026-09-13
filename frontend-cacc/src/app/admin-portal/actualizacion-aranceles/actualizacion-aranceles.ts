@@ -1,23 +1,14 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { TariffService } from '../../services/tariffs';
+import { TariffModel } from '../../models/TariffModel';
 
 Chart.register(...registerables);
 
-// One row in the "Historial y aranceles programados" table
-interface FeeRow {
-    id: number;
-    // 'male' renders the "Masculino" pill, 'female' the "Femenino" one
-    category: 'male' | 'female';
-    categoryLabel: string;
-    amount: string;
-    // Stored as ISO so the dates compare and sort directly
-    validFrom: string;
-    // Empty while the fee has no replacement scheduled after it
-    validTo: string;
-}
+type Branch = 'M' | 'F';
 
 @Component({
     selector: 'app-actualizacion-aranceles',
@@ -26,36 +17,31 @@ interface FeeRow {
     templateUrl: './actualizacion-aranceles.html',
     styleUrl: './actualizacion-aranceles.css',
 })
-export class ActualizacionAranceles implements OnDestroy {
+export class ActualizacionAranceles implements OnInit, OnDestroy {
 
-    // Header
-    headerMetrics = [
-        { value: '$85.000', label: 'Arancel masculino' },
-        { value: '$50.000', label: 'Arancel femenino' },
-        { value: 'En 15 días', label: 'Próximo cambio' },
-    ];
+    // Header: filled once the current tariffs are loaded
+    headerMetrics: { value: string; label: string }[] = [];
 
     // Scheduling form
     feeForm: FormGroup;
 
-    categories = ['Masculino', 'Femenino'];
+    branchOptions: { value: Branch; label: string }[] = [
+        { value: 'M', label: 'Masculino' },
+        { value: 'F', label: 'Femenino' },
+    ];
 
-    // Inline confirmation shown after a simulated submit
+    // Inline confirmation shown after a successful POST
     successMessage = '';
     successLeaving = false;
 
-    // Every fee ever set, newest first: past periods, the current one and the
-    // changes already scheduled ahead
-    feeRows: FeeRow[] = [
-        { id: 1, category: 'female', categoryLabel: 'Femenino', amount: '$58.000', validFrom: '2026-09-24', validTo: '' },
-        { id: 2, category: 'male', categoryLabel: 'Masculino', amount: '$92.000', validFrom: '2026-09-24', validTo: '' },
-        { id: 3, category: 'male', categoryLabel: 'Masculino', amount: '$85.000', validFrom: '2026-04-01', validTo: '2026-09-23' },
-        { id: 4, category: 'female', categoryLabel: 'Femenino', amount: '$50.000', validFrom: '2026-01-01', validTo: '2026-09-23' },
-        { id: 5, category: 'male', categoryLabel: 'Masculino', amount: '$70.000', validFrom: '2026-01-01', validTo: '2026-03-31' },
-        { id: 6, category: 'female', categoryLabel: 'Femenino', amount: '$42.000', validFrom: '2025-07-01', validTo: '2025-12-31' },
-        { id: 7, category: 'male', categoryLabel: 'Masculino', amount: '$58.000', validFrom: '2025-07-01', validTo: '2025-12-31' },
-        { id: 8, category: 'male', categoryLabel: 'Masculino', amount: '$45.000', validFrom: '2025-01-01', validTo: '2025-06-30' },
-    ];
+    // Inline error shown when the API rejects the scheduling (e.g. a date that
+    // does not come after the branch's current tariff)
+    submitError = '';
+
+    // Every tariff ever scheduled, both branches, newest first
+    feeRows: TariffModel[] = [];
+
+    loadError = '';
 
     // Bound to the date field so the native picker already blocks the past
     readonly today = new Date().toISOString().slice(0, 10);
@@ -139,14 +125,34 @@ export class ActualizacionAranceles implements OnDestroy {
     private fadeTimer?: ReturnType<typeof setTimeout>;
     private clearTimer?: ReturnType<typeof setTimeout>;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: FormBuilder, private tariffService: TariffService) {
         this.feeForm = this.fb.group({
-            category: ['', [Validators.required]],
+            branch: ['', [Validators.required]],
             amount: ['', [Validators.required, Validators.min(1)]],
             validFrom: ['', [Validators.required, this.notInThePastValidator]],
         });
+    }
 
-        this.feeChartData = this.buildChartData();
+    ngOnInit() {
+        this.loadTariffs();
+    }
+
+    // Pulls both the full history (table + chart) and the current tariffs
+    // (header) fresh from the API. Called on init and again after a
+    // successful schedule, so the screen never shows stale data.
+    private loadTariffs() {
+        this.loadError = '';
+
+        this.tariffService.getTariffHistory().subscribe({
+            next: (tariffs) => {
+                this.feeRows = tariffs;
+                this.feeChartData = this.buildChartData();
+                this.headerMetrics = this.buildHeaderMetrics(tariffs);
+            },
+            error: () => {
+                this.loadError = 'No se pudo cargar el historial de aranceles.';
+            },
+        });
     }
 
     // A fee can start today or later, never in a month already invoiced
@@ -164,22 +170,22 @@ export class ActualizacionAranceles implements OnDestroy {
         return control.hasError('pastDate') && (control.touched || control.dirty);
     }
 
-    // Series for both categories, from January up to the current month, priced
-    // with the fee that was in force on the first day of each month
+    // Series for both branches, from January up to the current month, priced
+    // with the tariff that was in force on the first day of each month
     private buildChartData(): ChartConfiguration<'line'>['data'] {
         const now = new Date();
         const year = now.getFullYear();
         const monthCount = now.getMonth() + 1;
 
-        const monthlyAmounts = (category: 'male' | 'female') =>
+        const monthlyAmounts = (branch: Branch) =>
             Array.from({ length: monthCount }, (_, index) => {
                 const reference = `${year}-${String(index + 1).padStart(2, '0')}-01`;
-                const row = this.feeRows.find(fee =>
-                    fee.category === category &&
-                    fee.validFrom <= reference &&
-                    (!fee.validTo || reference <= fee.validTo)
+                const row = this.feeRows.find(tariff =>
+                    tariff.branch === branch &&
+                    tariff.validFrom <= reference &&
+                    (!tariff.validTo || reference <= tariff.validTo)
                 );
-                return row ? this.parseAmount(row.amount) : null;
+                return row ? row.amount : null;
             });
 
         return {
@@ -187,7 +193,7 @@ export class ActualizacionAranceles implements OnDestroy {
             datasets: [
                 {
                     label: 'Masculino',
-                    data: monthlyAmounts('male'),
+                    data: monthlyAmounts('M'),
                     borderColor: '#3b82f6',
                     borderWidth: 2.5,
                     fill: false,
@@ -200,7 +206,7 @@ export class ActualizacionAranceles implements OnDestroy {
                 },
                 {
                     label: 'Femenino',
-                    data: monthlyAmounts('female'),
+                    data: monthlyAmounts('F'),
                     borderColor: '#8b5cf6',
                     borderWidth: 2.5,
                     fill: false,
@@ -215,9 +221,36 @@ export class ActualizacionAranceles implements OnDestroy {
         };
     }
 
-    // '$85.000' -> 85000
-    private parseAmount(amount: string): number {
-        return Number(amount.replace(/\D/g, ''));
+    // Header shows each branch's tariff in force today, plus the soonest
+    // upcoming change across both (if any is scheduled ahead)
+    private buildHeaderMetrics(tariffs: TariffModel[]): { value: string; label: string }[] {
+        const currentAmount = (branch: Branch) => {
+            const current = tariffs.find(tariff => tariff.branch === branch && tariff.validFrom <= this.today && tariff.isActive);
+            return current ? this.formatAmount(current.amount) : 'Sin arancel vigente';
+        };
+
+        const upcoming = tariffs
+            .filter(tariff => tariff.validFrom > this.today)
+            .sort((a, b) => a.validFrom.localeCompare(b.validFrom))[0];
+
+        const nextChangeValue = upcoming
+            ? this.daysUntil(upcoming.validFrom)
+            : 'Sin cambios programados';
+
+        return [
+            { value: currentAmount('M'), label: 'Arancel masculino' },
+            { value: currentAmount('F'), label: 'Arancel femenino' },
+            { value: nextChangeValue, label: 'Próximo cambio' },
+        ];
+    }
+
+    private daysUntil(isoDate: string): string {
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const days = Math.round((new Date(isoDate).getTime() - new Date(this.today).getTime()) / msPerDay);
+        if (days <= 0) {
+            return 'Hoy';
+        }
+        return days === 1 ? 'Mañana' : `En ${days} días`;
     }
 
     // 85000 -> '$85.000'
@@ -231,16 +264,15 @@ export class ActualizacionAranceles implements OnDestroy {
     }
 
     // 'current' while today falls inside the period, 'scheduled' before it
-    // starts, 'previous' once another fee has replaced it
-    status(row: FeeRow): 'current' | 'scheduled' | 'previous' {
-        const today = new Date().toISOString().slice(0, 10);
-        if (row.validFrom > today) {
+    // starts, 'previous' once another tariff has replaced it
+    status(row: TariffModel): 'current' | 'scheduled' | 'previous' {
+        if (row.validFrom > this.today) {
             return 'scheduled';
         }
-        return !row.validTo || today <= row.validTo ? 'current' : 'previous';
+        return !row.validTo || this.today <= row.validTo ? 'current' : 'previous';
     }
 
-    statusLabel(row: FeeRow): string {
+    statusLabel(row: TariffModel): string {
         switch (this.status(row)) {
             case 'current':
                 return 'Vigente';
@@ -252,8 +284,21 @@ export class ActualizacionAranceles implements OnDestroy {
     }
 
     // An open-ended period shows its state instead of an end date
-    validToLabel(row: FeeRow): string {
+    validToLabel(row: TariffModel): string {
         return row.validTo ? this.formatDate(row.validTo) : this.statusLabel(row);
+    }
+
+    // 'M' -> 'male' / 'F' -> 'female', to reuse the existing category-* pill styles
+    branchClass(branch: Branch): 'male' | 'female' {
+        return branch === 'M' ? 'male' : 'female';
+    }
+
+    branchLabel(branch: Branch): string {
+        return branch === 'M' ? 'Masculino' : 'Femenino';
+    }
+
+    formatRowAmount(row: TariffModel): string {
+        return this.formatAmount(row.amount);
     }
 
     // ISO dates are shown the way they are read locally
@@ -262,16 +307,37 @@ export class ActualizacionAranceles implements OnDestroy {
         return `${day}/${month}/${year}`;
     }
 
-    // No backend yet: the submit only simulates a successful scheduling
     onSubmit() {
         if (this.feeForm.invalid) {
             this.feeForm.markAllAsTouched();
             return;
         }
 
-        const category = this.feeForm.value.category;
-        this.feeForm.reset({ category: '', amount: '', validFrom: '' });
-        this.showConfirmation(`Nuevo arancel ${category} programado correctamente.`);
+        this.submitError = '';
+
+        const branch: Branch = this.feeForm.value.branch;
+        const amount = Number(this.feeForm.value.amount);
+        const validFrom: string = this.feeForm.value.validFrom;
+
+        this.tariffService.scheduleTariff({ branch, amount, validFrom }).subscribe({
+            next: () => {
+                this.feeForm.reset({ branch: '', amount: '', validFrom: '' });
+                this.showConfirmation(`Nuevo arancel ${this.branchLabel(branch)} programado correctamente.`);
+                this.loadTariffs();
+            },
+            error: (response) => {
+                this.submitError = this.extractErrorMessage(response);
+            },
+        });
+    }
+
+    // The API returns the validation message as a plain string body on 400
+    private extractErrorMessage(response: unknown): string {
+        const error = (response as { error?: unknown })?.error;
+        if (typeof error === 'string' && error.trim()) {
+            return error;
+        }
+        return 'No se pudo programar el nuevo arancel. Intentá nuevamente.';
     }
 
     // Shows the inline confirmation, fades it out and clears it after 3s
