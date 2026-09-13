@@ -33,6 +33,9 @@ builder.Services.AddScoped<DaoLibrary.PlayerDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.PaymentDao>(provider =>
     new DaoLibrary.PaymentDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 
+builder.Services.AddScoped<DaoLibrary.ITariffDao>(provider =>
+    new DaoLibrary.TariffDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
 // 4. NUEVO: Configuración de autenticación JWT
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
