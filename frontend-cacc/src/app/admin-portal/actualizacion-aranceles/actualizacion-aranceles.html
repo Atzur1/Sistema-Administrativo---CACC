@@ -47,11 +47,11 @@
     <form class="form-grid" [formGroup]="feeForm" (ngSubmit)="onSubmit()">
 
       <div class="field">
-        <label class="field-label" for="category">Categoría</label>
-        <select id="category" class="field-input" formControlName="category">
-          <option value="" disabled>Seleccionar categoría</option>
-          @for (category of categories; track category) {
-            <option [value]="category">{{ category }}</option>
+        <label class="field-label" for="branch">Rama</label>
+        <select id="branch" class="field-input" formControlName="branch">
+          <option value="" disabled>Seleccionar rama</option>
+          @for (option of branchOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
           }
         </select>
       </div>
@@ -82,6 +82,9 @@
       @if (successMessage) {
         <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
       }
+      @if (submitError) {
+        <p class="form-feedback form-feedback-error">{{ submitError }}</p>
+      }
     </form>
   </section>
 
@@ -99,7 +102,7 @@
         <table class="fees-table">
           <thead>
             <tr>
-              <th>Categoría</th>
+              <th>Rama</th>
               <th>Monto</th>
               <th>Vigente desde</th>
               <th>Vigente hasta</th>
@@ -107,14 +110,23 @@
             </tr>
           </thead>
           <tbody>
+            @if (loadError) {
+              <tr>
+                <td colspan="5" class="cell-muted">{{ loadError }}</td>
+              </tr>
+            } @else if (!feeRows.length) {
+              <tr>
+                <td colspan="5" class="cell-muted">Todavía no hay aranceles cargados.</td>
+              </tr>
+            }
             @for (row of feeRows; track row.id) {
               <tr>
                 <td>
-                  <span class="category-pill" [ngClass]="'category-' + row.category">
-                    {{ row.categoryLabel }}
+                  <span class="category-pill" [ngClass]="'category-' + branchClass(row.branch)">
+                    {{ branchLabel(row.branch) }}
                   </span>
                 </td>
-                <td class="cell-amount">{{ row.amount }}</td>
+                <td class="cell-amount">{{ formatRowAmount(row) }}</td>
                 <td class="cell-muted">{{ formatDate(row.validFrom) }}</td>
                 <td class="cell-muted">{{ validToLabel(row) }}</td>
                 <td>
