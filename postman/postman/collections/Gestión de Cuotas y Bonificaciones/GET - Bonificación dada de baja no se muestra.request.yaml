@@ -1,0 +1,9 @@
+$kind: http-request
+description: "HU-014, criterio de ocultamiento automático. Jugador 6 tiene estado_activo = 0 en JUGADORES_DESCUENTOS: la API no debe devolver su bonificación aunque la fecha siga vigente."
+url: "{{baseUrl}}/api/Players/6/discount"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 404 (bonificación dada de baja no se expone)\", function () {\n    pm.response.to.have.status(404);\n});"
+    language: text/javascript
+order: 1789148372903

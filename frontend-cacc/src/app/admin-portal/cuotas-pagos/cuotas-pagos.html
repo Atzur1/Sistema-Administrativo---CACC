@@ -18,7 +18,7 @@
     </div>
 
     <div class="header-metrics">
-      @for (metric of headerMetrics; track metric.label) {
+      @for (metric of headerMetrics(); track metric.label) {
         <div class="header-metric">
           <span class="header-metric-value">{{ metric.value }}</span>
           <span class="header-metric-label">{{ metric.label }}</span>
@@ -60,7 +60,10 @@
             @for (player of matchingPlayers; track player.id) {
               <li>
                 <button type="button" class="suggestion" (click)="selectPlayer(player)">
-                  <span class="suggestion-name">{{ player.name }}</span>
+                  <span class="suggestion-name">
+                    {{ player.fullName }}
+                    <app-discount-badge [discount]="getDiscount(player.id)" />
+                  </span>
                   <span class="suggestion-meta">DNI {{ player.document }} · {{ player.category }}</span>
                 </button>
               </li>
@@ -113,24 +116,33 @@
       <header class="panel-head">
         <span class="panel-dot dot-pending"></span>
         <h2 class="panel-title">Pendientes de cobro</h2>
-        <span class="panel-count">65</span>
+        <span class="panel-count">{{ pendingFees().length }}</span>
       </header>
 
       <ul class="row-list">
-        @for (row of pendingRows; track row.name) {
+        @for (fee of pendingFees(); track fee.id) {
           <li class="row">
-            <span class="row-avatar avatar-pending">{{ row.initials }}</span>
+            <span class="row-avatar avatar-pending">{{ initialsOf(fee.playerName) }}</span>
             <div class="row-identity">
-              <span class="row-name">{{ row.name }}</span>
-              <span class="row-meta">{{ row.category }}</span>
+              <span class="row-name">
+                <span class="row-name-text">{{ fee.playerName }}</span>
+                <app-discount-badge [discount]="getDiscount(fee.playerId)" />
+              </span>
+              <span class="row-meta">{{ fee.category }}</span>
             </div>
             <div class="row-figures">
-              <span class="row-amount amount-pending">{{ row.amount }}</span>
-              <span class="row-meta">{{ row.installments }}</span>
+              <span class="row-amount amount-pending">{{ formatAmount(fee.amount) }}</span>
+              <span class="row-meta">Vence {{ formatDate(fee.dueDate) }}</span>
             </div>
           </li>
         }
       </ul>
+
+      <!-- Monthly fee generation is not implemented yet, so no fee is ever in an
+           unpaid state. The panel says so instead of showing example rows. -->
+      @if (pendingLoaded() && pendingFees().length === 0) {
+        <p class="panel-empty">No hay cuotas pendientes registradas.</p>
+      }
     </article>
 
     <!-- Most recent payments -->
@@ -138,24 +150,31 @@
       <header class="panel-head">
         <span class="panel-dot dot-paid"></span>
         <h2 class="panel-title">Últimos pagos</h2>
-        <span class="panel-count">126</span>
+        <span class="panel-count">{{ latestPayments().length }}</span>
       </header>
 
       <ul class="row-list">
-        @for (row of paymentRows; track row.name) {
+        @for (payment of latestPayments(); track payment.id) {
           <li class="row">
-            <span class="row-avatar avatar-paid">{{ row.initials }}</span>
+            <span class="row-avatar avatar-paid">{{ initialsOf(payment.playerName) }}</span>
             <div class="row-identity">
-              <span class="row-name">{{ row.name }}</span>
-              <span class="row-meta">{{ row.method }}</span>
+              <span class="row-name">
+                <span class="row-name-text">{{ payment.playerName }}</span>
+                <app-discount-badge [discount]="getDiscount(payment.playerId)" />
+              </span>
+              <span class="row-meta">{{ payment.method }}</span>
             </div>
             <div class="row-figures">
-              <span class="row-amount amount-paid">{{ row.amount }}</span>
-              <span class="row-meta">{{ row.elapsed }}</span>
+              <span class="row-amount amount-paid">{{ formatAmount(payment.amount) }}</span>
+              <span class="row-meta">{{ formatDate(payment.paymentDate) }}</span>
             </div>
           </li>
         }
       </ul>
+
+      @if (latestLoaded() && latestPayments().length === 0) {
+        <p class="panel-empty">No hay pagos registrados.</p>
+      }
     </article>
   </section>
 </div>

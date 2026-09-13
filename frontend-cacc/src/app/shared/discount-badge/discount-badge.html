@@ -1,0 +1,8 @@
+<!-- Active discount badge. Renders nothing when there is no active benefit. -->
+@if (visible) {
+  <span class="discount-badge" tabindex="0" [attr.aria-label]="discount!.type + '. ' + tooltipText">
+    <span class="discount-dot"></span>
+    <span class="discount-label">{{ discount!.type }}</span>
+    <span class="discount-tooltip" role="tooltip">{{ tooltipText }}</span>
+  </span>
+}

@@ -1,0 +1,2 @@
+$kind: collection
+description: "HU-014. Pruebas de integración de los endpoints de bonificaciones de jugadores, usados por la grilla de tesorería y la tabla de Becados y Descuentos. Cubre el caso vigente, los dos criterios de ocultamiento automático (bonificación vencida y dada de baja), el jugador sin bonificación y la validación de id inválido. Requiere la API corriendo en {{baseUrl}} y los scripts database/V20260912_01__recrear_descuentos_identity.sql y database/seed_descuentos_prueba.sql ya ejecutados en ClubCamionerosPRUEBA."

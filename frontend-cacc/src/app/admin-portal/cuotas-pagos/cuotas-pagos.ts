@@ -1,48 +1,44 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
+import { DiscountService } from '../../services/discounts';
+import { DiscountModel } from '../../models/DiscountModel';
+import { PlayerService } from '../../services/players';
+import { PlayerModel } from '../../models/PlayerModel';
+import { PaymentService } from '../../services/payments';
+import { PaymentModel } from '../../models/PaymentModel';
+import { TreasuryMetricsModel } from '../../models/TreasuryMetricsModel';
+import { normalizeText } from '../../shared/normalize-text';
 
-// A player that can be picked in the payment form
-interface Player {
-    id: number;
-    name: string;
-    document: string;
-    category: string;
-}
-
-// One row in the "Pendientes de cobro" panel
-interface PendingRow {
-    initials: string;
-    name: string;
-    category: string;
-    amount: string;
-    installments: string;
-}
-
-// One row in the "Últimos pagos" panel
-interface PaymentRow {
-    initials: string;
-    name: string;
-    method: string;
-    amount: string;
-    elapsed: string;
+// One counter on the page header
+interface HeaderMetric {
+    value: string;
+    label: string;
 }
 
 @Component({
     selector: 'app-cuotas-pagos',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [CommonModule, ReactiveFormsModule, DiscountBadge],
     templateUrl: './cuotas-pagos.html',
     styleUrl: './cuotas-pagos.css',
 })
-export class CuotasPagos implements OnDestroy {
+export class CuotasPagos implements OnInit, OnDestroy {
 
-    // Header
-    headerMetrics = [
-        { value: '$4.2M', label: 'Recaudado 2026' },
-        { value: '126', label: 'Pagos del mes' },
-        { value: '65', label: 'Pendientes' },
-    ];
+    private static readonly LATEST_PAYMENTS_COUNT = 10;
+
+    // Minimum length before suggesting: below this, a single letter like "s"
+    // matches half the squad and the dropdown is more noise than help.
+    private static readonly MIN_SEARCH_LENGTH = 3;
+
+    // Header counters. They start as dashes so the screen never shows a made-up
+    // number while the request is still in flight.
+    headerMetrics = signal<HeaderMetric[]>([
+        { value: '—', label: 'Recaudado del año' },
+        { value: '—', label: 'Pagos del mes' },
+        { value: '—', label: 'Pendientes' },
+    ]);
 
     // Payment form
     paymentForm: FormGroup;
@@ -54,48 +50,43 @@ export class CuotasPagos implements OnDestroy {
 
     methods = ['Transferencia', 'Efectivo'];
 
-    // Squad the search field looks up — fictional demo data
-    private players: Player[] = [
-        { id: 1, name: 'Sánchez, Bautista D.', document: '48.221.107', category: 'Pt preAFA 2015' },
-        { id: 2, name: 'Correas, Juan V.', document: '48.310.564', category: 'Pt preAFA 2015' },
-        { id: 3, name: 'Guzmán, Tomás V.', document: '46.902.338', category: 'Pt AFA 2012' },
-        { id: 4, name: 'Aliendro, Brian E.', document: '46.115.720', category: 'Pt AFA 2011' },
-        { id: 5, name: 'Acosta, Ciro F.', document: '47.508.291', category: 'Pt AFA 2013' },
-        { id: 6, name: 'Baigorrí, Ángel A.', document: '47.664.183', category: 'Pt AFA 2013' },
-        { id: 7, name: 'López, Tobías A.', document: '46.740.955', category: 'Pt AFA 2012' },
-        { id: 8, name: 'Cuqueio, Juan C.', document: '45.988.402', category: 'Pt AFA 2010' },
-    ];
+    // Squad the lookup searches, loaded from the API on entry
+    private players = signal<PlayerModel[]>([]);
 
     // Suggestions shown under the search field
-    matchingPlayers: Player[] = [];
+    matchingPlayers: PlayerModel[] = [];
     showSuggestions = false;
 
     // Inline confirmation shown after a simulated submit
     successMessage = '';
     successLeaving = false;
 
-    // Pending fees, waiting to be collected
-    pendingRows: PendingRow[] = [
-        { initials: 'SB', name: 'Sánchez, Bautista D.', category: 'Pt preAFA 2015', amount: '$255.000', installments: '3 cuotas' },
-        { initials: 'CJ', name: 'Correas, Juan V.', category: 'Pt preAFA 2015', amount: '$255.000', installments: '3 cuotas' },
-        { initials: 'GT', name: 'Guzmán, Tomás V.', category: 'Pt AFA 2012', amount: '$85.000', installments: '1 cuota' },
-        { initials: 'AB', name: 'Aliendro, Brian E.', category: 'Pt AFA 2011', amount: '$85.000', installments: '1 cuota' },
-    ];
-
-    // Most recent payments registered in the system
-    paymentRows: PaymentRow[] = [
-        { initials: 'AC', name: 'Acosta, Ciro F.', method: 'Transferencia', amount: '$85.000', elapsed: 'Hace 5 min' },
-        { initials: 'BA', name: 'Baigorrí, Ángel A.', method: 'Efectivo', amount: '$85.000', elapsed: 'Hace 12 min' },
-        { initials: 'LT', name: 'López, Tobías A.', method: 'Efectivo', amount: '$85.000', elapsed: 'Hoy, 09:40' },
-        { initials: 'CJ', name: 'Cuqueio, Juan C.', method: 'Transferencia', amount: '$85.000', elapsed: 'Ayer, 18:20' },
-    ];
+    // Fees waiting to be collected and most recent payments, both from the API.
+    // Each list tracks whether its request already came back, so the template can
+    // tell "still loading" apart from "there is genuinely nothing to show".
+    pendingFees = signal<PaymentModel[]>([]);
+    pendingLoaded = signal(false);
+    latestPayments = signal<PaymentModel[]>([]);
+    latestLoaded = signal(false);
 
     // Timers for the confirmation message, cleared on destroy so leaving the
     // dashboard mid-animation never fires a callback on a dead component
     private fadeTimer?: ReturnType<typeof setTimeout>;
     private clearTimer?: ReturnType<typeof setTimeout>;
 
-    constructor(private fb: FormBuilder) {
+    // Active discounts indexed by player. Requested once on entry, and each row
+    // resolves its badge with a get on the map, so nothing is recomputed or
+    // re-filtered while the grid renders.
+    // Held in a signal so the grid repaints itself when the response arrives:
+    // assigning a plain field left the view stale.
+    private discounts = signal(new Map<number, DiscountModel>());
+
+    constructor(
+        private fb: FormBuilder,
+        private discountService: DiscountService,
+        private playerService: PlayerService,
+        private paymentService: PaymentService
+    ) {
         this.paymentForm = this.fb.group({
             player: ['', [Validators.required, this.knownPlayerValidator]],
             period: ['', [Validators.required]],
@@ -104,9 +95,75 @@ export class CuotasPagos implements OnDestroy {
         });
     }
 
+    ngOnInit() {
+        this.discountService.getDiscountMap().subscribe({
+            next: (discountMap) => this.discounts.set(discountMap),
+            // The grid is the main feature: if the discounts API fails it still
+            // renders, just without badges.
+            error: () => this.discounts.set(new Map<number, DiscountModel>()),
+        });
+
+        this.playerService.getPlayers().subscribe({
+            next: (players) => this.players.set(players),
+            error: () => this.players.set([]),
+        });
+
+        this.paymentService.getPendingFees().subscribe({
+            next: (fees) => {
+                this.pendingFees.set(fees);
+                this.pendingLoaded.set(true);
+            },
+            error: () => {
+                this.pendingFees.set([]);
+                this.pendingLoaded.set(true);
+            },
+        });
+
+        this.paymentService.getLatestPayments(CuotasPagos.LATEST_PAYMENTS_COUNT).subscribe({
+            next: (payments) => {
+                this.latestPayments.set(payments);
+                this.latestLoaded.set(true);
+            },
+            error: () => {
+                this.latestPayments.set([]);
+                this.latestLoaded.set(true);
+            },
+        });
+
+        this.paymentService.getTreasuryMetrics().subscribe({
+            next: (metrics) => this.headerMetrics.set(this.buildHeaderMetrics(metrics)),
+            // The dashes already state that the counters are unavailable
+            error: () => undefined,
+        });
+    }
+
+    // Returns null when the player has no active benefit and the badge is not
+    // drawn: that way it disappears on its own on expiry or deactivation.
+    getDiscount(playerId: number): DiscountModel | null {
+        return this.discounts().get(playerId) ?? null;
+    }
+
     ngOnDestroy() {
         clearTimeout(this.fadeTimer);
         clearTimeout(this.clearTimer);
+    }
+
+    initialsOf(fullName: string): string {
+        const [lastName = '', firstName = ''] = fullName.split(',').map(part => part.trim());
+        return ((lastName.charAt(0) || '') + (firstName.charAt(0) || '')).toUpperCase();
+    }
+
+    formatAmount(amount: number): string {
+        return '$' + amount.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+    }
+
+    // The backend sends ISO (yyyy-MM-dd) and the view shows it as read here
+    formatDate(isoDate: string | null): string {
+        if (isoDate === null) {
+            return 'Sin fecha';
+        }
+        const [year, month, day] = isoDate.split('-');
+        return day + '/' + month + '/' + year;
     }
 
     // The typed text must resolve to a real player, not just be non-empty
@@ -118,15 +175,15 @@ export class CuotasPagos implements OnDestroy {
         return this.findPlayer(value) ? null : { unknownPlayer: true };
     };
 
-    private findPlayer(value: string): Player | undefined {
-        const needle = value.toLowerCase();
-        return this.players.find(player => player.name.toLowerCase() === needle);
+    private findPlayer(value: string): PlayerModel | undefined {
+        const needle = normalizeText(value);
+        return this.players().find(player => normalizeText(player.fullName) === needle);
     }
 
     // One unified field: the same term is matched against name and document
     onPlayerSearch(term: string) {
-        const needle = term.trim().toLowerCase();
-        if (!needle) {
+        const needle = normalizeText(term.trim());
+        if (needle.length < CuotasPagos.MIN_SEARCH_LENGTH) {
             this.matchingPlayers = [];
             this.showSuggestions = false;
             return;
@@ -134,15 +191,15 @@ export class CuotasPagos implements OnDestroy {
 
         // Digits are compared without dots so "48221" also finds "48.221.107"
         const digits = needle.replace(/\D/g, '');
-        this.matchingPlayers = this.players.filter(player =>
-            player.name.toLowerCase().includes(needle) ||
+        this.matchingPlayers = this.players().filter(player =>
+            normalizeText(player.fullName).includes(needle) ||
             (digits.length > 0 && player.document.replace(/\D/g, '').includes(digits))
         );
         this.showSuggestions = this.matchingPlayers.length > 0;
     }
 
-    selectPlayer(player: Player) {
-        this.paymentForm.patchValue({ player: player.name });
+    selectPlayer(player: PlayerModel) {
+        this.paymentForm.patchValue({ player: player.fullName });
         this.matchingPlayers = [];
         this.showSuggestions = false;
     }
@@ -162,7 +219,15 @@ export class CuotasPagos implements OnDestroy {
         this.paymentForm.reset({ player: '', period: '', amount: '', method: '' });
         this.matchingPlayers = [];
         this.showSuggestions = false;
-        this.showConfirmation(`Pago de ${playerName} registrado correctamente.`);
+        this.showConfirmation('Pago de ' + playerName + ' registrado correctamente.');
+    }
+
+    private buildHeaderMetrics(metrics: TreasuryMetricsModel): HeaderMetric[] {
+        return [
+            { value: this.formatAmount(metrics.collectedThisYear), label: 'Recaudado del año' },
+            { value: metrics.paymentsThisMonth.toString(), label: 'Pagos del mes' },
+            { value: metrics.pendingCount.toString(), label: 'Pendientes' },
+        ];
     }
 
     // Shows the inline confirmation, fades it out and clears it after 3s

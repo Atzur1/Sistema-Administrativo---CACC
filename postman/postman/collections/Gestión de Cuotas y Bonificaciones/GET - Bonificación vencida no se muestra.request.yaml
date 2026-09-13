@@ -1,0 +1,9 @@
+$kind: http-request
+description: "HU-014, criterio de ocultamiento automático. Jugador 5 tiene una bonificación con fecha_fin en 2025 (ya vencida): la API no debe devolverla."
+url: "{{baseUrl}}/api/Players/5/discount"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 404 (bonificación vencida no se expone)\", function () {\n    pm.response.to.have.status(404);\n});"
+    language: text/javascript
+order: 1789148372902

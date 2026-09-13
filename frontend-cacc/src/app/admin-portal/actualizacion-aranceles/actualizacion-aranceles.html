@@ -1,0 +1,147 @@
+<!-- Actualización de Aranceles dashboard: header stamp, scheduling form, fee history and the non-retroactive rule -->
+<div class="dashboard">
+
+  <!-- ===== HEADER ===== -->
+  <header class="page-header">
+    <span class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        <polyline points="17 6 23 6 23 12"></polyline>
+      </svg>
+    </span>
+
+    <div class="header-text">
+      <h1 class="header-title">Actualización de Aranceles</h1>
+      <span class="header-subtitle">Definí y programá los valores de cuota del club</span>
+    </div>
+
+    <div class="header-metrics">
+      @for (metric of headerMetrics; track metric.label) {
+        <div class="header-metric">
+          <span class="header-metric-value">{{ metric.value }}</span>
+          <span class="header-metric-label">{{ metric.label }}</span>
+        </div>
+      }
+    </div>
+  </header>
+
+  <div class="header-divider"></div>
+
+  <!-- ===== SCHEDULING FORM ===== -->
+  <section class="form-panel">
+    <header class="form-head">
+      <span class="form-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14"></path>
+          <path d="M5 12h14"></path>
+        </svg>
+      </span>
+      <div class="form-head-text">
+        <h2 class="form-title">Programar nuevo arancel</h2>
+        <span class="form-subtitle">Definí el próximo valor de cuota. Los cambios no son retroactivos: solo aplican a los meses posteriores a su entrada en vigencia.</span>
+      </div>
+    </header>
+
+    <form class="form-grid" [formGroup]="feeForm" (ngSubmit)="onSubmit()">
+
+      <div class="field">
+        <label class="field-label" for="category">Categoría</label>
+        <select id="category" class="field-input" formControlName="category">
+          <option value="" disabled>Seleccionar categoría</option>
+          @for (category of categories; track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="amount">Nuevo monto</label>
+        <input id="amount" type="number" class="field-input" formControlName="amount"
+               placeholder="$92.000" min="1" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="validFrom">Entra en vigencia desde</label>
+        <!-- [min] blocks past dates in the native picker; the form validates it again -->
+        <input id="validFrom" type="date" class="field-input" formControlName="validFrom"
+               [min]="today" />
+
+        @if (validFromHasPastError) {
+          <span class="field-error">No se pueden programar fechas anteriores a hoy</span>
+        } @else {
+          <span class="field-hint">Podés elegir el mes actual o una fecha futura</span>
+        }
+      </div>
+
+      <button type="submit" class="submit-button" [disabled]="feeForm.invalid">
+        Programar actualización
+      </button>
+
+      @if (successMessage) {
+        <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
+      }
+    </form>
+  </section>
+
+  <!-- ===== MAIN GRID ===== -->
+  <section class="main-grid">
+
+    <!-- Every fee change, newest first, both categories in a single table -->
+    <article class="panel panel-history">
+      <header class="panel-head">
+        <h2 class="panel-title">Historial y aranceles programados</h2>
+        <span class="panel-subtitle">Todos los cambios de cuota, del más reciente al más antiguo</span>
+      </header>
+
+      <div class="table-wrapper">
+        <table class="fees-table">
+          <thead>
+            <tr>
+              <th>Categoría</th>
+              <th>Monto</th>
+              <th>Vigente desde</th>
+              <th>Vigente hasta</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of feeRows; track row.id) {
+              <tr>
+                <td>
+                  <span class="category-pill" [ngClass]="'category-' + row.category">
+                    {{ row.categoryLabel }}
+                  </span>
+                </td>
+                <td class="cell-amount">{{ row.amount }}</td>
+                <td class="cell-muted">{{ formatDate(row.validFrom) }}</td>
+                <td class="cell-muted">{{ validToLabel(row) }}</td>
+                <td>
+                  <span class="status-pill" [ngClass]="'status-' + status(row)">
+                    {{ statusLabel(row) }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <!-- Both series over the season, read off the same history as the table -->
+    <article class="panel panel-evolution">
+      <header class="panel-head">
+        <h2 class="panel-title">Evolución de aranceles</h2>
+        <span class="panel-subtitle">Comparativa masculino vs femenino — temporada 2026</span>
+      </header>
+
+      <div class="evolution-canvas">
+        <canvas baseChart
+                type="line"
+                [data]="feeChartData"
+                [options]="feeChartOptions"></canvas>
+      </div>
+    </article>
+  </section>
+</div>
