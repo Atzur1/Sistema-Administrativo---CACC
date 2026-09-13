@@ -10,6 +10,9 @@ public class PaymentResponseDTO
     public decimal Amount { get; set; }
     public string? PaymentDate { get; set; }
     public string? DueDate { get; set; }
+    public string? Period { get; set; }
     public string Method { get; set; } = "";
     public bool IsPaid { get; set; }
+    public string? Reference { get; set; }
+    public string? RegisteredAt { get; set; }
 }
