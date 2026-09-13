@@ -73,11 +73,20 @@
       </div>
 
       <div class="field">
-        <label class="field-label" for="period">Período</label>
-        <select id="period" class="field-input" formControlName="period">
-          <option value="" disabled>Seleccionar mes</option>
-          @for (period of periods; track period) {
-            <option [value]="period">{{ period }}</option>
+        <label class="field-label" for="periodMonth">Período</label>
+        <select id="periodMonth" class="field-input" formControlName="periodMonth">
+          <option [ngValue]="''" disabled>Seleccionar mes</option>
+          @for (month of months; track month.value) {
+            <option [ngValue]="month.value">{{ month.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="periodYear">Año</label>
+        <select id="periodYear" class="field-input" formControlName="periodYear">
+          @for (year of years; track year) {
+            <option [ngValue]="year">{{ year }}</option>
           }
         </select>
       </div>
@@ -88,23 +97,33 @@
                placeholder="$85.000" min="1" />
       </div>
 
+      <!-- Required before confirming: the payment method is recorded and cannot be changed later -->
       <div class="field">
         <label class="field-label" for="method">Método</label>
         <select id="method" class="field-input" formControlName="method">
           <option value="" disabled>Seleccionar método</option>
-          @for (method of methods; track method) {
-            <option [value]="method">{{ method }}</option>
+          @for (method of methods; track method.value) {
+            <option [value]="method.value">{{ method.label }}</option>
           }
         </select>
       </div>
 
-      <button type="submit" class="submit-button" [disabled]="paymentForm.invalid">
-        Registrar pago
-      </button>
+      <div class="field">
+        <label class="field-label" for="reference">Comprobante / Referencia</label>
+        <input id="reference" type="text" class="field-input" formControlName="reference"
+               [placeholder]="isTransfer() ? 'Opcional' : 'Solo transferencia'"
+               maxlength="50" autocomplete="off" />
+      </div>
 
-      @if (successMessage) {
-        <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
+      @if (paymentForm.hasError('periodAlreadyPaid')) {
+        <p class="form-error">
+          La cuota de {{ selectedPeriodLabel() }} ya está abonada para este jugador.
+        </p>
       }
+
+      <button type="submit" class="submit-button" [disabled]="paymentForm.invalid || submitting">
+        {{ submitting ? 'Registrando...' : 'Confirmar pago' }}
+      </button>
     </form>
   </section>
 
@@ -162,11 +181,15 @@
                 <span class="row-name-text">{{ payment.playerName }}</span>
                 <app-discount-badge [discount]="getDiscount(payment.playerId)" />
               </span>
-              <span class="row-meta">{{ payment.method }}</span>
+              <!-- Method, the period the fee covers and the bank reference, when there is one -->
+              <span class="row-meta">
+                {{ methodLabel(payment.method) }}@if (payment.period) { · {{ formatPeriod(payment.period) }} }@if (payment.reference) { · Ref. {{ payment.reference }} }
+              </span>
             </div>
             <div class="row-figures">
               <span class="row-amount amount-paid">{{ formatAmount(payment.amount) }}</span>
-              <span class="row-meta">{{ formatDate(payment.paymentDate) }}</span>
+              <!-- The day the payment was collected, not the period it covers -->
+              <span class="row-meta">Cobrado el {{ formatDate(payment.paymentDate) }}</span>
             </div>
           </li>
         }
@@ -177,4 +200,12 @@
       }
     </article>
   </section>
+
+  <!-- Result of registering a payment -->
+  @if (toastMessage) {
+    <div class="toast" [class.toast-error]="toastKind === 'error'" [class.is-leaving]="toastLeaving"
+         role="status" aria-live="polite">
+      {{ toastMessage }}
+    </div>
+  }
 </div>
