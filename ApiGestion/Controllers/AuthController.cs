@@ -33,7 +33,7 @@ namespace ApiGestion.Controllers
                 if (usuarioEncontrado != null)
                 {
                     // Generamos el token JWT con el rol adentro
-                    string token = GenerarToken(usuarioEncontrado.Email, usuarioEncontrado.IdRol);
+                    string token = GenerarToken(usuarioEncontrado.IdUsuario, usuarioEncontrado.Email, usuarioEncontrado.IdRol);
 
                     return Ok(new {
                         mensaje = "¡Bienvenido al Portal Administrativo del CACC!",
@@ -52,10 +52,12 @@ namespace ApiGestion.Controllers
             }
         }
 
-        private string GenerarToken(string email, int idRol)
+        private string GenerarToken(int idUsuario, string email, int idRol)
         {
             var claims = new[]
             {
+                // The user id lets the API record who registered each payment (HU-015)
+                new Claim(ClaimTypes.NameIdentifier, idUsuario.ToString()),
                 new Claim(ClaimTypes.Email, email),
                 new Claim(ClaimTypes.Role, idRol.ToString())
             };

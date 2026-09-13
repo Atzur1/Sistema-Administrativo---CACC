@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PaymentModel } from '../models/PaymentModel';
+import { PaymentRequestModel } from '../models/PaymentRequestModel';
 import { TreasuryMetricsModel } from '../models/TreasuryMetricsModel';
 
 @Injectable({
@@ -20,7 +21,15 @@ export class PaymentService {
         return this.http.get<PaymentModel[]>(`${this.API_URL}/payments/pending`);
     }
 
+    getPaymentsByPlayer(playerId: number): Observable<PaymentModel[]> {
+        return this.http.get<PaymentModel[]>(`${this.API_URL}/payments/player/${playerId}`);
+    }
+
     getTreasuryMetrics(): Observable<TreasuryMetricsModel> {
         return this.http.get<TreasuryMetricsModel>(`${this.API_URL}/payments/metrics`);
+    }
+
+    createPayment(request: PaymentRequestModel): Observable<PaymentModel> {
+        return this.http.post<PaymentModel>(`${this.API_URL}/payments`, request);
     }
 }

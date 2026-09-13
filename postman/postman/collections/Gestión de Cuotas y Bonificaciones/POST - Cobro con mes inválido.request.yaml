@@ -1,0 +1,15 @@
+$kind: http-request
+description: "HU-016. El período debe tener un mes entre 1 y 12. Un cobro con el mes 13 debe rechazarse con 400 y el error debe señalar el campo PeriodMonth."
+url: "{{baseUrl}}/api/Payments"
+method: POST
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+body:
+  type: json
+  content: "{\n    \"playerId\": 577,\n    \"periodYear\": 2026,\n    \"periodMonth\": 13,\n    \"amount\": 85000,\n    \"method\": \"efectivo\"\n}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 400\", function () {\n    pm.response.to.have.status(400);\n});\n\npm.test(\"El error señala el mes del período\", function () {\n    pm.expect(pm.response.json().errors).to.have.property(\"PeriodMonth\");\n});"
+    language: text/javascript
+order: 1789148380007

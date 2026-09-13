@@ -1,0 +1,15 @@
+$kind: http-request
+description: "HU-016. Un cobro para un jugador que no existe (id 999999) debe rechazarse con 400 antes de llegar a la base."
+url: "{{baseUrl}}/api/Payments"
+method: POST
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+body:
+  type: json
+  content: "{\n    \"playerId\": 999999,\n    \"periodYear\": 2026,\n    \"periodMonth\": 1,\n    \"amount\": 85000,\n    \"method\": \"efectivo\"\n}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 400\", function () {\n    pm.response.to.have.status(400);\n});\n\npm.test(\"Informa que el jugador no existe\", function () {\n    pm.expect(pm.response.text()).to.include(\"No player exists\");\n});"
+    language: text/javascript
+order: 1789148380008
