@@ -1,0 +1,15 @@
+$kind: http-request
+description: "HU-015, selección obligatoria del método de pago. Un cobro con el método vacío debe rechazarse con 400 y el error debe señalar el campo Method."
+url: "{{baseUrl}}/api/Payments"
+method: POST
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+body:
+  type: json
+  content: "{\n    \"playerId\": 577,\n    \"periodYear\": 2026,\n    \"periodMonth\": 1,\n    \"amount\": 85000,\n    \"method\": \"\"\n}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 400\", function () {\n    pm.response.to.have.status(400);\n});\n\npm.test(\"El error señala el método de pago\", function () {\n    pm.expect(pm.response.json().errors).to.have.property(\"Method\");\n});"
+    language: text/javascript
+order: 1789148380004
