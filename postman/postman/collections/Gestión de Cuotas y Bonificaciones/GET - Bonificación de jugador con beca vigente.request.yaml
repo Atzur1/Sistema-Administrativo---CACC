@@ -1,0 +1,9 @@
+$kind: http-request
+description: "HU-014. Jugador 1 tiene una bonificación \"Becado 100%\" vigente en los datos de prueba (database/seed_descuentos_prueba.sql)."
+url: "{{baseUrl}}/api/Players/1/discount"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"La bonificación está vigente\", function () {\n    pm.expect(pm.response.json().isActive).to.be.true;\n});\n\npm.test(\"El tipo es Becado 100%\", function () {\n    pm.expect(pm.response.json().type).to.eql(\"Becado 100%\");\n});"
+    language: text/javascript
+order: 1789148372901

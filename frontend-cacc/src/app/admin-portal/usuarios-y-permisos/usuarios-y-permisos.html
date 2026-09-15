@@ -1,2 +1,145 @@
-<h1>Usuarios y Permisos</h1>
-<p>Contenido del dashboard de Usuarios y Permisos.</p>
+<!-- Usuarios y Permisos dashboard: header stamp, users table and role distribution -->
+<div class="dashboard">
+
+  <!-- ===== HEADER ===== -->
+  <header class="page-header">
+    <span class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+    </span>
+
+    <div class="header-text">
+      <h1 class="header-title">Usuarios y Permisos</h1>
+      <span class="header-subtitle">Quién tiene acceso al sistema y con qué rol</span>
+    </div>
+
+    <div class="header-metrics">
+      @for (metric of headerMetrics; track metric.label) {
+        <div class="header-metric">
+          <span class="header-metric-value">{{ metric.value }}</span>
+          <span class="header-metric-label">{{ metric.label }}</span>
+        </div>
+      }
+    </div>
+  </header>
+
+  <div class="header-divider"></div>
+
+  <!-- ===== MAIN GRID ===== -->
+  <section class="main-grid">
+
+    <!-- Registered accounts -->
+    <article class="panel panel-users">
+      <header class="panel-head">
+        <h2 class="panel-title">Listado de usuarios</h2>
+        <span class="panel-subtitle">Todos los accesos registrados en el sistema</span>
+      </header>
+
+      <div class="table-wrapper">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Última actividad</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users; track user.email) {
+              <tr>
+                <td>
+                  <div class="cell-user">
+                    <span class="user-avatar" [ngClass]="'avatar-' + user.role">
+                      {{ user.initials }}
+                    </span>
+                    <div class="user-identity">
+                      <span class="user-name">{{ user.name }}</span>
+                      <span class="user-email">{{ user.email }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="role-pill" [ngClass]="'role-' + user.role">{{ user.roleLabel }}</span>
+                </td>
+                <td>
+                  <span class="status">
+                    <span class="status-dot" [class.status-off]="!user.active"></span>
+                    {{ user.statusLabel }}
+                  </span>
+                </td>
+                <td class="cell-muted">{{ user.lastActivity }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <!-- How many users hold each role -->
+    <article class="panel panel-roles">
+      <header class="panel-head">
+        <h2 class="panel-title">Distribución por rol</h2>
+        <span class="panel-subtitle">Cuántos usuarios hay de cada tipo</span>
+      </header>
+
+      <div class="roles-list">
+        @for (entry of roleDistribution; track entry.role; let i = $index) {
+          <div class="role-item" [style.animation-delay.ms]="320 + i * 80">
+
+            <span class="role-icon" [ngClass]="'icon-' + entry.role">
+              @switch (entry.role) {
+                @case ('admin') {
+                  <!-- Shield -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                }
+                @case ('user') {
+                  <!-- Person -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                }
+                @case ('teacher') {
+                  <!-- Graduation cap -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10 12 5 2 10l10 5 10-5z"></path>
+                    <path d="M6 12v5c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-5"></path>
+                  </svg>
+                }
+                @default {
+                  <!-- Team -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                }
+              }
+            </span>
+
+            <div class="role-text">
+              <span class="role-name">{{ entry.label }}</span>
+              <span class="role-description">{{ entry.description }}</span>
+            </div>
+
+            <span class="role-count">{{ entry.count }}</span>
+          </div>
+        }
+      </div>
+    </article>
+
+  </section>
+</div>

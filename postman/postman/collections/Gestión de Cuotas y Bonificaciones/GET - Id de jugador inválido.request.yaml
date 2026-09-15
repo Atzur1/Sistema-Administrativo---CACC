@@ -1,0 +1,9 @@
+$kind: http-request
+description: "HU-014. Un id de jugador menor o igual a cero es una petición mal formada, la API debe rechazarla antes de consultar la base."
+url: "{{baseUrl}}/api/Players/0/discount"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 400\", function () {\n    pm.response.to.have.status(400);\n});"
+    language: text/javascript
+order: 1789148372904
