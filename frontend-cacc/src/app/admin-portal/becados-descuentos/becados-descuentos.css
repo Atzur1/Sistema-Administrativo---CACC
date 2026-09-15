@@ -181,6 +181,22 @@
     gap: 12px;
 }
 
+/* Since HU-011 the panel only looks the player up: the benefit itself is filled
+   in the popup, so the row is just the search field and the button that opens
+   it. */
+.lookup-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+}
+
+.lookup-grid .submit-button {
+    grid-column: auto;
+    padding: 9px 18px;
+    white-space: nowrap;
+}
+
 .field {
     display: flex;
     flex-direction: column;
@@ -303,10 +319,10 @@
     cursor: not-allowed;
 }
 
-/* Simulated confirmation: fades in, then fades out before being removed */
+/* Confirmation of a persisted operation: fades in, then fades out before being
+   removed. It only shows after the API answered, never on submit. */
 .form-feedback {
-    grid-column: span 5;
-    margin: 0;
+    margin: 12px 0 0;
     padding: 9px 11px;
     background: #e7f4ea;
     border-radius: 9px;
@@ -578,4 +594,325 @@
     color: #64748b;
     font-size: 0.8rem;
     text-align: center;
+}
+
+/* ===== ROW ACTION ===== */
+.row-action {
+    padding: 5px 12px;
+    background: #ffffff;
+    border: 1px solid #00a651;
+    border-radius: 7px;
+    color: #00a651;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.row-action:hover {
+    background: #00a651;
+    color: #ffffff;
+}
+
+/* ===== BENEFIT POPUP (HU-011) =====
+   Sits above the dashboard. The backdrop closes it on click; the panel stops the
+   propagation so clicking inside never dismisses a half filled form. */
+.dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(17, 24, 20, 0.45);
+    backdrop-filter: blur(2px);
+    animation: dialogFade 0.18s ease both;
+}
+
+.dialog {
+    width: 100%;
+    max-width: 460px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    padding: 18px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 2px solid #00a651;
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+    animation: dialogRise 0.22s ease both;
+}
+
+@keyframes dialogFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes dialogRise {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dialog-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.dialog-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.dialog-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #000000;
+}
+
+.dialog-subtitle {
+    font-size: 12px;
+    color: #555a55;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dialog-close {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #e4e7e4;
+    border-radius: 8px;
+    color: #555a55;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dialog-close svg {
+    width: 14px;
+    height: 14px;
+}
+
+.dialog-close:hover {
+    background: #f4f6f4;
+    color: #000000;
+}
+
+/* ===== POPUP MESSAGES ===== */
+.dialog-error,
+.dialog-form-error {
+    margin: 0 0 12px;
+    padding: 9px 11px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 9px;
+    font-size: 12px;
+    color: #b91c1c;
+}
+
+.dialog-form-error {
+    margin: 4px 0 0;
+}
+
+.dialog-loading {
+    margin: 0;
+    padding: 18px 0;
+    text-align: center;
+    font-size: 12px;
+    color: #555a55;
+}
+
+.dialog-confirm {
+    margin: 0 0 16px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #000000;
+}
+
+/* ===== ACTIVE BENEFIT CARD ===== */
+.benefit-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    background: #f8faf8;
+    border: 1px solid #e4e7e4;
+    border-radius: 11px;
+}
+
+.benefit-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+    margin: 0;
+}
+
+.benefit-detail dt {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+}
+
+.benefit-detail dd {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: #000000;
+}
+
+.benefit-detail .benefit-amount {
+    font-size: 17px;
+    font-weight: 700;
+    color: #00a651;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Assigned but outside its date window: the slot is taken, so it has to be
+   explained instead of just looking like an ordinary active benefit. */
+.benefit-warning {
+    margin: 0;
+    padding: 8px 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    font-size: 11.5px;
+    color: #92400e;
+}
+
+/* ===== POPUP FORM ===== */
+.dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.field-hint {
+    font-size: 10.5px;
+    color: #555a55;
+}
+
+.field-hint-error {
+    color: #b91c1c;
+}
+
+/* Percentage and amount fields carry their unit inside the control */
+.field-affix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.field-affix .field-input {
+    padding-right: 30px;
+}
+
+.field-affix-label {
+    position: absolute;
+    right: 11px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555a55;
+    pointer-events: none;
+}
+
+.field-affix-left {
+    right: auto;
+    left: 11px;
+}
+
+.field-affix .field-affix-left ~ .field-input,
+.field-affix:has(.field-affix-left) .field-input {
+    padding-left: 24px;
+    padding-right: 11px;
+}
+
+/* ===== POPUP ACTIONS ===== */
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 16px;
+}
+
+.button-primary,
+.button-ghost,
+.button-danger {
+    padding: 9px 16px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+}
+
+.button-primary {
+    background: #00a651;
+    border: none;
+    color: #ffffff;
+}
+
+.button-primary:hover:not(:disabled) {
+    background: #009148;
+}
+
+.button-ghost {
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    color: #555a55;
+}
+
+.button-ghost:hover:not(:disabled) {
+    background: #f4f6f4;
+    color: #000000;
+}
+
+.button-danger {
+    background: #dc2626;
+    border: none;
+    color: #ffffff;
+}
+
+.button-danger:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.button-primary:disabled,
+.button-ghost:disabled,
+.button-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== NARROW SCREENS ===== */
+@media (max-width: 640px) {
+    .lookup-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .benefit-detail {
+        grid-template-columns: 1fr;
+    }
+
+    .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .dialog-actions button {
+        width: 100%;
+    }
 }

@@ -1,4 +1,5 @@
-<!-- Becados y Descuentos dashboard: header stamp, assignment form and granted benefits table -->
+<!-- Becados y Descuentos dashboard: header stamp, player lookup, granted benefits
+     table and the benefit popup (HU-011) -->
 <div class="dashboard">
 
   <!-- ===== HEADER ===== -->
@@ -28,7 +29,7 @@
 
   <div class="header-divider"></div>
 
-  <!-- ===== ASSIGNMENT FORM ===== -->
+  <!-- ===== PLAYER LOOKUP ===== -->
   <section class="form-panel">
     <header class="form-head">
       <span class="form-icon">
@@ -39,12 +40,12 @@
         </svg>
       </span>
       <div class="form-head-text">
-        <h2 class="form-title">Asignar beneficio</h2>
-        <span class="form-subtitle">Otorgá una beca o descuento a un jugador · acción reservada al Administrador</span>
+        <h2 class="form-title">Asignar bonificación</h2>
+        <span class="form-subtitle">Buscá al jugador y otorgale una beca o descuento · acción reservada al Administrador</span>
       </div>
     </header>
 
-    <form class="form-grid" [formGroup]="benefitForm" (ngSubmit)="onSubmit()">
+    <form class="lookup-grid" [formGroup]="lookupForm" (ngSubmit)="openDialogForSelectedPlayer()">
 
       <!-- Single unified lookup: matches both name and document number -->
       <div class="field field-player">
@@ -68,41 +69,14 @@
         }
       </div>
 
-      <div class="field">
-        <label class="field-label" for="type">Tipo de beneficio</label>
-        <select id="type" class="field-input" formControlName="type">
-          <option value="" disabled>Seleccionar tipo</option>
-          @for (type of benefitTypes; track type) {
-            <option [value]="type">{{ type }}</option>
-          }
-        </select>
-      </div>
-
-      <!-- Free text on purpose: the value can be a percentage or a fixed amount -->
-      <div class="field">
-        <label class="field-label" for="benefit">Monto o porcentaje</label>
-        <input id="benefit" type="text" class="field-input" formControlName="benefit"
-               placeholder="50% o $30.000" autocomplete="off" />
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="validFrom">Vigente desde</label>
-        <input id="validFrom" type="date" class="field-input" formControlName="validFrom" />
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="validTo">Vigente hasta</label>
-        <input id="validTo" type="date" class="field-input" formControlName="validTo" />
-      </div>
-
-      <button type="submit" class="submit-button" [disabled]="benefitForm.invalid">
-        Asignar beneficio
+      <button type="submit" class="submit-button" [disabled]="selectedPlayer === null">
+        Asignar Bonificación
       </button>
-
-      @if (successMessage) {
-        <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
-      }
     </form>
+
+    @if (successMessage) {
+      <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
+    }
   </section>
 
   <!-- ===== GRANTED BENEFITS ===== -->
@@ -118,11 +92,12 @@
           <thead>
             <tr>
               <th>Jugador</th>
-              <th>Tipo</th>
+              <th>Motivo</th>
               <th>Beneficio</th>
               <th>Vigente desde</th>
               <th>Vigente hasta</th>
               <th>Estado</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -145,13 +120,18 @@
                 <td>
                   <span class="type-pill type-benefit">{{ row.type }}</span>
                 </td>
-                <td class="cell-benefit">{{ row.percentage }}%</td>
+                <td class="cell-benefit">{{ benefitValueOf(row) }}</td>
                 <td class="cell-muted">{{ formatDate(row.startDate) }}</td>
                 <td class="cell-muted">{{ formatDate(row.endDate) }}</td>
                 <td>
                   <span class="status-pill" [ngClass]="isActive(row) ? 'status-active' : 'status-expired'">
                     {{ isActive(row) ? 'Vigente' : 'No vigente' }}
                   </span>
+                </td>
+                <td>
+                  <button type="button" class="row-action" (click)="openDialogForRow(row)">
+                    Gestionar
+                  </button>
                 </td>
               </tr>
             }
@@ -165,3 +145,188 @@
     </article>
   </section>
 </div>
+
+<!-- ===== BENEFIT POPUP (HU-011) =====
+     Opens on top of the dashboard. It always asks the API what the player holds
+     before deciding whether to show the form or the active benefit, so a second
+     benefit can never be offered for a player who already has one. -->
+@if (dialogOpen()) {
+  <div class="dialog-backdrop" (click)="closeDialog()">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"
+         (click)="$event.stopPropagation()">
+
+      <header class="dialog-head">
+        <div class="dialog-head-text">
+          <h2 class="dialog-title" id="dialogTitle">
+            @switch (dialogView()) {
+              @case ('active') { Bonificación activa }
+              @case ('confirmCancel') { Cancelar bonificación }
+              @default { {{ isEditing ? 'Editar bonificación' : 'Asignar bonificación' }} }
+            }
+          </h2>
+          <span class="dialog-subtitle">{{ dialogPlayer()?.fullName }}</span>
+        </div>
+        <button type="button" class="dialog-close" (click)="closeDialog()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </header>
+
+      @if (dialogError()) {
+        <p class="dialog-error" role="alert">{{ dialogError() }}</p>
+      }
+
+      <!-- ----- LOADING ----- -->
+      @if (dialogView() === 'loading') {
+        <p class="dialog-loading">Consultando la bonificación del jugador…</p>
+      }
+
+      <!-- ----- ACTIVE BENEFIT: no empty form for a player who already has one ----- -->
+      @if (dialogView() === 'active' && currentDiscount(); as discount) {
+        <div class="benefit-card">
+          <app-discount-badge [discount]="discount" [showValue]="true" />
+
+          <dl class="benefit-detail">
+            <div>
+              <dt>Motivo</dt>
+              <dd>{{ discount.type }}</dd>
+            </div>
+            <div>
+              <dt>Beneficio</dt>
+              <dd class="benefit-amount">{{ benefitValueOf(discount) }}</dd>
+            </div>
+            <div>
+              <dt>Vigente desde</dt>
+              <dd>{{ formatDate(discount.startDate) }}</dd>
+            </div>
+            <div>
+              <dt>Vigente hasta</dt>
+              <dd>{{ discount.endDate ? formatDate(discount.endDate) : 'Sin vencimiento' }}</dd>
+            </div>
+          </dl>
+
+          @if (!discount.isActive) {
+            <p class="benefit-warning">
+              Esta bonificación está asignada pero fuera de su período de vigencia.
+            </p>
+          }
+        </div>
+
+        <footer class="dialog-actions">
+          <button type="button" class="button-ghost" (click)="askCancelConfirmation()">
+            Cancelar bonificación
+          </button>
+          <button type="button" class="button-primary" (click)="startEditing()">
+            Editar bonificación
+          </button>
+        </footer>
+      }
+
+      <!-- ----- CONFIRM CANCELLATION ----- -->
+      @if (dialogView() === 'confirmCancel') {
+        <p class="dialog-confirm">
+          ¿Confirmás que querés cancelar la bonificación de
+          <strong>{{ dialogPlayer()?.fullName }}</strong>?
+          El jugador va a quedar sin beneficio y vas a poder asignarle uno nuevo.
+        </p>
+
+        <footer class="dialog-actions">
+          <button type="button" class="button-ghost" (click)="backToActive()" [disabled]="saving()">
+            Volver
+          </button>
+          <button type="button" class="button-danger" (click)="confirmCancelBenefit()" [disabled]="saving()">
+            {{ saving() ? 'Cancelando…' : 'Sí, cancelar' }}
+          </button>
+        </footer>
+      }
+
+      <!-- ----- ASSIGNMENT / EDIT FORM ----- -->
+      @if (dialogView() === 'form') {
+        <form class="dialog-form" [formGroup]="benefitForm" (ngSubmit)="onSubmit()">
+
+          <div class="field">
+            <label class="field-label" for="reason">Motivo</label>
+            <select id="reason" class="field-input" formControlName="reason">
+              <option value="" disabled>Seleccionar motivo</option>
+              @for (reason of benefitReasons(); track reason) {
+                <option [value]="reason">{{ reason }}</option>
+              }
+            </select>
+            @if (benefitReasons().length === 0) {
+              <span class="field-hint field-hint-error">
+                No se pudieron cargar los motivos. Verificá la conexión con la API.
+              </span>
+            }
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="valueType">Tipo de valor</label>
+            <select id="valueType" class="field-input" formControlName="valueType"
+                    (change)="onValueTypeChange()">
+              <option value="" disabled>Seleccionar tipo</option>
+              @for (type of valueTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Only one of the two is ever on screen: a benefit is percentage
+               based or a fixed amount, never both -->
+          @if (selectedValueType === '%') {
+            <div class="field">
+              <label class="field-label" for="percentage">Porcentaje de descuento</label>
+              <div class="field-affix">
+                <input id="percentage" type="number" class="field-input" formControlName="percentage"
+                       min="0.01" max="100" step="0.01" placeholder="50" autocomplete="off" />
+                <span class="field-affix-label">%</span>
+              </div>
+              <span class="field-hint">Mayor a 0 y hasta 100.</span>
+            </div>
+          }
+
+          @if (selectedValueType === '$') {
+            <div class="field">
+              <label class="field-label" for="fixedAmount">Monto del descuento</label>
+              <div class="field-affix">
+                <span class="field-affix-label field-affix-left">$</span>
+                <input id="fixedAmount" type="number" class="field-input" formControlName="fixedAmount"
+                       min="0.01" step="0.01" placeholder="15000" autocomplete="off" />
+              </div>
+              <span class="field-hint">Importe mayor a cero.</span>
+            </div>
+          }
+
+          <div class="field">
+            <label class="field-label" for="startDate">Vigente desde</label>
+            <input id="startDate" type="date" class="field-input" formControlName="startDate" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="endDate">Vigente hasta</label>
+            <input id="endDate" type="date" class="field-input" formControlName="endDate" />
+            <span class="field-hint">Opcional: dejalo vacío para una bonificación sin vencimiento.</span>
+          </div>
+
+          @if (formErrorMessage) {
+            <p class="dialog-form-error" role="alert">{{ formErrorMessage }}</p>
+          }
+
+          <footer class="dialog-actions">
+            <button type="button" class="button-ghost"
+                    (click)="isEditing ? backToActive() : closeDialog()" [disabled]="saving()">
+              Cancelar
+            </button>
+            <!-- Stays disabled until every required field is valid -->
+            <button type="submit" class="button-primary"
+                    [disabled]="benefitForm.invalid || saving()">
+              {{ saving() ? 'Guardando…' : 'Guardar bonificación' }}
+            </button>
+          </footer>
+        </form>
+      }
+    </div>
+  </div>
+}
