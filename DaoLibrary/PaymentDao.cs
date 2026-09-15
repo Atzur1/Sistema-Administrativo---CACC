@@ -1,5 +1,6 @@
 namespace DaoLibrary;
 
+using System.Data;
 using Microsoft.Data.SqlClient;
 using EntityLibrary;
 
@@ -140,6 +141,38 @@ public class PaymentDao
         payment.BaseAmount = payment.FinalAmount;
         payment.IsPaid = true;
         return payment;
+    }
+
+    // Runs sp_GenerateMonthlyFees (HU-009): the stored procedure holds its own
+    // transaction and idempotency check (one fee per player and period), so
+    // this only needs a plain command, not a client-side SqlTransaction.
+    public MonthlyFeeGenerationResult GenerateMonthlyFees(int month, int year, int adminUserId)
+    {
+        MonthlyFeeGenerationResult result = new MonthlyFeeGenerationResult();
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+
+            using (SqlCommand command = new SqlCommand("sp_GenerateMonthlyFees", connection))
+            {
+                command.CommandType = CommandType.StoredProcedure;
+                command.Parameters.AddWithValue("@mes", month);
+                command.Parameters.AddWithValue("@anio", year);
+                command.Parameters.AddWithValue("@id_usuario_admin", adminUserId);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        result.TotalGenerated = Convert.ToInt32(reader["TotalGenerated"]);
+                        result.TotalSkipped = Convert.ToInt32(reader["TotalSkipped"]);
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     public TreasuryMetrics GetTreasuryMetrics()

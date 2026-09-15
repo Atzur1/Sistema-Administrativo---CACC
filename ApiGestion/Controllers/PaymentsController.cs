@@ -1,5 +1,6 @@
 namespace ApiGestion.Controllers;
 
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,10 @@ public class PaymentsController : ControllerBase
     // Stored lowercase, matching the existing rows and the CK_PAGOS_metodo_pago constraint
     private const string CashMethod = "efectivo";
     private const string TransferMethod = "transferencia";
+
+    // ROLES.PK_id_rol = 1 -> "Administrador General", the only role the
+    // system has today. Matches the raw role id the JWT carries (AuthController.GenerarToken).
+    private const string AdminRoleId = "1";
 
     private readonly ILogger<PaymentsController> _logger;
     private readonly PaymentDao _paymentDao;
@@ -139,6 +144,44 @@ public class PaymentsController : ControllerBase
             createdPayment.Id, createdPayment.PlayerId, userId);
 
         return Created($"/api/payments/{createdPayment.Id}", MapToDto(createdPayment));
+    }
+
+    // Bulk-generates the pending fees for a period (HU-009), one per active
+    // player. Admin only: it affects every player's balance at once.
+    [Authorize(Roles = AdminRoleId)]
+    [HttpPost("generate-monthly")]
+    public IActionResult GenerateMonthlyFees([FromBody] MonthlyFeeGenerationRequestDTO? request)
+    {
+        if (!long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out long userId))
+        {
+            return Unauthorized("The token does not identify the user. Please log in again.");
+        }
+
+        DateTime now = DateTime.Now;
+        int month = request?.PeriodMonth ?? now.Month;
+        int year = request?.PeriodYear ?? now.Year;
+
+        MonthlyFeeGenerationResult result = _paymentDao.GenerateMonthlyFees(month, year, (int)userId);
+        string periodName = FormatPeriodName(month, year);
+
+        _logger.LogInformation(
+            "Monthly fees generated for {Period}: {Generated} created, {Skipped} skipped, by user {UserId}",
+            periodName, result.TotalGenerated, result.TotalSkipped, userId);
+
+        return Ok(new MonthlyFeeGenerationResultDTO
+        {
+            TotalGenerated = result.TotalGenerated,
+            TotalSkipped = result.TotalSkipped,
+            PeriodName = periodName
+        });
+    }
+
+    // "Septiembre 2026": es-AR month names come out lowercase, capitalized here
+    // to match how the frontend already labels periods.
+    private string FormatPeriodName(int month, int year)
+    {
+        string periodName = new DateTime(year, month, 1).ToString("MMMM yyyy", new CultureInfo("es-AR"));
+        return char.ToUpperInvariant(periodName[0]) + periodName.Substring(1);
     }
 
     private PaymentResponseDTO MapToDto(Payment payment)
