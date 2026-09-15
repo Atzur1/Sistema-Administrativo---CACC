@@ -34,6 +34,14 @@ CREATE UNIQUE INDEX UX_JUGDESC_UNA_ACTIVA
     WHERE estado_activo = 1;
 ```
 
+> **Superado por HU-012.** Ese índice se eliminó: no miraba las fechas, así que
+> una bonificación vencida seguía ocupando el lugar del jugador y había que
+> cancelarla a mano antes de asignarle otra. La regla pasó a ser "una
+> bonificación aplicable por fecha", validada por superposición de rangos dentro
+> de la transacción que escribe. El motivo, la evidencia y el costo asumido están
+> en `QA-HU-012.md`. Lo que sigue de este documento describe el estado del
+> sistema al cierre de HU-011.
+
 ---
 
 ## Pruebas de base de datos (constraints)
