@@ -1,10 +1,20 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
+import { Toast } from '../../shared/toast/toast';
 import { DiscountService } from '../../services/discounts';
-import { BenefitValueType, DiscountModel, DiscountRequest, formatBenefitValue } from '../../models/DiscountModel';
+import {
+    BenefitValueType,
+    DiscountModel,
+    DiscountRequest,
+    formatBenefitValue,
+    formatIsoDate,
+    formatValidity,
+    statusLabel,
+    statusToneClass,
+} from '../../models/DiscountModel';
 import { PlayerService } from '../../services/players';
 import { PlayerModel } from '../../models/PlayerModel';
 import { normalizeText } from '../../shared/normalize-text';
@@ -22,7 +32,7 @@ type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel';
 @Component({
     selector: 'app-becados-descuentos',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, DiscountBadge],
+    imports: [CommonModule, ReactiveFormsModule, DiscountBadge, Toast],
     templateUrl: './becados-descuentos.html',
     styleUrl: './becados-descuentos.css',
 })
@@ -67,19 +77,18 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
     dialogError = signal('');
     saving = signal(false);
 
-    // Inline confirmation shown on the page after a successful operation
-    successMessage = '';
-    successLeaving = false;
+    // Confirmation after a write. It only fires once the API answered, never on
+    // submit, so a failed save can never look like a successful one.
+    @ViewChild(Toast) private toast?: Toast;
+
+    // Every benefit of the player the popup is about: what expired, what runs
+    // today and what is scheduled. Since HU-012 a player can hold several.
+    playerDiscounts = signal<DiscountModel[]>([]);
 
     // Every benefit ever granted: the table mixes current and cancelled ones.
     // benefitsLoaded tells "still loading" apart from "there is nothing to show".
     benefitRows = signal<DiscountModel[]>([]);
     benefitsLoaded = signal(false);
-
-    // Timers for the confirmation message, cleared on destroy so leaving the
-    // dashboard mid-animation never fires a callback on a dead component
-    private fadeTimer?: ReturnType<typeof setTimeout>;
-    private clearTimer?: ReturnType<typeof setTimeout>;
 
     // Active discounts indexed by player, resolved by the backend.
     // Held in a signal so the table repaints when the response arrives.
@@ -99,8 +108,9 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
             valueType: ['', [Validators.required]],
             percentage: [null as number | null],
             fixedAmount: [null as number | null],
-            startDate: [''],
-            endDate: [''],
+            // Mandatory since HU-012: no benefit without an authorised period
+            startDate: ['', [Validators.required]],
+            endDate: ['', [Validators.required]],
         }, { validators: [this.benefitValueValidator, this.dateRangeValidator] });
     }
 
@@ -122,8 +132,7 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
     }
 
     ngOnDestroy() {
-        clearTimeout(this.fadeTimer);
-        clearTimeout(this.clearTimer);
+        // The toast clears its own timers; nothing else is pending here
     }
 
     // ===== DATA LOADING =====
@@ -256,27 +265,38 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         this.dialogPlayer.set(player);
         this.dialogError.set('');
         this.currentDiscount.set(null);
+        this.playerDiscounts.set([]);
         this.dialogView.set('loading');
         this.dialogOpen.set(true);
 
-        // The popup always asks the API what the player has right now: the grid
+        // The popup always asks the API what the player holds right now: the grid
         // may be stale and a benefit assigned from another screen has to show up.
-        // It asks for the open assignment, expired included, because that is what
-        // decides whether a new one can be granted.
-        this.discountService.getAssignedDiscount(player.id).subscribe({
-            next: (discount) => {
-                this.currentDiscount.set(discount);
-                this.dialogView.set('active');
-            },
-            error: (error: HttpErrorResponse) => {
-                if (error.status === 404) {
-                    // No benefit yet: straight to the assignment form
+        // Since HU-012 that is a list, not one record, and each item carries the
+        // state the server resolved.
+        this.discountService.getDiscountsByPlayer(player.id).subscribe({
+            next: (discounts) => {
+                this.playerDiscounts.set(discounts);
+
+                // The one that applies today, or failing that the next scheduled
+                // one: that is what the card shows and what editing acts on.
+                const current = discounts.find(benefit => benefit.status === 'Active')
+                    ?? discounts.find(benefit => benefit.status === 'Scheduled')
+                    ?? null;
+
+                this.currentDiscount.set(current);
+
+                if (current === null) {
+                    // Nothing in force or coming: straight to the assignment form
                     this.resetBenefitForm();
                     this.dialogView.set('form');
                     return;
                 }
 
+                this.dialogView.set('active');
+            },
+            error: () => {
                 this.dialogError.set('No se pudo cargar la bonificación del jugador. Intentá de nuevo.');
+                this.resetBenefitForm();
                 this.dialogView.set('form');
             },
         });
@@ -288,22 +308,36 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         this.saving.set(false);
     }
 
-    // Switches the popup from showing the active benefit to editing it
-    startEditing() {
-        const discount = this.currentDiscount();
-        if (discount === null) {
+    // Switches the popup from showing a benefit to editing it. Without an
+    // argument it edits the one on the card; the history list passes the one
+    // that was clicked.
+    startEditing(discount: DiscountModel | null = null) {
+        const target = discount ?? this.currentDiscount();
+        if (target === null) {
             return;
         }
 
+        this.currentDiscount.set(target);
+
         this.benefitForm.reset({
-            reason: discount.type,
-            valueType: discount.valueType,
-            percentage: discount.percentage,
-            fixedAmount: discount.fixedAmount,
-            startDate: discount.startDate,
-            endDate: discount.endDate,
+            reason: target.type,
+            valueType: target.valueType,
+            percentage: target.percentage,
+            fixedAmount: target.fixedAmount,
+            startDate: target.startDate,
+            endDate: target.endDate,
         });
 
+        this.dialogError.set('');
+        this.dialogView.set('form');
+    }
+
+    // Grants an additional benefit for a period the player does not have covered.
+    // Possible since HU-012: what the API refuses is an overlapping range, not a
+    // second benefit.
+    startNewBenefit() {
+        this.currentDiscount.set(null);
+        this.resetBenefitForm();
         this.dialogError.set('');
         this.dialogView.set('form');
     }
@@ -313,11 +347,27 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         this.dialogView.set('confirmCancel');
     }
 
+    // Back out of the form. With benefits already loaded it returns to the card;
+    // with none there is nothing to go back to, so the popup closes.
     backToActive() {
         this.dialogError.set('');
+
+        if (this.playerDiscounts().length === 0) {
+            this.closeDialog();
+            return;
+        }
+
         this.dialogView.set('active');
     }
 
+    // True when the form is editing something that already exists
+    get hasBenefits(): boolean {
+        return this.playerDiscounts().length > 0;
+    }
+
+    // Opens the form with a sensible period already filled: from today to the
+    // end of the year, which is the cycle the club grants benefits for. Both are
+    // editable; they are a starting point, not a decision.
     private resetBenefitForm() {
         this.benefitForm.reset({
             reason: '',
@@ -325,15 +375,21 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
             percentage: null,
             fixedAmount: null,
             startDate: this.today(),
-            endDate: '',
+            endDate: this.endOfYear(),
         });
     }
 
+    // Local date of the browser, used only to prefill the field. What the state
+    // of a benefit is gets decided by the server, never here.
     private today(): string {
         const now = new Date();
         const month = `${now.getMonth() + 1}`.padStart(2, '0');
         const day = `${now.getDate()}`.padStart(2, '0');
         return `${now.getFullYear()}-${month}-${day}`;
+    }
+
+    private endOfYear(): string {
+        return `${new Date().getFullYear()}-12-31`;
     }
 
     // ===== FORM =====
@@ -389,6 +445,13 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         return null;
     };
 
+    // The end has to be strictly later than the start: a range that opens and
+    // closes the same day is not a period the club grants. Lives on the group,
+    // not on a single field, so it re-runs when either date changes and the
+    // error shows the moment the second one is picked.
+    //
+    // ISO strings compare correctly as text (yyyy-MM-dd sorts chronologically),
+    // so there is no Date involved and no time zone to get wrong.
     private dateRangeValidator = (group: AbstractControl): ValidationErrors | null => {
         const start = group.get('startDate')?.value;
         const end = group.get('endDate')?.value;
@@ -397,10 +460,23 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
             return null;
         }
 
-        return end < start ? { endBeforeStart: true } : null;
+        return end <= start ? { endNotAfterStart: true } : null;
     };
 
-    // Single message for the whole form, shown under the fields
+    // The date range message, sitting next to the two date fields.
+    //
+    // It does not wait for the form to be touched or submitted: as soon as both
+    // dates carry a value and the range is wrong, the administrator sees why.
+    // That is the point of HU-012, catching it while the dates are being picked
+    // and not after pressing a button that was never going to work.
+    get dateRangeErrorMessage(): string {
+        const errors = this.benefitForm.errors ?? {};
+        return errors['endNotAfterStart']
+            ? 'La fecha de finalización debe ser posterior a la fecha de inicio.'
+            : '';
+    }
+
+    // Single message for the rest of the form, shown above the actions
     get formErrorMessage(): string {
         if (!this.benefitForm.touched && !this.benefitForm.dirty) {
             return '';
@@ -426,10 +502,14 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         if (errors['fixedAmountNotPositive']) {
             return 'El monto debe ser mayor a cero.';
         }
-        if (errors['endBeforeStart']) {
-            return 'La fecha de fin no puede ser anterior a la de inicio.';
+        if (this.benefitForm.get('startDate')?.invalid) {
+            return 'Indicá la fecha desde la que rige la bonificación.';
+        }
+        if (this.benefitForm.get('endDate')?.invalid) {
+            return 'Indicá la fecha hasta la que rige la bonificación.';
         }
 
+        // The range message has its own place, next to the dates
         return '';
     }
 
@@ -448,8 +528,10 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         this.saving.set(true);
         this.dialogError.set('');
 
+        const editingId = this.currentDiscount()?.id;
+
         const call = editing
-            ? this.discountService.updateDiscount(player.id, request)
+            ? this.discountService.updateDiscount(player.id, request, editingId)
             : this.discountService.assignDiscount(player.id, request);
 
         call.subscribe({
@@ -459,9 +541,11 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
                 // Never trust the payload just sent: the grid is rebuilt from the
                 // API so what the screen shows is what the database stored.
                 this.refreshFromServer();
-                this.showConfirmation(editing
-                    ? `Bonificación de ${player.fullName} actualizada correctamente.`
-                    : `Bonificación de ${player.fullName} asignada correctamente.`);
+                // The toast fires here and nowhere else: only a response that
+                // actually arrived counts as a success.
+                this.notify(editing
+                    ? 'Bonificación actualizada correctamente.'
+                    : 'Bonificación asignada correctamente.');
             },
             error: (error: HttpErrorResponse) => {
                 this.saving.set(false);
@@ -479,12 +563,12 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         this.saving.set(true);
         this.dialogError.set('');
 
-        this.discountService.cancelDiscount(player.id).subscribe({
+        this.discountService.cancelDiscount(player.id, this.currentDiscount()?.id).subscribe({
             next: () => {
                 this.saving.set(false);
                 this.closeDialog();
                 this.refreshFromServer();
-                this.showConfirmation(`Bonificación de ${player.fullName} cancelada.`);
+                this.notify('Bonificación cancelada correctamente.');
             },
             error: (error: HttpErrorResponse) => {
                 this.saving.set(false);
@@ -505,8 +589,9 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
             // the API and the table constraint demand.
             percentage: valueType === '%' ? Number(raw.percentage) : null,
             fixedAmount: valueType === '$' ? Number(raw.fixedAmount) : null,
-            startDate: raw.startDate || null,
-            endDate: raw.endDate || null,
+            // Both are required by the form, so by this point they carry a value
+            startDate: raw.startDate,
+            endDate: raw.endDate,
         };
     }
 
@@ -514,10 +599,16 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
     // server answers in English; what reaches the screen is always in Spanish.
     private messageFor(error: HttpErrorResponse, action: string): string {
         if (error.status === 409) {
-            return 'El jugador ya posee una bonificación activa. Editala o cancelala antes de asignar otra.';
+            // The API names the benefit in the way and its period, which is what
+            // the administrator needs to fix the dates. It answers in English,
+            // so only the period is lifted out of it.
+            const period = this.periodFromConflict(error);
+            return period
+                ? `El jugador ya tiene una bonificación para ese período (${period}). Ajustá las fechas o cancelá la existente.`
+                : 'El jugador ya tiene una bonificación que se superpone con ese período. Ajustá las fechas o cancelá la existente.';
         }
         if (error.status === 400) {
-            return 'Los datos de la bonificación no son válidos. Revisá el motivo y el valor ingresado.';
+            return 'Los datos de la bonificación no son válidos. Revisá el motivo, el valor y las fechas de vigencia.';
         }
         if (error.status === 401 || error.status === 403) {
             return 'Tu sesión no tiene permiso para esta acción. Volvé a iniciar sesión.';
@@ -532,40 +623,46 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         return `No se pudo ${action} la bonificación. Intentá nuevamente.`;
     }
 
+    // Pulls the two ISO dates out of the conflict message and reads them the way
+    // the screen does. If the wording ever changes, this returns empty and the
+    // caller falls back to the generic message instead of showing garbage.
+    private periodFromConflict(error: HttpErrorResponse): string {
+        const body = typeof error.error === 'string' ? error.error : '';
+        const dates = body.match(/\d{4}-\d{2}-\d{2}/g);
+
+        return dates && dates.length >= 2
+            ? `${formatIsoDate(dates[0])} - ${formatIsoDate(dates[1])}`
+            : '';
+    }
+
     // ===== TABLE RENDERING =====
 
-    // Validity is resolved by the backend, with the same criteria as the badge
-    isActive(row: DiscountModel): boolean {
-        return row.isActive;
+    // Everything below reads the state the server resolved. The browser never
+    // works out whether a benefit is in force: its clock is not the club's.
+
+    statusOf(row: DiscountModel): string {
+        return statusLabel(row.status);
+    }
+
+    statusClassOf(row: DiscountModel): string {
+        return statusToneClass(row.status);
     }
 
     benefitValueOf(row: DiscountModel): string {
         return formatBenefitValue(row);
     }
 
-    // ISO dates are shown the way they are read locally. An empty value means
-    // the benefit has no end date.
-    formatDate(isoDate: string): string {
-        if (!isoDate) {
-            return '—';
-        }
-        const [year, month, day] = isoDate.split('-');
-        return `${day}/${month}/${year}`;
+    // "01/10/2026 - 31/12/2026"
+    validityOf(row: DiscountModel): string {
+        return formatValidity(row);
     }
 
-    // Shows the inline confirmation, fades it out and clears it after 3s
-    private showConfirmation(message: string) {
-        clearTimeout(this.fadeTimer);
-        clearTimeout(this.clearTimer);
+    formatDate(isoDate: string): string {
+        return formatIsoDate(isoDate) || '—';
+    }
 
-        this.successMessage = message;
-        this.successLeaving = false;
-
-        // Start the fade before removing the node so it does not blink out
-        this.fadeTimer = setTimeout(() => (this.successLeaving = true), 2700);
-        this.clearTimer = setTimeout(() => {
-            this.successMessage = '';
-            this.successLeaving = false;
-        }, 3000);
+    // Only called after the API confirmed the write
+    private notify(message: string) {
+        this.toast?.show(message, 'success');
     }
 }

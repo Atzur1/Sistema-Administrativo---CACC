@@ -916,3 +916,135 @@
         width: 100%;
     }
 }
+
+/* ===== VALIDITY STATES (HU-012) =====
+   status-active and status-expired already existed and are reused as they are.
+   These two complete the set the server can answer. */
+
+/* Granted but not started yet: amber, the colour of something pending */
+.status-scheduled {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Taken down by hand. Muted, because it is no longer in play. */
+.status-cancelled {
+    background: #f1f5f1;
+    color: #8a908a;
+    text-decoration: line-through;
+}
+
+/* ===== BENEFIT CARD ===== */
+.benefit-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* The validity reads as one line, so it takes the full width of the grid */
+.benefit-detail-wide {
+    grid-column: 1 / -1;
+}
+
+/* A scheduled benefit needs a word: the card would otherwise look like it is
+   already being applied */
+.benefit-note {
+    margin: 0;
+    padding: 8px 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    font-size: 11.5px;
+    color: #92400e;
+}
+
+/* ===== BENEFIT HISTORY ===== */
+.benefit-history {
+    margin-top: 14px;
+}
+
+.benefit-history-title {
+    margin: 0 0 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+}
+
+.benefit-history-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 190px;
+    overflow-y: auto;
+}
+
+.benefit-history-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 9px;
+}
+
+/* The one the card above is showing */
+.benefit-history-item.is-current {
+    border-color: #00a651;
+    background: #f8faf8;
+}
+
+.benefit-history-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+}
+
+.benefit-history-reason {
+    font-size: 12px;
+    font-weight: 600;
+    color: #000000;
+}
+
+.benefit-history-meta {
+    font-size: 10.5px;
+    color: #555a55;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ===== DATE RANGE ===== */
+/* The two dates read as one field: they are a period, not two separate values */
+.field-dates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Marked while the range is wrong, next to the message that explains why */
+.field-input.is-invalid {
+    border-color: #dc2626;
+}
+
+.field-input.is-invalid:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+@media (max-width: 640px) {
+    .field-dates {
+        grid-template-columns: 1fr;
+    }
+
+    .benefit-history-item {
+        flex-wrap: wrap;
+    }
+}

@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { DiscountModel, formatBenefitValue } from '../../models/DiscountModel';
+import { DiscountModel, formatBenefitValue, formatIsoDate } from '../../models/DiscountModel';
 
 @Component({
     selector: 'app-discount-badge',
@@ -20,8 +20,11 @@ export class DiscountBadge {
     // 50 %" in a single label.
     @Input() showValue = false;
 
+    // Only a benefit that applies today gets a badge. A scheduled one has not
+    // started and an expired one no longer counts, so labelling either would
+    // claim a reduction that is not being applied.
     get visible(): boolean {
-        return this.discount !== null && this.discount.isActive;
+        return this.discount !== null && this.discount.status === 'Active';
     }
 
     get value(): string {
@@ -47,23 +50,10 @@ export class DiscountBadge {
             return '';
         }
 
-        const from = this.formatDate(this.discount.startDate);
+        // Both dates are mandatory since HU-012, so the period always reads whole
+        const from = formatIsoDate(this.discount.startDate);
+        const to = formatIsoDate(this.discount.endDate);
 
-        // An empty end date means the benefit runs until somebody cancels it
-        if (!this.discount.endDate) {
-            return from ? `Vigente desde ${from}, sin fecha de vencimiento` : 'Vigente, sin fecha de vencimiento';
-        }
-
-        const to = this.formatDate(this.discount.endDate);
         return `Vigente desde ${from} hasta ${to}`;
-    }
-
-    // The backend sends ISO (yyyy-MM-dd) and the view shows it as read here
-    private formatDate(isoDate: string): string {
-        if (!isoDate) {
-            return '';
-        }
-        const [year, month, day] = isoDate.split('-');
-        return `${day}/${month}/${year}`;
     }
 }

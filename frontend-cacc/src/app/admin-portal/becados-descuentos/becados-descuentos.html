@@ -74,9 +74,6 @@
       </button>
     </form>
 
-    @if (successMessage) {
-      <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
-    }
   </section>
 
   <!-- ===== GRANTED BENEFITS ===== -->
@@ -124,8 +121,10 @@
                 <td class="cell-muted">{{ formatDate(row.startDate) }}</td>
                 <td class="cell-muted">{{ formatDate(row.endDate) }}</td>
                 <td>
-                  <span class="status-pill" [ngClass]="isActive(row) ? 'status-active' : 'status-expired'">
-                    {{ isActive(row) ? 'Vigente' : 'No vigente' }}
+                  <!-- The state comes resolved from the server: nothing is worked
+                       out here from the browser clock -->
+                  <span class="status-pill" [ngClass]="statusClassOf(row)">
+                    {{ statusOf(row) }}
                   </span>
                 </td>
                 <td>
@@ -184,10 +183,16 @@
         <p class="dialog-loading">Consultando la bonificación del jugador…</p>
       }
 
-      <!-- ----- ACTIVE BENEFIT: no empty form for a player who already has one ----- -->
+      <!-- ----- FINANCIAL CARD: what the player holds, with its validity and
+           the state the server resolved ----- -->
       @if (dialogView() === 'active' && currentDiscount(); as discount) {
         <div class="benefit-card">
-          <app-discount-badge [discount]="discount" [showValue]="true" />
+          <div class="benefit-card-head">
+            <app-discount-badge [discount]="discount" [showValue]="true" />
+            <span class="status-pill" [ngClass]="statusClassOf(discount)">
+              {{ statusOf(discount) }}
+            </span>
+          </div>
 
           <dl class="benefit-detail">
             <div>
@@ -198,26 +203,50 @@
               <dt>Beneficio</dt>
               <dd class="benefit-amount">{{ benefitValueOf(discount) }}</dd>
             </div>
-            <div>
-              <dt>Vigente desde</dt>
-              <dd>{{ formatDate(discount.startDate) }}</dd>
-            </div>
-            <div>
-              <dt>Vigente hasta</dt>
-              <dd>{{ discount.endDate ? formatDate(discount.endDate) : 'Sin vencimiento' }}</dd>
+            <div class="benefit-detail-wide">
+              <dt>Vigencia</dt>
+              <dd>{{ validityOf(discount) }}</dd>
             </div>
           </dl>
 
-          @if (!discount.isActive) {
-            <p class="benefit-warning">
-              Esta bonificación está asignada pero fuera de su período de vigencia.
+          @if (discount.status === 'Scheduled') {
+            <p class="benefit-note">
+              Esta bonificación todavía no comenzó: va a aplicarse a partir del
+              {{ formatDate(discount.startDate) }}.
             </p>
           }
         </div>
 
+        <!-- The rest of the player's history. It only appears when there is more
+             than the one on the card, so a single benefit does not get a list. -->
+        @if (playerDiscounts().length > 1) {
+          <section class="benefit-history">
+            <h3 class="benefit-history-title">Historial de bonificaciones</h3>
+            <ul class="benefit-history-list">
+              @for (item of playerDiscounts(); track item.id) {
+                <li class="benefit-history-item" [class.is-current]="item.id === discount.id">
+                  <div class="benefit-history-text">
+                    <span class="benefit-history-reason">{{ item.type }}</span>
+                    <span class="benefit-history-meta">
+                      {{ benefitValueOf(item) }} · {{ validityOf(item) }}
+                    </span>
+                  </div>
+                  <span class="status-pill" [ngClass]="statusClassOf(item)">{{ statusOf(item) }}</span>
+                  <button type="button" class="row-action" (click)="startEditing(item)">Editar</button>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
         <footer class="dialog-actions">
           <button type="button" class="button-ghost" (click)="askCancelConfirmation()">
             Cancelar bonificación
+          </button>
+          <!-- Possible since HU-012: what the API refuses is an overlapping
+               period, not a second benefit -->
+          <button type="button" class="button-ghost" (click)="startNewBenefit()">
+            Asignar otro período
           </button>
           <button type="button" class="button-primary" (click)="startEditing()">
             Editar bonificación
@@ -299,16 +328,27 @@
             </div>
           }
 
-          <div class="field">
-            <label class="field-label" for="startDate">Vigente desde</label>
-            <input id="startDate" type="date" class="field-input" formControlName="startDate" />
+          <!-- Both dates are mandatory since HU-012: the benefit operates
+               strictly inside the authorised period and expires on its own -->
+          <div class="field-dates">
+            <div class="field">
+              <label class="field-label" for="startDate">Fecha desde</label>
+              <input id="startDate" type="date" class="field-input" formControlName="startDate"
+                     [class.is-invalid]="dateRangeErrorMessage" required />
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="endDate">Fecha hasta</label>
+              <input id="endDate" type="date" class="field-input" formControlName="endDate"
+                     [class.is-invalid]="dateRangeErrorMessage" required />
+            </div>
           </div>
 
-          <div class="field">
-            <label class="field-label" for="endDate">Vigente hasta</label>
-            <input id="endDate" type="date" class="field-input" formControlName="endDate" />
-            <span class="field-hint">Opcional: dejalo vacío para una bonificación sin vencimiento.</span>
-          </div>
+          <!-- Shows the moment both dates carry a value, without waiting for the
+               form to be submitted -->
+          @if (dateRangeErrorMessage) {
+            <p class="dialog-form-error" role="alert">{{ dateRangeErrorMessage }}</p>
+          }
 
           @if (formErrorMessage) {
             <p class="dialog-form-error" role="alert">{{ formErrorMessage }}</p>
@@ -316,10 +356,11 @@
 
           <footer class="dialog-actions">
             <button type="button" class="button-ghost"
-                    (click)="isEditing ? backToActive() : closeDialog()" [disabled]="saving()">
+                    (click)="hasBenefits ? backToActive() : closeDialog()" [disabled]="saving()">
               Cancelar
             </button>
-            <!-- Stays disabled until every required field is valid -->
+            <!-- Stays disabled while any required field is missing or the date
+                 range is invalid: benefitForm.invalid covers both -->
             <button type="submit" class="button-primary"
                     [disabled]="benefitForm.invalid || saving()">
               {{ saving() ? 'Guardando…' : 'Guardar bonificación' }}
@@ -330,3 +371,7 @@
     </div>
   </div>
 }
+
+<!-- Confirmation of a write. It only appears once the API answered. -->
+<app-toast />
+

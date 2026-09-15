@@ -44,18 +44,30 @@ export class DiscountService {
         );
     }
 
+    // Every benefit of a player that was not cancelled, oldest first. Since
+    // HU-012 a player can hold several over time, so the financial card lists
+    // the expired ones, the one running today and the scheduled ones.
+    getDiscountsByPlayer(playerId: number): Observable<DiscountModel[]> {
+        return this.http.get<DiscountModel[]>(`${this.API_URL}/players/${playerId}/discounts`);
+    }
+
     assignDiscount(playerId: number, request: DiscountRequest): Observable<DiscountModel> {
         return this.http.post<DiscountModel>(`${this.API_URL}/players/${playerId}/discount`, request);
     }
 
-    updateDiscount(playerId: number, request: DiscountRequest): Observable<DiscountModel> {
-        return this.http.put<DiscountModel>(`${this.API_URL}/players/${playerId}/discount`, request);
+    // Without a discountId the API edits the benefit the popup is showing; with
+    // one, that specific benefit.
+    updateDiscount(playerId: number, request: DiscountRequest, discountId?: number): Observable<DiscountModel> {
+        const query = discountId ? `?discountId=${discountId}` : '';
+        return this.http.put<DiscountModel>(`${this.API_URL}/players/${playerId}/discount${query}`, request);
     }
 
     // Answers 204 with no body: the benefit is kept as history and only flipped
-    // to inactive.
-    cancelDiscount(playerId: number): Observable<void> {
-        return this.http.delete<void>(`${this.API_URL}/players/${playerId}/discount`);
+    // to inactive. Cancelling is for taking a benefit down early; one that ran
+    // its course expires on its own and needs no call.
+    cancelDiscount(playerId: number, discountId?: number): Observable<void> {
+        const query = discountId ? `?discountId=${discountId}` : '';
+        return this.http.delete<void>(`${this.API_URL}/players/${playerId}/discount${query}`);
     }
 
     // The grids look discounts up by player, so they are handed over indexed and
