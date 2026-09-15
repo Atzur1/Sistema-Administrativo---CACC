@@ -28,24 +28,32 @@ DECLARE @mediaBeca    INT = (SELECT PK_id_descuento FROM TIPO_DESCUENTO WHERE ti
 DECLARE @hermanos     INT = (SELECT PK_id_descuento FROM TIPO_DESCUENTO WHERE tipo_descuento = 'Descuento por Hermanos');
 
 -- Se limpian solo los jugadores del seed, para no pisar asignaciones reales
-DELETE FROM JUGADORES_DESCUENTOS WHERE FK_id_jugador IN (1, 2, 3, 4, 5, 6);
+DELETE FROM JUGADORES_DESCUENTOS WHERE FK_id_jugador IN (1, 2, 3, 4, 5, 6, 7, 8);
 
--- Asignaciones de prueba.
+-- Asignaciones de prueba. Desde HU-012 toda bonificación lleva un período
+-- obligatorio y su estado se deduce de ese rango contra la fecha del servidor,
+-- así que el seed cubre los tres casos que el sistema puede devolver.
 --
---   1-4: bonificaciones vigentes, con etiqueta visible. La 4 es de monto fijo,
---        el caso que incorpora HU-011.
---     5: vigencia ya vencida -> sigue ocupando el lugar del jugador, pero no
---        se etiqueta ni la devuelve GET /discounts.
---     6: dada de baja -> no se etiqueta y libera al jugador para una nueva.
+--   1-4: Activa. Vigencia que contiene al día de hoy, etiqueta visible. La 4 es
+--        de monto fijo, el caso que incorporó HU-011.
+--     5: Expirada. Su período terminó en 2025: no se etiqueta, no la devuelve
+--        GET /discounts y ya no bloquea al jugador para una nueva.
+--     6: Cancelada. Dada de baja a mano, no se etiqueta.
+--     7: Programada. Empieza el año que viene, todavía no se aplica.
+--   8-9: dos períodos consecutivos del mismo jugador, que no se pisan. Es lo
+--        que HU-012 habilitó al reemplazar la unicidad por la no superposición.
 INSERT INTO JUGADORES_DESCUENTOS
     (FK_id_jugador, FK_id_descuento, estado_activo, tipo_valor, porcentaje, monto_fijo, fecha_inicio, fecha_fin)
 VALUES
     (1, @becaCompleta, 1, '%', 100.00, NULL,     '2026-01-01', '2026-12-31'),
     (2, @mediaBeca,    1, '%',  50.00, NULL,     '2026-01-01', '2026-12-31'),
-    (3, @hermanos,     1, '%',  30.00, NULL,     '2026-01-01', NULL),
-    (4, @hermanos,     1, '$',   NULL, 15000.00, '2026-01-01', NULL),
+    (3, @hermanos,     1, '%',  30.00, NULL,     '2026-01-01', '2026-12-31'),
+    (4, @hermanos,     1, '$',   NULL, 15000.00, '2026-01-01', '2026-12-31'),
     (5, @becaCompleta, 1, '%', 100.00, NULL,     '2025-01-01', '2025-12-31'),
-    (6, @mediaBeca,    0, '%',  50.00, NULL,     '2026-01-01', '2026-12-31');
+    (6, @mediaBeca,    0, '%',  50.00, NULL,     '2026-01-01', '2026-12-31'),
+    (7, @mediaBeca,    1, '%',  50.00, NULL,     '2027-01-01', '2027-12-31'),
+    (8, @mediaBeca,    1, '%',  50.00, NULL,     '2026-01-01', '2026-06-30'),
+    (8, @becaCompleta, 1, '%', 100.00, NULL,     '2026-07-01', '2026-12-31');
 
 COMMIT TRANSACTION;
 GO
@@ -61,10 +69,13 @@ SELECT
     jd.fecha_inicio,
     jd.fecha_fin,
     jd.estado_activo,
-    CASE WHEN jd.estado_activo = 1
-          AND (jd.fecha_inicio IS NULL OR CAST(GETDATE() AS DATE) >= jd.fecha_inicio)
-          AND (jd.fecha_fin IS NULL OR CAST(GETDATE() AS DATE) <= jd.fecha_fin)
-         THEN 'vigente' ELSE 'no vigente' END AS estado
+    -- Mismo criterio que resuelve DiscountDao: la fecha la pone el servidor
+    CASE
+        WHEN jd.estado_activo = 0 THEN 'Cancelada'
+        WHEN CAST(GETDATE() AS DATE) < jd.fecha_inicio THEN 'Programada'
+        WHEN CAST(GETDATE() AS DATE) > jd.fecha_fin THEN 'Expirada'
+        ELSE 'Activa'
+    END AS estado
 FROM JUGADORES_DESCUENTOS jd
     INNER JOIN JUGADORES j ON j.PK_id_jugador = jd.FK_id_jugador
     INNER JOIN PERSONA p ON p.PK_id_persona = j.FK_id_persona
