@@ -7,9 +7,12 @@ public class Discount
     private string playerName = "";
     private string category = "";
     private string type = "";
-    private int percentage = 0;
+    private long typeId = 0;
+    private string valueType = "";
+    private decimal? percentage = null;
+    private decimal? fixedAmount = null;
     private DateTime startDate;
-    private DateTime endDate;
+    private DateTime? endDate = null;
     private bool isActive = false;
 
     public long Id
@@ -42,10 +45,33 @@ public class Discount
         set { type = value; }
     }
 
-    public int Percentage
+    // Id of the row in TIPO_DESCUENTO. Since HU-011 that table is a closed
+    // catalogue of reasons, so this is what ties an assignment to its reason.
+    public long TypeId
+    {
+        get { return typeId; }
+        set { typeId = value; }
+    }
+
+    // '%' or '$'. Decides which of the two values below carries the benefit.
+    public string ValueType
+    {
+        get { return valueType; }
+        set { valueType = value; }
+    }
+
+    // Percentage and FixedAmount are mutually exclusive: the one that does not
+    // apply stays null, the same way the table constraint demands it.
+    public decimal? Percentage
     {
         get { return percentage; }
         set { percentage = value; }
+    }
+
+    public decimal? FixedAmount
+    {
+        get { return fixedAmount; }
+        set { fixedAmount = value; }
     }
 
     public DateTime StartDate
@@ -54,7 +80,9 @@ public class Discount
         set { startDate = value; }
     }
 
-    public DateTime EndDate
+    // Null means the benefit has no expiry date and stays valid until it is
+    // cancelled by hand, which is how most scholarships are granted.
+    public DateTime? EndDate
     {
         get { return endDate; }
         set { endDate = value; }
