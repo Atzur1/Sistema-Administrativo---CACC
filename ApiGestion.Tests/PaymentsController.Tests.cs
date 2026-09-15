@@ -128,4 +128,14 @@ public class PaymentsControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
+
+    [Fact]
+    public void GenerateMonthlyFees_TokenWithoutUserId_ReturnsUnauthorized()
+    {
+        ClaimsPrincipal user = UserWithClaims(new Claim(ClaimTypes.Email, "admin@cacc.com"));
+
+        IActionResult result = CreateController(user).GenerateMonthlyFees(null);
+
+        Assert.IsType<UnauthorizedObjectResult>(result);
+    }
 }
