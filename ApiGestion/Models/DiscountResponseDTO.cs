@@ -20,10 +20,20 @@ public class DiscountResponseDTO
     public decimal? Percentage { get; set; }
     public decimal? FixedAmount { get; set; }
 
+    // Both mandatory since HU-012, in yyyy-MM-dd
     public string StartDate { get; set; } = "";
-
-    // Empty when the benefit has no expiry date
     public string EndDate { get; set; } = "";
 
+    // Where the benefit stands today: "Scheduled", "Active" or "Expired".
+    //
+    // The server resolves it against its own clock and it is the only thing the
+    // client has to read to know the situation. It is not stored anywhere, so a
+    // benefit expires by itself the day its range ends, with no daily job and no
+    // button for the administrator to press.
+    public string Status { get; set; } = "";
+
+    // Derived from Status, kept for the consumers HU-014 left behind. It is not
+    // a second source of truth: the mapper fills it from Status and nothing
+    // else writes it.
     public bool IsActive { get; set; }
 }

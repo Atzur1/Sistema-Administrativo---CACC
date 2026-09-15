@@ -16,8 +16,8 @@ public class DiscountRequestDTOTests
             ValueType = "%",
             Percentage = 50m,
             FixedAmount = null,
-            StartDate = "2026-09-15",
-            EndDate = null
+            StartDate = "2026-10-01",
+            EndDate = "2026-12-31"
         };
     }
 
@@ -29,8 +29,8 @@ public class DiscountRequestDTOTests
             ValueType = "$",
             Percentage = null,
             FixedAmount = 15000m,
-            StartDate = "2026-09-15",
-            EndDate = null
+            StartDate = "2026-10-01",
+            EndDate = "2026-12-31"
         };
     }
 
@@ -155,25 +155,33 @@ public class DiscountRequestDTOTests
         Assert.Contains(nameof(DiscountRequestDTO.Percentage), InvalidMembers(request));
     }
 
-    // Una bonificación sin fecha de corte es válida: corre hasta que la cancelen
-    [Fact]
-    public void EndDate_Missing_IsValid()
+    // ===== HU-012: vigencia obligatoria =====
+
+    // Hasta HU-011 una bonificación podía otorgarse sin fecha de corte y corría
+    // hasta que alguien la diera de baja. HU-012 lo prohíbe: todo beneficio
+    // opera dentro de un período autorizado.
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void StartDate_Missing_IsInvalid(string? startDate)
     {
         DiscountRequestDTO request = PercentageRequest();
-        request.EndDate = null;
+        request.StartDate = startDate;
 
-        Assert.Empty(InvalidMembers(request));
+        Assert.Contains(nameof(DiscountRequestDTO.StartDate), InvalidMembers(request));
     }
 
-    // Un input de fecha sin tocar postea "", y eso significa "no enviada"
-    [Fact]
-    public void Dates_Blank_CountAsNotSent()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void EndDate_Missing_IsInvalid(string? endDate)
     {
         DiscountRequestDTO request = PercentageRequest();
-        request.StartDate = "";
-        request.EndDate = "";
+        request.EndDate = endDate;
 
-        Assert.Empty(InvalidMembers(request));
+        Assert.Contains(nameof(DiscountRequestDTO.EndDate), InvalidMembers(request));
     }
 
     [Theory]
@@ -188,22 +196,69 @@ public class DiscountRequestDTOTests
         Assert.Contains(nameof(DiscountRequestDTO.StartDate), InvalidMembers(request));
     }
 
+    [Theory]
+    [InlineData("31/12/2026")]
+    [InlineData("2026-02-30")]
+    [InlineData("nunca")]
+    public void EndDate_Malformed_IsInvalid(string endDate)
+    {
+        DiscountRequestDTO request = PercentageRequest();
+        request.EndDate = endDate;
+
+        Assert.Contains(nameof(DiscountRequestDTO.EndDate), InvalidMembers(request));
+    }
+
+    // El ejemplo explícito de la historia: 10/10 a 09/10 no se acepta
     [Fact]
     public void EndDate_BeforeStartDate_IsInvalid()
     {
         DiscountRequestDTO request = PercentageRequest();
-        request.StartDate = "2026-09-15";
-        request.EndDate = "2026-09-14";
+        request.StartDate = "2026-10-10";
+        request.EndDate = "2026-10-09";
+
+        Assert.Contains(nameof(DiscountRequestDTO.EndDate), InvalidMembers(request));
+    }
+
+    // El otro ejemplo de la historia: 10/10 a 10/10 tampoco. La fecha de fin
+    // tiene que ser ESTRICTAMENTE posterior, no "posterior o igual".
+    [Fact]
+    public void EndDate_SameAsStartDate_IsInvalid()
+    {
+        DiscountRequestDTO request = PercentageRequest();
+        request.StartDate = "2026-10-10";
+        request.EndDate = "2026-10-10";
 
         Assert.Contains(nameof(DiscountRequestDTO.EndDate), InvalidMembers(request));
     }
 
     [Fact]
-    public void EndDate_SameAsStartDate_IsValid()
+    public void EndDate_OneDayAfterStartDate_IsValid()
     {
         DiscountRequestDTO request = PercentageRequest();
-        request.StartDate = "2026-09-15";
-        request.EndDate = "2026-09-15";
+        request.StartDate = "2026-10-10";
+        request.EndDate = "2026-10-11";
+
+        Assert.Empty(InvalidMembers(request));
+    }
+
+    // Una vigencia que arranca en el futuro es válida: queda Programada
+    [Fact]
+    public void Range_EntirelyInTheFuture_IsValid()
+    {
+        DiscountRequestDTO request = PercentageRequest();
+        request.StartDate = "2030-01-01";
+        request.EndDate = "2030-12-31";
+
+        Assert.Empty(InvalidMembers(request));
+    }
+
+    // Y una enteramente pasada también: sirve para cargar un beneficio histórico
+    [Fact]
+    public void Range_EntirelyInThePast_IsValid()
+    {
+        DiscountRequestDTO request = PercentageRequest();
+        request.StartDate = "2020-01-01";
+        request.EndDate = "2020-12-31";
 
         Assert.Empty(InvalidMembers(request));
     }

@@ -2,7 +2,6 @@ namespace ApiGestion.Controllers;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using ApiGestion.Models;
 using DaoLibrary;
 using EntityLibrary;
@@ -11,12 +10,6 @@ using EntityLibrary;
 [Route("api/[controller]")]
 public class PlayersController : ControllerBase
 {
-    // SQL Server codes for a unique index violation. The filtered index
-    // UX_JUGDESC_UNA_ACTIVA raises one of these when two assignments for the
-    // same player race past the check below, and that is a conflict, not a 500.
-    private const int UniqueIndexViolation = 2601;
-    private const int UniqueConstraintViolation = 2627;
-
     private readonly ILogger<PlayersController> _logger;
     private readonly PlayerDao _playerDao;
     private readonly DiscountDao _discountDao;
@@ -78,10 +71,10 @@ public class PlayersController : ControllerBase
     // contract HU-014 established and its QA suite checks: an expired or
     // cancelled benefit reads as 404.
     //
-    // includeExpired=true widens it to the open assignment even when it is out of
-    // its date window. The benefit popup needs that: a player whose benefit
-    // expired last month still holds the only active slot, so offering an empty
-    // form there would promise an assignment the API is going to reject.
+    // includeExpired=true widens it to the benefit the form has to work with even
+    // when it is outside its window, which is what the popup opens with: the one
+    // that applies today, or failing that the next scheduled one, or the last
+    // one that expired.
     [HttpGet("{playerId}/discount")]
     public IActionResult GetDiscountByPlayer(long playerId, bool includeExpired = false)
     {
@@ -99,11 +92,32 @@ public class PlayersController : ControllerBase
         return Ok(MapToDto(discount));
     }
 
-    // Assigns a benefit to a player (HU-011).
+    // Every benefit of a player that was not cancelled, oldest first (HU-012).
     //
-    // The single active benefit rule is enforced here and not only in the form:
-    // a direct call to the API hits the same check, and the filtered unique index
-    // catches whatever slips through a race.
+    // Since a player can hold several over time, the financial card lists them
+    // all: what already expired, what runs today and what is scheduled. Each one
+    // carries its own state, resolved by the server.
+    [HttpGet("{playerId}/discounts")]
+    public IActionResult GetDiscountsByPlayer(long playerId)
+    {
+        if (playerId <= 0)
+        {
+            return BadRequest("The player id must be greater than zero.");
+        }
+
+        List<Discount> discounts = _discountDao.GetDiscountsByPlayer(playerId);
+        _logger.LogInformation("Benefits returned for player {PlayerId}: {Count}", playerId, discounts.Count);
+
+        return Ok(discounts.Select(MapToDto).ToList());
+    }
+
+    // Assigns a benefit to a player (HU-011 / HU-012).
+    //
+    // Since HU-012 a player can hold several benefits over time, so what is
+    // refused is not a second benefit but a range that overlaps another one of
+    // the same player: on any given date, only one benefit can apply. The check
+    // lives in the DAO, inside the transaction that inserts, so a direct call to
+    // the API and a race between two requests hit the same rule.
     [Authorize]
     [HttpPost("{playerId}/discount")]
     public IActionResult AssignDiscount(long playerId, DiscountRequestDTO request)
@@ -114,38 +128,43 @@ public class PlayersController : ControllerBase
             return rejection;
         }
 
-        if (_discountDao.GetAssignedDiscountByPlayer(playerId) != null)
-        {
-            return Conflict($"Player {playerId} already has an active benefit. Edit or cancel it before assigning a new one.");
-        }
-
         Discount discount = BuildDiscount(playerId, request, reason!);
 
-        try
+        // Asked before writing only to name the offending benefit in the error;
+        // the write path checks again while holding the range.
+        Discount? clash = _discountDao.GetOverlappingDiscount(playerId, discount.StartDate, discount.EndDate);
+        if (clash != null)
         {
-            Discount created = _discountDao.CreateDiscount(discount);
-            _logger.LogInformation("Benefit {DiscountId} assigned to player {PlayerId}", created.Id, playerId);
-
-            // Read back the stored row: the insert alone does not know the player
-            // name or the category, and the client has to receive the same shape
-            // the GET returns.
-            Discount? stored = _discountDao.GetAssignedDiscountByPlayer(playerId);
-
-            return Created($"/api/players/{playerId}/discount", MapToDto(stored ?? created));
+            return Conflict(OverlapMessage(playerId, clash));
         }
-        catch (SqlException exception) when (IsUniqueViolation(exception))
+
+        Discount? created = _discountDao.CreateDiscount(discount);
+        if (created == null)
         {
-            // Another request got there first between the check and the insert
+            // Another request took the range between the check and the insert
             _logger.LogWarning("Concurrent benefit assignment rejected for player {PlayerId}", playerId);
-            return Conflict($"Player {playerId} already has an active benefit. Edit or cancel it before assigning a new one.");
+            return Conflict($"Player {playerId} already has a benefit covering that period. Adjust the dates or cancel the existing one.");
         }
+
+        _logger.LogInformation("Benefit {DiscountId} assigned to player {PlayerId}", created.Id, playerId);
+
+        // Read back the stored row: the insert alone does not know the player
+        // name, the category or the resolved state, and the client has to
+        // receive the same shape the GET returns.
+        //
+        // Looked up by id, not by "the benefit of the player": now that a player
+        // can hold several, assigning a scheduled one while another is running
+        // would otherwise answer with the running one.
+        Discount? stored = FindDiscount(playerId, created.Id);
+
+        return Created($"/api/players/{playerId}/discount", MapToDto(stored ?? created));
     }
 
-    // Edits the benefit a player already holds. Only the open assignment can be
-    // touched: a cancelled one stays as it was granted.
+    // Edits a benefit the player already holds. Only a benefit that was not
+    // cancelled can be touched: a cancelled one stays as it was granted.
     [Authorize]
     [HttpPut("{playerId}/discount")]
-    public IActionResult UpdateDiscount(long playerId, DiscountRequestDTO request)
+    public IActionResult UpdateDiscount(long playerId, DiscountRequestDTO request, long discountId = 0)
     {
         IActionResult? rejection = ValidatePlayerAndReason(playerId, request, out DiscountType? reason);
         if (rejection != null)
@@ -153,45 +172,80 @@ public class PlayersController : ControllerBase
             return rejection;
         }
 
-        Discount? current = _discountDao.GetAssignedDiscountByPlayer(playerId);
+        // Without an explicit id the one the popup is showing is edited
+        Discount? current = discountId > 0
+            ? FindDiscount(playerId, discountId)
+            : _discountDao.GetAssignedDiscountByPlayer(playerId);
+
         if (current == null)
         {
-            return NotFound($"Player {playerId} has no active benefit to edit.");
+            return NotFound($"Player {playerId} has no such benefit to edit.");
         }
 
         Discount discount = BuildDiscount(playerId, request, reason!);
         discount.Id = current.Id;
 
-        if (!_discountDao.UpdateDiscount(discount))
+        Discount? clash = _discountDao.GetOverlappingDiscount(playerId, discount.StartDate, discount.EndDate, current.Id);
+        if (clash != null)
         {
-            return NotFound($"Player {playerId} has no active benefit to edit.");
+            return Conflict(OverlapMessage(playerId, clash));
+        }
+
+        bool? updated = _discountDao.UpdateDiscount(discount);
+
+        if (updated == null)
+        {
+            _logger.LogWarning("Concurrent benefit edit rejected for player {PlayerId}", playerId);
+            return Conflict($"Player {playerId} already has a benefit covering that period. Adjust the dates or cancel the existing one.");
+        }
+
+        if (updated == false)
+        {
+            return NotFound($"Player {playerId} has no such benefit to edit.");
         }
 
         _logger.LogInformation("Benefit {DiscountId} updated for player {PlayerId}", discount.Id, playerId);
 
         // Read back what was stored: the client renders persisted data, never the
         // payload it just sent.
-        Discount? stored = _discountDao.GetAssignedDiscountByPlayer(playerId);
+        Discount? stored = FindDiscount(playerId, current.Id);
         return Ok(MapToDto(stored ?? discount));
     }
 
-    // Cancels the benefit of a player. The row is kept as history and only
-    // flipped to inactive, which frees the player to receive a new one.
+    // Cancels a benefit of a player. The row is kept as history and only flipped
+    // to inactive: PAGOS may still point at it, and the administration table has
+    // to keep showing what was granted.
+    //
+    // Cancelling is for taking a benefit down before its time. A benefit that
+    // simply ran its course does not need this: it expires on its own the day
+    // after its end date, and frees the period for a new one.
     [Authorize]
     [HttpDelete("{playerId}/discount")]
-    public IActionResult CancelDiscount(long playerId)
+    public IActionResult CancelDiscount(long playerId, long discountId = 0)
     {
         if (playerId <= 0)
         {
             return BadRequest("The player id must be greater than zero.");
         }
 
-        if (!_discountDao.DeactivateDiscount(playerId))
+        // Without an explicit id the one the popup is showing is cancelled
+        long target = discountId;
+        if (target <= 0)
         {
-            return NotFound($"Player {playerId} has no active benefit to cancel.");
+            Discount? current = _discountDao.GetAssignedDiscountByPlayer(playerId);
+            if (current == null)
+            {
+                return NotFound($"Player {playerId} has no benefit to cancel.");
+            }
+            target = current.Id;
         }
 
-        _logger.LogInformation("Benefit cancelled for player {PlayerId}", playerId);
+        if (!_discountDao.DeactivateDiscount(playerId, target))
+        {
+            return NotFound($"Player {playerId} has no such benefit to cancel.");
+        }
+
+        _logger.LogInformation("Benefit {DiscountId} cancelled for player {PlayerId}", target, playerId);
 
         return NoContent();
     }
@@ -236,15 +290,29 @@ public class PlayersController : ControllerBase
             ValueType = request.ValueType.Trim(),
             Percentage = isPercentage ? request.Percentage : null,
             FixedAmount = isPercentage ? null : request.FixedAmount,
-            StartDate = DiscountRequestDTO.ParseDate(request.StartDate) ?? DateTime.Today,
-            EndDate = DiscountRequestDTO.ParseDate(request.EndDate),
-            IsActive = true
+            // Both dates are mandatory and already validated by the DTO, so by
+            // the time this runs they parse. The state is not set here: the
+            // database resolves it when the row is read back.
+            StartDate = DiscountRequestDTO.ParseDate(request.StartDate)!.Value,
+            EndDate = DiscountRequestDTO.ParseDate(request.EndDate)!.Value
         };
     }
 
-    private static bool IsUniqueViolation(SqlException exception)
+    // One specific benefit of a player, by id. Cancelled ones are not reachable
+    // here, the same way they are not reachable anywhere else.
+    private Discount? FindDiscount(long playerId, long discountId)
     {
-        return exception.Number == UniqueIndexViolation || exception.Number == UniqueConstraintViolation;
+        return _discountDao.GetDiscountsByPlayer(playerId)
+            .FirstOrDefault(benefit => benefit.Id == discountId);
+    }
+
+    // Names the benefit standing in the way, with its period, so the message
+    // tells the administrator what to move instead of just saying "no".
+    private static string OverlapMessage(long playerId, Discount clash)
+    {
+        return $"Player {playerId} already has a benefit for that period: "
+             + $"{clash.Type} from {clash.StartDate:yyyy-MM-dd} to {clash.EndDate:yyyy-MM-dd}. "
+             + "Adjust the dates or cancel that one first.";
     }
 
     private PlayerResponseDTO MapPlayerToDto(Player player)
@@ -270,10 +338,11 @@ public class PlayersController : ControllerBase
             ValueType = discount.ValueType,
             Percentage = discount.Percentage,
             FixedAmount = discount.FixedAmount,
-            StartDate = discount.StartDate == DateTime.MinValue ? "" : discount.StartDate.ToString("yyyy-MM-dd"),
-            // Empty string, not "0001-01-01": a benefit with no end date has no
-            // date to render and the client checks for the empty value.
-            EndDate = discount.EndDate?.ToString("yyyy-MM-dd") ?? "",
+            StartDate = discount.StartDate.ToString("yyyy-MM-dd"),
+            EndDate = discount.EndDate.ToString("yyyy-MM-dd"),
+            // The state the server resolved, and IsActive read off it. Both come
+            // from the same value, so they cannot contradict each other.
+            Status = discount.Status.ToString(),
             IsActive = discount.IsActive
         };
     }

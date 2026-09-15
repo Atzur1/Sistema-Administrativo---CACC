@@ -29,11 +29,13 @@ public class DiscountRequestDTO : IValidatableObject
 
     public decimal? FixedAmount { get; set; }
 
-    // Optional: the server falls back to today when it is not sent
+    // Mandatory since HU-012: a benefit runs for an authorised period and stops
+    // on its own when that period ends, so neither end of the range can be left
+    // open. Both travel as yyyy-MM-dd, the same shape the API hands back.
+    [Required(ErrorMessage = "The start date is required.")]
     public string? StartDate { get; set; }
 
-    // Optional and nullable on purpose: no end date means the benefit runs until
-    // somebody cancels it.
+    [Required(ErrorMessage = "The end date is required.")]
     public string? EndDate { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -97,8 +99,9 @@ public class DiscountRequestDTO : IValidatableObject
         DateTime? start = ParseDate(StartDate);
         DateTime? end = ParseDate(EndDate);
 
-        // An untouched date input posts an empty string, and that means "not
-        // sent", not "invalid": only a non-blank value that fails to parse is.
+        // [Required] already rejects a missing date, so a blank value reports
+        // once and not twice. What is checked here is the shape of what did
+        // arrive.
         if (!string.IsNullOrWhiteSpace(StartDate) && start == null)
         {
             yield return new ValidationResult(
@@ -113,10 +116,12 @@ public class DiscountRequestDTO : IValidatableObject
                 new[] { nameof(EndDate) });
         }
 
-        if (start != null && end != null && end < start)
+        // Strictly later, not "later or equal": a range that starts and ends the
+        // same day describes a one-day benefit, which the club does not grant.
+        if (start != null && end != null && end <= start)
         {
             yield return new ValidationResult(
-                "The end date cannot be earlier than the start date.",
+                "The end date must be later than the start date.",
                 new[] { nameof(EndDate) });
         }
     }
