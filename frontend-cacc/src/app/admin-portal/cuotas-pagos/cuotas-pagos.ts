@@ -12,6 +12,7 @@ import { PaymentService } from '../../services/payments';
 import { PaymentModel } from '../../models/PaymentModel';
 import { PaymentRequestModel } from '../../models/PaymentRequestModel';
 import { TreasuryMetricsModel } from '../../models/TreasuryMetricsModel';
+import { MonthlyFeeGenerationResultModel } from '../../models/MonthlyFeeGenerationResultModel';
 import { normalizeText } from '../../shared/normalize-text';
 
 // One counter on the page header
@@ -80,6 +81,10 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
     // Blocks a second submit while the payment is being registered
     submitting = false;
+
+    // "Generar Cuotas del Mes" confirmation modal (HU-009)
+    showGenerateModal = false;
+    generating = false;
 
     // Squad the lookup searches, loaded from the API on entry
     private players = signal<PlayerModel[]>([]);
@@ -157,17 +162,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
             error: () => this.players.set([]),
         });
 
-        this.paymentService.getPendingFees().subscribe({
-            next: (fees) => {
-                this.pendingFees.set(fees);
-                this.pendingLoaded.set(true);
-            },
-            error: () => {
-                this.pendingFees.set([]);
-                this.pendingLoaded.set(true);
-            },
-        });
-
+        this.loadPendingFees();
         this.loadLatestPayments();
         this.loadTreasuryMetrics();
 
@@ -226,6 +221,47 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
     isTransfer(): boolean {
         return this.paymentForm.get('method')!.value === CuotasPagos.TRANSFER_METHOD;
+    }
+
+    // "Septiembre 2026", shown in the confirmation modal
+    currentPeriodLabel(): string {
+        const now = new Date();
+        return `${this.months[now.getMonth()].label} ${now.getFullYear()}`;
+    }
+
+    openGenerateModal() {
+        this.showGenerateModal = true;
+    }
+
+    closeGenerateModal() {
+        if (this.generating) {
+            return;
+        }
+        this.showGenerateModal = false;
+    }
+
+    confirmGenerateMonthlyFees() {
+        if (this.generating) {
+            return;
+        }
+
+        this.generating = true;
+        this.paymentService.generateMonthlyFees().subscribe({
+            next: (result) => {
+                this.generating = false;
+                this.showGenerateModal = false;
+                this.showToast(this.describeGenerationResult(result), 'success');
+
+                // The pending list and the counters now include the new fees
+                this.loadPendingFees();
+                this.loadTreasuryMetrics();
+            },
+            error: (error: HttpErrorResponse) => {
+                this.generating = false;
+                this.showGenerateModal = false;
+                this.showToast(this.describeGenerationError(error), 'error');
+            },
+        });
     }
 
     // One unified field: the same term is matched against name and document
@@ -402,6 +438,36 @@ export class CuotasPagos implements OnInit, OnDestroy {
             return 'No se pudo registrar el pago: el período ya está abonado o hay datos inválidos.';
         }
         return 'Ocurrió un error al registrar el pago. Intentá nuevamente.';
+    }
+
+    private loadPendingFees() {
+        this.paymentService.getPendingFees().subscribe({
+            next: (fees) => {
+                this.pendingFees.set(fees);
+                this.pendingLoaded.set(true);
+            },
+            error: () => {
+                this.pendingFees.set([]);
+                this.pendingLoaded.set(true);
+            },
+        });
+    }
+
+    private describeGenerationResult(result: MonthlyFeeGenerationResultModel): string {
+        const skippedNote = result.totalSkipped > 0
+            ? ` ${result.totalSkipped} jugadores fueron omitidos por ya poseer cuota en este período.`
+            : '';
+        return `Se generaron ${result.totalGenerated} cuotas de ${result.periodName} exitosamente.${skippedNote}`;
+    }
+
+    private describeGenerationError(error: HttpErrorResponse): string {
+        if (error.status === 0) {
+            return 'No se pudo conectar con el servidor. Intentá nuevamente.';
+        }
+        if (error.status === 401 || error.status === 403) {
+            return 'No tenés permisos para generar las cuotas del mes.';
+        }
+        return 'Ocurrió un error al generar las cuotas del mes. Intentá nuevamente.';
     }
 
     private loadLatestPayments() {

@@ -43,6 +43,10 @@
         <h2 class="form-title">Registrar pago</h2>
         <span class="form-subtitle">Cargá un nuevo pago en segundos</span>
       </div>
+
+      <button type="button" class="generate-button" (click)="openGenerateModal()">
+        Generar Cuotas del Mes
+      </button>
     </header>
 
     <form class="form-grid" [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
@@ -201,11 +205,33 @@
     </article>
   </section>
 
-  <!-- Result of registering a payment -->
+  <!-- Result of registering a payment or generating the monthly fees -->
   @if (toastMessage) {
     <div class="toast" [class.toast-error]="toastKind === 'error'" [class.is-leaving]="toastLeaving"
          role="status" aria-live="polite">
       {{ toastMessage }}
+    </div>
+  }
+
+  <!-- Confirmation before the bulk generation runs (HU-009) -->
+  @if (showGenerateModal) {
+    <div class="modal-backdrop" (click)="closeGenerateModal()">
+      <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <h2 class="modal-title">Generar cuotas del mes</h2>
+        <p class="modal-body">
+          Se generarán las cuotas correspondientes a <strong>{{ currentPeriodLabel() }}</strong>. ¿Desea continuar?
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="modal-button modal-cancel"
+                  [disabled]="generating" (click)="closeGenerateModal()">
+            Cancelar
+          </button>
+          <button type="button" class="modal-button modal-confirm"
+                  [disabled]="generating" (click)="confirmGenerateMonthlyFees()">
+            {{ generating ? 'Generando...' : 'Confirmar' }}
+          </button>
+        </div>
+      </div>
     </div>
   }
 </div>

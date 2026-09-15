@@ -139,6 +139,27 @@
     margin-bottom: 14px;
 }
 
+/* Bulk generation entry point, pushed to the far right of the form header */
+.generate-button {
+    margin-left: auto;
+    padding: 9px 14px;
+    background: #ffffff;
+    border: 1.5px solid #00a651;
+    border-radius: 9px;
+    color: #00a651;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.generate-button:hover {
+    background: #00a651;
+    color: #ffffff;
+}
+
 .form-icon {
     display: flex;
     align-items: center;
@@ -564,6 +585,15 @@
         padding: 14px;
     }
 
+    .form-head {
+        flex-wrap: wrap;
+    }
+
+    .generate-button {
+        margin-left: 0;
+        width: 100%;
+    }
+
     .form-grid {
         grid-template-columns: 1fr;
     }
@@ -592,4 +622,82 @@
     color: #64748b;
     font-size: 0.8rem;
     text-align: center;
+}
+
+/* ===== GENERATE MONTHLY FEES MODAL ===== */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.45);
+    animation: fadeIn 0.15s ease both;
+    box-sizing: border-box;
+}
+
+.modal {
+    width: 100%;
+    max-width: 380px;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    box-sizing: border-box;
+}
+
+.modal-title {
+    margin: 0 0 10px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.modal-body {
+    margin: 0 0 18px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #333733;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-button {
+    padding: 9px 16px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.modal-cancel {
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    color: #555a55;
+}
+
+.modal-cancel:hover:not(:disabled) {
+    background: #f4f6f4;
+}
+
+.modal-confirm {
+    background: #00a651;
+    border: none;
+    color: #ffffff;
+}
+
+.modal-confirm:hover:not(:disabled) {
+    background: #009148;
+}
+
+.modal-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }

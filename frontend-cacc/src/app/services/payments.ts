@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { PaymentModel } from '../models/PaymentModel';
 import { PaymentRequestModel } from '../models/PaymentRequestModel';
 import { TreasuryMetricsModel } from '../models/TreasuryMetricsModel';
+import { MonthlyFeeGenerationResultModel } from '../models/MonthlyFeeGenerationResultModel';
 
 @Injectable({
     providedIn: 'root',
@@ -31,5 +32,10 @@ export class PaymentService {
 
     createPayment(request: PaymentRequestModel): Observable<PaymentModel> {
         return this.http.post<PaymentModel>(`${this.API_URL}/payments`, request);
+    }
+
+    // No body: the backend defaults to the current server month/year (HU-009)
+    generateMonthlyFees(): Observable<MonthlyFeeGenerationResultModel> {
+        return this.http.post<MonthlyFeeGenerationResultModel>(`${this.API_URL}/payments/generate-monthly`, {});
     }
 }
