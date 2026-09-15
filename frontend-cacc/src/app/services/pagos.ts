@@ -86,10 +86,11 @@ export class PagosService {
     return this.http.get<CuotaPendienteDetalle[]>(`${this.apiUrl}/pagos/deuda/${idJugador}`);
   }
 
-  registrarPago(idJugador: number, periodo: string, monto: number, metodoPago: string): Observable<RegistrarPagoResponse> {
+  registrarPago(idJugador: number, periodo: string, anio: number, monto: number, metodoPago: string): Observable<RegistrarPagoResponse> {
     return this.http.post<RegistrarPagoResponse>(`${this.apiUrl}/pagos/registrar`, {
       idJugador,
       periodo,
+      anio,
       monto,
       metodoPago,
     });

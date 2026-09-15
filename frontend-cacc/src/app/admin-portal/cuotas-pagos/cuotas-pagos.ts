@@ -73,6 +73,10 @@ export class CuotasPagos implements OnInit, OnDestroy {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
 
+  // Año actual + los 2 anteriores. Se recalcula solo con la fecha de hoy, así que la ventana
+  // se corre sola con el correr de los años (ej. en 2027 pasa a ser 2027/2026/2025) sin tocar código.
+  years = buildYearOptions();
+
   methods = ['Transferencia', 'Efectivo'];
 
   private jugadores: JugadorResumen[] = [];
@@ -127,6 +131,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.paymentForm = this.fb.group({
       player: ['', [Validators.required, this.knownPlayerValidator]],
       period: ['', [Validators.required]],
+      year: [new Date().getFullYear(), [Validators.required]],
       amount: ['', [Validators.required, Validators.min(1)]],
       method: ['', [Validators.required]],
     });
@@ -321,17 +326,17 @@ export class CuotasPagos implements OnInit, OnDestroy {
       return;
     }
 
-    const { period, amount, method } = this.paymentForm.value;
+    const { period, year, amount, method } = this.paymentForm.value;
     const jugador = this.selectedPlayer;
 
     this.enviando = true;
     this.errorMessage = '';
     this.clearSuccessMessage();
 
-    this.pagosService.registrarPago(jugador.idJugador, period, Number(amount), method).subscribe({
+    this.pagosService.registrarPago(jugador.idJugador, period, Number(year), Number(amount), method).subscribe({
       next: () => {
         this.enviando = false;
-        this.paymentForm.reset({ player: '', period: '', amount: '', method: '' });
+        this.paymentForm.reset({ player: '', period: '', year: new Date().getFullYear(), amount: '', method: '' });
         this.montoDisplay = '';
         this.selectedPlayer = null;
         this.matchingPlayers = [];
@@ -380,6 +385,13 @@ const DIACRITICS_REGEX = new RegExp(DIACRITICS_PATTERN, 'g');
 
 function normalizeTexto(texto: string): string {
   return texto.normalize('NFD').replace(DIACRITICS_REGEX, '');
+}
+
+// Año actual y los 2 anteriores, más nuevo primero. Calculado en el momento (no hardcodeado)
+// para que la ventana se corra sola cada 1° de enero sin que haga falta tocar código.
+function buildYearOptions(): number[] {
+  const actual = new Date().getFullYear();
+  return [actual, actual - 1, actual - 2];
 }
 
 function initialsOf(nombreCompleto: string): string {

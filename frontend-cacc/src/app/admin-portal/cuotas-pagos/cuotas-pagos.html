@@ -88,6 +88,15 @@
         </select>
       </div>
 
+      <div class="field field-year">
+        <label class="field-label" for="year">Año</label>
+        <select id="year" class="field-input" formControlName="year">
+          @for (year of years; track year) {
+            <option [value]="year">{{ year }}</option>
+          }
+        </select>
+      </div>
+
       <div class="field">
         <label class="field-label" for="amount">Monto</label>
         <div class="amount-wrapper">
