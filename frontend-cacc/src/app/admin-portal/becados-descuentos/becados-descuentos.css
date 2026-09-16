@@ -1,0 +1,1050 @@
+/* ===== ANIMATIONS ===== */
+/* Blocks fade in while sliding up on load */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* The confirmation message fades in on its own, without moving the layout */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ===== LAYOUT ===== */
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    min-height: 100%;
+    box-sizing: border-box;
+    background: #f1f5f1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #000000;
+    /* Never scroll sideways, no matter how narrow the viewport gets */
+    overflow-x: hidden;
+}
+
+/* ===== HEADER ===== */
+/* Sits directly on the page background, with no card of its own */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #e7f4ea;
+    color: #00a651;
+    flex-shrink: 0;
+}
+
+.header-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.header-title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    font-size: 12px;
+    color: #555a55;
+}
+
+.header-metrics {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.header-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0 18px;
+}
+
+/* Separator between metrics */
+.header-metric + .header-metric {
+    border-left: 1px solid #e4e7e4;
+}
+
+.header-metric-value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.header-metric-label {
+    font-size: 9.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #555a55;
+    white-space: nowrap;
+}
+
+.header-divider {
+    height: 1px;
+    margin: 14px 0;
+    background: #e4e7e4;
+}
+
+/* ===== ASSIGNMENT FORM ===== */
+/* The action panel of the dashboard, so it carries a heavier green frame */
+.form-panel {
+    padding: 16px;
+    margin-bottom: 14px;
+    background: #ffffff;
+    border: 2px solid #00a651;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0, 166, 81, 0.12);
+    animation: fadeSlideUp 0.4s ease both;
+    animation-delay: 60ms;
+}
+
+.form-head {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+}
+
+.form-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #00a651;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.form-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.form-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.form-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form-subtitle {
+    font-size: 11px;
+    color: #555a55;
+}
+
+/* Five fields: the player lookup takes the extra room */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+/* Since HU-011 the panel only looks the player up: the benefit itself is filled
+   in the popup, so the row is just the search field and the button that opens
+   it. */
+.lookup-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+}
+
+.lookup-grid .submit-button {
+    grid-column: auto;
+    padding: 9px 18px;
+    white-space: nowrap;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+/* Anchor for the suggestions dropdown */
+.field-player {
+    position: relative;
+}
+
+.field-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+}
+
+.field-input {
+    width: 100%;
+    padding: 9px 11px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12px;
+    color: #000000;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field-input::placeholder {
+    color: #555a55;
+    opacity: 0.7;
+}
+
+.field-input:hover {
+    border-color: #c9d3c9;
+}
+
+.field-input:focus {
+    border-color: #00a651;
+    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
+}
+
+/* ===== PLAYER SUGGESTIONS ===== */
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    margin: 4px 0 0;
+    padding: 4px;
+    list-style: none;
+    max-height: 180px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 9px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.15s ease both;
+}
+
+.suggestion {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    padding: 7px 9px;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.suggestion:hover,
+.suggestion:focus-visible {
+    background: #f9faf9;
+    outline: none;
+}
+
+.suggestion-name {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.suggestion-meta {
+    font-size: 10.5px;
+    color: #555a55;
+}
+
+/* ===== SUBMIT ===== */
+.submit-button {
+    grid-column: span 5;
+    padding: 11px;
+    background: #00a651;
+    border: none;
+    border-radius: 9px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+    background: #009148;
+}
+
+.submit-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Confirmation of a persisted operation: fades in, then fades out before being
+   removed. It only shows after the API answered, never on submit. */
+.form-feedback {
+    margin: 12px 0 0;
+    padding: 9px 11px;
+    background: #e7f4ea;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #00a651;
+    animation: fadeIn 0.3s ease both;
+    transition: opacity 0.3s ease;
+}
+
+.form-feedback.is-leaving {
+    opacity: 0;
+}
+
+/* ===== MAIN GRID ===== */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    /* Fills the remaining height so nothing is left empty below */
+    flex: 1;
+    min-height: 0;
+}
+
+/* ===== PANELS ===== */
+.panel {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    min-width: 0;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.panel-benefits {
+    animation-delay: 140ms;
+}
+
+.panel-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 14px;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.panel-subtitle {
+    font-size: 11px;
+    color: #555a55;
+}
+
+/* ===== BENEFITS TABLE ===== */
+/* Only the table scrolls sideways if the viewport gets too narrow */
+/* overflow-x fuerza a recortar también en vertical, así que se reserva espacio
+   arriba para que el globo de la insignia de la primera fila no quede cortado. */
+.table-wrapper {
+    overflow-x: auto;
+    padding-top: 34px;
+    margin-top: -34px;
+}
+
+.benefits-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.benefits-table th {
+    padding: 0 10px 8px;
+    border-bottom: 1px solid #e4e7e4;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.benefits-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #f1f5f1;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.benefits-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.benefits-table tbody tr:hover {
+    background: #f9faf9;
+}
+
+.benefits-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.cell-player {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* Avatar background per benefit type */
+.avatar-scholarship {
+    background: #8b5cf6;
+}
+
+.avatar-discount {
+    background: #3b82f6;
+}
+
+.player-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.player-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.player-category {
+    font-size: 11px;
+    color: #555a55;
+    white-space: nowrap;
+}
+
+.cell-benefit {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cell-muted {
+    color: #555a55;
+    white-space: nowrap;
+}
+
+/* ===== PILLS ===== */
+.type-pill,
+.status-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.type-scholarship {
+    background: #f3eeff;
+    color: #8b5cf6;
+}
+
+.type-discount {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+/* A benefit still inside its range reads as valid, an old one as neutral */
+.status-active {
+    background: #e7f4ea;
+    color: #00a651;
+}
+
+.status-expired {
+    background: #f1f5f1;
+    color: #555a55;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablet: the form drops to two fields per row */
+@media (max-width: 1100px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* The button and the message still span the whole form */
+    .submit-button,
+    .form-feedback {
+        grid-column: span 2;
+    }
+}
+
+/* Mobile: metrics drop to their own line under the title */
+@media (max-width: 768px) {
+    .page-header {
+        flex-wrap: wrap;
+    }
+
+    .header-metrics {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .header-metric {
+        padding: 0 18px 0 0;
+    }
+
+    .header-metric + .header-metric {
+        padding-left: 18px;
+    }
+}
+
+/* Small mobile: one field per row, tighter padding */
+@media (max-width: 520px) {
+    .dashboard {
+        padding: 14px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .submit-button,
+    .form-feedback {
+        grid-column: span 1;
+    }
+
+    .header-metrics {
+        flex-wrap: wrap;
+        row-gap: 10px;
+    }
+}
+
+/* Neutral pill and avatar: the database has no column that classifies a benefit
+   as scholarship or discount, so the real discount type name is shown instead
+   of inventing that distinction in the front end. */
+.avatar-benefit {
+    background: #8b5cf6;
+}
+
+.type-benefit {
+    background: #f3eeff;
+    color: #8b5cf6;
+}
+
+/* Empty state, so nobody reads a blank table as a loading failure. */
+.panel-empty {
+    margin: 0;
+    padding: 1.25rem 0.25rem;
+    color: #64748b;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+/* ===== ROW ACTION ===== */
+.row-action {
+    padding: 5px 12px;
+    background: #ffffff;
+    border: 1px solid #00a651;
+    border-radius: 7px;
+    color: #00a651;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.row-action:hover {
+    background: #00a651;
+    color: #ffffff;
+}
+
+/* ===== BENEFIT POPUP (HU-011) =====
+   Sits above the dashboard. The backdrop closes it on click; the panel stops the
+   propagation so clicking inside never dismisses a half filled form. */
+.dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(17, 24, 20, 0.45);
+    backdrop-filter: blur(2px);
+    animation: dialogFade 0.18s ease both;
+}
+
+.dialog {
+    width: 100%;
+    max-width: 460px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    padding: 18px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 2px solid #00a651;
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+    animation: dialogRise 0.22s ease both;
+}
+
+@keyframes dialogFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes dialogRise {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dialog-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.dialog-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.dialog-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #000000;
+}
+
+.dialog-subtitle {
+    font-size: 12px;
+    color: #555a55;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dialog-close {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #e4e7e4;
+    border-radius: 8px;
+    color: #555a55;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dialog-close svg {
+    width: 14px;
+    height: 14px;
+}
+
+.dialog-close:hover {
+    background: #f4f6f4;
+    color: #000000;
+}
+
+/* ===== POPUP MESSAGES ===== */
+.dialog-error,
+.dialog-form-error {
+    margin: 0 0 12px;
+    padding: 9px 11px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 9px;
+    font-size: 12px;
+    color: #b91c1c;
+}
+
+.dialog-form-error {
+    margin: 4px 0 0;
+}
+
+.dialog-loading {
+    margin: 0;
+    padding: 18px 0;
+    text-align: center;
+    font-size: 12px;
+    color: #555a55;
+}
+
+.dialog-confirm {
+    margin: 0 0 16px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #000000;
+}
+
+/* ===== ACTIVE BENEFIT CARD ===== */
+.benefit-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    background: #f8faf8;
+    border: 1px solid #e4e7e4;
+    border-radius: 11px;
+}
+
+.benefit-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+    margin: 0;
+}
+
+.benefit-detail dt {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+}
+
+.benefit-detail dd {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: #000000;
+}
+
+.benefit-detail .benefit-amount {
+    font-size: 17px;
+    font-weight: 700;
+    color: #00a651;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Assigned but outside its date window: the slot is taken, so it has to be
+   explained instead of just looking like an ordinary active benefit. */
+.benefit-warning {
+    margin: 0;
+    padding: 8px 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    font-size: 11.5px;
+    color: #92400e;
+}
+
+/* ===== POPUP FORM ===== */
+.dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.field-hint {
+    font-size: 10.5px;
+    color: #555a55;
+}
+
+.field-hint-error {
+    color: #b91c1c;
+}
+
+/* Percentage and amount fields carry their unit inside the control */
+.field-affix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.field-affix .field-input {
+    padding-right: 30px;
+}
+
+.field-affix-label {
+    position: absolute;
+    right: 11px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555a55;
+    pointer-events: none;
+}
+
+.field-affix-left {
+    right: auto;
+    left: 11px;
+}
+
+.field-affix .field-affix-left ~ .field-input,
+.field-affix:has(.field-affix-left) .field-input {
+    padding-left: 24px;
+    padding-right: 11px;
+}
+
+/* ===== POPUP ACTIONS ===== */
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 16px;
+}
+
+.button-primary,
+.button-ghost,
+.button-danger {
+    padding: 9px 16px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+}
+
+.button-primary {
+    background: #00a651;
+    border: none;
+    color: #ffffff;
+}
+
+.button-primary:hover:not(:disabled) {
+    background: #009148;
+}
+
+.button-ghost {
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    color: #555a55;
+}
+
+.button-ghost:hover:not(:disabled) {
+    background: #f4f6f4;
+    color: #000000;
+}
+
+.button-danger {
+    background: #dc2626;
+    border: none;
+    color: #ffffff;
+}
+
+.button-danger:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.button-primary:disabled,
+.button-ghost:disabled,
+.button-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== NARROW SCREENS ===== */
+@media (max-width: 640px) {
+    .lookup-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .benefit-detail {
+        grid-template-columns: 1fr;
+    }
+
+    .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .dialog-actions button {
+        width: 100%;
+    }
+}
+
+/* ===== VALIDITY STATES (HU-012) =====
+   status-active and status-expired already existed and are reused as they are.
+   These two complete the set the server can answer. */
+
+/* Granted but not started yet: amber, the colour of something pending */
+.status-scheduled {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Taken down by hand. Muted, because it is no longer in play. */
+.status-cancelled {
+    background: #f1f5f1;
+    color: #8a908a;
+    text-decoration: line-through;
+}
+
+/* ===== BENEFIT CARD ===== */
+.benefit-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* The validity reads as one line, so it takes the full width of the grid */
+.benefit-detail-wide {
+    grid-column: 1 / -1;
+}
+
+/* A scheduled benefit needs a word: the card would otherwise look like it is
+   already being applied */
+.benefit-note {
+    margin: 0;
+    padding: 8px 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    font-size: 11.5px;
+    color: #92400e;
+}
+
+/* ===== BENEFIT HISTORY ===== */
+.benefit-history {
+    margin-top: 14px;
+}
+
+.benefit-history-title {
+    margin: 0 0 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+}
+
+.benefit-history-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 190px;
+    overflow-y: auto;
+}
+
+.benefit-history-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 9px;
+}
+
+/* The one the card above is showing */
+.benefit-history-item.is-current {
+    border-color: #00a651;
+    background: #f8faf8;
+}
+
+.benefit-history-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+}
+
+.benefit-history-reason {
+    font-size: 12px;
+    font-weight: 600;
+    color: #000000;
+}
+
+.benefit-history-meta {
+    font-size: 10.5px;
+    color: #555a55;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ===== DATE RANGE ===== */
+/* The two dates read as one field: they are a period, not two separate values */
+.field-dates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Marked while the range is wrong, next to the message that explains why */
+.field-input.is-invalid {
+    border-color: #dc2626;
+}
+
+.field-input.is-invalid:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+@media (max-width: 640px) {
+    .field-dates {
+        grid-template-columns: 1fr;
+    }
+
+    .benefit-history-item {
+        flex-wrap: wrap;
+    }
+}

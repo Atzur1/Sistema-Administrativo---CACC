@@ -48,25 +48,44 @@ namespace ServiceLibrary
                 }
 
                 // Hay una cuota pendiente para este período: este pago es un abono contra ella,
-                // total o parcial. No se admite pagar de más (el vuelto no existe acá).
-                if (request.Monto > pendiente.MontoFinal)
+                // total o parcial. Antes de validar el monto, se busca si el jugador tiene un
+                // beneficio de Becados y Descuentos activo para este período — no importa que la
+                // cuota ya estuviera cargada antes de asignárselo, se aplica igual acá.
+                var descuento = _pagosDao.ObtenerDescuentoAplicableEnPeriodo(conexion, transaccion, request.IdJugador, pendiente.FechaVencimiento!.Value);
+                var saldoAjustado = CalcularSaldoAjustado(pendiente.MontoFinal, pendiente.MontoBase, descuento);
+
+                if (saldoAjustado <= 0)
                 {
                     throw new CobroInvalidoException(
-                        $"El monto supera el saldo pendiente (${pendiente.MontoFinal:N0}) de este jugador para {request.Periodo} {anio}.");
+                        $"La cuota de {request.Periodo} {anio} de este jugador ya está cubierta por un beneficio de Becados y Descuentos, no hay nada que cobrar.");
                 }
 
-                var resultado = InsertarAbono(conexion, transaccion, request, pendiente.FechaVencimiento!.Value);
-
-                var saldoRestante = pendiente.MontoFinal - request.Monto;
-                if (saldoRestante <= 0)
+                // No se admite pagar de más (el vuelto no existe acá) — contra el saldo YA
+                // ajustado por el beneficio, no contra el monto_final crudo de la cuota.
+                if (request.Monto > saldoAjustado)
                 {
-                    // Cubrió el total: la cuota pendiente ya cumplió su función, se borra. La
-                    // "prueba" de que está pagada queda en el/los abono(s) insertados arriba.
+                    throw new CobroInvalidoException(
+                        $"El monto supera el saldo pendiente (${saldoAjustado:N0}, ya con el beneficio de Becados y Descuentos aplicado) de este jugador para {request.Periodo} {anio}.");
+                }
+
+                // montoBaseCuota: se guarda el ORIGINAL de la cuota (no lo que se paga en este
+                // abono puntual) para que el Historial de Pagos pueda mostrar más adelante "Cuota:
+                // $10.000" aunque la cuota pendiente ya se haya borrado al completarse.
+                var resultado = InsertarAbono(conexion, transaccion, request, pendiente.FechaVencimiento!.Value, descuento?.IdJugadorDescuento, pendiente.MontoBase);
+
+                var saldoRestanteAjustado = saldoAjustado - request.Monto;
+                if (saldoRestanteAjustado <= 0)
+                {
+                    // Cubrió el total (ya con el beneficio aplicado): la cuota pendiente ya cumplió
+                    // su función, se borra. La "prueba" de que está pagada queda en el/los abono(s)
+                    // insertados arriba.
                     _pagosDao.EliminarPago(conexion, transaccion, pendiente.IdPago);
                 }
                 else
                 {
-                    _pagosDao.ActualizarSaldoPendiente(conexion, transaccion, pendiente.IdPago, saldoRestante);
+                    // monto_final sigue guardando el saldo crudo (sin el beneficio restado): el
+                    // beneficio se vuelve a recalcular la próxima vez que se lea/cobre esta cuota.
+                    _pagosDao.ActualizarSaldoPendiente(conexion, transaccion, pendiente.IdPago, pendiente.MontoFinal - request.Monto);
                 }
 
                 return resultado;
@@ -75,14 +94,18 @@ namespace ServiceLibrary
 
         // Inserta la fila de PAGOS que representa la plata efectivamente recibida (Estado = true),
         // sea un pago directo (sin cuota previa) o un abono contra una cuota pendiente.
-        private RegistrarPagoResultado InsertarAbono(SqlConnection conexion, SqlTransaction transaccion, RegistrarPagoRequest request, DateTime fechaVencimiento)
+        // idJugadorDescuento queda de rastro de qué beneficio (si hubo uno) se le aplicó a este abono.
+        // montoBaseCuota: el monto ORIGINAL de la cuota completa (antes de abonos/beneficio); si es
+        // null (pago directo sin cuota previa) se usa el propio monto del abono.
+        private RegistrarPagoResultado InsertarAbono(SqlConnection conexion, SqlTransaction transaccion, RegistrarPagoRequest request, DateTime fechaVencimiento, int? idJugadorDescuento = null, decimal? montoBaseCuota = null)
         {
             var fechaPago = DateTime.Now.Date; // PAGOS.fecha_pago es DATE: no admite componente de hora
 
             var pago = new Pago
             {
                 IdJugador = request.IdJugador,
-                MontoBase = request.Monto,
+                MontoBase = montoBaseCuota ?? request.Monto,
+                IdJugadorDescuento = idJugadorDescuento,
                 MontoFinal = request.Monto,
                 MetodoPago = request.MetodoPago,
                 FechaPago = fechaPago,
@@ -135,6 +158,23 @@ namespace ServiceLibrary
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => _pagosDao.ObtenerDeudaDetalle(idJugador);
 
         public ResumenPagos ObtenerResumen() => _pagosDao.ObtenerResumen();
+
+        // Cuánto queda realmente pendiente de una cuota tras aplicar el beneficio (si tiene uno):
+        // "%" descuenta ese porcentaje del monto ORIGINAL de la cuota, "$" descuenta un monto fijo.
+        // Nunca negativo (un beneficio no puede generar saldo a favor).
+        private static decimal CalcularSaldoAjustado(decimal montoFinal, decimal montoBase, DescuentoAplicable? descuento)
+        {
+            if (descuento == null)
+            {
+                return montoFinal;
+            }
+
+            decimal ajustado = descuento.TipoValor == "%"
+                ? montoFinal - (montoBase * (descuento.Porcentaje ?? 0) / 100m)
+                : montoFinal - (descuento.MontoFijo ?? 0);
+
+            return ajustado < 0 ? 0 : ajustado;
+        }
 
         private static (int mes, int anio) ValidarSolicitudDeRegistro(RegistrarPagoRequest request)
         {

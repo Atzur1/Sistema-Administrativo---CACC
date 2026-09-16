@@ -35,7 +35,10 @@ namespace DaoLibrary
 
         private static void ObtenerTotales(SqlConnection conexion, ResumenGeneralInfo info)
         {
-            string query = @"
+            // deuda_acumulada ya descuenta el beneficio activo de Becados y Descuentos de cada
+            // cuota (clampleado a 0), aunque la cuota se haya generado antes de asignarle el
+            // beneficio.
+            string query = $@"
                 SELECT
                     (SELECT COUNT(*) FROM JUGADORES) AS total_jugadores,
                     (SELECT COUNT(DISTINCT FK_id_categoria) FROM JUGADORES) AS cantidad_categorias,
@@ -47,7 +50,10 @@ namespace DaoLibrary
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS
                         WHERE estado = 1 AND fecha_pago >= DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) - 1, 0)
                                           AND fecha_pago <  DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)) AS ingresado_mes_anterior,
-                    (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WHERE estado = 0) AS deuda_acumulada";
+                    (SELECT ISNULL(SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}), 0)
+                        FROM PAGOS pg
+                        {DescuentosSql.ApplyDescuentoActivo}
+                        WHERE pg.estado = 0) AS deuda_acumulada";
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             using SqlDataReader reader = comando.ExecuteReader();
@@ -62,18 +68,24 @@ namespace DaoLibrary
             info.DeudaAcumulada = Convert.ToDecimal(reader["deuda_acumulada"]);
         }
 
-        // Agrupa jugadores por cuántos pagos pendientes (estado = 0) tienen: 0 / 1 / 2+.
+        // Agrupa jugadores por cuántas cuotas con saldo real > 0 tienen: 0 / 1 / 2+. Una cuota
+        // que un beneficio de Becados y Descuentos dejó en $0 no cuenta como deuda impaga.
         private static void ObtenerBucketsDeDeuda(SqlConnection conexion, ResumenGeneralInfo info)
         {
-            string query = @"
+            string query = $@"
                 SELECT
                     SUM(CASE WHEN cnt = 0 THEN 1 ELSE 0 END) AS sin_deuda,
                     SUM(CASE WHEN cnt = 1 THEN 1 ELSE 0 END) AS una_impaga,
                     SUM(CASE WHEN cnt >= 2 THEN 1 ELSE 0 END) AS dos_o_mas
                 FROM (
-                    SELECT j.PK_id_jugador, COUNT(pg.PK_id_pago) AS cnt
+                    SELECT j.PK_id_jugador, COUNT(ca.PK_id_pago) AS cnt
                     FROM JUGADORES j
-                    LEFT JOIN PAGOS pg ON pg.FK_id_jugador = j.PK_id_jugador AND pg.estado = 0
+                    LEFT JOIN (
+                        SELECT pg.PK_id_pago, pg.FK_id_jugador, ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
+                        FROM PAGOS pg
+                        {DescuentosSql.ApplyDescuentoActivo}
+                        WHERE pg.estado = 0
+                    ) ca ON ca.FK_id_jugador = j.PK_id_jugador AND ca.saldo_ajustado > 0
                     GROUP BY j.PK_id_jugador
                 ) t";
 
@@ -167,15 +179,20 @@ namespace DaoLibrary
 
         private static List<PendienteJugador> ObtenerMayorDeudaPendiente(SqlConnection conexion)
         {
-            string query = @"
+            // Mismo criterio que PagosDao.ObtenerPendientesAgrupados: saldo ya con el beneficio
+            // aplicado, y afuera si un beneficio le deja todo en $0.
+            string query = $@"
                 SELECT TOP (5) j.PK_id_jugador, p.nombre, p.apellido, c.nombre_categoria,
-                       SUM(pg.monto_final) AS monto_total, COUNT(*) AS cantidad_cuotas
+                       SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
+                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 THEN 1 END) AS cantidad_cuotas
                 FROM PAGOS pg
+                {DescuentosSql.ApplyDescuentoActivo}
                 JOIN JUGADORES j ON pg.FK_id_jugador = j.PK_id_jugador
                 JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE pg.estado = 0
                 GROUP BY j.PK_id_jugador, p.nombre, p.apellido, c.nombre_categoria
+                HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
                 ORDER BY monto_total DESC";
 
             var resultado = new List<PendienteJugador>();

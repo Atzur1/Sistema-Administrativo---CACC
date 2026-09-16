@@ -14,7 +14,17 @@ namespace EntityLibrary
     public class PagoHistorialItem
     {
         public string Periodo { get; set; } = string.Empty; // "Enero 2026", derivado de fecha_vencimiento; "-" si no está cargado
-        public decimal MontoTotal { get; set; }
+        public decimal MontoTotal { get; set; } // Lo que efectivamente se cobró (suma de los abonos)
+        public decimal MontoOriginal { get; set; } // El valor completo de la cuota, antes del beneficio (si tiene uno)
+
+        // Beneficio de Becados y Descuentos que se le aplicó a esta cuota al pagarla, si tuvo uno
+        // — así se ve por qué MontoTotal es menor que MontoOriginal.
+        public bool TieneBeneficio { get; set; }
+        public string? MotivoBeneficio { get; set; }
+        public string? TipoValorBeneficio { get; set; } // "%" o "$"
+        public decimal? PorcentajeBeneficio { get; set; }
+        public decimal? MontoFijoBeneficio { get; set; }
+
         public List<PagoHistorialAbono> Abonos { get; set; } = new();
     }
 

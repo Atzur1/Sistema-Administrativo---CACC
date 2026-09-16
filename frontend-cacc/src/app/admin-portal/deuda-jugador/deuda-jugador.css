@@ -239,6 +239,29 @@
     color: #00a651;
 }
 
+/* ===== BENEFICIO (Becados y Descuentos) ===== */
+.cuota-beneficio-badge {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 3px 8px;
+    background: #e7f4ea;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #00874a;
+}
+
+.cuota-cubierta {
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    background: #e7f4ea;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #00874a;
+    text-align: center;
+}
+
 /* ===== SALDO ===== */
 .cuota-saldo {
     display: flex;

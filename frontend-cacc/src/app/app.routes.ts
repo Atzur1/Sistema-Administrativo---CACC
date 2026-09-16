@@ -12,6 +12,7 @@ import { Reportes } from './admin-portal/reportes/reportes';
 import { JugadorPerfil } from './admin-portal/jugador-perfil/jugador-perfil';
 import { ActualizacionAranceles } from './admin-portal/actualizacion-aranceles/actualizacion-aranceles';
 import { DeudaJugador } from './admin-portal/deuda-jugador/deuda-jugador';
+import { BecadosDescuentos } from './admin-portal/becados-descuentos/becados-descuentos';
 
 export const routes: Routes = [
   { path: '', component: Login },
@@ -33,6 +34,7 @@ export const routes: Routes = [
       { path: 'jugadores/:id/deuda', component: DeudaJugador },
       { path: 'reportes', component: Reportes },
       { path: 'actualizacion-aranceles', component: ActualizacionAranceles },
+      { path: 'becados-descuentos', component: BecadosDescuentos },
     ],
   },
 

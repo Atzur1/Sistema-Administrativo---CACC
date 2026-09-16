@@ -189,6 +189,30 @@
     color: #00a651;
 }
 
+/* ===== BENEFICIO (Becados y Descuentos) ===== */
+.periodo-beneficio {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.periodo-cuota-original {
+    font-size: 11px;
+    color: #555a55;
+}
+
+.periodo-beneficio-badge {
+    padding: 3px 8px;
+    background: #e7f4ea;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #00874a;
+}
+
 /* ===== ABONOS DENTRO DE CADA PERÍODO ===== */
 .abono-list {
     display: flex;

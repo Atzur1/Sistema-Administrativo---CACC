@@ -11,7 +11,13 @@ export interface PagoHistorialAbono {
 
 export interface PagoHistorialItem {
   periodo: string;
-  montoTotal: number;
+  montoTotal: number; // Lo efectivamente cobrado
+  montoOriginal: number; // El valor completo de la cuota, antes del beneficio (si tuvo uno)
+  tieneBeneficio: boolean;
+  motivoBeneficio: string | null;
+  tipoValorBeneficio: string | null; // "%" o "$"
+  porcentajeBeneficio: number | null;
+  montoFijoBeneficio: number | null;
   abonos: PagoHistorialAbono[];
 }
 

@@ -203,4 +203,16 @@ export class DeudaJugador implements OnInit, OnDestroy {
   formatMonto(valor: number): string {
     return CURRENCY_FULL.format(valor);
   }
+
+  // Texto del badge de beneficio: "Beca Completa (100%)" o "Descuento por Hermanos ($15.000)".
+  beneficioTexto(cuota: CuotaPendienteDetalle): string {
+    if (!cuota.tieneBeneficio) {
+      return '';
+    }
+    const valor =
+      cuota.tipoValorBeneficio === '%'
+        ? `${cuota.porcentajeBeneficio}%`
+        : this.formatMonto(cuota.montoFijoBeneficio ?? 0);
+    return `${cuota.motivoBeneficio} (${valor})`;
+  }
 }

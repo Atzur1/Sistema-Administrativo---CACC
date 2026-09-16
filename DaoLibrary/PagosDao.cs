@@ -57,6 +57,36 @@ namespace DaoLibrary
             return reader.Read() ? LeerPago(reader) : null;
         }
 
+        public DescuentoAplicable? ObtenerDescuentoAplicableEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime fechaVencimiento)
+        {
+            string query = @"
+                SELECT TOP (1) jd.PK_id_jugador_descuento, td.tipo_descuento AS motivo, jd.tipo_valor, jd.porcentaje, jd.monto_fijo
+                FROM JUGADORES_DESCUENTOS jd
+                JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
+                WHERE jd.FK_id_jugador = @idJugador AND jd.estado_activo = 1
+                  AND jd.fecha_inicio <= EOMONTH(@fechaVencimiento) AND jd.fecha_fin >= @fechaVencimiento
+                ORDER BY jd.fecha_inicio DESC";
+
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            comando.Parameters.AddWithValue("@idJugador", idJugador);
+            comando.Parameters.AddWithValue("@fechaVencimiento", fechaVencimiento);
+
+            using SqlDataReader reader = comando.ExecuteReader();
+            if (!reader.Read())
+            {
+                return null;
+            }
+
+            return new DescuentoAplicable
+            {
+                IdJugadorDescuento = Convert.ToInt32(reader["PK_id_jugador_descuento"]),
+                Motivo = reader["motivo"].ToString()?.Trim() ?? "",
+                TipoValor = reader["tipo_valor"].ToString()?.Trim() ?? "",
+                Porcentaje = reader["porcentaje"] != DBNull.Value ? Convert.ToDecimal(reader["porcentaje"]) : null,
+                MontoFijo = reader["monto_fijo"] != DBNull.Value ? Convert.ToDecimal(reader["monto_fijo"]) : null
+            };
+        }
+
         // Solo reduce monto_final (el saldo que falta pagar). monto_base queda intacto a
         // propósito: conserva el monto ORIGINAL de la cuota para poder mostrar después
         // "debía $70.000, ya pagó $30.000, le faltan $40.000" en el detalle de deuda.
@@ -97,6 +127,13 @@ namespace DaoLibrary
 
             try
             {
+                // A propósito NO se aplica ningún beneficio de Becados y Descuentos acá: monto_base
+                // y monto_final quedan siempre con el arancel CRUDO. El beneficio (si tiene uno,
+                // vigente o asignado después) se resuelve dinámicamente cada vez que se lee/cobra
+                // la cuota (ver DescuentosSql + PagosDao.ObtenerDeudaDetalle/ObtenerDescuentoAplicableEnPeriodo).
+                // Aplicarlo acá también, en el momento de generar la cuota, terminaba
+                // duplicándolo: una cuota generada con un % ya vigente quedaba con monto_final
+                // pre-descontado, y el ajuste dinámico de lectura lo volvía a descontar encima.
                 string query = @"
                     DECLARE @maxId INT;
                     SELECT @maxId = ISNULL(MAX(PK_id_pago), 0) FROM PAGOS WITH (TABLOCKX, HOLDLOCK);
@@ -106,10 +143,8 @@ namespace DaoLibrary
                         @maxId + ROW_NUMBER() OVER (ORDER BY j.PK_id_jugador),
                         j.PK_id_jugador,
                         arancel.monto,
-                        descuento.PK_id_jugador_descuento,
-                        CASE WHEN descuento.porcentaje IS NOT NULL
-                             THEN arancel.monto - (arancel.monto * descuento.porcentaje / 100.0)
-                             ELSE arancel.monto END,
+                        NULL,
+                        arancel.monto,
                         NULL,
                         NULL,
                         @primerDiaMes,
@@ -125,14 +160,6 @@ namespace DaoLibrary
                           AND vigente_desde <= EOMONTH(@primerDiaMes)
                         ORDER BY vigente_desde DESC
                     ) AS arancel
-                    OUTER APPLY (
-                        SELECT TOP (1) jd.PK_id_jugador_descuento, td.porcentaje
-                        FROM JUGADORES_DESCUENTOS jd
-                        JOIN TIPO_DESCUENTO td ON jd.FK_id_descuento = td.PK_id_descuento
-                        WHERE jd.FK_id_jugador = j.PK_id_jugador AND jd.estado_activo = 1
-                          AND td.fecha_inicio <= EOMONTH(@primerDiaMes) AND td.fecha_fin >= @primerDiaMes
-                        ORDER BY td.porcentaje DESC
-                    ) AS descuento
                     WHERE NOT EXISTS (
                         SELECT 1 FROM PAGOS p2
                         WHERE p2.FK_id_jugador = j.PK_id_jugador
@@ -245,15 +272,22 @@ namespace DaoLibrary
         {
             var resultado = new List<PendienteJugador>();
 
-            string query = @"
+            // El saldo de cada cuota ya sale con el beneficio de Becados y Descuentos aplicado
+            // (si tiene uno vigente para ese período), aunque la cuota se haya cargado antes de
+            // asignarle el beneficio. Un jugador cuyo beneficio le deja todo en $0 desaparece de
+            // este panel (HAVING > 0): no tiene nada pendiente de cobro de verdad.
+            string query = $@"
                 SELECT j.PK_id_jugador, p.nombre, p.apellido, c.nombre_categoria,
-                       SUM(pg.monto_final) AS monto_total, COUNT(*) AS cantidad_cuotas
+                       SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
+                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 THEN 1 END) AS cantidad_cuotas
                 FROM PAGOS pg
+                {DescuentosSql.ApplyDescuentoActivo}
                 JOIN JUGADORES j ON pg.FK_id_jugador = j.PK_id_jugador
                 JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE pg.estado = 0
                 GROUP BY j.PK_id_jugador, p.nombre, p.apellido, c.nombre_categoria
+                HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
                 ORDER BY monto_total DESC";
 
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
@@ -343,11 +377,18 @@ namespace DaoLibrary
         {
             var pendientes = new List<CuotaPendienteDetalle>();
 
-            string queryPendientes = @"
-                SELECT PK_id_pago, monto_base, monto_final, fecha_vencimiento
-                FROM PAGOS
-                WHERE FK_id_jugador = @idJugador AND estado = 0
-                ORDER BY fecha_vencimiento";
+            // El saldo pendiente sale ya con el beneficio de Becados y Descuentos aplicado (si el
+            // jugador tiene uno activo cuya vigencia cubre el mes de esta cuota) — no importa que
+            // la cuota se haya cargado antes de asignarle el beneficio, se resuelve acá al leer.
+            string queryPendientes = $@"
+                SELECT pg.PK_id_pago, pg.monto_base, pg.monto_final, pg.fecha_vencimiento,
+                       d.tipo_valor, d.porcentaje, d.monto_fijo, td.tipo_descuento AS motivo,
+                       ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
+                FROM PAGOS pg
+                {DescuentosSql.ApplyDescuentoActivo}
+                LEFT JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento
+                WHERE pg.FK_id_jugador = @idJugador AND pg.estado = 0
+                ORDER BY pg.fecha_vencimiento";
 
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
             conexion.Open();
@@ -359,12 +400,20 @@ namespace DaoLibrary
                 while (reader.Read())
                 {
                     var periodoBase = Convert.ToDateTime(reader["fecha_vencimiento"]);
+                    var tieneBeneficio = reader["motivo"] != DBNull.Value;
+                    var saldoAjustado = Convert.ToDecimal(reader["saldo_ajustado"]);
+
                     pendientes.Add(new CuotaPendienteDetalle
                     {
                         IdPago = Convert.ToInt32(reader["PK_id_pago"]),
                         Periodo = $"{MesesCompletos[periodoBase.Month - 1]} {periodoBase.Year}",
                         MontoOriginal = Convert.ToDecimal(reader["monto_base"]),
-                        SaldoPendiente = Convert.ToDecimal(reader["monto_final"])
+                        SaldoPendiente = saldoAjustado < 0 ? 0 : saldoAjustado,
+                        TieneBeneficio = tieneBeneficio,
+                        MotivoBeneficio = tieneBeneficio ? reader["motivo"].ToString()?.Trim() : null,
+                        TipoValorBeneficio = tieneBeneficio ? reader["tipo_valor"].ToString()?.Trim() : null,
+                        PorcentajeBeneficio = reader["porcentaje"] != DBNull.Value ? Convert.ToDecimal(reader["porcentaje"]) : null,
+                        MontoFijoBeneficio = reader["monto_fijo"] != DBNull.Value ? Convert.ToDecimal(reader["monto_fijo"]) : null
                     });
                 }
             }
@@ -406,11 +455,18 @@ namespace DaoLibrary
 
         public ResumenPagos ObtenerResumen()
         {
-            string query = @"
+            // cantidad_pendientes solo cuenta cuotas con saldo real > 0: una cuota que un
+            // beneficio de Becados y Descuentos dejó en $0 ya no es algo pendiente de cobrar.
+            string query = $@"
                 SELECT
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR(GETDATE())) AS recaudado_anio,
                     (SELECT COUNT(*) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR(GETDATE()) AND MONTH(fecha_pago) = MONTH(GETDATE())) AS pagos_del_mes,
-                    (SELECT COUNT(*) FROM PAGOS WHERE estado = 0) AS cantidad_pendientes";
+                    (SELECT COUNT(*) FROM (
+                        SELECT ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
+                        FROM PAGOS pg
+                        {DescuentosSql.ApplyDescuentoActivo}
+                        WHERE pg.estado = 0
+                    ) t WHERE saldo_ajustado > 0) AS cantidad_pendientes";
 
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
             conexion.Open();
@@ -438,20 +494,29 @@ namespace DaoLibrary
             // misma cuota. La paginación es por período (10 meses por página), no por abono suelto.
             var resultado = new HistorialPagosResultado { Page = page, PageSize = pageSize };
 
+            // monto_base_grupo: el valor ORIGINAL de la cuota (PagosService ahora lo guarda en cada
+            // abono cuando paga contra una cuota pendiente — antes se perdía al borrarse la cuota).
+            // id_descuento_grupo: qué beneficio (si hubo uno) se le aplicó a esos abonos, para
+            // mostrar el motivo/tipo/valor y explicar por qué monto_grupo < monto_base_grupo.
             string queryPeriodos = @"
                 ;WITH Agrupado AS (
                     SELECT PK_id_pago, fecha_vencimiento,
                         COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)) AS clave_periodo,
                         SUM(monto_final) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE))) AS monto_grupo,
+                        MAX(monto_base) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE))) AS monto_base_grupo,
+                        MAX(FK_id_jugador_descuento) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE))) AS id_descuento_grupo,
                         MAX(fecha_pago) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE))) AS fecha_grupo,
                         ROW_NUMBER() OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)) ORDER BY fecha_pago DESC, PK_id_pago DESC) AS rn
                     FROM PAGOS
                     WHERE FK_id_jugador = @idJugador AND estado = 1
                 )
-                SELECT COUNT(*) OVER() AS total_count, clave_periodo, monto_grupo, fecha_grupo, fecha_vencimiento
-                FROM Agrupado
-                WHERE rn = 1
-                ORDER BY fecha_grupo DESC, clave_periodo DESC
+                SELECT COUNT(*) OVER() AS total_count, a.clave_periodo, a.monto_grupo, a.monto_base_grupo,
+                       a.fecha_grupo, a.fecha_vencimiento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo, td.tipo_descuento AS motivo
+                FROM Agrupado a
+                LEFT JOIN JUGADORES_DESCUENTOS jd ON jd.PK_id_jugador_descuento = a.id_descuento_grupo
+                LEFT JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
+                WHERE a.rn = 1
+                ORDER BY a.fecha_grupo DESC, a.clave_periodo DESC
                 OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY";
 
             // (clave_periodo, PagoHistorialItem) en el orden en que vinieron, para después
@@ -477,10 +542,18 @@ namespace DaoLibrary
                         ? Convert.ToDateTime(reader["fecha_vencimiento"])
                         : clave; // fallback: pagos históricos sin fecha_vencimiento cargada
 
+                    var tieneBeneficio = reader["motivo"] != DBNull.Value;
+
                     var item = new PagoHistorialItem
                     {
                         Periodo = $"{MesesCompletos[periodoBase.Month - 1]} {periodoBase.Year}",
-                        MontoTotal = Convert.ToDecimal(reader["monto_grupo"])
+                        MontoTotal = Convert.ToDecimal(reader["monto_grupo"]),
+                        MontoOriginal = Convert.ToDecimal(reader["monto_base_grupo"]),
+                        TieneBeneficio = tieneBeneficio,
+                        MotivoBeneficio = tieneBeneficio ? reader["motivo"].ToString()?.Trim() : null,
+                        TipoValorBeneficio = tieneBeneficio ? reader["tipo_valor"].ToString()?.Trim() : null,
+                        PorcentajeBeneficio = reader["porcentaje"] != DBNull.Value ? Convert.ToDecimal(reader["porcentaje"]) : null,
+                        MontoFijoBeneficio = reader["monto_fijo"] != DBNull.Value ? Convert.ToDecimal(reader["monto_fijo"]) : null
                     };
                     itemsPorClave.Add((clave, item));
                     resultado.Items.Add(item);

@@ -1,0 +1,116 @@
+/* Purple on purpose: overdue states already use green and red, so the discount
+   has to read as a different category of information. */
+
+.discount-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid #c4b5fd;
+    border-radius: 999px;
+    background: #ede9fe;
+    color: #5b21b6;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    cursor: default;
+    vertical-align: middle;
+}
+
+.discount-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: #7c3aed;
+    flex-shrink: 0;
+}
+
+.discount-label {
+    letter-spacing: 0.01em;
+}
+
+/* The amount, shown only where the badge stands on its own and there is no
+   column next to it already carrying the value. */
+.discount-value {
+    padding-left: 0.4rem;
+    margin-left: 0.1rem;
+    border-left: 1px solid currentColor;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+}
+
+/* One tone per reason, so the three benefits are told apart at a glance. They
+   stay inside the violet-indigo-amber range on purpose: green and red belong to
+   the payment states and reusing them here would read as a debt. */
+.discount-badge.tone-full {
+    border-color: #c4b5fd;
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.discount-badge.tone-full .discount-dot {
+    background: #7c3aed;
+}
+
+.discount-badge.tone-half {
+    border-color: #a5b4fc;
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.discount-badge.tone-half .discount-dot {
+    background: #4f46e5;
+}
+
+.discount-badge.tone-siblings {
+    border-color: #fcd34d;
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.discount-badge.tone-siblings .discount-dot {
+    background: #d97706;
+}
+
+.discount-tooltip {
+    position: absolute;
+    bottom: calc(100% + 0.45rem);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.35rem;
+    background: #312e81;
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+/* Bottom arrow of the bubble */
+.discount-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 0.3rem solid transparent;
+    border-top-color: #312e81;
+}
+
+.discount-badge:hover .discount-tooltip,
+.discount-badge:focus-visible .discount-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.discount-badge:focus-visible {
+    outline: 2px solid #7c3aed;
+    outline-offset: 2px;
+}
