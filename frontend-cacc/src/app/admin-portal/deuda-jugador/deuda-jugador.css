@@ -1,0 +1,443 @@
+/* Mismo lenguaje visual que jugador-perfil.css, pero tematizado en naranja/ámbar (pendiente)
+   en vez del verde institucional (pagado) */
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    min-height: 100%;
+    box-sizing: border-box;
+    background: #f1f5f1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #000000;
+    overflow-x: hidden;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.back-button {
+    padding: 8px 14px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8a5a0b;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.back-button:hover {
+    background: #fef4e3;
+    border-color: #eba83a;
+}
+
+.loading-text,
+.error-text {
+    margin: 16px 0 0;
+    font-size: 13px;
+    color: #555a55;
+}
+
+.error-text {
+    color: #b3261e;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+    animation: fadeSlideUp 0.4s ease both;
+    animation-delay: 60ms;
+}
+
+.profile-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fef4e3;
+    color: #8a5a0b;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.profile-name {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.profile-meta {
+    font-size: 12px;
+    color: #555a55;
+}
+
+.profile-total {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.profile-total-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #b3261e;
+}
+
+.profile-total-label {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #555a55;
+}
+
+.header-divider {
+    height: 1px;
+    margin: 14px 0;
+    background: #e4e7e4;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    min-width: 0;
+    animation: fadeSlideUp 0.4s ease both;
+    animation-delay: 120ms;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.panel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dot-pending {
+    background: #eba83a;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.panel-count {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 700;
+    color: #555a55;
+}
+
+.deuda-empty {
+    margin: 0;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 12.5px;
+    color: #555a55;
+}
+
+/* ===== CUOTAS ===== */
+.cuota-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cuota-card {
+    padding: 12px;
+    background: #fffaf1;
+    border: 1px solid #f6e2b8;
+    border-radius: 10px;
+}
+
+.cuota-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.cuota-periodo {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.cuota-original {
+    font-size: 11.5px;
+    color: #555a55;
+}
+
+/* ===== ABONOS YA REALIZADOS ===== */
+.abono-list {
+    display: flex;
+    flex-direction: column;
+    margin: 6px 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px dashed #f6e2b8;
+    border-bottom: 1px dashed #f6e2b8;
+}
+
+.abono-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+}
+
+.abono-meta {
+    font-size: 11px;
+    color: #555a55;
+}
+
+.abono-monto {
+    font-size: 12px;
+    font-weight: 700;
+    color: #00a651;
+}
+
+/* ===== BENEFICIO (Becados y Descuentos) ===== */
+.cuota-beneficio-badge {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 3px 8px;
+    background: #e7f4ea;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #00874a;
+}
+
+.cuota-cubierta {
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    background: #e7f4ea;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #00874a;
+    text-align: center;
+}
+
+/* ===== SALDO ===== */
+.cuota-saldo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.saldo-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8a5a0b;
+}
+
+.saldo-monto {
+    font-size: 15px;
+    font-weight: 700;
+    color: #b3261e;
+}
+
+/* ===== PAGAR SALDO (inline, sin salir de la pantalla) ===== */
+.pagar-button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    width: 100%;
+    background: #eba83a;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.pagar-button:hover {
+    background: #d6941f;
+}
+
+.pagar-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f6e2b8;
+}
+
+.pagar-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.pagar-label {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8a5a0b;
+}
+
+.pagar-input {
+    width: 100%;
+    padding: 7px 9px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #f6e2b8;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 12px;
+    color: #000000;
+    outline: none;
+}
+
+.pagar-input:focus {
+    border-color: #eba83a;
+}
+
+.pagar-amount-wrapper {
+    position: relative;
+}
+
+.pagar-amount-prefix {
+    position: absolute;
+    top: 50%;
+    left: 9px;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #555a55;
+    pointer-events: none;
+}
+
+.pagar-amount-input {
+    padding-left: 20px;
+}
+
+.pagar-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.pagar-cancelar {
+    flex: 1;
+    padding: 8px;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #555a55;
+    cursor: pointer;
+}
+
+.pagar-cancelar:hover {
+    background: #f9faf9;
+}
+
+.pagar-confirmar {
+    flex: 1.4;
+    padding: 8px;
+    background: #00a651;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.pagar-confirmar:hover:not(:disabled) {
+    background: #009148;
+}
+
+.pagar-confirmar:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.pagar-error {
+    margin: 0;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #c0392b;
+}
+
+.pago-exito-global {
+    margin: 0 0 12px;
+    padding: 9px 11px;
+    background: #e7f4ea;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #00a651;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 520px) {
+    .dashboard {
+        padding: 14px;
+    }
+
+    .profile-header {
+        flex-wrap: wrap;
+    }
+
+    .profile-total {
+        align-items: flex-start;
+        margin-left: 70px;
+    }
+}

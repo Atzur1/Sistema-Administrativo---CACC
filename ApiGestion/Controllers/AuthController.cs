@@ -56,10 +56,10 @@ namespace ApiGestion.Controllers
         {
             var claims = new[]
             {
-                // The user id lets the API record who registered each payment (HU-015)
-                new Claim(ClaimTypes.NameIdentifier, idUsuario.ToString()),
                 new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.Role, idRol.ToString())
+                new Claim(ClaimTypes.Role, idRol.ToString()),
+                // Identificador de negocio usado por endpoints protegidos (ej. quién registró un cobro)
+                new Claim("idUsuario", idUsuario.ToString())
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));

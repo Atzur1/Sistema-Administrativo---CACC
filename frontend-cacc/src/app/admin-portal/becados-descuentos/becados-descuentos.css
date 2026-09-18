@@ -122,6 +122,11 @@
 /* ===== ASSIGNMENT FORM ===== */
 /* The action panel of the dashboard, so it carries a heavier green frame */
 .form-panel {
+    /* La animacion de entrada deja un transform aplicado, que crea un stacking
+       context propio. Sin esto, las sugerencias del buscador quedan encerradas
+       en esta tarjeta y el panel de abajo las tapa. */
+    position: relative;
+    z-index: 2;
     padding: 16px;
     margin-bottom: 14px;
     background: #ffffff;

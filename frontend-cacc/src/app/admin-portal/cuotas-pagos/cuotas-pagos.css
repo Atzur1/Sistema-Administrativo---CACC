@@ -79,6 +79,32 @@
     color: #555a55;
 }
 
+/* Mismos colores que ya se usan para Masculino/Femenino en Actualización de Aranceles */
+.header-aranceles-vigentes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.arancel-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.arancel-badge-masculino {
+    background: #00a651;
+}
+
+.arancel-badge-femenino {
+    background: #555a55;
+}
+
 .header-metrics {
     display: flex;
     align-items: center;
@@ -122,6 +148,8 @@
 /* ===== PAYMENT FORM ===== */
 /* The only action panel of the portal, so it carries a heavier green frame */
 .form-panel {
+    position: relative;
+    z-index: 2;
     padding: 16px;
     margin-bottom: 14px;
     background: #ffffff;
@@ -176,7 +204,7 @@
 
 .form-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 0.7fr 0.9fr 1fr 1.2fr;
+    grid-template-columns: 1.4fr 0.9fr 0.6fr 0.9fr 0.9fr;
     gap: 12px;
 }
 
@@ -228,6 +256,25 @@
     box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
 }
 
+/* ===== MONTO: signo $ fijo + formato con puntos de miles ===== */
+.amount-wrapper {
+    position: relative;
+}
+
+.amount-prefix {
+    position: absolute;
+    top: 50%;
+    left: 11px;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #555a55;
+    pointer-events: none;
+}
+
+.amount-input {
+    padding-left: 22px;
+}
+
 /* ===== PLAYER SUGGESTIONS ===== */
 .suggestions {
     position: absolute;
@@ -269,9 +316,6 @@
 }
 
 .suggestion-name {
-    display: flex;
-    align-items: center;
-    gap: 6px;
     font-size: 12px;
     font-weight: 600;
 }
@@ -283,7 +327,7 @@
 
 /* ===== SUBMIT ===== */
 .submit-button {
-    grid-column: span 6;
+    grid-column: span 5;
     padding: 11px;
     background: #00a651;
     border: none;
@@ -305,50 +349,27 @@
     cursor: not-allowed;
 }
 
-.field-input:disabled {
-    background: #f4f6f4;
-    cursor: not-allowed;
-}
-
-/* Shown when the selected player already paid the chosen period */
-.form-error {
-    grid-column: span 6;
+/* Simulated confirmation: fades in, then fades out before being removed */
+.form-feedback {
+    grid-column: span 5;
     margin: 0;
     padding: 9px 11px;
-    background: #fdecec;
+    background: #e7f4ea;
     border-radius: 9px;
     font-size: 12px;
     font-weight: 600;
-    color: #c62828;
-}
-
-/* Toast: fades in, then fades out before being removed */
-.toast {
-    position: fixed;
-    right: 24px;
-    bottom: 24px;
-    z-index: 20;
-    max-width: 360px;
-    padding: 12px 16px;
-    background: #e7f4ea;
-    border-left: 4px solid #00a651;
-    border-radius: 9px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-    font-size: 13px;
-    font-weight: 600;
-    color: #00753a;
+    color: #00a651;
     animation: fadeIn 0.3s ease both;
     transition: opacity 0.3s ease;
 }
 
-.toast.toast-error {
-    background: #fdecec;
-    border-left-color: #c62828;
-    color: #c62828;
+.form-feedback.is-leaving {
+    opacity: 0;
 }
 
-.toast.is-leaving {
-    opacity: 0;
+.form-feedback.is-error {
+    background: #fdecea;
+    color: #b3261e;
 }
 
 /* ===== MAIN GRID ===== */
@@ -418,6 +439,59 @@
     color: #555a55;
 }
 
+/* ===== PANEL SEARCH (buscador de "Últimos pagos") ===== */
+.panel-search {
+    position: relative;
+    margin-left: 14px;
+    width: 220px;
+    flex-shrink: 0;
+}
+
+.panel-search-input {
+    width: 100%;
+    padding: 7px 30px 7px 11px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #e4e7e4;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: #000000;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.panel-search-input::placeholder {
+    color: #555a55;
+    opacity: 0.7;
+}
+
+.panel-search-input:focus {
+    border-color: #00a651;
+    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
+}
+
+.panel-search-icon {
+    position: absolute;
+    top: 50%;
+    right: 9px;
+    transform: translateY(-50%);
+    display: flex;
+    color: #555a55;
+    pointer-events: none;
+}
+
+.panel-search-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.panel-suggestions {
+    right: 0;
+    left: auto;
+    width: 260px;
+}
+
 /* ===== ROW LISTS ===== */
 .row-list {
     display: flex;
@@ -439,6 +513,10 @@
 
 .row:hover {
     background: #f9faf9;
+}
+
+.row-clickable {
+    cursor: pointer;
 }
 
 .row:last-child {
@@ -474,18 +552,9 @@
     min-width: 0;
 }
 
-/* Contenedor flexible: el recorte con puntos suspensivos queda en el texto para
-   que el globo de la insignia no se corte contra el borde de la fila. */
 .row-name {
-    display: flex;
-    align-items: center;
-    gap: 6px;
     font-size: 12px;
     font-weight: 600;
-    min-width: 0;
-}
-
-.row-name-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -533,7 +602,7 @@
 
     /* The button and the message still span the whole form */
     .submit-button,
-    .form-error {
+    .form-feedback {
         grid-column: span 2;
     }
 }
@@ -547,6 +616,12 @@
     .header-metrics {
         width: 100%;
         margin-left: 0;
+    }
+
+    .header-aranceles-vigentes {
+        width: 100%;
+        margin-left: 0;
+        flex-wrap: wrap;
     }
 
     .header-metric {
@@ -569,7 +644,7 @@
     }
 
     .submit-button,
-    .form-error {
+    .form-feedback {
         grid-column: span 1;
     }
 
@@ -582,14 +657,4 @@
         align-items: flex-start;
         margin-left: 42px;
     }
-}
-
-/* Empty state for a panel whose data source is genuinely empty, so nobody reads
-   a blank panel as a loading failure. */
-.panel-empty {
-    margin: 0;
-    padding: 1.25rem 0.25rem;
-    color: #64748b;
-    font-size: 0.8rem;
-    text-align: center;
 }

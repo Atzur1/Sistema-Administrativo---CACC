@@ -15,9 +15,29 @@ import {
     statusLabel,
     statusToneClass,
 } from '../../models/DiscountModel';
-import { PlayerService } from '../../services/players';
-import { PlayerModel } from '../../models/PlayerModel';
+import { PagosService, JugadorResumen } from '../../services/pagos';
 import { normalizeText } from '../../shared/normalize-text';
+
+// Player shape this screen was originally built against (repo de Atzur1).
+// Se mantiene local en vez de traer PlayerModel/PlayerService: Laura ya tiene
+// su propio JugadoresService/JugadorResumen, así que solo se mapea una vez acá
+// y el resto del archivo (y el HTML) sigue usando los mismos nombres de
+// siempre (fullName, document, category, id) sin tocar nada más.
+interface PlayerModel {
+    id: number;
+    fullName: string;
+    document: string;
+    category: string;
+}
+
+function toPlayerModel(jugador: JugadorResumen): PlayerModel {
+    return {
+        id: jugador.idJugador,
+        fullName: jugador.nombreCompleto,
+        document: jugador.dni,
+        category: jugador.categoria,
+    };
+}
 
 // One counter on the page header
 interface HeaderMetric {
@@ -97,7 +117,7 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
     constructor(
         private fb: FormBuilder,
         private discountService: DiscountService,
-        private playerService: PlayerService
+        private pagosService: PagosService
     ) {
         this.lookupForm = this.fb.group({
             player: ['', [Validators.required, this.knownPlayerValidator]],
@@ -118,8 +138,8 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
         this.loadDiscountMap();
         this.loadBenefitRows();
 
-        this.playerService.getPlayers().subscribe({
-            next: (players) => this.players.set(players),
+        this.pagosService.getJugadores().subscribe({
+            next: (jugadores) => this.players.set(jugadores.map(toPlayerModel)),
             error: () => this.players.set([]),
         });
 
@@ -258,7 +278,7 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
             fullName: row.playerName,
             document: '',
             category: row.category,
-        } as PlayerModel);
+        });
     }
 
     private openDialog(player: PlayerModel) {

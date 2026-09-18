@@ -4,7 +4,7 @@
   <!-- ===== BANNER ===== -->
   <section class="banner">
     <div class="banner-intro">
-      <span class="banner-greeting">Buenos días, Admin</span>
+      <span class="banner-greeting">{{ greeting }}</span>
       <h1 class="banner-title">Resumen General</h1>
       <span class="banner-date">{{ currentDate }}</span>
     </div>
@@ -26,7 +26,9 @@
       <article class="card" [style.animation-delay.ms]="i * 80">
 
         <div class="card-head">
-          <span class="card-badge" [ngClass]="'badge-' + card.badgeTone">{{ card.badge }}</span>
+          @if (card.badge) {
+            <span class="card-badge" [ngClass]="'badge-' + card.badgeTone">{{ card.badge }}</span>
+          }
         </div>
 
         <div class="card-body">
@@ -116,9 +118,6 @@
             <!-- Icon, count and description all sit on a single row -->
             <span class="eligibility-title">{{ item.title }}</span>
             <span class="eligibility-description">{{ item.description }}</span>
-
-            <span class="eligibility-variation"
-                  [ngClass]="'variation-' + item.variationTone">{{ item.variation }}</span>
           </div>
         }
       </div>
@@ -126,8 +125,8 @@
       <!-- Eligibility trend over the season (Chart.js line chart) -->
       <div class="trend">
         <div class="trend-head">
-          <h3 class="trend-title">Evolución de habilitados — 2026</h3>
-          <span class="trend-badge">↑ Tendencia positiva</span>
+          <h3 class="trend-title">Evolución de cobertura de pagos</h3>
+          <span class="trend-badge" [class.negative]="!trendBadgePositive">{{ trendBadgeText }}</span>
         </div>
 
         <div class="trend-canvas">
@@ -138,19 +137,21 @@
         </div>
       </div>
 
-      <!-- Recently suspended players -->
+      <!-- Players with the largest outstanding balance -->
       <div class="suspended">
-        <h3 class="suspended-title">Últimos inhabilitados</h3>
+        <h3 class="suspended-title">Mayor deuda pendiente</h3>
 
         <div class="suspended-list">
-          @for (player of suspendedPlayers; track player.name; let i = $index) {
-            <div class="suspended-item" [style.animation-delay.ms]="640 + i * 80">
+          @for (player of suspendedPlayers; track player.id) {
+            <div class="suspended-item" [style.animation-delay.ms]="640 + $index * 80">
               <div class="suspended-info">
                 <span class="suspended-name">{{ player.name }}</span>
                 <span class="suspended-category">{{ player.category }}</span>
               </div>
               <span class="suspended-badge">{{ player.debtLabel }}</span>
             </div>
+          } @empty {
+            <p class="suspended-empty">Sin jugadores con cuotas pendientes.</p>
           }
         </div>
       </div>

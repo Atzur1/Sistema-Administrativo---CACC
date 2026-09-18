@@ -1,455 +1,449 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Subscription } from 'rxjs';
-import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
-import { DiscountService } from '../../services/discounts';
-import { DiscountModel } from '../../models/DiscountModel';
-import { PlayerService } from '../../services/players';
-import { PlayerModel } from '../../models/PlayerModel';
-import { PaymentService } from '../../services/payments';
-import { PaymentModel } from '../../models/PaymentModel';
-import { PaymentRequestModel } from '../../models/PaymentRequestModel';
-import { TreasuryMetricsModel } from '../../models/TreasuryMetricsModel';
-import { normalizeText } from '../../shared/normalize-text';
+import { Router } from '@angular/router';
+import {
+  JugadorResumen,
+  PagoReciente,
+  PagosService,
+  PendienteJugador,
+  ResumenPagos,
+} from '../../services/pagos';
+import { ArancelesService } from '../../services/aranceles';
+import { formatCompactCurrency } from '../../shared/format-currency';
 
-// One counter on the page header
+const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  maximumFractionDigits: 0,
+});
+
+// One row in the "Pendientes de cobro" panel
+interface PendingRow {
+  id: number;
+  initials: string;
+  name: string;
+  category: string;
+  amount: string;
+  installments: string;
+}
+
+// One row in the "Últimos pagos" panel
+interface PaymentRow {
+  id: number;
+  idJugador: number;
+  initials: string;
+  name: string;
+  method: string;
+  amount: string;
+  elapsed: string;
+}
+
 interface HeaderMetric {
-    value: string;
-    label: string;
+  value: string;
+  label: string;
 }
 
-// A select option whose stored value differs from the label shown
-interface SelectOption<T> {
-    value: T;
-    label: string;
-}
-
-type ToastKind = 'success' | 'error';
+const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  maximumFractionDigits: 0,
+});
 
 @Component({
-    selector: 'app-cuotas-pagos',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, DiscountBadge],
-    templateUrl: './cuotas-pagos.html',
-    styleUrl: './cuotas-pagos.css',
+  selector: 'app-cuotas-pagos',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './cuotas-pagos.html',
+  styleUrl: './cuotas-pagos.css',
 })
 export class CuotasPagos implements OnInit, OnDestroy {
 
-    private static readonly LATEST_PAYMENTS_COUNT = 10;
+  headerMetrics: HeaderMetric[] = [
+    { value: '—', label: `Recaudado ${new Date().getFullYear()}` },
+    { value: '—', label: 'Pagos del mes' },
+    { value: '—', label: 'Pendientes' },
+  ];
 
-    // Minimum length before suggesting: below this, a single letter like "s"
-    // matches half the squad and the dropdown is more noise than help.
-    private static readonly MIN_SEARCH_LENGTH = 3;
+  paymentForm: FormGroup;
 
-    private static readonly TOAST_DURATION_MS = 3500;
-    private static readonly TOAST_FADE_MS = 300;
+  periods = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  ];
 
-    // Same length as PAGOS.referencia_pago
-    private static readonly REFERENCE_MAX_LENGTH = 50;
+  // Año actual + los 2 anteriores. Se recalcula solo con la fecha de hoy, así que la ventana
+  // se corre sola con el correr de los años (ej. en 2027 pasa a ser 2027/2026/2025) sin tocar código.
+  years = buildYearOptions();
 
-    private static readonly TRANSFER_METHOD = 'transferencia';
+  methods = ['Transferencia', 'Efectivo'];
 
-    // Header counters. They start as dashes so the screen never shows a made-up
-    // number while the request is still in flight.
-    headerMetrics = signal<HeaderMetric[]>([
-        { value: '—', label: 'Recaudado del año' },
-        { value: '—', label: 'Pagos del mes' },
-        { value: '—', label: 'Pendientes' },
-    ]);
+  private jugadores: JugadorResumen[] = [];
 
-    // Payment form
-    paymentForm: FormGroup;
+  // Jugador realmente seleccionado desde las sugerencias. El control del form solo guarda el
+  // texto visible; esto es lo único que se manda al backend, así dos jugadores con el mismo
+  // nombre nunca se confunden (con 577 jugadores reales, un match por string no alcanza).
+  private selectedPlayer: JugadorResumen | null = null;
 
-    months: SelectOption<number>[] = [
-        { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
-        { value: 4, label: 'Abril' }, { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
-        { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
-        { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
-    ];
+  matchingPlayers: JugadorResumen[] = [];
+  showSuggestions = false;
 
-    // Previous, current and next year: enough to settle arrears or pay ahead
-    years: number[];
+  // Buscador del panel "Últimos pagos": busca entre TODOS los jugadores (no solo los que
+  // aparecen en la lista de abajo) y navega directo a su perfil. No filtra ni reemplaza esa
+  // lista, que siempre sigue mostrando los últimos 10 pagos.
+  panelSearchResults: JugadorResumen[] = [];
+  showPanelSearchResults = false;
 
-    // Values are stored lowercase, as the API and the database expect
-    methods: SelectOption<string>[] = [
-        { value: 'efectivo', label: 'Efectivo' },
-        { value: CuotasPagos.TRANSFER_METHOD, label: 'Transferencia' },
-    ];
+  successMessage = '';
+  successLeaving = false;
+  errorMessage = '';
+  enviando = false;
 
-    // Blocks a second submit while the payment is being registered
-    submitting = false;
+  cargandoJugadores = false;
+  cargandoListas = false;
 
-    // Squad the lookup searches, loaded from the API on entry
-    private players = signal<PlayerModel[]>([]);
+  pendingRows: PendingRow[] = [];
+  paymentRows: PaymentRow[] = [];
 
-    // Suggestions shown under the search field
-    matchingPlayers: PlayerModel[] = [];
-    showSuggestions = false;
+  private fadeTimer?: ReturnType<typeof setTimeout>;
+  private clearTimer?: ReturnType<typeof setTimeout>;
 
-    // Periods ("yyyy-MM") the selected player already paid. They block collecting
-    // the same fee twice before the request is sent; the API rejects it anyway.
-    private paidPeriods = new Set<string>();
-    private selectedPlayerId: number | null = null;
+  // Lo que se ve en el input de Monto ("1.000"). El control del form (paymentForm.get('amount'))
+  // guarda el número limpio sin puntos ("1000"), que es lo que se valida y se manda al backend.
+  montoDisplay = '';
 
-    // Notification shown after registering a payment
-    toastMessage = '';
-    toastKind: ToastKind = 'success';
-    toastLeaving = false;
+  // Referencia fija arriba del formulario (no depende de qué jugador/período elijas): los dos
+  // aranceles vigentes ahora mismo, uno por género. Se recalculan solos si cambia el arancel
+  // vigente. A propósito el campo Monto NO trae ninguna sugerencia — mezclar jugador+período
+  // traía confusión (un jugador podía tener otro monto real para un período pasado), así que la
+  // precisión de "cuánto debe puntualmente" vive en Deuda Pendiente, no acá.
+  arancelMasculinoTexto = '';
+  arancelFemeninoTexto = '';
 
-    // Fees waiting to be collected and most recent payments, both from the API.
-    // Each list tracks whether its request already came back, so the template can
-    // tell "still loading" apart from "there is genuinely nothing to show".
-    pendingFees = signal<PaymentModel[]>([]);
-    pendingLoaded = signal(false);
-    latestPayments = signal<PaymentModel[]>([]);
-    latestLoaded = signal(false);
+  constructor(
+    private fb: FormBuilder,
+    private pagosService: PagosService,
+    private arancelesService: ArancelesService,
+    private cdr: ChangeDetectorRef,
+    private router: Router
+  ) {
+    this.paymentForm = this.fb.group({
+      player: ['', [Validators.required, this.knownPlayerValidator]],
+      period: ['', [Validators.required]],
+      year: [new Date().getFullYear(), [Validators.required]],
+      amount: ['', [Validators.required, Validators.min(1)]],
+      method: ['', [Validators.required]],
+    });
+  }
 
-    // Cleared on destroy so leaving the dashboard mid-animation never fires a
-    // callback on a dead component
-    private fadeTimer?: ReturnType<typeof setTimeout>;
-    private clearTimer?: ReturnType<typeof setTimeout>;
-    private methodSubscription?: Subscription;
+  irAJugador(idJugador: number) {
+    this.router.navigate(['/admin/portal/jugadores', idJugador]);
+  }
 
-    // Active discounts indexed by player. Requested once on entry, and each row
-    // resolves its badge with a get on the map, so nothing is recomputed or
-    // re-filtered while the grid renders.
-    // Held in a signal so the grid repaints itself when the response arrives:
-    // assigning a plain field left the view stale.
-    private discounts = signal(new Map<number, DiscountModel>());
+  // Desde "Pendientes de cobro" no se va al historial general, sino a la deuda puntual
+  // (cuánto debe, cuánto ya abonó y cuánto le falta).
+  irADeuda(idJugador: number) {
+    this.router.navigate(['/admin/portal/jugadores', idJugador, 'deuda']);
+  }
 
-    constructor(
-        private fb: FormBuilder,
-        private discountService: DiscountService,
-        private playerService: PlayerService,
-        private paymentService: PaymentService
-    ) {
-        const currentYear = new Date().getFullYear();
-        this.years = [currentYear - 1, currentYear, currentYear + 1];
+  // Reformatea el Monto con puntos de miles a medida que se escribe, preservando la posición
+  // del cursor por cantidad de dígitos (no por índice de caracter, que cambia cada vez que se
+  // agrega o saca un punto) — así corregir un número a mitad de la escritura no hace saltar
+  // el cursor al final.
+  onMontoInput(target: HTMLInputElement) {
+    const cursorPos = target.selectionStart ?? target.value.length;
+    const digitsBeforeCursor = target.value.slice(0, cursorPos).replace(/\D/g, '').length;
 
-        this.paymentForm = this.fb.group(
-            {
-                player: ['', [Validators.required, this.knownPlayerValidator]],
-                periodYear: [currentYear, [Validators.required]],
-                periodMonth: ['', [Validators.required]],
-                amount: ['', [Validators.required, Validators.min(1)]],
-                method: ['', [Validators.required]],
-                reference: [
-                    { value: '', disabled: true },
-                    [Validators.maxLength(CuotasPagos.REFERENCE_MAX_LENGTH)],
-                ],
-            },
-            { validators: this.unpaidPeriodValidator }
-        );
-    }
+    const digitsOnly = target.value.replace(/\D/g, '').slice(0, 12);
+    const formatted = digitsOnly ? Number(digitsOnly).toLocaleString('es-AR') : '';
 
-    ngOnInit() {
-        this.discountService.getDiscountMap().subscribe({
-            next: (discountMap) => this.discounts.set(discountMap),
-            // The grid is the main feature: if the discounts API fails it still
-            // renders, just without badges.
-            error: () => this.discounts.set(new Map<number, DiscountModel>()),
-        });
+    // Se escribe el DOM a mano, no solo vía el binding [value]: si el texto recalculado da
+    // igual al montoDisplay anterior (ej. al borrar un punto de formato, que reaparece solo),
+    // Angular no vuelve a tocar el input porque "no cambió" desde su óptica — pero el navegador
+    // ya había mutado el value nativamente al borrar, y sin esto queda esa edición sin corregir.
+    target.value = formatted;
+    this.montoDisplay = formatted;
+    this.paymentForm.patchValue({ amount: digitsOnly });
 
-        this.playerService.getPlayers().subscribe({
-            next: (players) => this.players.set(players),
-            error: () => this.players.set([]),
-        });
-
-        this.paymentService.getPendingFees().subscribe({
-            next: (fees) => {
-                this.pendingFees.set(fees);
-                this.pendingLoaded.set(true);
-            },
-            error: () => {
-                this.pendingFees.set([]);
-                this.pendingLoaded.set(true);
-            },
-        });
-
-        this.loadLatestPayments();
-        this.loadTreasuryMetrics();
-
-        // The bank reference only applies to a transfer
-        this.methodSubscription = this.paymentForm.get('method')!.valueChanges
-            .subscribe((method: string) => this.toggleReference(method));
-    }
-
-    ngOnDestroy() {
-        clearTimeout(this.fadeTimer);
-        clearTimeout(this.clearTimer);
-        this.methodSubscription?.unsubscribe();
-    }
-
-    // Returns null when the player has no active benefit and the badge is not
-    // drawn: that way it disappears on its own on expiry or deactivation.
-    getDiscount(playerId: number): DiscountModel | null {
-        return this.discounts().get(playerId) ?? null;
-    }
-
-    initialsOf(fullName: string): string {
-        const [lastName = '', firstName = ''] = fullName.split(',').map(part => part.trim());
-        return ((lastName.charAt(0) || '') + (firstName.charAt(0) || '')).toUpperCase();
-    }
-
-    formatAmount(amount: number): string {
-        return '$' + amount.toLocaleString('es-AR', { maximumFractionDigits: 0 });
-    }
-
-    // The backend sends ISO (yyyy-MM-dd) and the view shows it as read here
-    formatDate(isoDate: string | null): string {
-        if (isoDate === null) {
-            return 'Sin fecha';
+    queueMicrotask(() => {
+      let newPos = digitsBeforeCursor === 0 ? 0 : formatted.length;
+      let digitsSeen = 0;
+      for (let i = 0; i < formatted.length && digitsBeforeCursor > 0; i++) {
+        if (/\d/.test(formatted[i])) {
+          digitsSeen++;
         }
-        const [year, month, day] = isoDate.split('-');
-        return day + '/' + month + '/' + year;
-    }
-
-    // The backend sends "yyyy-MM"; the view shows "Julio 2026"
-    formatPeriod(period: string | null): string {
-        if (period === null) {
-            return 'Sin período';
+        if (digitsSeen === digitsBeforeCursor) {
+          newPos = i + 1;
+          break;
         }
-        const [year, month] = period.split('-');
-        return `${this.months[Number(month) - 1].label} ${year}`;
+      }
+      target.setSelectionRange(newPos, newPos);
+    });
+  }
+
+  onPanelSearch(term: string) {
+    const needle = normalizeTexto(term.trim().toLowerCase());
+    if (!needle) {
+      this.panelSearchResults = [];
+      this.showPanelSearchResults = false;
+      return;
     }
 
-    selectedPeriodLabel(): string {
-        const { periodYear, periodMonth } = this.paymentForm.getRawValue();
-        return this.formatPeriod(this.periodKey(Number(periodYear), Number(periodMonth)));
+    const digits = needle.replace(/\D/g, '');
+    this.panelSearchResults = this.jugadores
+      .filter(
+        (jugador) =>
+          normalizeTexto(jugador.nombreCompleto.toLowerCase()).includes(needle) ||
+          (digits.length > 0 && jugador.dni.replace(/\D/g, '').includes(digits))
+      )
+      .slice(0, 20);
+    this.showPanelSearchResults = this.panelSearchResults.length > 0;
+  }
+
+  hidePanelSearchResults() {
+    this.showPanelSearchResults = false;
+  }
+
+  ngOnInit() {
+    this.cargarJugadores();
+    this.cargarListas();
+    this.cargarArancelesResumen();
+  }
+
+  private cargarArancelesResumen() {
+    this.arancelesService.getResumen().subscribe({
+      next: (resumen) => {
+        this.arancelMasculinoTexto = resumen.arancelMasculinoVigente != null
+          ? `Arancel Masculino ${CURRENCY_ARANCEL.format(resumen.arancelMasculinoVigente)}`
+          : '';
+        this.arancelFemeninoTexto = resumen.arancelFemeninoVigente != null
+          ? `Arancel Femenino ${CURRENCY_ARANCEL.format(resumen.arancelFemeninoVigente)}`
+          : '';
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
+  ngOnDestroy() {
+    clearTimeout(this.fadeTimer);
+    clearTimeout(this.clearTimer);
+  }
+
+  private cargarJugadores() {
+    this.cargandoJugadores = true;
+    this.pagosService.getJugadores().subscribe({
+      next: (jugadores) => {
+        this.jugadores = jugadores;
+        this.cargandoJugadores = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cargandoJugadores = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private cargarListas() {
+    this.cargandoListas = true;
+
+    // detectChanges() explícito: HttpClient usa FetchBackend por default y sus respuestas no
+    // siempre disparan la detección de cambios basada en zone.js, así que sin esto los campos
+    // se actualizan en el componente pero la vista queda mostrando los valores viejos.
+    this.pagosService.getPendientes().subscribe({
+      next: (pendientes) => {
+        this.pendingRows = pendientes.map(mapPendiente);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+
+    this.pagosService.getRecientes(10).subscribe({
+      next: (recientes) => {
+        this.paymentRows = recientes.map(mapReciente);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+
+    this.pagosService.getResumen().subscribe({
+      next: (resumen) => {
+        this.headerMetrics = mapResumen(resumen);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+      complete: () => (this.cargandoListas = false),
+    });
+  }
+
+  // El control solo es válido si su texto coincide exactamente con el jugador elegido en
+  // selectPlayer(): escribir un nombre "a mano" que calce con uno real no alcanza.
+  private knownPlayerValidator = (control: AbstractControl): ValidationErrors | null => {
+    const value = (control.value ?? '').toString().trim();
+    if (!value) {
+      return null;
+    }
+    return this.selectedPlayer && this.selectedPlayer.nombreCompleto === value ? null : { unknownPlayer: true };
+  };
+
+  onPlayerSearch(term: string) {
+    this.selectedPlayer = null;
+
+    const needle = normalizeTexto(term.trim().toLowerCase());
+    if (!needle) {
+      this.matchingPlayers = [];
+      this.showSuggestions = false;
+      return;
     }
 
-    methodLabel(method: string): string {
-        return this.methods.find(option => option.value === method)?.label ?? method;
+    const digits = needle.replace(/\D/g, '');
+    this.matchingPlayers = this.jugadores
+      .filter(
+        (jugador) =>
+          normalizeTexto(jugador.nombreCompleto.toLowerCase()).includes(needle) ||
+          (digits.length > 0 && jugador.dni.replace(/\D/g, '').includes(digits))
+      )
+      .slice(0, 20);
+    this.showSuggestions = this.matchingPlayers.length > 0;
+  }
+
+  selectPlayer(jugador: JugadorResumen) {
+    this.selectedPlayer = jugador;
+    this.paymentForm.patchValue({ player: jugador.nombreCompleto });
+    this.matchingPlayers = [];
+    this.showSuggestions = false;
+  }
+
+  hideSuggestions() {
+    this.showSuggestions = false;
+  }
+
+  onSubmit() {
+    if (this.paymentForm.invalid || !this.selectedPlayer) {
+      this.paymentForm.markAllAsTouched();
+      return;
     }
 
-    isTransfer(): boolean {
-        return this.paymentForm.get('method')!.value === CuotasPagos.TRANSFER_METHOD;
-    }
+    const { period, year, amount, method } = this.paymentForm.value;
+    const jugador = this.selectedPlayer;
 
-    // One unified field: the same term is matched against name and document
-    onPlayerSearch(term: string) {
-        const needle = normalizeText(term.trim());
+    this.enviando = true;
+    this.errorMessage = '';
+    this.clearSuccessMessage();
 
-        // Typing the exact name also counts as choosing the player
-        const exactPlayer = this.findPlayer(term.trim());
-        if (exactPlayer) {
-            this.loadPaidPeriods(exactPlayer.id);
-        } else {
-            this.clearPaidPeriods();
-        }
-
-        if (needle.length < CuotasPagos.MIN_SEARCH_LENGTH) {
-            this.matchingPlayers = [];
-            this.showSuggestions = false;
-            return;
-        }
-
-        // Digits are compared without dots so "48221" also finds "48.221.107"
-        const digits = needle.replace(/\D/g, '');
-        this.matchingPlayers = this.players().filter(player =>
-            normalizeText(player.fullName).includes(needle) ||
-            (digits.length > 0 && player.document.replace(/\D/g, '').includes(digits))
-        );
-        this.showSuggestions = this.matchingPlayers.length > 0;
-    }
-
-    selectPlayer(player: PlayerModel) {
-        this.paymentForm.patchValue({ player: player.fullName });
+    this.pagosService.registrarPago(jugador.idJugador, period, Number(year), Number(amount), method).subscribe({
+      next: () => {
+        this.enviando = false;
+        this.paymentForm.reset({ player: '', period: '', year: new Date().getFullYear(), amount: '', method: '' });
+        this.montoDisplay = '';
+        this.selectedPlayer = null;
         this.matchingPlayers = [];
         this.showSuggestions = false;
-        this.loadPaidPeriods(player.id);
-    }
+        this.showConfirmation(`Pago de ${jugador.nombreCompleto} registrado correctamente.`);
+        this.cargarListas();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviando = false;
+        this.errorMessage = err.error?.mensaje ?? 'No se pudo registrar el pago. Intentá de nuevo.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
-    hideSuggestions() {
-        this.showSuggestions = false;
-    }
+  private showConfirmation(message: string) {
+    this.clearSuccessMessage();
 
-    onSubmit() {
-        const player = this.findPlayer((this.paymentForm.value.player ?? '').toString().trim());
-        if (this.paymentForm.invalid || this.submitting || !player) {
-            this.paymentForm.markAllAsTouched();
-            return;
-        }
+    this.successMessage = message;
+    this.successLeaving = false;
 
-        const formValue = this.paymentForm.getRawValue();
-        const reference = (formValue.reference ?? '').toString().trim();
-        const request: PaymentRequestModel = {
-            playerId: player.id,
-            periodYear: Number(formValue.periodYear),
-            periodMonth: Number(formValue.periodMonth),
-            amount: Number(formValue.amount),
-            method: formValue.method,
-            reference: this.isTransfer() && reference !== '' ? reference : null,
-        };
+    this.fadeTimer = setTimeout(() => (this.successLeaving = true), 2700);
+    this.clearTimer = setTimeout(() => {
+      this.successMessage = '';
+      this.successLeaving = false;
+    }, 3000);
+  }
 
-        this.submitting = true;
-        this.paymentService.createPayment(request).subscribe({
-            next: (payment) => {
-                this.submitting = false;
-                this.resetForm();
-                this.showToast(`Pago de ${player.fullName} registrado: ${this.formatPeriod(payment.period)}.`, 'success');
+  private clearSuccessMessage() {
+    clearTimeout(this.fadeTimer);
+    clearTimeout(this.clearTimer);
+    this.successMessage = '';
+    this.successLeaving = false;
+  }
+}
 
-                // The grid and the counters show the new payment without reloading the page
-                this.loadLatestPayments();
-                this.loadTreasuryMetrics();
-            },
-            error: (error: HttpErrorResponse) => {
-                this.submitting = false;
-                this.showToast(this.describeError(error), 'error');
+// Saca los acentos (á->a, ñ->n, etc.) para que buscar "guzman" encuentre "GUZMÁN" y
+// buscar "nino" encuentre "NIÑO". Sin esto, cualquier tilde que el usuario no tipee hace
+// fallar la búsqueda por completo.
+// Regex para el rango Unicode de marcas diacríticas combinantes (U+0300-U+036F), construida
+// por código de caracter en vez de escribir el literal para evitar que el editor la reinterprete
+// como el caracter combinante real en vez del patrón de regex.
+const DIACRITICS_PATTERN = String.fromCharCode(91, 92, 117, 48, 51, 48, 48, 45, 92, 117, 48, 51, 54, 102, 93);
+const DIACRITICS_REGEX = new RegExp(DIACRITICS_PATTERN, 'g');
 
-                // A rejected duplicate means the local history was stale
-                if (error.status === 400) {
-                    this.loadPaidPeriods(player.id);
-                }
-            },
-        });
-    }
+function normalizeTexto(texto: string): string {
+  return texto.normalize('NFD').replace(DIACRITICS_REGEX, '');
+}
 
-    // The typed text must resolve to a real player, not just be non-empty
-    private knownPlayerValidator = (control: AbstractControl): ValidationErrors | null => {
-        const value = (control.value ?? '').toString().trim();
-        if (!value) {
-            return null;
-        }
-        return this.findPlayer(value) ? null : { unknownPlayer: true };
-    };
+// Año actual y los 2 anteriores, más nuevo primero. Calculado en el momento (no hardcodeado)
+// para que la ventana se corra sola cada 1° de enero sin que haga falta tocar código.
+function buildYearOptions(): number[] {
+  const actual = new Date().getFullYear();
+  return [actual, actual - 1, actual - 2];
+}
 
-    // The selected player cannot pay the same period twice
-    private unpaidPeriodValidator = (group: AbstractControl): ValidationErrors | null => {
-        const year = group.get('periodYear')?.value;
-        const month = group.get('periodMonth')?.value;
-        if (!year || !month) {
-            return null;
-        }
-        return this.paidPeriods.has(this.periodKey(Number(year), Number(month)))
-            ? { periodAlreadyPaid: true }
-            : null;
-    };
+function initialsOf(nombreCompleto: string): string {
+  const [apellido, nombre] = nombreCompleto.split(',').map((p) => p.trim());
+  return `${(apellido?.[0] ?? '')}${(nombre?.[0] ?? '')}`.toUpperCase();
+}
 
-    private findPlayer(value: string): PlayerModel | undefined {
-        const needle = normalizeText(value);
-        return this.players().find(player => normalizeText(player.fullName) === needle);
-    }
+function mapPendiente(p: PendienteJugador): PendingRow {
+  return {
+    id: p.idJugador,
+    initials: initialsOf(p.nombreCompleto),
+    name: p.nombreCompleto,
+    category: p.categoria,
+    amount: CURRENCY_FULL.format(p.montoTotal),
+    installments: `${p.cantidadCuotas} ${p.cantidadCuotas === 1 ? 'cuota' : 'cuotas'}`,
+  };
+}
 
-    private periodKey(year: number, month: number): string {
-        return `${year}-${String(month).padStart(2, '0')}`;
-    }
+function mapReciente(p: PagoReciente): PaymentRow {
+  return {
+    id: p.idPago,
+    idJugador: p.idJugador,
+    initials: initialsOf(p.nombreCompleto),
+    name: p.nombreCompleto,
+    method: p.metodoPago,
+    amount: CURRENCY_FULL.format(p.monto),
+    elapsed: formatElapsed(p.fechaPago),
+  };
+}
 
-    private loadPaidPeriods(playerId: number) {
-        if (this.selectedPlayerId === playerId) {
-            return;
-        }
-        this.selectedPlayerId = playerId;
-        this.paidPeriods = new Set<string>();
+// PAGOS.fecha_pago es DATE (sin hora) en la base real: solo se puede mostrar granularidad de
+// días, no "hace 5 min" como en el mock original.
+function formatElapsed(fechaPagoIso: string): string {
+  const fecha = new Date(fechaPagoIso);
+  const hoy = new Date();
+  const unDia = 24 * 60 * 60 * 1000;
+  const diffDias = Math.round(
+    (new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime() -
+      new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()).getTime()) /
+      unDia
+  );
 
-        this.paymentService.getPaymentsByPlayer(playerId).subscribe({
-            next: (payments) => {
-                // Ignore a late response for a player that is no longer selected
-                if (this.selectedPlayerId !== playerId) {
-                    return;
-                }
-                this.paidPeriods = new Set(
-                    payments
-                        .filter(payment => payment.period !== null)
-                        .map(payment => payment.period as string)
-                );
-                this.paymentForm.updateValueAndValidity();
-            },
-            // Without the history the form still submits and the API rejects a duplicate
-            error: () => undefined,
-        });
-    }
+  if (diffDias === 0) return 'Hoy';
+  if (diffDias === 1) return 'Ayer';
+  if (diffDias > 1 && diffDias < 30) return `Hace ${diffDias} días`;
+  return fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
-    private clearPaidPeriods() {
-        this.selectedPlayerId = null;
-        this.paidPeriods = new Set<string>();
-        this.paymentForm.updateValueAndValidity();
-    }
-
-    private toggleReference(method: string) {
-        const reference = this.paymentForm.get('reference')!;
-        if (method === CuotasPagos.TRANSFER_METHOD) {
-            reference.enable();
-            return;
-        }
-        reference.reset({ value: '', disabled: true });
-    }
-
-    private resetForm() {
-        this.paymentForm.reset({
-            player: '',
-            periodYear: new Date().getFullYear(),
-            periodMonth: '',
-            amount: '',
-            method: '',
-            reference: '',
-        });
-        this.matchingPlayers = [];
-        this.showSuggestions = false;
-        this.clearPaidPeriods();
-    }
-
-    private describeError(error: HttpErrorResponse): string {
-        if (error.status === 0) {
-            return 'No se pudo conectar con el servidor. Intentá nuevamente.';
-        }
-        if (error.status === 401) {
-            return 'Tu sesión venció. Iniciá sesión nuevamente para registrar el pago.';
-        }
-        if (error.status === 400) {
-            return 'No se pudo registrar el pago: el período ya está abonado o hay datos inválidos.';
-        }
-        return 'Ocurrió un error al registrar el pago. Intentá nuevamente.';
-    }
-
-    private loadLatestPayments() {
-        this.paymentService.getLatestPayments(CuotasPagos.LATEST_PAYMENTS_COUNT).subscribe({
-            next: (payments) => {
-                this.latestPayments.set(payments);
-                this.latestLoaded.set(true);
-            },
-            error: () => {
-                this.latestPayments.set([]);
-                this.latestLoaded.set(true);
-            },
-        });
-    }
-
-    private loadTreasuryMetrics() {
-        this.paymentService.getTreasuryMetrics().subscribe({
-            next: (metrics) => this.headerMetrics.set(this.buildHeaderMetrics(metrics)),
-            // The dashes already state that the counters are unavailable
-            error: () => undefined,
-        });
-    }
-
-    private buildHeaderMetrics(metrics: TreasuryMetricsModel): HeaderMetric[] {
-        return [
-            { value: this.formatAmount(metrics.collectedThisYear), label: 'Recaudado del año' },
-            { value: metrics.paymentsThisMonth.toString(), label: 'Pagos del mes' },
-            { value: metrics.pendingCount.toString(), label: 'Pendientes' },
-        ];
-    }
-
-    // Shows the toast, fades it out and removes it
-    private showToast(message: string, kind: ToastKind) {
-        clearTimeout(this.fadeTimer);
-        clearTimeout(this.clearTimer);
-
-        this.toastMessage = message;
-        this.toastKind = kind;
-        this.toastLeaving = false;
-
-        // Start the fade before removing the node so it does not blink out
-        this.fadeTimer = setTimeout(
-            () => (this.toastLeaving = true),
-            CuotasPagos.TOAST_DURATION_MS - CuotasPagos.TOAST_FADE_MS
-        );
-        this.clearTimer = setTimeout(() => {
-            this.toastMessage = '';
-            this.toastLeaving = false;
-        }, CuotasPagos.TOAST_DURATION_MS);
-    }
+function mapResumen(r: ResumenPagos): HeaderMetric[] {
+  return [
+    { value: formatCompactCurrency(r.recaudadoAnioActual), label: `Recaudado ${new Date().getFullYear()}` },
+    { value: String(r.pagosDelMes), label: 'Pagos del mes' },
+    { value: String(r.cantidadPendientes), label: 'Pendientes' },
+  ];
 }

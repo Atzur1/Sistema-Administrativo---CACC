@@ -1,9 +1,0 @@
-$kind: http-request
-description: "HU-016. Historial de pagos del jugador 577, que usa el formulario de cobro para bloquear los períodos ya abonados. Debe responder 200 e incluir los dos cobros registrados por las requests anteriores, con su período. Correr después de los cobros en efectivo y por transferencia."
-url: "{{baseUrl}}/api/Payments/player/{{cobroPlayerId}}"
-method: GET
-scripts:
-  - type: afterResponse
-    code: "const data = pm.response.json();\nconst year = pm.collectionVariables.get(\"cobroYear\");\nconst cashPeriod = year + \"-\" + String(pm.collectionVariables.get(\"cobroMonth\")).padStart(2, \"0\");\nconst transferPeriod = year + \"-\" + String(pm.collectionVariables.get(\"cobroTransferMonth\")).padStart(2, \"0\");\n\npm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"Todos los pagos son del jugador consultado\", function () {\n    data.forEach(payment => pm.expect(payment.playerId).to.eql(577));\n});\n\npm.test(\"Incluye los períodos cobrados en efectivo y por transferencia\", function () {\n    const periods = data.map(payment => payment.period);\n    pm.expect(periods).to.include(cashPeriod);\n    pm.expect(periods).to.include(transferPeriod);\n});"
-    language: text/javascript
-order: 1789148380010

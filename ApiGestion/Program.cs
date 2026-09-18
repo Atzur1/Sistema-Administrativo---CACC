@@ -24,14 +24,27 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<DaoLibrary.AuthDao>(provider =>
     new DaoLibrary.AuthDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 
+// Cuotas y pagos: DAO + runner transaccional + servicio de negocio
+builder.Services.AddScoped<DaoLibrary.IPagosDao>(provider =>
+    new DaoLibrary.PagosDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<DaoLibrary.ISqlTransactionRunner>(provider =>
+    new DaoLibrary.SqlTransactionRunner(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<ServiceLibrary.IPagosService, ServiceLibrary.PagosService>();
+
+builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
+    new DaoLibrary.JugadoresDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
+builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
+    new DaoLibrary.EstadisticasDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
+// Aranceles: DAO + servicio de negocio
+builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
+    new DaoLibrary.ArancelesDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<ServiceLibrary.IArancelesService, ServiceLibrary.ArancelesService>();
+
+// Becados y descuentos
 builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
     new DaoLibrary.DiscountDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
-
-builder.Services.AddScoped<DaoLibrary.PlayerDao>(provider =>
-    new DaoLibrary.PlayerDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
-
-builder.Services.AddScoped<DaoLibrary.PaymentDao>(provider =>
-    new DaoLibrary.PaymentDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 
 // 4. NUEVO: Configuración de autenticación JWT
 var jwtKey = builder.Configuration["Jwt:Key"]!;
@@ -70,6 +83,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// 3. SEED: crea el usuario Admin si no existe (una sola vez al arrancar)
+string cadenaConexion = builder.Configuration.GetConnectionString("ConexionSQL") ?? "";
+// DaoLibrary.SeedAdmin.CrearAdminSiNoExiste(cadenaConexion);
 
 app.Run();
 

@@ -1,8 +1,10 @@
-import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { ArancelesService, ArancelHistorialItem } from '../../services/aranceles';
 
 Chart.register(...registerables);
 
@@ -17,7 +19,14 @@ interface FeeRow {
     validFrom: string;
     // Empty while the fee has no replacement scheduled after it
     validTo: string;
+    estado: 'Vigente' | 'Programado' | 'Anterior';
 }
+
+const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0,
+});
 
 @Component({
     selector: 'app-actualizacion-aranceles',
@@ -26,39 +35,30 @@ interface FeeRow {
     templateUrl: './actualizacion-aranceles.html',
     styleUrl: './actualizacion-aranceles.css',
 })
-export class ActualizacionAranceles implements OnDestroy {
+export class ActualizacionAranceles implements OnInit, OnDestroy {
 
-    // Header
     headerMetrics = [
-        { value: '$85.000', label: 'Arancel masculino' },
-        { value: '$50.000', label: 'Arancel femenino' },
-        { value: 'En 15 días', label: 'Próximo cambio' },
+        { value: '—', label: 'Arancel masculino' },
+        { value: '—', label: 'Arancel femenino' },
+        { value: '—', label: 'Próximo cambio' },
     ];
 
-    // Scheduling form
     feeForm: FormGroup;
 
     categories = ['Masculino', 'Femenino'];
 
-    // Inline confirmation shown after a simulated submit
     successMessage = '';
     successLeaving = false;
+    errorMessage = '';
+    enviando = false;
 
     // Every fee ever set, newest first: past periods, the current one and the
     // changes already scheduled ahead
-    feeRows: FeeRow[] = [
-        { id: 1, category: 'female', categoryLabel: 'Femenino', amount: '$58.000', validFrom: '2026-09-24', validTo: '' },
-        { id: 2, category: 'male', categoryLabel: 'Masculino', amount: '$92.000', validFrom: '2026-09-24', validTo: '' },
-        { id: 3, category: 'male', categoryLabel: 'Masculino', amount: '$85.000', validFrom: '2026-04-01', validTo: '2026-09-23' },
-        { id: 4, category: 'female', categoryLabel: 'Femenino', amount: '$50.000', validFrom: '2026-01-01', validTo: '2026-09-23' },
-        { id: 5, category: 'male', categoryLabel: 'Masculino', amount: '$70.000', validFrom: '2026-01-01', validTo: '2026-03-31' },
-        { id: 6, category: 'female', categoryLabel: 'Femenino', amount: '$42.000', validFrom: '2025-07-01', validTo: '2025-12-31' },
-        { id: 7, category: 'male', categoryLabel: 'Masculino', amount: '$58.000', validFrom: '2025-07-01', validTo: '2025-12-31' },
-        { id: 8, category: 'male', categoryLabel: 'Masculino', amount: '$45.000', validFrom: '2025-01-01', validTo: '2025-06-30' },
-    ];
+    feeRows: FeeRow[] = [];
 
-    // Bound to the date field so the native picker already blocks the past
-    readonly today = new Date().toISOString().slice(0, 10);
+    // Lo que se ve en el input de Nuevo monto ("1.000"). El control del form (feeForm.get('amount'))
+    // guarda el número limpio sin puntos ("1000"), que es lo que se valida y se manda al backend.
+    montoDisplay = '';
 
     private monthLabels = [
         'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
@@ -139,29 +139,78 @@ export class ActualizacionAranceles implements OnDestroy {
     private fadeTimer?: ReturnType<typeof setTimeout>;
     private clearTimer?: ReturnType<typeof setTimeout>;
 
-    constructor(private fb: FormBuilder) {
+    constructor(
+        private fb: FormBuilder,
+        private arancelesService: ArancelesService,
+        private cdr: ChangeDetectorRef
+    ) {
         this.feeForm = this.fb.group({
             category: ['', [Validators.required]],
             amount: ['', [Validators.required, Validators.min(1)]],
-            validFrom: ['', [Validators.required, this.notInThePastValidator]],
+            validFrom: ['', [Validators.required]],
         });
-
-        this.feeChartData = this.buildChartData();
     }
 
-    // A fee can start today or later, never in a month already invoiced
-    private notInThePastValidator = (control: AbstractControl): ValidationErrors | null => {
-        const value = (control.value ?? '').toString();
-        if (!value) {
-            return null;
-        }
-        return value >= this.today ? null : { pastDate: true };
-    };
+    ngOnInit() {
+        this.cargarDatos();
+    }
 
-    // The error only surfaces once the user has actually been on the field
-    get validFromHasPastError(): boolean {
-        const control = this.feeForm.controls['validFrom'];
-        return control.hasError('pastDate') && (control.touched || control.dirty);
+    // Reformatea el Nuevo monto con puntos de miles a medida que se escribe, preservando la
+    // posición del cursor por cantidad de dígitos (no por índice de caracter, que cambia cada
+    // vez que se agrega o saca un punto) — así corregir un número a mitad de la escritura no
+    // hace saltar el cursor al final.
+    onMontoInput(target: HTMLInputElement) {
+        const cursorPos = target.selectionStart ?? target.value.length;
+        const digitsBeforeCursor = target.value.slice(0, cursorPos).replace(/\D/g, '').length;
+
+        const digitsOnly = target.value.replace(/\D/g, '').slice(0, 12);
+        const formatted = digitsOnly ? Number(digitsOnly).toLocaleString('es-AR') : '';
+
+        // Se escribe el DOM a mano, no solo vía el binding [value]: si el texto recalculado da
+        // igual al montoDisplay anterior (ej. al borrar un punto de formato, que reaparece solo),
+        // Angular no vuelve a tocar el input porque "no cambió" desde su óptica — pero el navegador
+        // ya había mutado el value nativamente al borrar, y sin esto queda esa edición sin corregir.
+        target.value = formatted;
+        this.montoDisplay = formatted;
+        this.feeForm.patchValue({ amount: digitsOnly });
+
+        queueMicrotask(() => {
+            let newPos = digitsBeforeCursor === 0 ? 0 : formatted.length;
+            let digitsSeen = 0;
+            for (let i = 0; i < formatted.length && digitsBeforeCursor > 0; i++) {
+                if (/\d/.test(formatted[i])) {
+                    digitsSeen++;
+                }
+                if (digitsSeen === digitsBeforeCursor) {
+                    newPos = i + 1;
+                    break;
+                }
+            }
+            target.setSelectionRange(newPos, newPos);
+        });
+    }
+
+    private cargarDatos() {
+        this.arancelesService.getResumen().subscribe({
+            next: (resumen) => {
+                this.headerMetrics = [
+                    { value: resumen.arancelMasculinoVigente != null ? CURRENCY_FULL.format(resumen.arancelMasculinoVigente) : '—', label: 'Arancel masculino' },
+                    { value: resumen.arancelFemeninoVigente != null ? CURRENCY_FULL.format(resumen.arancelFemeninoVigente) : '—', label: 'Arancel femenino' },
+                    { value: resumen.proximoCambioFecha ? this.formatDate(resumen.proximoCambioFecha) : 'Sin cambios', label: 'Próximo cambio' },
+                ];
+                this.cdr.detectChanges();
+            },
+            error: () => {},
+        });
+
+        this.arancelesService.getHistorial().subscribe({
+            next: (historial) => {
+                this.feeRows = historial.map(mapHistorialItem);
+                this.feeChartData = this.buildChartData();
+                this.cdr.detectChanges();
+            },
+            error: () => {},
+        });
     }
 
     // Series for both categories, from January up to the current month, priced
@@ -230,25 +279,17 @@ export class ActualizacionAranceles implements OnDestroy {
         clearTimeout(this.clearTimer);
     }
 
-    // 'current' while today falls inside the period, 'scheduled' before it
-    // starts, 'previous' once another fee has replaced it
+    // El estado ya viene calculado desde el backend (Vigente/Programado/Anterior).
     status(row: FeeRow): 'current' | 'scheduled' | 'previous' {
-        const today = new Date().toISOString().slice(0, 10);
-        if (row.validFrom > today) {
-            return 'scheduled';
+        switch (row.estado) {
+            case 'Vigente': return 'current';
+            case 'Programado': return 'scheduled';
+            default: return 'previous';
         }
-        return !row.validTo || today <= row.validTo ? 'current' : 'previous';
     }
 
     statusLabel(row: FeeRow): string {
-        switch (this.status(row)) {
-            case 'current':
-                return 'Vigente';
-            case 'scheduled':
-                return 'Programado';
-            default:
-                return 'Anterior';
-        }
+        return row.estado;
     }
 
     // An open-ended period shows its state instead of an end date
@@ -258,20 +299,36 @@ export class ActualizacionAranceles implements OnDestroy {
 
     // ISO dates are shown the way they are read locally
     formatDate(isoDate: string): string {
-        const [year, month, day] = isoDate.split('-');
+        const [year, month, day] = isoDate.slice(0, 10).split('-');
         return `${day}/${month}/${year}`;
     }
 
-    // No backend yet: the submit only simulates a successful scheduling
     onSubmit() {
         if (this.feeForm.invalid) {
             this.feeForm.markAllAsTouched();
             return;
         }
 
-        const category = this.feeForm.value.category;
-        this.feeForm.reset({ category: '', amount: '', validFrom: '' });
-        this.showConfirmation(`Nuevo arancel ${category} programado correctamente.`);
+        const { category, amount, validFrom } = this.feeForm.value;
+
+        this.enviando = true;
+        this.errorMessage = '';
+
+        this.arancelesService.programar(category, Number(amount), validFrom).subscribe({
+            next: () => {
+                this.enviando = false;
+                this.feeForm.reset({ category: '', amount: '', validFrom: '' });
+                this.montoDisplay = '';
+                this.showConfirmation(`Nuevo arancel ${category} programado correctamente.`);
+                this.cargarDatos();
+                this.cdr.detectChanges();
+            },
+            error: (err: HttpErrorResponse) => {
+                this.enviando = false;
+                this.errorMessage = err.error?.mensaje ?? 'No se pudo programar el arancel. Intentá de nuevo.';
+                this.cdr.detectChanges();
+            },
+        });
     }
 
     // Shows the inline confirmation, fades it out and clears it after 3s
@@ -289,4 +346,16 @@ export class ActualizacionAranceles implements OnDestroy {
             this.successLeaving = false;
         }, 3000);
     }
+}
+
+function mapHistorialItem(item: ArancelHistorialItem): FeeRow {
+    return {
+        id: item.idArancel,
+        category: item.genero === 'Femenino' ? 'female' : 'male',
+        categoryLabel: item.genero,
+        amount: `$${item.monto.toLocaleString('es-AR')}`,
+        validFrom: item.vigenteDesde.slice(0, 10),
+        validTo: item.vigenteHasta ? item.vigenteHasta.slice(0, 10) : '',
+        estado: item.estado,
+    };
 }

@@ -17,8 +17,17 @@
       <span class="header-subtitle">Registro y control de la recaudación del club</span>
     </div>
 
+    <div class="header-aranceles-vigentes">
+      @if (arancelMasculinoTexto) {
+        <span class="arancel-badge arancel-badge-masculino">{{ arancelMasculinoTexto }}</span>
+      }
+      @if (arancelFemeninoTexto) {
+        <span class="arancel-badge arancel-badge-femenino">{{ arancelFemeninoTexto }}</span>
+      }
+    </div>
+
     <div class="header-metrics">
-      @for (metric of headerMetrics(); track metric.label) {
+      @for (metric of headerMetrics; track metric.label) {
         <div class="header-metric">
           <span class="header-metric-value">{{ metric.value }}</span>
           <span class="header-metric-label">{{ metric.label }}</span>
@@ -57,14 +66,11 @@
 
         @if (showSuggestions) {
           <ul class="suggestions">
-            @for (player of matchingPlayers; track player.id) {
+            @for (jugador of matchingPlayers; track jugador.idJugador) {
               <li>
-                <button type="button" class="suggestion" (click)="selectPlayer(player)">
-                  <span class="suggestion-name">
-                    {{ player.fullName }}
-                    <app-discount-badge [discount]="getDiscount(player.id)" />
-                  </span>
-                  <span class="suggestion-meta">DNI {{ player.document }} · {{ player.category }}</span>
+                <button type="button" class="suggestion" (click)="selectPlayer(jugador)">
+                  <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
+                  <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
                 </button>
               </li>
             }
@@ -73,57 +79,54 @@
       </div>
 
       <div class="field">
-        <label class="field-label" for="periodMonth">Período</label>
-        <select id="periodMonth" class="field-input" formControlName="periodMonth">
-          <option [ngValue]="''" disabled>Seleccionar mes</option>
-          @for (month of months; track month.value) {
-            <option [ngValue]="month.value">{{ month.label }}</option>
+        <label class="field-label" for="period">Período</label>
+        <select id="period" class="field-input" formControlName="period">
+          <option value="" disabled>Seleccionar mes</option>
+          @for (period of periods; track period) {
+            <option [value]="period">{{ period }}</option>
           }
         </select>
       </div>
 
-      <div class="field">
-        <label class="field-label" for="periodYear">Año</label>
-        <select id="periodYear" class="field-input" formControlName="periodYear">
+      <div class="field field-year">
+        <label class="field-label" for="year">Año</label>
+        <select id="year" class="field-input" formControlName="year">
           @for (year of years; track year) {
-            <option [ngValue]="year">{{ year }}</option>
+            <option [value]="year">{{ year }}</option>
           }
         </select>
       </div>
 
       <div class="field">
         <label class="field-label" for="amount">Monto</label>
-        <input id="amount" type="number" class="field-input" formControlName="amount"
-               placeholder="$85.000" min="1" />
+        <div class="amount-wrapper">
+          <span class="amount-prefix">$</span>
+          <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
+                 [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
+                 placeholder="0" />
+        </div>
       </div>
 
-      <!-- Required before confirming: the payment method is recorded and cannot be changed later -->
       <div class="field">
         <label class="field-label" for="method">Método</label>
         <select id="method" class="field-input" formControlName="method">
           <option value="" disabled>Seleccionar método</option>
-          @for (method of methods; track method.value) {
-            <option [value]="method.value">{{ method.label }}</option>
+          @for (method of methods; track method) {
+            <option [value]="method">{{ method }}</option>
           }
         </select>
       </div>
 
-      <div class="field">
-        <label class="field-label" for="reference">Comprobante / Referencia</label>
-        <input id="reference" type="text" class="field-input" formControlName="reference"
-               [placeholder]="isTransfer() ? 'Opcional' : 'Solo transferencia'"
-               maxlength="50" autocomplete="off" />
-      </div>
-
-      @if (paymentForm.hasError('periodAlreadyPaid')) {
-        <p class="form-error">
-          La cuota de {{ selectedPeriodLabel() }} ya está abonada para este jugador.
-        </p>
-      }
-
-      <button type="submit" class="submit-button" [disabled]="paymentForm.invalid || submitting">
-        {{ submitting ? 'Registrando...' : 'Confirmar pago' }}
+      <button type="submit" class="submit-button" [disabled]="paymentForm.invalid || enviando">
+        {{ enviando ? 'Registrando...' : 'Registrar pago' }}
       </button>
+
+      @if (successMessage) {
+        <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
+      }
+      @if (errorMessage) {
+        <p class="form-feedback is-error">{{ errorMessage }}</p>
+      }
     </form>
   </section>
 
@@ -135,33 +138,24 @@
       <header class="panel-head">
         <span class="panel-dot dot-pending"></span>
         <h2 class="panel-title">Pendientes de cobro</h2>
-        <span class="panel-count">{{ pendingFees().length }}</span>
+        <span class="panel-count">{{ pendingRows.length }}</span>
       </header>
 
       <ul class="row-list">
-        @for (fee of pendingFees(); track fee.id) {
-          <li class="row">
-            <span class="row-avatar avatar-pending">{{ initialsOf(fee.playerName) }}</span>
+        @for (row of pendingRows; track row.id) {
+          <li class="row row-clickable" (click)="irADeuda(row.id)">
+            <span class="row-avatar avatar-pending">{{ row.initials }}</span>
             <div class="row-identity">
-              <span class="row-name">
-                <span class="row-name-text">{{ fee.playerName }}</span>
-                <app-discount-badge [discount]="getDiscount(fee.playerId)" />
-              </span>
-              <span class="row-meta">{{ fee.category }}</span>
+              <span class="row-name">{{ row.name }}</span>
+              <span class="row-meta">{{ row.category }}</span>
             </div>
             <div class="row-figures">
-              <span class="row-amount amount-pending">{{ formatAmount(fee.amount) }}</span>
-              <span class="row-meta">Vence {{ formatDate(fee.dueDate) }}</span>
+              <span class="row-amount amount-pending">{{ row.amount }}</span>
+              <span class="row-meta">{{ row.installments }}</span>
             </div>
           </li>
         }
       </ul>
-
-      <!-- Monthly fee generation is not implemented yet, so no fee is ever in an
-           unpaid state. The panel says so instead of showing example rows. -->
-      @if (pendingLoaded() && pendingFees().length === 0) {
-        <p class="panel-empty">No hay cuotas pendientes registradas.</p>
-      }
     </article>
 
     <!-- Most recent payments -->
@@ -169,43 +163,51 @@
       <header class="panel-head">
         <span class="panel-dot dot-paid"></span>
         <h2 class="panel-title">Últimos pagos</h2>
-        <span class="panel-count">{{ latestPayments().length }}</span>
+        <span class="panel-count">{{ paymentRows.length }}</span>
+
+        <div class="panel-search">
+          <input type="text" class="panel-search-input" placeholder="Buscar por nombre o DNI..."
+                 autocomplete="off"
+                 (input)="onPanelSearch($any($event.target).value)"
+                 (keydown.escape)="hidePanelSearchResults()" />
+          <span class="panel-search-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+
+          @if (showPanelSearchResults) {
+            <ul class="suggestions panel-suggestions">
+              @for (jugador of panelSearchResults; track jugador.idJugador) {
+                <li>
+                  <button type="button" class="suggestion" (click)="irAJugador(jugador.idJugador)">
+                    <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
+                    <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
       </header>
 
       <ul class="row-list">
-        @for (payment of latestPayments(); track payment.id) {
-          <li class="row">
-            <span class="row-avatar avatar-paid">{{ initialsOf(payment.playerName) }}</span>
+        @for (row of paymentRows; track row.id) {
+          <li class="row row-clickable" (click)="irAJugador(row.idJugador)">
+            <span class="row-avatar avatar-paid">{{ row.initials }}</span>
             <div class="row-identity">
-              <span class="row-name">
-                <span class="row-name-text">{{ payment.playerName }}</span>
-                <app-discount-badge [discount]="getDiscount(payment.playerId)" />
-              </span>
-              <!-- Method, the period the fee covers and the bank reference, when there is one -->
-              <span class="row-meta">
-                {{ methodLabel(payment.method) }}@if (payment.period) { · {{ formatPeriod(payment.period) }} }@if (payment.reference) { · Ref. {{ payment.reference }} }
-              </span>
+              <span class="row-name">{{ row.name }}</span>
+              <span class="row-meta">{{ row.method }}</span>
             </div>
             <div class="row-figures">
-              <span class="row-amount amount-paid">{{ formatAmount(payment.amount) }}</span>
-              <!-- The day the payment was collected, not the period it covers -->
-              <span class="row-meta">Cobrado el {{ formatDate(payment.paymentDate) }}</span>
+              <span class="row-amount amount-paid">{{ row.amount }}</span>
+              <span class="row-meta">{{ row.elapsed }}</span>
             </div>
           </li>
         }
       </ul>
-
-      @if (latestLoaded() && latestPayments().length === 0) {
-        <p class="panel-empty">No hay pagos registrados.</p>
-      }
     </article>
   </section>
-
-  <!-- Result of registering a payment -->
-  @if (toastMessage) {
-    <div class="toast" [class.toast-error]="toastKind === 'error'" [class.is-leaving]="toastLeaving"
-         role="status" aria-live="polite">
-      {{ toastMessage }}
-    </div>
-  }
 </div>

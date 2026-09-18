@@ -31,7 +31,6 @@ private pageTitles: Record<string, string> = {
     'usuarios':               'Usuarios y Permisos',
     'cuotas-pagos':           'Cuotas y Pagos',
     'reportes':               'Reportes',
-    'becados-descuentos':      'Becados y Descuentos',
     'actualizacion-aranceles': 'Actualización de Aranceles',
 };
 
@@ -70,10 +69,23 @@ this.router.events
     this.updatePageTitle();
     }
 
-  // Reads the last URL segment and maps it to a display name
+  // Reads the last URL segment and maps it to a display name.
+  // "jugadores/:id" has a numeric id as its last segment, so it's matched by the
+  // second-to-last segment instead — otherwise the topbar would show a raw id.
 private updatePageTitle() {
     const urlSegments = this.router.url.split('/');
     const lastSegment = urlSegments[urlSegments.length - 1];
+
+    if (lastSegment === 'deuda' && urlSegments[urlSegments.length - 3] === 'jugadores') {
+        this.currentPageTitle = 'Deuda Pendiente';
+        return;
+    }
+
+    if (urlSegments[urlSegments.length - 2] === 'jugadores') {
+        this.currentPageTitle = 'Perfil de Jugador';
+        return;
+    }
+
     this.currentPageTitle = this.pageTitles[lastSegment] ?? '';
 }
 

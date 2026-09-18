@@ -225,6 +225,25 @@
     box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
 }
 
+/* ===== NUEVO MONTO: signo $ fijo + formato con puntos de miles ===== */
+.amount-wrapper {
+    position: relative;
+}
+
+.amount-prefix {
+    position: absolute;
+    top: 50%;
+    left: 11px;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #555a55;
+    pointer-events: none;
+}
+
+.amount-input {
+    padding-left: 22px;
+}
+
 .field-hint {
     font-size: 10.5px;
     color: #555a55;
@@ -277,6 +296,11 @@
 
 .form-feedback.is-leaving {
     opacity: 0;
+}
+
+.form-feedback-error {
+    background: #fdecea;
+    color: #c0392b;
 }
 
 /* ===== MAIN GRID ===== */

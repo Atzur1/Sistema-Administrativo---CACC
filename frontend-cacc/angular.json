@@ -3,7 +3,7 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "analytics": "65e0347f-c554-416e-9370-e3d384f52d22"
+    "analytics": "18f5d9ea-85b0-45d2-8280-a110c3655103"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -22,7 +22,7 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "assets"
+                "input": "public"
               }
             ],
             "styles": [
@@ -39,8 +39,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "10kB",
-                  "maximumError": "16kB"
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
                 }
               ],
               "outputHashing": "all"

@@ -1,0 +1,123 @@
+<!-- Deuda pendiente de un jugador: mismo layout que Perfil de Jugador, tematizado en naranja
+     (pendiente) en vez de verde (pagado) -->
+<div class="dashboard">
+
+  <!-- ===== HEADER ===== -->
+  <header class="page-header">
+    <button type="button" class="back-button" (click)="volver()">← Volver a Cuotas y Pagos</button>
+  </header>
+
+  @if (cargandoJugador) {
+    <p class="loading-text">Cargando jugador...</p>
+  } @else if (jugador) {
+    <div class="profile-header">
+      <span class="profile-avatar">{{ iniciales }}</span>
+      <div class="profile-info">
+        <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
+        <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+      </div>
+      @if (cuotas.length > 0) {
+        <div class="profile-total">
+          <span class="profile-total-value">{{ formatMonto(montoTotalAdeudado) }}</span>
+          <span class="profile-total-label">Total adeudado</span>
+        </div>
+      }
+    </div>
+  } @else if (errorMessage) {
+    <p class="error-text">{{ errorMessage }}</p>
+  }
+
+  <div class="header-divider"></div>
+
+  <!-- ===== DEUDA PENDIENTE ===== -->
+  <section class="panel panel-deuda">
+    <header class="panel-head">
+      <span class="panel-dot dot-pending"></span>
+      <h2 class="panel-title">Deuda Pendiente</h2>
+      @if (cuotas.length > 0) {
+        <span class="panel-count">{{ cuotas.length }}</span>
+      }
+    </header>
+
+    @if (mensajeExito) {
+      <p class="pago-exito-global">{{ mensajeExito }}</p>
+    }
+
+    @if (cargandoDeuda) {
+      <p class="deuda-empty">Cargando deuda...</p>
+    } @else if (cuotas.length === 0) {
+      <p class="deuda-empty">Este jugador no tiene cuotas pendientes.</p>
+    } @else {
+      <ul class="cuota-list">
+        @for (cuota of cuotas; track cuota.idPago) {
+          <li class="cuota-card">
+            <div class="cuota-head">
+              <span class="cuota-periodo">{{ cuota.periodo }}</span>
+              <span class="cuota-original">Cuota: {{ formatMonto(cuota.montoOriginal) }}</span>
+            </div>
+
+            @if (cuota.tieneBeneficio) {
+              <span class="cuota-beneficio-badge">🎓 {{ beneficioTexto(cuota) }}</span>
+            }
+
+            @if (cuota.abonos.length > 0) {
+              <ul class="abono-list">
+                @for (abono of cuota.abonos; track $index) {
+                  <li class="abono-row">
+                    <span class="abono-meta">{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span>
+                    <span class="abono-monto">+{{ formatMonto(abono.monto) }}</span>
+                  </li>
+                }
+              </ul>
+            }
+
+            <div class="cuota-saldo">
+              <span class="saldo-label">Saldo pendiente</span>
+              <span class="saldo-monto">{{ formatMonto(cuota.saldoPendiente) }}</span>
+            </div>
+
+            @if (cuota.saldoPendiente <= 0) {
+              <p class="cuota-cubierta">Cubierta por beneficio de Becados y Descuentos — nada que cobrar.</p>
+            } @else if (pagandoId !== cuota.idPago) {
+              <button type="button" class="pagar-button" (click)="abrirPago(cuota)">
+                Pagar saldo
+              </button>
+            } @else {
+              <div class="pagar-form">
+                <div class="pagar-field">
+                  <label class="pagar-label">Monto</label>
+                  <div class="pagar-amount-wrapper">
+                    <span class="pagar-amount-prefix">$</span>
+                    <input type="text" inputmode="numeric" class="pagar-input pagar-amount-input"
+                           [value]="montoPagoDisplay" (input)="onMontoPagoInput($any($event.target))" />
+                  </div>
+                </div>
+
+                <div class="pagar-field">
+                  <label class="pagar-label">Método</label>
+                  <select class="pagar-input" [(ngModel)]="metodoPago">
+                    <option value="" disabled>Seleccionar método</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Efectivo">Efectivo</option>
+                  </select>
+                </div>
+
+                @if (errorPago) {
+                  <p class="pagar-error">{{ errorPago }}</p>
+                }
+
+                <div class="pagar-actions">
+                  <button type="button" class="pagar-cancelar" (click)="cancelarPago()" [disabled]="enviandoPago">Cancelar</button>
+                  <button type="button" class="pagar-confirmar" [disabled]="!metodoPago || !montoPagoDisplay || enviandoPago"
+                          (click)="confirmarPago(cuota)">
+                    {{ enviandoPago ? 'Registrando...' : 'Confirmar pago' }}
+                  </button>
+                </div>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

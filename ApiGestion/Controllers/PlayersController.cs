@@ -6,29 +6,23 @@ using ApiGestion.Models;
 using DaoLibrary;
 using EntityLibrary;
 
+// Becados y Descuentos (HU-011 / HU-012). Traído del repo de Atzur1, adaptado
+// para reusar el IJugadoresDao que ya existe en este proyecto en vez de crear
+// un PlayerDao/PlayersController.GetPlayers paralelo — evita duplicar el
+// concepto de "jugador" que ya resuelve JugadoresController/JugadoresDao.
 [ApiController]
 [Route("api/[controller]")]
 public class PlayersController : ControllerBase
 {
     private readonly ILogger<PlayersController> _logger;
-    private readonly PlayerDao _playerDao;
+    private readonly IJugadoresDao _jugadoresDao;
     private readonly DiscountDao _discountDao;
 
-    public PlayersController(ILogger<PlayersController> logger, PlayerDao playerDao, DiscountDao discountDao)
+    public PlayersController(ILogger<PlayersController> logger, IJugadoresDao jugadoresDao, DiscountDao discountDao)
     {
         _logger = logger;
-        _playerDao = playerDao;
+        _jugadoresDao = jugadoresDao;
         _discountDao = discountDao;
-    }
-
-    // Feeds the player lookup on the treasury screens
-    [HttpGet]
-    public IActionResult GetPlayers()
-    {
-        List<Player> players = _playerDao.GetAllPlayers();
-        _logger.LogInformation("Players returned: {Count}", players.Count);
-
-        return Ok(players.Select(MapPlayerToDto).ToList());
     }
 
     // Feeds the badge on the treasury grid: a single call returns every active
@@ -151,10 +145,6 @@ public class PlayersController : ControllerBase
         // Read back the stored row: the insert alone does not know the player
         // name, the category or the resolved state, and the client has to
         // receive the same shape the GET returns.
-        //
-        // Looked up by id, not by "the benefit of the player": now that a player
-        // can hold several, assigning a scheduled one while another is running
-        // would otherwise answer with the running one.
         Discount? stored = FindDiscount(playerId, created.Id);
 
         return Created($"/api/players/{playerId}/discount", MapToDto(stored ?? created));
@@ -252,6 +242,10 @@ public class PlayersController : ControllerBase
 
     // The two checks every write shares: the player has to exist and the reason
     // has to be one of the catalogue rows.
+    //
+    // Adaptado para usar IJugadoresDao.ObtenerJugadorPorId(int) en vez del
+    // PlayerDao del repo original, así este feature no duplica el stack de
+    // Jugadores que ya existe en este proyecto.
     private IActionResult? ValidatePlayerAndReason(long playerId, DiscountRequestDTO request, out DiscountType? reason)
     {
         reason = null;
@@ -261,7 +255,7 @@ public class PlayersController : ControllerBase
             return BadRequest("The player id must be greater than zero.");
         }
 
-        if (_playerDao.GetPlayerById(playerId) == null)
+        if (_jugadoresDao.ObtenerJugadorPorId((int)playerId) == null)
         {
             return BadRequest($"No player exists with id {playerId}.");
         }
@@ -313,17 +307,6 @@ public class PlayersController : ControllerBase
         return $"Player {playerId} already has a benefit for that period: "
              + $"{clash.Type} from {clash.StartDate:yyyy-MM-dd} to {clash.EndDate:yyyy-MM-dd}. "
              + "Adjust the dates or cancel that one first.";
-    }
-
-    private PlayerResponseDTO MapPlayerToDto(Player player)
-    {
-        return new PlayerResponseDTO
-        {
-            Id = player.Id,
-            FullName = $"{player.LastName}, {player.FirstName}",
-            Document = player.Document,
-            Category = player.Category
-        };
     }
 
     private DiscountResponseDTO MapToDto(Discount discount)
