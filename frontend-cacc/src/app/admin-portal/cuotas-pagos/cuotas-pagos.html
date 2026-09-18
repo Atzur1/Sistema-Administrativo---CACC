@@ -55,13 +55,6 @@
                (input)="onPlayerSearch($any($event.target).value)"
                (keydown.escape)="hideSuggestions()" />
 
-        @if (jugadoresError) {
-          <p class="jugadores-error">
-            No se pudo cargar la lista de jugadores, por eso el buscador no encuentra nada.
-            <button type="button" class="jugadores-retry" (click)="reintentarCargarJugadores()">Reintentar</button>
-          </p>
-        }
-
         @if (showSuggestions) {
           <ul class="suggestions">
             @for (jugador of matchingPlayers; track jugador.idJugador) {
@@ -92,7 +85,7 @@
           <span class="amount-prefix">$</span>
           <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
                  [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
-                 placeholder="85.000" />
+                 [placeholder]="montoPlaceholder" />
         </div>
       </div>
 
@@ -132,7 +125,7 @@
 
       <ul class="row-list">
         @for (row of pendingRows; track row.id) {
-          <li class="row row-clickable" (click)="irAJugador(row.id)">
+          <li class="row row-clickable" (click)="irADeuda(row.id)">
             <span class="row-avatar avatar-pending">{{ row.initials }}</span>
             <div class="row-identity">
               <span class="row-name">{{ row.name }}</span>
@@ -166,13 +159,6 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
           </span>
-
-          @if (jugadoresError) {
-            <div class="jugadores-error jugadores-error-compact">
-              No se pudo cargar la lista de jugadores.
-              <button type="button" class="jugadores-retry" (click)="reintentarCargarJugadores()">Reintentar</button>
-            </div>
-          }
 
           @if (showPanelSearchResults) {
             <ul class="suggestions panel-suggestions">

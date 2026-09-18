@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { timeout } from 'rxjs';
 import {
   JugadorResumen,
   PagoReciente,
@@ -11,6 +10,7 @@ import {
   PendienteJugador,
   ResumenPagos,
 } from '../../services/pagos';
+import { ArancelesService } from '../../services/aranceles';
 import { formatCompactCurrency } from '../../shared/format-currency';
 
 // One row in the "Pendientes de cobro" panel
@@ -92,7 +92,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   cargandoJugadores = false;
   cargandoListas = false;
-  jugadoresError = false;
 
   pendingRows: PendingRow[] = [];
   paymentRows: PaymentRow[] = [];
@@ -104,9 +103,14 @@ export class CuotasPagos implements OnInit, OnDestroy {
   // guarda el número limpio sin puntos ("1000"), que es lo que se valida y se manda al backend.
   montoDisplay = '';
 
+  // Sugerencia (solo placeholder, no un valor forzado): el arancel vigente del género del
+  // jugador seleccionado. Vacío si no hay jugador elegido o no hay arancel cargado para su género.
+  montoPlaceholder = '';
+
   constructor(
     private fb: FormBuilder,
     private pagosService: PagosService,
+    private arancelesService: ArancelesService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {
@@ -120,6 +124,12 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   irAJugador(idJugador: number) {
     this.router.navigate(['/admin/portal/jugadores', idJugador]);
+  }
+
+  // Desde "Pendientes de cobro" no se va al historial general, sino a la deuda puntual
+  // (cuánto debe, cuánto ya abonó y cuánto le falta).
+  irADeuda(idJugador: number) {
+    this.router.navigate(['/admin/portal/jugadores', idJugador, 'deuda']);
   }
 
   // Reformatea el Monto con puntos de miles a medida que se escribe, preservando la posición
@@ -190,17 +200,9 @@ export class CuotasPagos implements OnInit, OnDestroy {
     clearTimeout(this.clearTimer);
   }
 
-  reintentarCargarJugadores() {
-    this.cargarJugadores();
-  }
-
   private cargarJugadores() {
     this.cargandoJugadores = true;
-    this.jugadoresError = false;
-
-    // timeout: si el pedido no responde en 2s (colgado, sin éxito ni error), se lo trata como
-    // falla y se muestra el aviso directo — un solo intento, sin reintento automático.
-    this.pagosService.getJugadores().pipe(timeout(2000)).subscribe({
+    this.pagosService.getJugadores().subscribe({
       next: (jugadores) => {
         this.jugadores = jugadores;
         this.cargandoJugadores = false;
@@ -208,7 +210,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
       },
       error: () => {
         this.cargandoJugadores = false;
-        this.jugadoresError = true;
         this.cdr.detectChanges();
       },
     });
@@ -258,6 +259,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   onPlayerSearch(term: string) {
     this.selectedPlayer = null;
+    this.montoPlaceholder = '';
 
     const needle = normalizeTexto(term.trim().toLowerCase());
     if (!needle) {
@@ -282,6 +284,23 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.paymentForm.patchValue({ player: jugador.nombreCompleto });
     this.matchingPlayers = [];
     this.showSuggestions = false;
+    this.actualizarMontoSugerido(jugador);
+  }
+
+  // Placeholder, no un valor forzado: el admin puede tipear cualquier otro monto igual (por
+  // ejemplo, para cargar un pago parcial a propósito).
+  private actualizarMontoSugerido(jugador: JugadorResumen) {
+    this.montoPlaceholder = '';
+    this.arancelesService.getResumen().subscribe({
+      next: (resumen) => {
+        const vigente = jugador.genero === 'Femenino'
+          ? resumen.arancelFemeninoVigente
+          : resumen.arancelMasculinoVigente;
+        this.montoPlaceholder = vigente != null ? vigente.toLocaleString('es-AR') : '';
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
   }
 
   hideSuggestions() {
@@ -306,6 +325,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
         this.enviando = false;
         this.paymentForm.reset({ player: '', period: '', amount: '', method: '' });
         this.montoDisplay = '';
+        this.montoPlaceholder = '';
         this.selectedPlayer = null;
         this.matchingPlayers = [];
         this.showSuggestions = false;

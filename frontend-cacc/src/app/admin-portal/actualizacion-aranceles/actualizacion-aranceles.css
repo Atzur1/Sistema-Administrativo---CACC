@@ -119,11 +119,9 @@
     background: #e4e7e4;
 }
 
-/* ===== PAYMENT FORM ===== */
-/* The only action panel of the portal, so it carries a heavier green frame */
+/* ===== SCHEDULING FORM ===== */
+/* The action panel of the dashboard, so it carries a heavier green frame */
 .form-panel {
-    position: relative;
-    z-index: 2;
     padding: 16px;
     margin-bottom: 14px;
     background: #ffffff;
@@ -178,8 +176,10 @@
 
 .form-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 12px;
+    /* The hint under the date field must not stretch the other two */
+    align-items: start;
 }
 
 .field {
@@ -187,11 +187,6 @@
     flex-direction: column;
     gap: 5px;
     min-width: 0;
-}
-
-/* Anchor for the suggestions dropdown */
-.field-player {
-    position: relative;
 }
 
 .field-label {
@@ -230,7 +225,7 @@
     box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
 }
 
-/* ===== MONTO: signo $ fijo + formato con puntos de miles ===== */
+/* ===== NUEVO MONTO: signo $ fijo + formato con puntos de miles ===== */
 .amount-wrapper {
     position: relative;
 }
@@ -249,59 +244,21 @@
     padding-left: 22px;
 }
 
-/* ===== PLAYER SUGGESTIONS ===== */
-.suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 5;
-    margin: 4px 0 0;
-    padding: 4px;
-    list-style: none;
-    max-height: 180px;
-    overflow-y: auto;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
-    border-radius: 9px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-    animation: fadeIn 0.15s ease both;
-}
-
-.suggestion {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    width: 100%;
-    padding: 7px 9px;
-    background: none;
-    border: none;
-    border-radius: 7px;
-    font-family: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.suggestion:hover,
-.suggestion:focus-visible {
-    background: #f9faf9;
-    outline: none;
-}
-
-.suggestion-name {
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.suggestion-meta {
+.field-hint {
     font-size: 10.5px;
     color: #555a55;
 }
 
+/* Replaces the hint in place, so showing it never shifts the layout */
+.field-error {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #c0392b;
+}
+
 /* ===== SUBMIT ===== */
 .submit-button {
-    grid-column: span 4;
+    grid-column: span 3;
     padding: 11px;
     background: #00a651;
     border: none;
@@ -325,7 +282,7 @@
 
 /* Simulated confirmation: fades in, then fades out before being removed */
 .form-feedback {
-    grid-column: span 4;
+    grid-column: span 3;
     margin: 0;
     padding: 9px 11px;
     background: #e7f4ea;
@@ -341,19 +298,21 @@
     opacity: 0;
 }
 
-.form-feedback.is-error {
+.form-feedback-error {
     background: #fdecea;
-    color: #b3261e;
+    color: #c0392b;
 }
 
 /* ===== MAIN GRID ===== */
 .main-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.6fr 1fr;
     gap: 12px;
-    /* Fills the remaining height so nothing is left empty below */
+    /* Fills the remaining height, but each panel keeps its own height instead
+       of stretching the shorter one into a hollow card */
     flex: 1;
     min-height: 0;
+    align-items: start;
 }
 
 /* ===== PANELS ===== */
@@ -370,34 +329,19 @@
 }
 
 /* Stagger the panels as they come in */
-.panel-pending {
+.panel-history {
     animation-delay: 140ms;
 }
 
-.panel-payments {
+.panel-evolution {
     animation-delay: 220ms;
 }
 
 .panel-head {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 2px;
     margin-bottom: 14px;
-}
-
-.panel-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.dot-pending {
-    background: #eba83a;
-}
-
-.dot-paid {
-    background: #00a651;
 }
 
 .panel-title {
@@ -406,165 +350,111 @@
     font-weight: 600;
 }
 
-.panel-count {
-    margin-left: auto;
-    font-size: 13px;
-    font-weight: 700;
+.panel-subtitle {
+    font-size: 11px;
     color: #555a55;
 }
 
-/* ===== PANEL SEARCH (buscador de "Últimos pagos") ===== */
-.panel-search {
-    position: relative;
-    margin-left: 14px;
-    width: 220px;
-    flex-shrink: 0;
+/* ===== FEES TABLE ===== */
+/* Only the table scrolls sideways if the viewport gets too narrow */
+.table-wrapper {
+    overflow-x: auto;
 }
 
-.panel-search-input {
+.fees-table {
     width: 100%;
-    padding: 7px 30px 7px 11px;
-    box-sizing: border-box;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 11.5px;
-    color: #000000;
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    border-collapse: collapse;
 }
 
-.panel-search-input::placeholder {
+.fees-table th {
+    padding: 0 10px 8px;
+    border-bottom: 1px solid #e4e7e4;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: #555a55;
-    opacity: 0.7;
+    text-align: left;
+    white-space: nowrap;
 }
 
-.panel-search-input:focus {
-    border-color: #00a651;
-    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
-}
-
-.panel-search-icon {
-    position: absolute;
-    top: 50%;
-    right: 9px;
-    transform: translateY(-50%);
-    display: flex;
-    color: #555a55;
-    pointer-events: none;
-}
-
-.panel-search-icon svg {
-    width: 14px;
-    height: 14px;
-}
-
-.panel-suggestions {
-    right: 0;
-    left: auto;
-    width: 260px;
-}
-
-/* ===== ROW LISTS ===== */
-.row-list {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    border-radius: 9px;
+.fees-table td {
+    padding: 9px 10px;
     border-bottom: 1px solid #f1f5f1;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.fees-table tbody tr {
     transition: background 0.2s ease;
 }
 
-.row:hover {
+.fees-table tbody tr:hover {
     background: #f9faf9;
 }
 
-.row-clickable {
-    cursor: pointer;
-}
-
-.row:last-child {
+.fees-table tbody tr:last-child td {
     border-bottom: none;
 }
 
-.row-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    font-size: 11px;
+.cell-amount {
     font-weight: 700;
-    flex-shrink: 0;
+    white-space: nowrap;
 }
 
-.avatar-pending {
-    background: #fef4e3;
-    color: #8a5a0b;
+.cell-muted {
+    color: #555a55;
+    white-space: nowrap;
 }
 
-.avatar-paid {
+/* ===== PILLS ===== */
+.category-pill,
+.status-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.category-male {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.category-female {
+    background: #f3eeff;
+    color: #8b5cf6;
+}
+
+/* The fee charged today, one waiting to start, and one already replaced */
+.status-current {
     background: #e7f4ea;
     color: #00a651;
 }
 
-.row-identity {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-}
-
-.row-name {
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.row-meta {
-    font-size: 11px;
-    color: #555a55;
-    white-space: nowrap;
-}
-
-.row-figures {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 1px;
-    margin-left: auto;
-    flex-shrink: 0;
-}
-
-.row-amount {
-    font-size: 12.5px;
-    font-weight: 700;
-}
-
-.amount-pending {
+.status-scheduled {
+    background: #fef4e3;
     color: #8a5a0b;
 }
 
-.amount-paid {
-    color: #00a651;
+.status-previous {
+    background: #f1f5f1;
+    color: #555a55;
+}
+
+/* ===== FEE EVOLUTION CHART ===== */
+/* The canvas needs a sized, positioned box to be responsive */
+.evolution-canvas {
+    position: relative;
+    width: 100%;
+    height: 240px;
 }
 
 /* ===== RESPONSIVE ===== */
 
-/* Tablet: the two panels stack and the form drops to two fields per row */
+/* Tablet: the panels stack and the form drops to two fields per row */
 @media (max-width: 1100px) {
     .main-grid {
         grid-template-columns: 1fr;
@@ -616,13 +506,8 @@
         grid-column: span 1;
     }
 
-    /* Amount and elapsed time move under the name instead of to the right */
-    .row {
+    .header-metrics {
         flex-wrap: wrap;
-    }
-
-    .row-figures {
-        align-items: flex-start;
-        margin-left: 42px;
+        row-gap: 10px;
     }
 }

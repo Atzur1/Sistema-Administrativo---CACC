@@ -31,6 +31,7 @@ private pageTitles: Record<string, string> = {
     'usuarios':               'Usuarios y Permisos',
     'cuotas-pagos':           'Cuotas y Pagos',
     'reportes':               'Reportes',
+    'actualizacion-aranceles': 'Actualización de Aranceles',
 };
 
 private destroyRef = inject(DestroyRef);
@@ -74,6 +75,11 @@ this.router.events
 private updatePageTitle() {
     const urlSegments = this.router.url.split('/');
     const lastSegment = urlSegments[urlSegments.length - 1];
+
+    if (lastSegment === 'deuda' && urlSegments[urlSegments.length - 3] === 'jugadores') {
+        this.currentPageTitle = 'Deuda Pendiente';
+        return;
+    }
 
     if (urlSegments[urlSegments.length - 2] === 'jugadores') {
         this.currentPageTitle = 'Perfil de Jugador';

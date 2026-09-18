@@ -37,16 +37,22 @@
     } @else if (!historial || historial.items.length === 0) {
       <p class="historial-empty">No se registran pagos realizados para este jugador.</p>
     } @else {
-      <ul class="row-list">
-        @for (item of historial.items; track item.idPago) {
-          <li class="row">
-            <div class="row-identity">
-              <span class="row-name">{{ item.periodo }}</span>
-              <span class="row-meta">{{ item.metodoPago }} · {{ formatFecha(item.fechaPago) }}</span>
+      <ul class="periodo-list">
+        @for (item of historial.items; track item.periodo) {
+          <li class="periodo-card">
+            <div class="periodo-head">
+              <span class="periodo-nombre">{{ item.periodo }}</span>
+              <span class="periodo-total">{{ formatMonto(item.montoTotal) }}</span>
             </div>
-            <div class="row-figures">
-              <span class="row-amount amount-paid">{{ formatMonto(item.monto) }}</span>
-            </div>
+
+            <ul class="abono-list">
+              @for (abono of item.abonos; track $index) {
+                <li class="abono-row">
+                  <span class="abono-meta">{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span>
+                  <span class="abono-monto">{{ formatMonto(abono.monto) }}</span>
+                </li>
+              }
+            </ul>
           </li>
         }
       </ul>

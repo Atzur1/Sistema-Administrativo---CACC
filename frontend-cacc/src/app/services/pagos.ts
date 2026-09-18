@@ -7,6 +7,7 @@ export interface JugadorResumen {
   nombre: string;
   apellido: string;
   dni: string;
+  genero: string; // "Masculino" | "Femenino"
   categoria: string;
   nombreCompleto: string;
 }
@@ -32,6 +33,20 @@ export interface ResumenPagos {
   recaudadoAnioActual: number;
   pagosDelMes: number;
   cantidadPendientes: number;
+}
+
+export interface AbonoDetalle {
+  monto: number;
+  metodoPago: string;
+  fechaPago: string;
+}
+
+export interface CuotaPendienteDetalle {
+  idPago: number;
+  periodo: string;
+  montoOriginal: number;
+  saldoPendiente: number;
+  abonos: AbonoDetalle[];
 }
 
 export interface RegistrarPagoResponse {
@@ -65,6 +80,10 @@ export class PagosService {
 
   getResumen(): Observable<ResumenPagos> {
     return this.http.get<ResumenPagos>(`${this.apiUrl}/pagos/resumen`);
+  }
+
+  getDeuda(idJugador: number): Observable<CuotaPendienteDetalle[]> {
+    return this.http.get<CuotaPendienteDetalle[]>(`${this.apiUrl}/pagos/deuda/${idJugador}`);
   }
 
   registrarPago(idJugador: number, periodo: string, monto: number, metodoPago: string): Observable<RegistrarPagoResponse> {
