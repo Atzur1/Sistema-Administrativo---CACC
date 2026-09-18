@@ -21,8 +21,21 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<DaoLibrary.AuthDao>(provider => 
+builder.Services.AddScoped<DaoLibrary.AuthDao>(provider =>
     new DaoLibrary.AuthDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
+// Cuotas y pagos: DAO + runner transaccional + servicio de negocio
+builder.Services.AddScoped<DaoLibrary.IPagosDao>(provider =>
+    new DaoLibrary.PagosDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<DaoLibrary.ISqlTransactionRunner>(provider =>
+    new DaoLibrary.SqlTransactionRunner(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<ServiceLibrary.IPagosService, ServiceLibrary.PagosService>();
+
+builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
+    new DaoLibrary.JugadoresDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
+builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
+    new DaoLibrary.EstadisticasDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 
 // 4. NUEVO: Configuración de autenticación JWT
 var jwtKey = builder.Configuration["Jwt:Key"]!;

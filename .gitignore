@@ -1,58 +1,27 @@
 # Credentials / secrets
 OpenCode - Sistema Administrativo CACC.txt
 
-# Prerequisites
-*.d
+# Datos de prueba locales: usuarios/jugadores demo, solo para este equipo, no se comparten
+database/2026-09-08_seed_usuarios_demo.sql
+database/2026-09-08_seed_jugadores_prueba.sql
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+# .NET (ApiGestion, DaoLibrary, EntityLibrary, ServiceLibrary, ApiGestion.Tests)
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.vs/
 
-# Linker output
-*.ilk
-*.map
-*.exp
+# Node (root package.json usa jwt-decode; frontend-cacc tiene su propio .gitignore)
+node_modules/
+npm-debug.log*
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-
-# debug information files
-*.dwo
+# Editores / SO
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
