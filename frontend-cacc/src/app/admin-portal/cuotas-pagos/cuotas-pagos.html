@@ -17,6 +17,15 @@
       <span class="header-subtitle">Registro y control de la recaudación del club</span>
     </div>
 
+    <div class="header-aranceles-vigentes">
+      @if (arancelMasculinoTexto) {
+        <span class="arancel-badge arancel-badge-masculino">{{ arancelMasculinoTexto }}</span>
+      }
+      @if (arancelFemeninoTexto) {
+        <span class="arancel-badge arancel-badge-femenino">{{ arancelFemeninoTexto }}</span>
+      }
+    </div>
+
     <div class="header-metrics">
       @for (metric of headerMetrics; track metric.label) {
         <div class="header-metric">
@@ -79,13 +88,22 @@
         </select>
       </div>
 
+      <div class="field field-year">
+        <label class="field-label" for="year">Año</label>
+        <select id="year" class="field-input" formControlName="year">
+          @for (year of years; track year) {
+            <option [value]="year">{{ year }}</option>
+          }
+        </select>
+      </div>
+
       <div class="field">
         <label class="field-label" for="amount">Monto</label>
         <div class="amount-wrapper">
           <span class="amount-prefix">$</span>
           <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
                  [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
-                 [placeholder]="montoPlaceholder" />
+                 placeholder="0" />
         </div>
       </div>
 

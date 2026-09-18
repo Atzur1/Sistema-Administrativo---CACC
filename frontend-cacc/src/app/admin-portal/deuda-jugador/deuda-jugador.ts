@@ -162,13 +162,14 @@ export class DeudaJugador implements OnInit, OnDestroy {
       return;
     }
 
-    // cuota.periodo es "Enero 2026": el endpoint solo necesita el nombre del mes.
-    const nombreMes = cuota.periodo.split(' ')[0];
+    // cuota.periodo es "Enero 2026": el endpoint necesita mes y año por separado.
+    const [nombreMes, anioTexto] = cuota.periodo.split(' ');
+    const anio = Number(anioTexto);
 
     this.enviandoPago = true;
     this.errorPago = '';
 
-    this.pagosService.registrarPago(this.idJugador, nombreMes, monto, this.metodoPago).subscribe({
+    this.pagosService.registrarPago(this.idJugador, nombreMes, anio, monto, this.metodoPago).subscribe({
       next: () => {
         this.enviandoPago = false;
         this.pagandoId = null;
@@ -176,6 +177,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
         this.metodoPago = '';
         this.mostrarExito(`Pago de ${this.formatMonto(monto)} registrado correctamente.`);
         this.cargarDeuda(); // refresca saldos/abonos (y hace desaparecer la cuota si quedó completa)
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.enviandoPago = false;

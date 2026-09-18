@@ -46,10 +46,10 @@ namespace ApiGestion.Controllers
             return Ok(_pagosService.ObtenerDeudaDetalle(idJugador));
         }
 
-        // POST api/pagos/registrar -> form "Registrar pago" (jugador + período + monto + método)
-        // Body:  { "idJugador": 12, "periodo": "Marzo", "monto": 85000, "metodoPago": "Transferencia" }
+        // POST api/pagos/registrar -> form "Registrar pago" (jugador + período + año + monto + método)
+        // Body:  { "idJugador": 12, "periodo": "Marzo", "anio": 2026, "monto": 85000, "metodoPago": "Transferencia" }
         // 200:   { exito, idPago, idJugador, periodo, monto, metodoPago, fechaPago, mensaje }
-        // 400:   jugador/período/monto/método inválido, o ya existe un pago de ese jugador en ese período
+        // 400:   jugador/período/año/monto/método inválido, o ya existe un pago de ese jugador en ese período
         [HttpPost("registrar")]
         public IActionResult RegistrarPago([FromBody] RegistrarPagoRequestDto request)
         {
@@ -59,6 +59,7 @@ namespace ApiGestion.Controllers
                 {
                     IdJugador = request.IdJugador,
                     Periodo = request.Periodo,
+                    Anio = request.Anio,
                     Monto = request.Monto,
                     MetodoPago = request.MetodoPago
                 });

@@ -24,8 +24,7 @@ namespace ServiceLibrary
 
         public RegistrarPagoResultado RegistrarPago(RegistrarPagoRequest request)
         {
-            int mes = ValidarSolicitudDeRegistro(request);
-            int anio = DateTime.Now.Year;
+            var (mes, anio) = ValidarSolicitudDeRegistro(request);
 
             // Todo corre dentro de una única transacción: la validación de re-cobro (con lock) y el
             // insert son atómicos, así que ningún request concurrente puede colarse entre medio.
@@ -137,7 +136,7 @@ namespace ServiceLibrary
 
         public ResumenPagos ObtenerResumen() => _pagosDao.ObtenerResumen();
 
-        private static int ValidarSolicitudDeRegistro(RegistrarPagoRequest request)
+        private static (int mes, int anio) ValidarSolicitudDeRegistro(RegistrarPagoRequest request)
         {
             if (request.IdJugador <= 0)
             {
@@ -147,6 +146,13 @@ namespace ServiceLibrary
             if (!MesesPorNombre.TryGetValue((request.Periodo ?? string.Empty).Trim(), out int mes))
             {
                 throw new CobroInvalidoException($"Período inválido: '{request.Periodo}'.");
+            }
+
+            // Rango amplio a propósito (no solo año actual +- 2): el form limita las opciones,
+            // pero esto es la última barrera del lado del servidor contra un año absurdo.
+            if (request.Anio < 2000 || request.Anio > DateTime.Now.Year + 1)
+            {
+                throw new CobroInvalidoException($"Año inválido: '{request.Anio}'.");
             }
 
             if (request.Monto <= 0)
@@ -160,7 +166,7 @@ namespace ServiceLibrary
                     $"Método de pago inválido: '{request.MetodoPago}'. Valores permitidos: {string.Join(", ", MetodosPago.Validos)}.");
             }
 
-            return mes;
+            return (mes, request.Anio);
         }
 
         private static List<int> ValidarSolicitudDeCobro(CobrarPagosPendientesRequest request)

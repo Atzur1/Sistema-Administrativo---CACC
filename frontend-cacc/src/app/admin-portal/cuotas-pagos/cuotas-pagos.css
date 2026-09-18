@@ -79,6 +79,32 @@
     color: #555a55;
 }
 
+/* Mismos colores que ya se usan para Masculino/Femenino en Actualización de Aranceles */
+.header-aranceles-vigentes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.arancel-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.arancel-badge-masculino {
+    background: #00a651;
+}
+
+.arancel-badge-femenino {
+    background: #555a55;
+}
+
 .header-metrics {
     display: flex;
     align-items: center;
@@ -178,7 +204,7 @@
 
 .form-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    grid-template-columns: 1.4fr 0.9fr 0.6fr 0.9fr 0.9fr;
     gap: 12px;
 }
 
@@ -301,7 +327,7 @@
 
 /* ===== SUBMIT ===== */
 .submit-button {
-    grid-column: span 4;
+    grid-column: span 5;
     padding: 11px;
     background: #00a651;
     border: none;
@@ -325,7 +351,7 @@
 
 /* Simulated confirmation: fades in, then fades out before being removed */
 .form-feedback {
-    grid-column: span 4;
+    grid-column: span 5;
     margin: 0;
     padding: 9px 11px;
     background: #e7f4ea;
@@ -590,6 +616,12 @@
     .header-metrics {
         width: 100%;
         margin-left: 0;
+    }
+
+    .header-aranceles-vigentes {
+        width: 100%;
+        margin-left: 0;
+        flex-wrap: wrap;
     }
 
     .header-metric {

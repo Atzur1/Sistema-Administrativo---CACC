@@ -33,7 +33,7 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 1350px;
+  max-width: 1440px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -46,10 +46,39 @@
    TOP BAR & BOTÓN CERRAR SESIÓN
 ========================================= */
 .top-bar {
-  width: 100%;
+  width: calc(100% + 40px);
+  margin: -12px -20px 44px;
   display: flex;
-  justify-content: flex-end;
-  margin-bottom: 25px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, rgba(0, 148, 71, 0.42) 0%, rgba(0, 92, 44, 0.32) 100%);
+  border: 1px solid rgba(126, 224, 166, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+.brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.3px;
 }
 
 .btn-logout {
@@ -82,46 +111,27 @@
 }
 
 /* =========================================
-   ENCABEZADOS
+   ESCENARIO CENTRAL (título + tarjetas)
 ========================================= */
-.header-section {
+.portal-stage {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================
+   ENCABEZADO DE LA PÁGINA
+========================================= */
+.page-header {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 40px;
+  animation: fadeDown 0.6s ease backwards;
 }
 
-.selection-header {
-  text-align: center;
-  margin-bottom: 35px;
-}
-
-.subtitle {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  color: #7ee0a6;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 6px;
-}
-
-.selection-subtitle {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: #8edeb1;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 8px;
-}
-
-.main-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #e5f5ec;
-  margin: 0 0 15px 0;
-}
-
-.selection-title {
+.page-title {
   font-size: 30px;
   font-weight: 700;
   color: #ffffff;
@@ -129,11 +139,15 @@
   margin: 0;
 }
 
-.logo-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+@keyframes fadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* =========================================
@@ -141,11 +155,11 @@
 ========================================= */
 .cards-container {
   display: flex;
-  gap: 24px;
+  gap: 30px;
   width: 100%;
-  max-width: 1250px;
+  max-width: 1360px;
   justify-content: center;
-  margin-bottom: 45px;
+  margin-bottom: 0;
   flex-wrap: nowrap;
 }
 
@@ -155,10 +169,10 @@
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 247, 0.94) 100%);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  width: 350px;
-  min-width: 330px;
-  padding: 34px 26px 30px 26px;
-  border-radius: 20px;
+  width: 410px;
+  min-width: 380px;
+  padding: 42px 34px 36px 34px;
+  border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 127, 62, 0.1);
   box-sizing: border-box;
@@ -167,10 +181,33 @@
   justify-content: space-between;
   cursor: pointer;
   overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+  animation: cardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-/* Línea superior con degradé institucional */
+/* Entrada escalonada de las tarjetas */
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cards-container .card-portal:nth-child(1) {
+  animation-delay: 0.08s;
+}
+.cards-container .card-portal:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.cards-container .card-portal:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+/* Línea superior con degradé institucional (fluye en hover) */
 .card-portal::before {
   content: "";
   position: absolute;
@@ -178,71 +215,66 @@
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, #007f3e 0%, #00d666 50%, #004d25 100%);
-  opacity: 0.6;
+  background: linear-gradient(90deg, #007f3e, #00d666, #004d25, #00d666, #007f3e);
+  background-size: 200% 100%;
+  opacity: 0.55;
   transition: opacity 0.3s ease, height 0.3s ease;
 }
 
+/* Resplandor superior que aparece al pasar el mouse */
+.card-portal::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -45%;
+  width: 130%;
+  height: 80%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(0, 214, 102, 0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
 .card-portal:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 32px rgba(0, 179, 85, 0.28);
+  transform: translateY(-10px);
+  box-shadow: 0 28px 55px rgba(0, 0, 0, 0.5), 0 0 36px rgba(0, 179, 85, 0.3);
 }
 
 .card-portal:hover::before {
   opacity: 1;
   height: 6px;
+  animation: barFlow 2s linear infinite;
 }
 
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
+.card-portal:hover::after {
+  opacity: 1;
 }
 
-.icon-circle {
-  width: 52px;
-  height: 52px;
-  border: 1px solid rgba(0, 127, 62, 0.2);
-  background: linear-gradient(135deg, #eaf6ef 0%, #d2edd9 100%);
-  border-radius: 14px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 14px rgba(0, 127, 62, 0.12);
-}
-
-.arrow-right {
-  color: #b0b7c3;
-  font-size: 26px;
-  line-height: 1;
-  font-weight: 300;
-  transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.card-portal:hover .arrow-right {
-  color: var(--primary-green);
-  transform: translateX(4px);
+@keyframes barFlow {
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .card-body {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .card-body h3 {
-  font-size: 21px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-dark);
   letter-spacing: -0.3px;
-  margin: 0 0 10px 0;
+  margin: 0 0 12px 0;
 }
 
 .card-body p {
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--text-muted);
   line-height: 1.6;
   margin: 0;
-  min-height: 65px;
+  min-height: 72px;
 }
 
 /* =========================================
@@ -258,20 +290,16 @@
 .tag {
   background: linear-gradient(180deg, #f9fbf9 0%, #edf4ef 100%);
   border: 1px solid #dce8df;
-  border-radius: 8px;
-  padding: 9px 11px;
+  border-radius: 9px;
+  padding: 11px 13px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 11.5px;
+  gap: 8px;
+  font-size: 12.5px;
   font-weight: 600;
   color: #2e3832;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.card-portal:hover .tag {
-  background: #ffffff;
-  border-color: #c7decb;
+  transition: background 0.25s ease, border-color 0.25s ease,
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
 }
 
 .tag svg {
@@ -279,34 +307,74 @@
   flex-shrink: 0;
 }
 
+/* Los chips se levantan en cascada al pasar el mouse por la tarjeta */
+.card-portal:hover .tag {
+  background: #ffffff;
+  border-color: #b6dcbf;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 127, 62, 0.12);
+}
+
+.card-portal:hover .tag:nth-child(1) {
+  transition-delay: 0s;
+}
+.card-portal:hover .tag:nth-child(2) {
+  transition-delay: 0.04s;
+}
+.card-portal:hover .tag:nth-child(3) {
+  transition-delay: 0.08s;
+}
+.card-portal:hover .tag:nth-child(4) {
+  transition-delay: 0.12s;
+}
+
 /* =========================================
    BOTONES DE LOS PORTALES
 ========================================= */
 .btn-portal {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   background: linear-gradient(135deg, #00994c 0%, #007f3e 50%, #005a2b 100%);
   background-size: 200% auto;
   color: #ffffff;
   border: none;
-  padding: 14px 10px;
-  border-radius: 10px;
-  font-size: 13px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
-  min-height: 48px;
+  min-height: 54px;
   box-sizing: border-box;
   box-shadow: 0 6px 18px rgba(0, 127, 62, 0.3);
-  transition: all 0.3s ease;
+  transition: background-position 0.4s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* Destello que barre el botón al pasar el mouse */
+.btn-portal::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
 }
 
 .btn-portal:hover {
   background-position: right center;
-  box-shadow: 0 10px 24px rgba(0, 127, 62, 0.45);
+  box-shadow: 0 12px 26px rgba(0, 127, 62, 0.45);
   transform: translateY(-2px);
+}
+
+.btn-portal:hover::after {
+  left: 125%;
 }
 
 .btn-portal:active {
@@ -318,14 +386,14 @@
    FOOTER & RESPONSIVE
 ========================================= */
 .footer-bottom {
-  margin-top: auto;
+  margin-top: 40px;
   text-align: center;
   font-size: 12.5px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.65);
 }
 
-@media (max-width: 1150px) {
+@media (max-width: 1380px) {
   .cards-container {
     flex-wrap: wrap;
   }
@@ -341,6 +409,11 @@
     padding: 20px 10px;
   }
 
+  .portal-stage {
+    justify-content: flex-start;
+    padding-top: 8px;
+  }
+
   .cards-container {
     flex-direction: column;
     align-items: center;
@@ -352,7 +425,75 @@
   }
 
   .top-bar {
+    width: calc(100% + 20px);
+    margin: -12px -10px 32px;
+    flex-wrap: wrap;
     justify-content: center;
-    margin-bottom: 25px;
+    gap: 14px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .brand-name {
+    font-size: 13px;
+  }
+
+  .brand-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .page-header {
+    margin-bottom: 28px;
+  }
+
+  .page-title {
+    font-size: 21px;
+  }
+
+  .card-portal {
+    padding: 32px 22px 28px 22px;
+    border-radius: 20px;
+  }
+
+  .card-body h3 {
+    font-size: 21px;
+  }
+
+  .card-body p {
+    font-size: 14px;
+    min-height: 0;
+  }
+
+  .tags-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-portal {
+    font-size: 14px;
+  }
+}
+
+/* Respeta a quien pide menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .card-portal,
+  .page-header {
+    animation: none;
+  }
+
+  .card-portal:hover::before {
+    animation: none;
+  }
+
+  .card-portal,
+  .card-portal::after,
+  .tag,
+  .btn-portal,
+  .btn-portal::after {
+    transition-duration: 0.01ms;
   }
 }

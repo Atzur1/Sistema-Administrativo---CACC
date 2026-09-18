@@ -6,6 +6,7 @@ namespace ServiceLibrary
     {
         public int IdJugador { get; set; }
         public string Periodo { get; set; } = string.Empty; // nombre de mes: "Marzo"
+        public int Anio { get; set; } // elegido en el form: año actual o alguno de los 2 anteriores
         public decimal Monto { get; set; }
         public string MetodoPago { get; set; } = string.Empty;
     }
