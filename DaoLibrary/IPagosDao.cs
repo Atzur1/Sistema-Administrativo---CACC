@@ -15,6 +15,11 @@ namespace DaoLibrary
         // registrar un abono (total o parcial) contra ella. WITH (UPDLOCK) como la de arriba.
         Pago? ObtenerPagoPendienteDeJugadorEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio);
 
+        // Busca si el jugador tiene un beneficio activo de Becados y Descuentos (JUGADORES_DESCUENTOS)
+        // cuya vigencia cubra el mes de esa fecha de vencimiento. Se usa para ajustar el saldo real
+        // a cobrar de una cuota que ya estaba cargada ANTES de asignarle el beneficio.
+        DescuentoAplicable? ObtenerDescuentoAplicableEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime fechaVencimiento);
+
         // Reduce el saldo de una cuota pendiente tras un abono parcial (sigue con Estado = false).
         void ActualizarSaldoPendiente(SqlConnection conexion, SqlTransaction transaccion, int idPago, decimal nuevoMonto);
 

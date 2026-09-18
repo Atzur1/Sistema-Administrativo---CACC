@@ -45,7 +45,12 @@ export interface CuotaPendienteDetalle {
   idPago: number;
   periodo: string;
   montoOriginal: number;
-  saldoPendiente: number;
+  saldoPendiente: number; // Ya con el beneficio de Becados y Descuentos aplicado, si tiene uno
+  tieneBeneficio: boolean;
+  motivoBeneficio: string | null;
+  tipoValorBeneficio: string | null; // "%" o "$"
+  porcentajeBeneficio: number | null;
+  montoFijoBeneficio: number | null;
   abonos: AbonoDetalle[];
 }
 

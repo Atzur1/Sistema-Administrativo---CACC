@@ -42,6 +42,10 @@ builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
     new DaoLibrary.ArancelesDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 builder.Services.AddScoped<ServiceLibrary.IArancelesService, ServiceLibrary.ArancelesService>();
 
+// Becados y descuentos
+builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
+    new DaoLibrary.DiscountDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
 // 4. NUEVO: Configuración de autenticación JWT
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

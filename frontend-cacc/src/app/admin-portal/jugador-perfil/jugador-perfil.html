@@ -45,6 +45,13 @@
               <span class="periodo-total">{{ formatMonto(item.montoTotal) }}</span>
             </div>
 
+            @if (item.tieneBeneficio) {
+              <div class="periodo-beneficio">
+                <span class="periodo-cuota-original">Cuota: {{ formatMonto(item.montoOriginal) }}</span>
+                <span class="periodo-beneficio-badge">🎓 {{ beneficioTexto(item) }}</span>
+              </div>
+            }
+
             <ul class="abono-list">
               @for (abono of item.abonos; track $index) {
                 <li class="abono-row">

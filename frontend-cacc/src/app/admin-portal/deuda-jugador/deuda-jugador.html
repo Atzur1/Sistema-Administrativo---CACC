@@ -56,6 +56,10 @@
               <span class="cuota-original">Cuota: {{ formatMonto(cuota.montoOriginal) }}</span>
             </div>
 
+            @if (cuota.tieneBeneficio) {
+              <span class="cuota-beneficio-badge">🎓 {{ beneficioTexto(cuota) }}</span>
+            }
+
             @if (cuota.abonos.length > 0) {
               <ul class="abono-list">
                 @for (abono of cuota.abonos; track $index) {
@@ -72,7 +76,9 @@
               <span class="saldo-monto">{{ formatMonto(cuota.saldoPendiente) }}</span>
             </div>
 
-            @if (pagandoId !== cuota.idPago) {
+            @if (cuota.saldoPendiente <= 0) {
+              <p class="cuota-cubierta">Cubierta por beneficio de Becados y Descuentos — nada que cobrar.</p>
+            } @else if (pagandoId !== cuota.idPago) {
               <button type="button" class="pagar-button" (click)="abrirPago(cuota)">
                 Pagar saldo
               </button>

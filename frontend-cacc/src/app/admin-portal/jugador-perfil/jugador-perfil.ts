@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HistorialPagosResultado, JugadoresService } from '../../services/jugadores';
+import { HistorialPagosResultado, JugadoresService, PagoHistorialItem } from '../../services/jugadores';
 import { JugadorResumen } from '../../services/pagos';
 import { formatCompactCurrency } from '../../shared/format-currency';
 
@@ -116,5 +116,17 @@ export class JugadorPerfil implements OnInit {
 
   formatMontoCompacto(valor: number): string {
     return formatCompactCurrency(valor);
+  }
+
+  // Texto del badge de beneficio: "Media Beca ($5.000)" o "Descuento por Hermanos (20%)".
+  beneficioTexto(item: PagoHistorialItem): string {
+    if (!item.tieneBeneficio) {
+      return '';
+    }
+    const valor =
+      item.tipoValorBeneficio === '%'
+        ? `${item.porcentajeBeneficio}%`
+        : this.formatMonto(item.montoFijoBeneficio ?? 0);
+    return `${item.motivoBeneficio} (${valor})`;
   }
 }
