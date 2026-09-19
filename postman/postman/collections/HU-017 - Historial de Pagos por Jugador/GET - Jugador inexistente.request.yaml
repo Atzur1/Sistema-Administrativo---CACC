@@ -1,0 +1,12 @@
+$kind: http-request
+description: "HU-017. Si el jugador no existe, la API debe responder 404 con un mensaje claro y sin devolver un historial."
+url: "{{baseUrl}}/api/Jugadores/99999/historial-pagos"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 404\", function () {\n    pm.response.to.have.status(404);\n});\n\npm.test(\"Informa que el jugador no fue encontrado\", function () {\n    const respuesta = pm.response.json();\n    pm.expect(respuesta.exito).to.be.false;\n    pm.expect(respuesta.mensaje).to.equal(\"Jugador no encontrado.\");\n});\n\npm.test(\"No devuelve items\", function () {\n    pm.expect(pm.response.json()).to.not.have.property(\"items\");\n});"
+    language: text/javascript
+order: 1789148390008

@@ -1,0 +1,12 @@
+$kind: http-request
+description: "HU-017, requerimiento de paginación. Sin parámetros, la API debe devolver la primera página con un tamaño de 10 períodos como máximo."
+url: "{{baseUrl}}/api/Jugadores/3/historial-pagos"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: "const respuesta = pm.response.json();\n\npm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"Devuelve la página 1 con tamaño 10\", function () {\n    pm.expect(respuesta.page).to.equal(1);\n    pm.expect(respuesta.pageSize).to.equal(10);\n});\n\npm.test(\"No devuelve más de 10 períodos\", function () {\n    pm.expect(respuesta.items.length).to.be.at.most(10);\n});"
+    language: text/javascript
+order: 1789148390004

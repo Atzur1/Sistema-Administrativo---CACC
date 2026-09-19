@@ -1,0 +1,12 @@
+$kind: http-request
+description: "HU-017, criterio de estado vacío. Un jugador sin pagos registrados (el jugador 2) debe responder 200 con la lista vacía y total 0; con esa respuesta la pantalla muestra \"No se registran pagos realizados para este jugador.\". Requiere que el jugador 2 no tenga pagos abonados."
+url: "{{baseUrl}}/api/Jugadores/2/historial-pagos"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: "const respuesta = pm.response.json();\n\npm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"La lista de períodos viene vacía\", function () {\n    pm.expect(respuesta.items).to.be.an(\"array\").that.is.empty;\n});\n\npm.test(\"El total es 0\", function () {\n    pm.expect(respuesta.total).to.equal(0);\n});"
+    language: text/javascript
+order: 1789148390007

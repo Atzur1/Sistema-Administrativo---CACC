@@ -1,0 +1,9 @@
+$kind: http-request
+description: "HU-017. El historial requiere una sesión iniciada. Sin la cabecera Authorization la API debe responder 401 y no devolver datos."
+url: "{{baseUrl}}/api/Jugadores/3/historial-pagos"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 401\", function () {\n    pm.response.to.have.status(401);\n});\n\npm.test(\"No devuelve datos del historial\", function () {\n    pm.expect(pm.response.text()).to.not.include(\"montoTotal\");\n});"
+    language: text/javascript
+order: 1789148390009

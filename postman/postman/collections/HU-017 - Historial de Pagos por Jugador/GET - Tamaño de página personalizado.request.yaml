@@ -1,0 +1,12 @@
+$kind: http-request
+description: "HU-017, requerimiento de paginación. Con pageSize=1 la API debe devolver un solo período por página y mantener el total del historial completo."
+url: "{{baseUrl}}/api/Jugadores/3/historial-pagos?page=1&pageSize=1"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: "const respuesta = pm.response.json();\n\npm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"Respeta el tamaño de página pedido\", function () {\n    pm.expect(respuesta.pageSize).to.equal(1);\n    pm.expect(respuesta.items.length).to.be.at.most(1);\n});\n\npm.test(\"El total cuenta todos los períodos, no solo los de la página\", function () {\n    pm.expect(respuesta.total).to.be.at.least(respuesta.items.length);\n});"
+    language: text/javascript
+order: 1789148390005
