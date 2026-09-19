@@ -1,0 +1,12 @@
+$kind: http-request
+description: "HU-017. Devuelve el historial de pagos del jugador 3, agrupado por período. La API debe responder 200 con items, total, page y pageSize; cada período informa su nombre, el monto total y sus abonos, y cada abono trae monto, método de pago (Efectivo o Transferencia) y fecha de cobro. Requiere que el jugador 3 tenga al menos un pago registrado."
+url: "{{baseUrl}}/api/Jugadores/3/historial-pagos"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: "const respuesta = pm.response.json();\n\npm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"La respuesta trae items, total, page y pageSize\", function () {\n    pm.expect(respuesta).to.have.property(\"items\").that.is.an(\"array\");\n    pm.expect(respuesta).to.have.property(\"total\").that.is.a(\"number\");\n    pm.expect(respuesta).to.have.property(\"page\").that.is.a(\"number\");\n    pm.expect(respuesta).to.have.property(\"pageSize\").that.is.a(\"number\");\n});\n\npm.test(\"El jugador tiene al menos un período pagado\", function () {\n    pm.expect(respuesta.total).to.be.above(0);\n    pm.expect(respuesta.items.length).to.be.above(0);\n});\n\npm.test(\"Cada período informa nombre, monto total y abonos\", function () {\n    respuesta.items.forEach((item) => {\n        pm.expect(item.periodo).to.be.a(\"string\").and.not.empty;\n        pm.expect(item.montoTotal).to.be.a(\"number\").and.above(0);\n        pm.expect(item.abonos).to.be.an(\"array\").and.not.empty;\n    });\n});\n\npm.test(\"Cada abono informa monto, método de pago y fecha de cobro\", function () {\n    respuesta.items.forEach((item) => {\n        item.abonos.forEach((abono) => {\n            pm.expect(abono.monto).to.be.above(0);\n            pm.expect([\"efectivo\", \"transferencia\"]).to.include(abono.metodoPago.toLowerCase());\n            pm.expect(Number.isNaN(Date.parse(abono.fechaPago))).to.be.false;\n        });\n    });\n});\n\npm.test(\"El monto total de cada período es la suma de sus abonos\", function () {\n    respuesta.items.forEach((item) => {\n        const suma = item.abonos.reduce((acumulado, abono) => acumulado + abono.monto, 0);\n        pm.expect(Math.round(suma * 100)).to.equal(Math.round(item.montoTotal * 100));\n    });\n});"
+    language: text/javascript
+order: 1789148390002

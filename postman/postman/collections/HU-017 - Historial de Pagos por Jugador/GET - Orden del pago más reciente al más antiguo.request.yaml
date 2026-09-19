@@ -1,0 +1,12 @@
+$kind: http-request
+description: "HU-017, criterio de ordenamiento cronológico. Los períodos deben venir del pago más reciente al más antiguo. Pide hasta 100 períodos del jugador 3. La comparación solo es significativa si el jugador tiene dos o más períodos pagados; con uno solo se cumple trivialmente."
+url: "{{baseUrl}}/api/Jugadores/3/historial-pagos?page=1&pageSize=100"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: "const respuesta = pm.response.json();\nconst lastPayment = (item) => Math.max(...item.abonos.map((abono) => Date.parse(abono.fechaPago)));\n\npm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"Los períodos están ordenados del pago más reciente al más antiguo\", function () {\n    for (let i = 1; i < respuesta.items.length; i++) {\n        pm.expect(lastPayment(respuesta.items[i - 1])).to.be.at.least(lastPayment(respuesta.items[i]));\n    }\n});"
+    language: text/javascript
+order: 1789148390003

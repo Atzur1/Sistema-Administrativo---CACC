@@ -1,0 +1,12 @@
+$kind: http-request
+description: "HU-017. Una página menor a 1 debe corregirse a 1 y un tamaño fuera del rango de 1 a 100 debe volver al valor por defecto de 10, sin que la API responda con error."
+url: "{{baseUrl}}/api/Jugadores/3/historial-pagos?page=0&pageSize=500"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: "const respuesta = pm.response.json();\n\npm.test(\"Status code es 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"La página menor a 1 se corrige a 1\", function () {\n    pm.expect(respuesta.page).to.equal(1);\n});\n\npm.test(\"El tamaño mayor a 100 vuelve al valor por defecto de 10\", function () {\n    pm.expect(respuesta.pageSize).to.equal(10);\n});"
+    language: text/javascript
+order: 1789148390006

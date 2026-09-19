@@ -1,0 +1,15 @@
+$kind: http-request
+description: "HU-017, requerimiento no funcional de solo lectura. Un POST sobre el endpoint del historial no debe crear ni alterar pagos: la API debe responder 405 (método no permitido)."
+url: "{{baseUrl}}/api/Jugadores/3/historial-pagos"
+method: POST
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+body:
+  type: json
+  content: "{\n    \"items\": []\n}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code es 405\", function () {\n    pm.response.to.have.status(405);\n});"
+    language: text/javascript
+order: 1789148390012
