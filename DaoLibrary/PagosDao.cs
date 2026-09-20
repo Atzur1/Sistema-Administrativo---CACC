@@ -457,6 +457,21 @@ namespace DaoLibrary
         {
             // cantidad_pendientes solo cuenta cuotas con saldo real > 0: una cuota que un
             // beneficio de Becados y Descuentos dejó en $0 ya no es algo pendiente de cobrar.
+            //
+            // deuda_global_total / jugadores_morosos (HU-019): mismo criterio de saldo real que
+            // cantidad_pendientes, pero uno suma $ (por jugador, no por cuota) y el otro cuenta
+            // jugadores distintos en vez de cuotas. A propósito NO se multiplica "cantidad de
+            // cuotas x arancel vigente hoy": eso violaría la regla de negocio del arancel
+            // congelado (project.md §2.3) y daría mal en cuanto dos categorías tengan aranceles
+            // distintos (ej. Femenino Primera vs Sub17). Se suma el saldo real de cada cuota, ya
+            // congelado al mes en que se emitió.
+            //
+            // WITH (NOLOCK) sobre PAGOS a propósito: es una métrica de panel (no un comprobante
+            // legal), y sin este hint la lectura queda en cola detrás del TABLOCKX breve que
+            // PagosDao.InsertarPago / GenerarCuotasPendientesDelMes toman sobre PAGOS mientras
+            // calculan el próximo id (la tabla no tiene IDENTITY). Con NOLOCK, cobrar una cuota
+            // nunca bloquea a alguien mirando el panel, a costa de una ventana mínima de
+            // inconsistencia (se corrige sola en la siguiente lectura).
             string query = $@"
                 SELECT
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR(GETDATE())) AS recaudado_anio,
@@ -466,7 +481,17 @@ namespace DaoLibrary
                         FROM PAGOS pg
                         {DescuentosSql.ApplyDescuentoActivo}
                         WHERE pg.estado = 0
-                    ) t WHERE saldo_ajustado > 0) AS cantidad_pendientes";
+                    ) t WHERE saldo_ajustado > 0) AS cantidad_pendientes,
+                    (SELECT ISNULL(SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}), 0)
+                        FROM PAGOS pg WITH (NOLOCK)
+                        {DescuentosSql.ApplyDescuentoActivo}
+                        WHERE pg.estado = 0) AS deuda_global_total,
+                    (SELECT COUNT(DISTINCT t.FK_id_jugador) FROM (
+                        SELECT pg.FK_id_jugador, ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
+                        FROM PAGOS pg WITH (NOLOCK)
+                        {DescuentosSql.ApplyDescuentoActivo}
+                        WHERE pg.estado = 0
+                    ) t WHERE t.saldo_ajustado > 0) AS jugadores_morosos";
 
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
             conexion.Open();
@@ -479,7 +504,9 @@ namespace DaoLibrary
             {
                 RecaudadoAnioActual = Convert.ToDecimal(reader["recaudado_anio"]),
                 PagosDelMes = Convert.ToInt32(reader["pagos_del_mes"]),
-                CantidadPendientes = Convert.ToInt32(reader["cantidad_pendientes"])
+                CantidadPendientes = Convert.ToInt32(reader["cantidad_pendientes"]),
+                DeudaGlobalTotal = Convert.ToDecimal(reader["deuda_global_total"]),
+                JugadoresMorosos = Convert.ToInt32(reader["jugadores_morosos"])
             };
         }
 

@@ -33,6 +33,11 @@ export interface ResumenPagos {
   recaudadoAnioActual: number;
   pagosDelMes: number;
   cantidadPendientes: number;
+  // HU-019: indicador destacado "Deuda Global Total" — suma de cada cuota pendiente por su
+  // monto ya congelado al mes de emisión (no el arancel vigente hoy), y cantidad de jugadores
+  // únicos con al menos una cuota con saldo real > 0.
+  deudaGlobalTotal: number;
+  jugadoresMorosos: number;
 }
 
 export interface AbonoDetalle {

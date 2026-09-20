@@ -18,7 +18,8 @@ namespace ApiGestion.Controllers
             _pagosService = pagosService;
         }
 
-        // GET api/pagos/resumen -> métricas del header (recaudado del año, pagos del mes, pendientes)
+        // GET api/pagos/resumen -> métricas del header (recaudado del año, pagos del mes, pendientes,
+        // deuda global total y cantidad de jugadores morosos — HU-019)
         [HttpGet("resumen")]
         public IActionResult ObtenerResumen()
         {
