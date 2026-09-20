@@ -1,6 +1,6 @@
 {
   "Jwt": {
-    "Key": "CACC-Clave-Secreta-Super-Larga-Para-Firmar-Tokens-2026-Tesis",
+    "Key": "REEMPLAZAR-por-una-clave-secreta-propia-larga",
     "Issuer": "SistemaCACC",
     "Audience": "SistemaCACC"
   },
@@ -11,8 +11,6 @@
     }
   },
   "ConnectionStrings": {
-    "ConexionSQL": "Server=(localdb)\\MSSQLLocalDB;Database=ClubCamionerosPRUEBA;Trusted_Connection=True;TrustServerCertificate=True;"
+    "ConexionSQL": "Server=TU_SERVIDOR;Database=TU_BASE;Trusted_Connection=True;TrustServerCertificate=True;"
   }
 }
-
-
