@@ -17,6 +17,11 @@ database/V20260915_02__vigencia_obligatoria_bonificaciones.sql
 *.suo
 .vs/
 
+# Config local por desarrollador: cada uno apunta a su propia instancia de SQL Server y tiene
+# su propia clave JWT — nunca es el mismo valor para todo el equipo. Ver
+# ApiGestion/appsettings.Development.json.example para la plantilla de qué completar.
+ApiGestion/appsettings.Development.json
+
 # Node (root package.json usa jwt-decode; frontend-cacc tiene su propio .gitignore)
 node_modules/
 npm-debug.log*
