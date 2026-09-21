@@ -45,9 +45,6 @@ namespace ServiceLibrary
 
         IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null);
 
-        // HU-029: roster of players with what each one owes; onlyDebtors keeps just the ones that owe.
-        IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors);
-
         IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null);
 
         IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador);
