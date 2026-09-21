@@ -1,15 +1,5 @@
-/* ===== ANIMATIONS ===== */
-/* Blocks fade in while sliding up on load */
-@keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+﻿/* ===== ANIMATIONS ===== */
+/* fadeSlideUp vive ahora en styles.css (global) */
 
 /* ===== LAYOUT ===== */
 .dashboard {
@@ -18,9 +8,9 @@
     padding: 20px;
     min-height: 100%;
     box-sizing: border-box;
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #000000;
+    color: var(--color-text);
     /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
 }
@@ -41,8 +31,8 @@
     width: 52px;
     height: 52px;
     border-radius: 14px;
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-info-bg);
+    color: var(--color-info);
     flex-shrink: 0;
 }
 
@@ -66,7 +56,7 @@
 
 .header-subtitle {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .header-metrics {
@@ -86,7 +76,7 @@
 
 /* Separator between metrics */
 .header-metric + .header-metric {
-    border-left: 1px solid #e4e7e4;
+    border-left: 1px solid var(--color-border);
 }
 
 .header-metric-value {
@@ -99,14 +89,14 @@
     font-size: 9.5px;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
 .header-divider {
     height: 1px;
     margin: 14px 0;
-    background: #e4e7e4;
+    background: var(--color-border);
 }
 
 /* ===== MAIN GRID ===== */
@@ -124,10 +114,12 @@
     display: flex;
     flex-direction: column;
     padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--glass-shadow);
     min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
 }
@@ -156,7 +148,7 @@
 
 .panel-subtitle {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== USERS TABLE ===== */
@@ -172,19 +164,19 @@
 
 .users-table th {
     padding: 0 10px 8px;
-    border-bottom: 1px solid #e4e7e4;
+    border-bottom: 1px solid var(--color-border);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     text-align: left;
     white-space: nowrap;
 }
 
 .users-table td {
     padding: 9px 10px;
-    border-bottom: 1px solid #f1f5f1;
+    border-bottom: 1px solid var(--color-bg-page);
     font-size: 12px;
     vertical-align: middle;
 }
@@ -194,7 +186,7 @@
 }
 
 .users-table tbody tr:hover {
-    background: #f9faf9;
+    background: var(--color-bg-hover);
 }
 
 .users-table tbody tr:last-child td {
@@ -214,7 +206,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    color: #ffffff;
+    color: var(--color-bg-card);
     font-size: 11px;
     font-weight: 700;
     flex-shrink: 0;
@@ -222,15 +214,15 @@
 
 /* Avatar background per role */
 .avatar-admin {
-    background: #00a651;
+    background: var(--color-brand);
 }
 
 .avatar-user {
-    background: #3b82f6;
+    background: var(--color-info);
 }
 
 .avatar-teacher {
-    background: #8b5cf6;
+    background: var(--color-accent);
 }
 
 .avatar-staff {
@@ -251,7 +243,7 @@
 
 .user-email {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
@@ -266,18 +258,18 @@
 
 /* Pill colors per role */
 .role-admin {
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
 }
 
 .role-user {
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-info-bg);
+    color: var(--color-info);
 }
 
 .role-teacher {
     background: #f3eeff;
-    color: #8b5cf6;
+    color: var(--color-accent);
 }
 
 .role-staff {
@@ -296,7 +288,7 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #00a651;
+    background: var(--color-brand);
     flex-shrink: 0;
 }
 
@@ -306,7 +298,7 @@
 }
 
 .cell-muted {
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
@@ -329,7 +321,7 @@
 }
 
 .role-item:hover {
-    background: #f9faf9;
+    background: var(--color-bg-hover);
 }
 
 .role-icon {
@@ -349,18 +341,18 @@
 
 /* Icon tone per role */
 .icon-admin {
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
 }
 
 .icon-user {
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-info-bg);
+    color: var(--color-info);
 }
 
 .icon-teacher {
     background: #f3eeff;
-    color: #8b5cf6;
+    color: var(--color-accent);
 }
 
 .icon-staff {
@@ -382,7 +374,7 @@
 
 .role-description {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .role-count {

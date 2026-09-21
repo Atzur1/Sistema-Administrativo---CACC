@@ -12,7 +12,7 @@
     <div class="banner-stats">
       @for (stat of bannerStats; track stat.label) {
         <div class="banner-stat">
-          <span class="banner-stat-value">{{ stat.value }}</span>
+          <span class="banner-stat-value">{{ stat.value() }}</span>
           <span class="banner-stat-label">{{ stat.label }}</span>
         </div>
       }
@@ -32,7 +32,7 @@
         </div>
 
         <div class="card-body">
-          <span class="card-value">{{ card.value }}</span>
+          <span class="card-value">{{ card.value() }}</span>
           <span class="card-label">{{ card.label }}</span>
           <span class="card-detail">{{ card.detail }}</span>
         </div>

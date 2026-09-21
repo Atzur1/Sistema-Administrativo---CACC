@@ -1,25 +1,5 @@
-/* ===== ANIMATIONS ===== */
-/* Blocks fade in while sliding up on load */
-@keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* The confirmation message fades in on its own, without moving the layout */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
+﻿/* ===== ANIMATIONS ===== */
+/* fadeSlideUp y fadeIn viven ahora en styles.css (global) */
 
 /* ===== LAYOUT ===== */
 .dashboard {
@@ -28,9 +8,9 @@
     padding: 20px;
     min-height: 100%;
     box-sizing: border-box;
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #000000;
+    color: var(--color-text);
     /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
 }
@@ -51,8 +31,8 @@
     width: 52px;
     height: 52px;
     border-radius: 14px;
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
     flex-shrink: 0;
 }
 
@@ -76,7 +56,7 @@
 
 .header-subtitle {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* Mismos colores que ya se usan para Masculino/Femenino en Actualización de Aranceles */
@@ -93,16 +73,16 @@
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--color-bg-card);
     white-space: nowrap;
 }
 
 .arancel-badge-masculino {
-    background: #00a651;
+    background: var(--color-brand);
 }
 
 .arancel-badge-femenino {
-    background: #555a55;
+    background: var(--color-text-muted);
 }
 
 .header-metrics {
@@ -122,7 +102,7 @@
 
 /* Separator between metrics */
 .header-metric + .header-metric {
-    border-left: 1px solid #e4e7e4;
+    border-left: 1px solid var(--color-border);
 }
 
 .header-metric-value {
@@ -135,75 +115,30 @@
     font-size: 9.5px;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
 .header-divider {
     height: 1px;
     margin: 14px 0;
-    background: #e4e7e4;
-}
-
-/* Deuda Global Total (HU-019). --tone/--tone-dark evitan duplicar cada regla bajo .is-clear */
-.deuda-global-banner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    animation: fadeSlideUp 0.4s ease both;
-    --tone: #c0392b;
-    --tone-dark: #7a2119;
-    background: #fdecea;
-}
-
-.deuda-global-banner.is-clear {
-    --tone: #00a651;
-    --tone-dark: #1f6b3a;
-    background: #e7f4ea;
-}
-
-.deuda-global-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: var(--tone);
-    color: #fff;
-    flex-shrink: 0;
-}
-
-.deuda-global-label {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--tone-dark);
-}
-
-.deuda-global-value {
-    margin-left: auto;
-    font-size: 24px;
-    font-weight: 800;
-    color: var(--tone);
-    white-space: nowrap;
+    background: var(--color-border);
 }
 
 /* ===== PAYMENT FORM ===== */
-/* The only action panel of the portal, so it carries a heavier green frame */
+/* Panel de acción "deportivo institucional": blanco limpio, acento verde
+   sólido en el borde superior, sombra suave y difusa. Nada de fondos de
+   color ni brillos — la jerarquía la marca la estructura, no el efecto. */
 .form-panel {
     position: relative;
     z-index: 2;
-    padding: 16px;
+    padding: 22px 20px 20px;
     margin-bottom: 14px;
-    background: #ffffff;
-    border: 2px solid #00a651;
-    border-radius: 14px;
-    box-shadow: 0 2px 10px rgba(0, 166, 81, 0.12);
+    background: var(--action-bg);
+    border: 1px solid var(--action-border);
+    border-top: 4px solid var(--action-accent);
+    border-radius: 16px;
+    box-shadow: var(--action-shadow);
     animation: fadeSlideUp 0.4s ease both;
     animation-delay: 60ms;
 }
@@ -211,19 +146,20 @@
 .form-head {
     display: flex;
     align-items: center;
-    gap: 11px;
-    margin-bottom: 14px;
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
+/* Ícono como badge/pill discreto: fondo verde tenue, ícono en verde oscuro */
 .form-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: #00a651;
-    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: var(--action-badge-bg);
+    color: var(--action-badge-fg);
     flex-shrink: 0;
 }
 
@@ -241,25 +177,43 @@
 
 .form-title {
     margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text-dark);
 }
 
 .form-subtitle {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
+/* Dos filas prolijas en vez de 5 campos apretados + una barra gigante:
+   fila 1 = búsqueda de jugador y período; fila 2 = monto, método y el
+   botón de acción, compacto, a la derecha. */
 .form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-row {
     display: grid;
-    grid-template-columns: 1.4fr 0.9fr 0.6fr 0.9fr 0.9fr;
     gap: 12px;
+}
+
+.form-row-lookup {
+    grid-template-columns: 1.6fr 1fr 0.7fr;
+}
+
+.form-row-action {
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
 }
 
 .field {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
     min-width: 0;
 }
 
@@ -273,35 +227,37 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--action-label);
 }
 
 .field-input {
     width: 100%;
-    padding: 9px 11px;
+    height: 44px;
+    padding: 0 12px;
     box-sizing: border-box;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--action-field-bg);
+    border: 1px solid var(--action-border);
     border-radius: 9px;
     font-family: inherit;
-    font-size: 12px;
-    color: #000000;
+    font-size: 13px;
+    color: var(--color-text);
     outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .field-input::placeholder {
-    color: #555a55;
-    opacity: 0.7;
+    color: var(--color-text-muted);
+    opacity: 0.8;
 }
 
 .field-input:hover {
-    border-color: #c9d3c9;
+    border-color: var(--color-brand);
 }
 
 .field-input:focus {
-    border-color: #00a651;
-    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
+    background: var(--action-bg);
+    border-color: var(--action-accent);
+    box-shadow: var(--action-focus-ring);
 }
 
 /* ===== MONTO: signo $ fijo + formato con puntos de miles ===== */
@@ -312,15 +268,16 @@
 .amount-prefix {
     position: absolute;
     top: 50%;
-    left: 11px;
+    left: 12px;
     transform: translateY(-50%);
-    font-size: 12px;
-    color: #555a55;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--action-accent);
     pointer-events: none;
 }
 
 .amount-input {
-    padding-left: 22px;
+    padding-left: 24px;
 }
 
 /* ===== PLAYER SUGGESTIONS ===== */
@@ -335,10 +292,10 @@
     list-style: none;
     max-height: 180px;
     overflow-y: auto;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--action-bg);
+    border: 1px solid var(--action-border);
     border-radius: 9px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
     animation: fadeIn 0.15s ease both;
 }
 
@@ -359,7 +316,7 @@
 
 .suggestion:hover,
 .suggestion:focus-visible {
-    background: #f9faf9;
+    background: var(--color-brand-tint);
     outline: none;
 }
 
@@ -370,26 +327,56 @@
 
 .suggestion-meta {
     font-size: 10.5px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
-/* ===== SUBMIT ===== */
+/* ===== SUBMIT =====
+   Botón compacto y firme, no una barra que ocupa todo el ancho: se ubica
+   solo (columna "auto") a la derecha de la fila 2, a la misma altura que
+   los campos gracias a align-items: end en .form-row-action. */
 .submit-button {
-    grid-column: span 5;
-    padding: 11px;
-    background: #00a651;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 22px;
+    /* Verde institucional pleno (el mismo que ya usan los CTA del resto del
+       sistema), no la variante oscura del acento del panel: contra blanco da
+       más contraste y se siente "lleno", no apagado. */
+    background: var(--color-brand);
     border: none;
     border-radius: 9px;
-    color: #ffffff;
+    color: var(--color-bg-card);
     font-family: inherit;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
+    white-space: nowrap;
     cursor: pointer;
-    transition: background 0.2s ease, opacity 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.submit-button svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
 }
 
 .submit-button:hover:not(:disabled) {
-    background: #009148;
+    background: var(--color-brand-hover);
+    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+    transform: translateY(-1px);
+}
+
+.submit-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 127, 62, 0.2);
+}
+
+.submit-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--action-bg), 0 0 0 4px var(--color-brand);
 }
 
 .submit-button:disabled {
@@ -399,14 +386,14 @@
 
 /* Simulated confirmation: fades in, then fades out before being removed */
 .form-feedback {
-    grid-column: span 5;
     margin: 0;
     padding: 9px 11px;
-    background: #e7f4ea;
+    background: var(--color-brand-tint);
+    border: 1px solid rgba(0, 166, 81, 0.3);
     border-radius: 9px;
     font-size: 12px;
     font-weight: 600;
-    color: #00a651;
+    color: var(--color-brand-deep);
     animation: fadeIn 0.3s ease both;
     transition: opacity 0.3s ease;
 }
@@ -416,8 +403,9 @@
 }
 
 .form-feedback.is-error {
-    background: #fdecea;
-    color: #b3261e;
+    background: var(--color-danger-bg);
+    border-color: rgba(192, 57, 43, 0.3);
+    color: var(--color-danger-strong);
 }
 
 /* ===== MAIN GRID ===== */
@@ -435,8 +423,8 @@
     display: flex;
     flex-direction: column;
     padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     min-width: 0;
@@ -467,11 +455,11 @@
 }
 
 .dot-pending {
-    background: #eba83a;
+    background: var(--color-warning-text);
 }
 
 .dot-paid {
-    background: #00a651;
+    background: var(--color-brand);
 }
 
 .panel-title {
@@ -484,7 +472,7 @@
     margin-left: auto;
     font-size: 13px;
     font-weight: 700;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== PANEL SEARCH (buscador de "Últimos pagos") ===== */
@@ -499,23 +487,23 @@
     width: 100%;
     padding: 7px 30px 7px 11px;
     box-sizing: border-box;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 9px;
     font-family: inherit;
     font-size: 11.5px;
-    color: #000000;
+    color: var(--color-text);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .panel-search-input::placeholder {
-    color: #555a55;
+    color: var(--color-text-muted);
     opacity: 0.7;
 }
 
 .panel-search-input:focus {
-    border-color: #00a651;
+    border-color: var(--color-brand);
     box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
 }
 
@@ -525,7 +513,7 @@
     right: 9px;
     transform: translateY(-50%);
     display: flex;
-    color: #555a55;
+    color: var(--color-text-muted);
     pointer-events: none;
 }
 
@@ -555,12 +543,12 @@
     gap: 10px;
     padding: 10px;
     border-radius: 9px;
-    border-bottom: 1px solid #f1f5f1;
+    border-bottom: 1px solid var(--color-bg-page);
     transition: background 0.2s ease;
 }
 
 .row:hover {
-    background: #f9faf9;
+    background: var(--color-bg-hover);
 }
 
 .row-clickable {
@@ -584,13 +572,13 @@
 }
 
 .avatar-pending {
-    background: #fef4e3;
-    color: #8a5a0b;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
 }
 
 .avatar-paid {
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
 }
 
 .row-identity {
@@ -610,7 +598,7 @@
 
 .row-meta {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
@@ -629,29 +617,29 @@
 }
 
 .amount-pending {
-    color: #8a5a0b;
+    color: var(--color-warning-text);
 }
 
 .amount-paid {
-    color: #00a651;
+    color: var(--color-brand);
 }
 
 /* ===== RESPONSIVE ===== */
 
-/* Tablet: the two panels stack and the form drops to two fields per row */
+/* Tablet: the two panels stack and each form row drops to two fields */
 @media (max-width: 1100px) {
     .main-grid {
         grid-template-columns: 1fr;
     }
 
-    .form-grid {
+    .form-row-lookup,
+    .form-row-action {
         grid-template-columns: 1fr 1fr;
     }
 
-    /* The button and the message still span the whole form */
-    .submit-button,
-    .form-feedback {
+    .submit-button {
         grid-column: span 2;
+        width: 100%;
     }
 }
 
@@ -687,13 +675,14 @@
         padding: 14px;
     }
 
-    .form-grid {
+    .form-row-lookup,
+    .form-row-action {
         grid-template-columns: 1fr;
     }
 
-    .submit-button,
-    .form-feedback {
-        grid-column: span 1;
+    .submit-button {
+        grid-column: 1;
+        width: 100%;
     }
 
     /* Amount and elapsed time move under the name instead of to the right */
@@ -704,14 +693,5 @@
     .row-figures {
         align-items: flex-start;
         margin-left: 42px;
-    }
-
-    /* El monto de deuda global se cae debajo del label en vez de apretarse a la derecha */
-    .deuda-global-banner {
-        flex-wrap: wrap;
-    }
-
-    .deuda-global-value {
-        margin-left: 50px;
     }
 }

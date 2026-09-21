@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, NgZone, OnInit, WritableSignal, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
@@ -10,12 +10,22 @@ import {
 } from '../../services/estadisticas';
 import { AuthService } from '../../services/auth';
 import { formatCompactCurrency } from '../../shared/format-currency';
+import { animateCountUp } from '../../shared/count-up';
 
 Chart.register(...registerables);
 
+// One count-up metric on the banner ("Pagos del mes", "Recaudado 2026"...).
+// `value` is a signal so the count-up animation can update it every frame
+// without depending on which zone the click/navigation that rendered this
+// component landed in (see CustomSelect for the same reasoning).
+interface BannerStat {
+  value: WritableSignal<string>;
+  label: string;
+}
+
 // One metric card in the KPI row
 interface SummaryCard {
-  value: string;
+  value: WritableSignal<string>;
   label: string;
   detail: string;
   badge: string;
@@ -62,11 +72,15 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 })
 export class ResumenGeneral implements OnInit {
 
+  private zone = inject(NgZone);
+  private destroyRef = inject(DestroyRef);
+  private cancelCountUp: () => void = () => {};
+
   currentDate = '';
   greeting = '';
   cargando = true;
 
-  bannerStats: { value: string; label: string }[] = [];
+  bannerStats: BannerStat[] = [];
   cards: SummaryCard[] = [];
   monthlyRevenue: MonthlyBar[] = [];
   eligibility: EligibilityItem[] = [];
@@ -126,6 +140,7 @@ export class ResumenGeneral implements OnInit {
   ngOnInit() {
     this.currentDate = this.formatToday();
     this.greeting = this.buildGreeting();
+    this.destroyRef.onDestroy(() => this.cancelCountUp());
     this.cargarResumen();
   }
 
@@ -158,15 +173,23 @@ export class ResumenGeneral implements OnInit {
         ? Math.round(((r.ingresadoEsteMes - r.ingresadoMesAnterior) / r.ingresadoMesAnterior) * 100)
         : null;
 
+    const pagosDelMesDisplay = signal('0');
+    const recaudadoDisplay = signal(formatCompactCurrency(0));
+    const cuotasAlDiaDisplay = signal('0%');
+    const jugadoresActivosDisplay = signal('0');
+    const jugadoresHabilitadosDisplay = signal('0');
+    const ingresadoEsteMesDisplay = signal(CURRENCY_FULL.format(0));
+    const deudaAcumuladaDisplay = signal(CURRENCY_FULL.format(0));
+
     this.bannerStats = [
-      { value: String(r.pagosDelMes), label: 'Pagos del mes' },
-      { value: formatCompactCurrency(r.recaudadoAnioActual), label: `Recaudado ${new Date().getFullYear()}` },
-      { value: `${porcentajeHabilitados}%`, label: 'Cuotas al día' },
+      { value: pagosDelMesDisplay, label: 'Pagos del mes' },
+      { value: recaudadoDisplay, label: `Recaudado ${new Date().getFullYear()}` },
+      { value: cuotasAlDiaDisplay, label: 'Cuotas al día' },
     ];
 
     this.cards = [
       {
-        value: String(r.totalJugadores),
+        value: jugadoresActivosDisplay,
         label: 'Jugadores activos',
         detail: `Distribuidos en ${r.cantidadCategorias} categorías`,
         badge: `${r.cantidadCategorias} cat.`,
@@ -175,7 +198,7 @@ export class ResumenGeneral implements OnInit {
         progressColor: '#00a651',
       },
       {
-        value: String(r.jugadoresSinDeuda),
+        value: jugadoresHabilitadosDisplay,
         label: 'Jugadores habilitados',
         detail: `${jugadoresConRestricciones} con restricciones`,
         badge: `${porcentajeHabilitados}%`,
@@ -184,7 +207,7 @@ export class ResumenGeneral implements OnInit {
         progressColor: '#4cb863',
       },
       {
-        value: CURRENCY_FULL.format(r.ingresadoEsteMes),
+        value: ingresadoEsteMesDisplay,
         label: 'Ingresado este mes',
         detail: `${r.pagosDelMes} pagos registrados`,
         badge: cambioMensual === null ? '' : `${cambioMensual >= 0 ? '+' : ''}${cambioMensual}%`,
@@ -193,7 +216,7 @@ export class ResumenGeneral implements OnInit {
         progressColor: '#8dd49d',
       },
       {
-        value: CURRENCY_FULL.format(r.deudaAcumulada),
+        value: deudaAcumuladaDisplay,
         label: 'Deuda acumulada',
         detail: `${jugadoresConRestricciones} jugadores con cuotas impagas`,
         badge: String(jugadoresConRestricciones),
@@ -202,6 +225,19 @@ export class ResumenGeneral implements OnInit {
         progressColor: '#c0392b',
       },
     ];
+
+    // Los números "de vida" del panel cuentan de 0 hasta el valor real en vez
+    // de aparecer de golpe (mismo criterio que el banner de Deudas y
+    // Morosidad y de Actividad y Movimientos).
+    this.cancelCountUp = animateCountUp(this.zone, [
+      { target: r.pagosDelMes, display: pagosDelMesDisplay },
+      { target: r.recaudadoAnioActual, display: recaudadoDisplay, format: formatCompactCurrency },
+      { target: porcentajeHabilitados, display: cuotasAlDiaDisplay, format: (v) => `${v}%` },
+      { target: r.totalJugadores, display: jugadoresActivosDisplay },
+      { target: r.jugadoresSinDeuda, display: jugadoresHabilitadosDisplay },
+      { target: r.ingresadoEsteMes, display: ingresadoEsteMesDisplay, format: (v) => CURRENCY_FULL.format(v) },
+      { target: r.deudaAcumulada, display: deudaAcumuladaDisplay, format: (v) => CURRENCY_FULL.format(v) },
+    ]);
 
     this.monthlyRevenue = this.mapMonthlyRevenue(r.recaudacionMensual);
 

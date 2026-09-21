@@ -1,25 +1,5 @@
-/* ===== ANIMATIONS ===== */
-/* Blocks fade in while sliding up on load */
-@keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* The confirmation message fades in on its own, without moving the layout */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
+﻿/* ===== ANIMATIONS ===== */
+/* fadeSlideUp y fadeIn viven ahora en styles.css (global) */
 
 /* ===== LAYOUT ===== */
 .dashboard {
@@ -28,9 +8,9 @@
     padding: 20px;
     min-height: 100%;
     box-sizing: border-box;
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #000000;
+    color: var(--color-text);
     /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
 }
@@ -51,8 +31,8 @@
     width: 52px;
     height: 52px;
     border-radius: 14px;
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
     flex-shrink: 0;
 }
 
@@ -76,7 +56,7 @@
 
 .header-subtitle {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .header-metrics {
@@ -96,7 +76,7 @@
 
 /* Separator between metrics */
 .header-metric + .header-metric {
-    border-left: 1px solid #e4e7e4;
+    border-left: 1px solid var(--color-border);
 }
 
 .header-metric-value {
@@ -109,25 +89,30 @@
     font-size: 9.5px;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
 .header-divider {
     height: 1px;
     margin: 14px 0;
-    background: #e4e7e4;
+    background: var(--color-border);
 }
 
 /* ===== SCHEDULING FORM ===== */
-/* The action panel of the dashboard, so it carries a heavier green frame */
+/* Panel de acción "deportivo institucional": blanco limpio, acento verde
+   sólido en el borde superior, sombra suave y difusa. Misma línea que
+   Registrar pago y Asignar bonificación (antes tenía un dorado que
+   desentonaba con el resto de la paleta — ver styles.css). */
 .form-panel {
-    padding: 16px;
+    position: relative;
+    padding: 18px 16px 16px;
     margin-bottom: 14px;
-    background: #ffffff;
-    border: 2px solid #00a651;
-    border-radius: 14px;
-    box-shadow: 0 2px 10px rgba(0, 166, 81, 0.12);
+    background: var(--action-bg);
+    border: 1px solid var(--action-border);
+    border-top: 4px solid var(--action-accent);
+    border-radius: 16px;
+    box-shadow: var(--action-shadow);
     animation: fadeSlideUp 0.4s ease both;
     animation-delay: 60ms;
 }
@@ -139,15 +124,16 @@
     margin-bottom: 14px;
 }
 
+/* Ícono como badge/pill discreto: fondo verde tenue, ícono en verde oscuro */
 .form-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: #00a651;
-    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: var(--action-badge-bg);
+    color: var(--action-badge-fg);
     flex-shrink: 0;
 }
 
@@ -165,13 +151,14 @@
 
 .form-title {
     margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text-dark);
 }
 
 .form-subtitle {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .form-grid {
@@ -194,35 +181,35 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--action-label);
 }
 
 .field-input {
     width: 100%;
     padding: 9px 11px;
     box-sizing: border-box;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--action-bg);
+    border: 1px solid var(--action-border-strong);
     border-radius: 9px;
     font-family: inherit;
     font-size: 12px;
-    color: #000000;
+    color: var(--color-text);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .field-input::placeholder {
-    color: #555a55;
+    color: var(--color-text-muted);
     opacity: 0.7;
 }
 
 .field-input:hover {
-    border-color: #c9d3c9;
+    border-color: var(--color-brand);
 }
 
 .field-input:focus {
-    border-color: #00a651;
-    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
+    border-color: var(--action-accent);
+    box-shadow: var(--action-focus-ring);
 }
 
 /* ===== NUEVO MONTO: signo $ fijo + formato con puntos de miles ===== */
@@ -236,7 +223,7 @@
     left: 11px;
     transform: translateY(-50%);
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
     pointer-events: none;
 }
 
@@ -246,33 +233,41 @@
 
 .field-hint {
     font-size: 10.5px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* Replaces the hint in place, so showing it never shifts the layout */
 .field-error {
     font-size: 10.5px;
     font-weight: 600;
-    color: #c0392b;
+    color: var(--color-danger);
 }
 
 /* ===== SUBMIT ===== */
 .submit-button {
     grid-column: span 3;
     padding: 11px;
-    background: #00a651;
+    background: var(--action-accent);
     border: none;
     border-radius: 9px;
-    color: #ffffff;
+    color: var(--color-bg-card);
     font-family: inherit;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: background 0.2s ease, opacity 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
+    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 .submit-button:hover:not(:disabled) {
-    background: #009148;
+    background: var(--action-accent-hover);
+    box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
+    transform: translateY(-1px);
+}
+
+.submit-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 79, 39, 0.2);
 }
 
 .submit-button:disabled {
@@ -285,11 +280,12 @@
     grid-column: span 3;
     margin: 0;
     padding: 9px 11px;
-    background: #e7f4ea;
+    background: var(--color-brand-tint);
+    border: 1px solid rgba(0, 166, 81, 0.3);
     border-radius: 9px;
     font-size: 12px;
     font-weight: 600;
-    color: #00a651;
+    color: var(--color-brand-deep);
     animation: fadeIn 0.3s ease both;
     transition: opacity 0.3s ease;
 }
@@ -299,8 +295,9 @@
 }
 
 .form-feedback-error {
-    background: #fdecea;
-    color: #c0392b;
+    background: var(--color-danger-bg);
+    border: 1px solid rgba(192, 57, 43, 0.3);
+    color: var(--color-danger-strong);
 }
 
 /* ===== MAIN GRID ===== */
@@ -320,8 +317,8 @@
     display: flex;
     flex-direction: column;
     padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     min-width: 0;
@@ -352,7 +349,7 @@
 
 .panel-subtitle {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== FEES TABLE ===== */
@@ -368,19 +365,19 @@
 
 .fees-table th {
     padding: 0 10px 8px;
-    border-bottom: 1px solid #e4e7e4;
+    border-bottom: 1px solid var(--color-border);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     text-align: left;
     white-space: nowrap;
 }
 
 .fees-table td {
     padding: 9px 10px;
-    border-bottom: 1px solid #f1f5f1;
+    border-bottom: 1px solid var(--color-bg-page);
     font-size: 12px;
     vertical-align: middle;
 }
@@ -390,7 +387,7 @@
 }
 
 .fees-table tbody tr:hover {
-    background: #f9faf9;
+    background: var(--color-bg-hover);
 }
 
 .fees-table tbody tr:last-child td {
@@ -403,7 +400,7 @@
 }
 
 .cell-muted {
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
@@ -419,29 +416,29 @@
 }
 
 .category-male {
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-info-bg);
+    color: var(--color-info);
 }
 
 .category-female {
-    background: #f3eeff;
-    color: #8b5cf6;
+    background: var(--color-accent-bg);
+    color: var(--color-accent);
 }
 
 /* The fee charged today, one waiting to start, and one already replaced */
 .status-current {
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
 }
 
 .status-scheduled {
-    background: #fef4e3;
-    color: #8a5a0b;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
 }
 
 .status-previous {
-    background: #f1f5f1;
-    color: #555a55;
+    background: var(--color-bg-page);
+    color: var(--color-text-muted);
 }
 
 /* ===== FEE EVOLUTION CHART ===== */

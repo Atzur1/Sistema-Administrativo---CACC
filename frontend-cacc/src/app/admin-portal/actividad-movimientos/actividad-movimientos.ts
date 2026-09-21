@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { animateCountUp } from '../../shared/count-up';
 
 // One row in the latest payments table
 interface PaymentRow {
@@ -59,8 +60,8 @@ export class ActividadMovimientos implements OnInit {
     private zone = inject(NgZone);
     private destroyRef = inject(DestroyRef);
 
-    // Pending animation frame id, so it can be cancelled on destroy.
-    private rafId = 0;
+    // Cancels the running count-up animation, so it can be cancelled on destroy.
+    private cancelCountUp: () => void = () => {};
 
     // Banner
     currentDate: string = '';
@@ -240,36 +241,16 @@ export class ActividadMovimientos implements OnInit {
 
     ngOnInit() {
         this.currentDate = this.formatToday();
-        // Stop the running frame the moment the component is torn down.
-        this.destroyRef.onDestroy(() => cancelAnimationFrame(this.rafId));
-        this.animateBannerMetrics();
-    }
-
-    // Counts every banner metric up from 0 to its target over ~800ms with an
-    // ease-out cubic curve. The loop runs outside the zone to keep zone.js
-    // from tracking every animation frame; each frame writes to a signal, so
-    // change detection still runs through Angular's normal flow.
-    private animateBannerMetrics(): void {
-        const duration = 800;
-        const startTime = performance.now();
-
-        this.zone.runOutsideAngular(() => {
-            const tick = (now: number) => {
-                const progress = Math.min((now - startTime) / duration, 1);
-                const eased = 1 - Math.pow(1 - progress, 3);
-
-                for (const metric of this.bannerMetrics) {
-                    const current = Math.round(metric.target * eased);
-                    metric.display.set(`${metric.prefix}${current}${metric.suffix}`);
-                }
-
-                if (progress < 1) {
-                    this.rafId = requestAnimationFrame(tick);
-                }
-            };
-
-            this.rafId = requestAnimationFrame(tick);
-        });
+        // Stop the running animation the moment the component is torn down.
+        this.destroyRef.onDestroy(() => this.cancelCountUp());
+        this.cancelCountUp = animateCountUp(
+            this.zone,
+            this.bannerMetrics.map((metric) => ({
+                target: metric.target,
+                display: metric.display,
+                format: (value: number) => `${metric.prefix}${value}${metric.suffix}`,
+            }))
+        );
     }
 
     // Builds a Spanish long date without depending on locale registration

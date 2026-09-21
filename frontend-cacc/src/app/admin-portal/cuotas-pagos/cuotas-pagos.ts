@@ -12,6 +12,7 @@ import {
 } from '../../services/pagos';
 import { ArancelesService } from '../../services/aranceles';
 import { formatCompactCurrency } from '../../shared/format-currency';
+import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { PlayerRoster } from './player-roster/player-roster';
 
 const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
@@ -46,13 +47,6 @@ interface HeaderMetric {
   label: string;
 }
 
-// Indicador destacado del header: "Deuda Global Total" (HU-019)
-interface DeudaGlobal {
-  monto: string;
-  morosos: number;
-  moroLabel: string;
-}
-
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
   currency: 'ARS',
@@ -62,7 +56,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-cuotas-pagos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PlayerRoster],
+  imports: [CommonModule, ReactiveFormsModule, CustomSelect, PlayerRoster],
   templateUrl: './cuotas-pagos.html',
   styleUrl: './cuotas-pagos.css',
 })
@@ -77,11 +71,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
     { value: '—', label: 'Pagos del mes' },
     { value: '—', label: 'Pendientes' },
   ];
-
-  // HU-019: se recalcula cada vez que cargarListas() vuelve a pedir /api/pagos/resumen —
-  // incluido justo después de un "Registrar pago" exitoso (ver onSubmit), así que el impacto
-  // de un cobro se refleja acá sin recargar la página.
-  deudaGlobal: DeudaGlobal = { monto: '—', morosos: 0, moroLabel: '' };
 
   paymentForm: FormGroup;
 
@@ -288,7 +277,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.pagosService.getResumen().subscribe({
       next: (resumen) => {
         this.headerMetrics = mapResumen(resumen);
-        this.deudaGlobal = mapDeudaGlobal(resumen);
         this.cdr.detectChanges();
       },
       error: () => {},
@@ -465,15 +453,4 @@ function mapResumen(r: ResumenPagos): HeaderMetric[] {
     { value: String(r.pagosDelMes), label: 'Pagos del mes' },
     { value: String(r.cantidadPendientes), label: 'Pendientes' },
   ];
-}
-
-// HU-019: "Deuda Global Total" — suma real de cada cuota pendiente (ya congelada al mes de
-// emisión, con bonificaciones aplicadas), no cantidad de cuotas x arancel vigente hoy.
-function mapDeudaGlobal(r: ResumenPagos): DeudaGlobal {
-  const morosos = r.jugadoresMorosos;
-  return {
-    monto: CURRENCY_FULL.format(r.deudaGlobalTotal),
-    morosos,
-    moroLabel: `${morosos} ${morosos === 1 ? 'jugador moroso' : 'jugadores morosos'}`,
-  };
 }

@@ -1,15 +1,5 @@
-/* ===== ANIMATIONS ===== */
-/* Blocks fade in while sliding up on load */
-@keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+﻿/* ===== ANIMATIONS ===== */
+/* fadeSlideUp y fadeIn viven ahora en styles.css (global) */
 
 /* Chart bars grow from the baseline up */
 @keyframes columnGrow {
@@ -31,16 +21,6 @@
     }
 }
 
-/* The average line only fades in, so it does not slide over the bars */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
 /* ===== LAYOUT ===== */
 .dashboard {
     display: flex;
@@ -48,9 +28,9 @@
     padding: 24px;
     min-height: 100%;
     box-sizing: border-box;
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #000000;
+    color: var(--color-text);
     /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
 }
@@ -71,8 +51,8 @@
     width: 52px;
     height: 52px;
     border-radius: 14px;
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-info-bg);
+    color: var(--color-info);
     flex-shrink: 0;
 }
 
@@ -96,7 +76,7 @@
 
 .header-subtitle {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .header-metrics {
@@ -116,7 +96,7 @@
 
 /* Separator between metrics */
 .header-metric + .header-metric {
-    border-left: 1px solid #e4e7e4;
+    border-left: 1px solid var(--color-border);
 }
 
 .header-metric-value {
@@ -129,14 +109,14 @@
     font-size: 9.5px;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
 .header-divider {
     height: 1px;
     margin: 18px 0;
-    background: #e4e7e4;
+    background: var(--color-border);
 }
 
 /* ===== PANELS ===== */
@@ -144,10 +124,12 @@
     display: flex;
     flex-direction: column;
     padding: 20px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--glass-shadow);
     min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
 }
@@ -181,7 +163,7 @@
 
 .panel-subtitle {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== MONTHLY REVENUE CHART ===== */
@@ -217,7 +199,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    border-top: 2px dashed #3b82f6;
+    border-top: 2px dashed var(--color-info);
     animation: fadeIn 0.5s ease 0.5s both;
 }
 
@@ -236,14 +218,14 @@
     line-height: var(--amount-height);
     font-size: 10px;
     font-weight: 500;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .chart-month {
     height: var(--month-height);
     line-height: var(--month-height);
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .chart-amount.is-empty,
@@ -258,7 +240,7 @@
     justify-content: center;
     width: 100%;
     flex: 1;
-    border-bottom: 1px solid #e4e7e4;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .chart-bar {
@@ -278,7 +260,7 @@
 /* January is called out as a loss, matching the red used for debt elsewhere
    in this dashboard, so it reads as a warning at a glance */
 .bar-loss {
-    background: #c0392b;
+    background: var(--color-danger);
 }
 
 .bar-normal {
@@ -286,13 +268,13 @@
 }
 
 .bar-best {
-    background: #00a651;
+    background: var(--color-brand);
 }
 
 /* The month in progress gets its own colour instead of borrowing the best-
    month green, so it never reads as a top performer it hasn't earned yet */
 .bar-current {
-    background: #3b82f6;
+    background: var(--color-info);
 }
 
 /* The weakest month of the season overrides the current-month highlight */
@@ -302,7 +284,7 @@
 
 /* Months of the season still to be collected */
 .bar-empty {
-    background: #f1f5f1;
+    background: var(--color-bg-page);
 }
 
 /* ===== BOTTOM GRID ===== */
@@ -330,12 +312,12 @@
     font-size: 32px;
     font-weight: 700;
     line-height: 1;
-    color: #c0392b;
+    color: var(--color-danger);
 }
 
 .unpaid-total-label {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .unpaid-list {
@@ -356,7 +338,7 @@
 .unpaid-label {
     width: 34px;
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
     flex-shrink: 0;
 }
 
@@ -365,14 +347,14 @@
     min-width: 0;
     height: 18px;
     border-radius: 5px;
-    background: #f9faf9;
+    background: var(--color-bg-hover);
 }
 
 .unpaid-bar {
     display: block;
     height: 100%;
     border-radius: 5px;
-    background: #c0392b;
+    background: var(--color-danger);
     transform-origin: left center;
     animation: barGrow 0.6s ease backwards;
 }
@@ -381,7 +363,7 @@
     width: 24px;
     font-size: 12px;
     font-weight: 700;
-    color: #c0392b;
+    color: var(--color-danger);
     text-align: right;
     flex-shrink: 0;
 }
@@ -401,13 +383,13 @@
     align-items: center;
     gap: 11px;
     padding: 11px;
-    border: 1px solid #e4e7e4;
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .trend-card:hover {
-    background: #f9faf9;
+    background: var(--color-bg-hover);
     border-color: #d7dcd7;
 }
 
@@ -427,17 +409,17 @@
 }
 
 .icon-average {
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-info-bg);
+    color: var(--color-info);
 }
 
 .icon-best {
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
 }
 
 .icon-low {
-    background: #fef4e3;
+    background: var(--color-warning-bg);
     color: #eba83a;
 }
 
@@ -455,7 +437,7 @@
 
 .trend-label {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== RESPONSIVE ===== */

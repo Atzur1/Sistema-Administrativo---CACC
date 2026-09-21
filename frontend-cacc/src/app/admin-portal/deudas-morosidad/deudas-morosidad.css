@@ -1,24 +1,5 @@
-/* ===== ANIMATIONS ===== */
-/* Blocks fade in while sliding up on load */
-@keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Bars grow from zero. Only the `from` step is declared so the implicit
-    end state is each bar's own inline width, and the label inside is not
-    distorted the way a transform would distort it. */
-@keyframes barGrow {
-    from {
-        width: 0;
-    }
-}
+﻿/* ===== ANIMATIONS ===== */
+/* fadeSlideUp y growWidth (antes "barGrow") viven ahora en styles.css (global) */
 
 /* ===== LAYOUT ===== */
 .dashboard {
@@ -27,24 +8,44 @@
     padding: 20px;
     min-height: 100%;
     box-sizing: border-box;
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #000000;
+    color: var(--color-text);
     /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
 }
 
 /* ===== BANNER ===== */
 .banner {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 24px;
     margin-bottom: 12px;
     padding: 18px 24px;
-    background: #fbeae8;
+    background: var(--color-danger-bg);
     border-radius: 12px;
+    overflow: hidden;
     animation: fadeSlideUp 0.4s ease both;
+}
+
+/* Destello que recorre el banner cada tanto, de punta a punta (keyframe
+   "bannerShimmerCycle" global en styles.css, compartido con los banners de
+   Resumen General y Actividad y Movimientos). El barrido dura ~1.7s y el
+   ciclo completo 6s, así que queda "quieto" la mayor parte del tiempo: un
+   sistema de plata/morosidad tiene que sentirse serio, no animado todo el
+   tiempo. Se apaga solo con prefers-reduced-motion (regla global). */
+.banner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -30%;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    animation: bannerShimmerCycle 6s ease-in-out infinite;
+    pointer-events: none;
 }
 
 .banner-intro {
@@ -61,8 +62,8 @@
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    background: #c0392b;
-    color: #ffffff;
+    background: var(--color-danger);
+    color: var(--color-bg-card);
     flex-shrink: 0;
 }
 
@@ -148,10 +149,12 @@
     display: flex;
     flex-direction: column;
     padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--glass-shadow);
     min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
 }
@@ -161,8 +164,17 @@
     animation-delay: 80ms;
 }
 
+/* Jugadores inhabilitados: caja en rojo, para que se distinga a simple vista
+   como algo grave y no como un panel informativo más. */
 .panel-suspended {
     animation-delay: 160ms;
+    background: var(--glass-bg-danger);
+    border-color: var(--glass-border-danger);
+    box-shadow: var(--glass-shadow-danger);
+}
+
+.panel-suspended .panel-title {
+    color: var(--color-danger);
 }
 
 .panel-distribution {
@@ -184,7 +196,24 @@
 
 .panel-subtitle {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
+}
+
+/* ===== EMPTY / LOADING STATES ===== */
+.empty-state {
+    margin: 0;
+    padding: 18px 4px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+/* Explica qué significa cada estado de la columna "Estado" */
+.table-legend {
+    margin: 10px 2px 0;
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: #8a8f8a;
 }
 
 /* ===== DEBTORS TABLE ===== */
@@ -200,29 +229,31 @@
 
 .debtors-table th {
     padding: 0 10px 8px;
-    border-bottom: 1px solid #e4e7e4;
+    border-bottom: 1px solid var(--color-border);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     text-align: left;
     white-space: nowrap;
 }
 
 .debtors-table td {
     padding: 9px 10px;
-    border-bottom: 1px solid #f1f5f1;
+    border-bottom: 1px solid var(--color-bg-page);
     font-size: 12px;
     vertical-align: middle;
 }
 
 .debtors-table tbody tr {
-    transition: background 0.2s ease;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .debtors-table tbody tr:hover {
-    background: #f9faf9;
+    background: var(--color-bg-hover);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
 }
 
 .debtors-table tbody tr:last-child td {
@@ -245,15 +276,15 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: #f1f5f1;
-    color: #555a55;
+    background: var(--color-bg-page);
+    color: var(--color-text-muted);
     font-size: 11px;
     font-weight: 600;
 }
 
 .rank-badge.rank-top {
-    background: #fbeae8;
-    color: #c0392b;
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
 }
 
 .cell-player {
@@ -262,7 +293,7 @@
 }
 
 .cell-muted {
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
@@ -281,13 +312,13 @@
 }
 
 .status-suspended {
-    background: #fbeae8;
-    color: #c0392b;
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
 }
 
 .status-partial {
-    background: #fef4e3;
-    color: #8a5a0b;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
 }
 
 /* ===== NEWLY SUSPENDED ===== */
@@ -301,7 +332,16 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 4px 6px;
+    margin: 0 -6px;
+    border-radius: 8px;
     animation: fadeSlideUp 0.4s ease both;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.suspended-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
 }
 
 .suspended-avatar {
@@ -311,8 +351,8 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #fbeae8;
-    color: #c0392b;
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
     font-size: 11px;
     font-weight: 700;
     flex-shrink: 0;
@@ -336,13 +376,13 @@
 
 .suspended-detail {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
 .suspended-amount {
     margin-left: auto;
-    color: #c0392b;
+    color: var(--color-danger);
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
@@ -367,7 +407,7 @@
 .distribution-label {
     width: 66px;
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
     flex-shrink: 0;
 }
 
@@ -377,6 +417,7 @@
 }
 
 .distribution-bar {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -386,11 +427,27 @@
     box-sizing: border-box;
     /* Keeps the count clipped while the bar is still growing */
     overflow: hidden;
-    animation: barGrow 0.6s ease backwards;
+    animation: growWidth 0.6s ease backwards;
+}
+
+/* Un único destello que recorre la barra justo al terminar de crecer
+   (arranca cuando growWidth ya llegó al ancho final). */
+.distribution-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -75%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    animation: shimmerSweep 0.7s ease-out backwards;
+    animation-delay: 0.55s;
+    pointer-events: none;
 }
 
 .distribution-count {
-    color: #ffffff;
+    position: relative;
+    color: var(--color-bg-card);
     font-size: 11px;
     font-weight: 700;
 }

@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { ArancelesService, ArancelHistorialItem } from '../../services/aranceles';
+import { CustomSelect } from '../../shared/custom-select/custom-select';
 
 Chart.register(...registerables);
 
@@ -31,7 +32,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
     selector: 'app-actualizacion-aranceles',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective],
+    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect],
     templateUrl: './actualizacion-aranceles.html',
     styleUrl: './actualizacion-aranceles.css',
 })
