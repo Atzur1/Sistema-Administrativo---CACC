@@ -35,7 +35,9 @@ namespace DaoLibrary
 
         // ---- Lecturas simples, sin transacción (mismo estilo que AuthDao) ----
 
-        IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados();
+        // idCategoria: null trae todas las categorías (comportamiento previo, sin cambios). Con un
+        // valor, HU-020 acota el padrón de morosos a esa división únicamente.
+        IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null);
 
         // Roster of players with what each one owes (HU-029). With onlyDebtors the query itself
         // returns just the players that owe something, so the filter never depends on the client.

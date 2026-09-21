@@ -5,6 +5,9 @@ namespace EntityLibrary
     {
         public int IdJugador { get; set; }
         public string NombreCompleto { get; set; } = string.Empty;
+        // HU-020: se expone el id (no solo el nombre) para poder armar el combo de categorías
+        // del lado del cliente a partir de esta misma lista, sin necesitar un endpoint aparte.
+        public int IdCategoria { get; set; }
         public string Categoria { get; set; } = string.Empty;
         public decimal MontoTotal { get; set; }
         public int CantidadCuotas { get; set; }

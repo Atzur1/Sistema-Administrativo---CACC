@@ -30,10 +30,11 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/pagos/pendientes -> panel "Pendientes de cobro"
+        // GET api/pagos/pendientes?idCategoria=5 -> HU-020: acota el padrón a esa categoría/división
         [HttpGet("pendientes")]
-        public IActionResult ObtenerPendientes()
+        public IActionResult ObtenerPendientes([FromQuery] int? idCategoria = null)
         {
-            return Ok(_pagosService.ObtenerPendientes());
+            return Ok(_pagosService.ObtenerPendientes(idCategoria));
         }
 
         // GET api/pagos/player-accounts?onlyDebtors=true -> roster of Cuotas y Pagos (HU-029).

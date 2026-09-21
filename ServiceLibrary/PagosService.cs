@@ -151,7 +151,7 @@ namespace ServiceLibrary
 
         // 100% manual: las cuotas solo existen para los meses en los que se cargó un arancel
         // (ver ArancelesService.ProgramarArancel). Acá no se genera nada por fecha de hoy.
-        public IReadOnlyList<PendienteJugador> ObtenerPendientes() => _pagosDao.ObtenerPendientesAgrupados();
+        public IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null) => _pagosDao.ObtenerPendientesAgrupados(idCategoria);
 
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors)
         {
