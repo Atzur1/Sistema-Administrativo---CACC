@@ -25,6 +25,12 @@ userInitials: string = '';
 // Off-canvas sidebar state, only meaningful under the 768px breakpoint
 sidebarOpen: boolean = false;
 
+// Modo compacto de escritorio (icon-only): decisión de cada admin sobre su
+// propia pantalla, así que se guarda en localStorage — no es estado del
+// servidor ni algo que otro usuario deba compartir.
+private static readonly SIDEBAR_COLLAPSED_KEY = 'cacc_sidebar_collapsed';
+sidebarCollapsed: boolean = false;
+
 // Maps each route segment to its display name
 private pageTitles: Record<string, string> = {
     'resumen-general':        'Resumen General',
@@ -44,6 +50,8 @@ constructor(
 ) {}
 
 ngOnInit() {
+    this.sidebarCollapsed = localStorage.getItem(AdminPortal.SIDEBAR_COLLAPSED_KEY) === 'true';
+
     // Load user data from session
     const usuario = this.authService.getUsuario();
     if (usuario) {
@@ -98,6 +106,14 @@ toggleSidebar() {
 
 closeSidebar() {
     this.sidebarOpen = false;
+}
+
+// Colapsa el sidebar a solo íconos en escritorio, para aprovechar el ancho
+// de pantalla en tablas y grillas que lo necesitan (Deudas y Morosidad,
+// Reportes, etc.). No tiene efecto en el drawer móvil, que es otro mecanismo.
+toggleCollapse() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    localStorage.setItem(AdminPortal.SIDEBAR_COLLAPSED_KEY, String(this.sidebarCollapsed));
 }
 
 // Go back to the portals selection screen
