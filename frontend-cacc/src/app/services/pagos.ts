@@ -16,9 +16,18 @@ export interface JugadorResumen {
 export interface PendienteJugador {
   idJugador: number;
   nombreCompleto: string;
+  dni: string;
+  idCategoria: number;
   categoria: string;
   montoTotal: number;
   cantidadCuotas: number;
+}
+
+export interface CategoriaDeuda {
+  idCategoria: number;
+  categoria: string;
+  montoTotal: number;
+  cantidadJugadores: number;
 }
 
 export interface PagoReciente {
@@ -81,8 +90,18 @@ export class PagosService {
     return this.http.get<JugadorResumen[]>(`${this.apiUrl}/jugadores`);
   }
 
-  getPendientes(): Observable<PendienteJugador[]> {
-    return this.http.get<PendienteJugador[]>(`${this.apiUrl}/pagos/pendientes`);
+  // idCategoria: HU-020, acota el padrón a esa categoría/división del lado del servidor.
+  getPendientes(idCategoria?: number | null): Observable<PendienteJugador[]> {
+    const url = idCategoria != null
+      ? `${this.apiUrl}/pagos/pendientes?idCategoria=${idCategoria}`
+      : `${this.apiUrl}/pagos/pendientes`;
+    return this.http.get<PendienteJugador[]>(url);
+  }
+
+  // mes: si se omite, trae la deuda del año completo en vez de un mes puntual.
+  getDeudaPorCategoria(anio: number, mes?: number | null): Observable<CategoriaDeuda[]> {
+    const params = mes != null ? `anio=${anio}&mes=${mes}` : `anio=${anio}`;
+    return this.http.get<CategoriaDeuda[]>(`${this.apiUrl}/pagos/deuda-por-categoria?${params}`);
   }
 
   // HU-029: with onlyDebtors the API itself returns just the players that owe something

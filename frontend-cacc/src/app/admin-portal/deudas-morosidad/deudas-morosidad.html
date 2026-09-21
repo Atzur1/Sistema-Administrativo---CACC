@@ -35,8 +35,44 @@
     <!-- Debtors ranked by outstanding amount -->
     <article class="panel panel-ranking">
       <header class="panel-head">
-        <h2 class="panel-title">Ranking de morosos</h2>
-        <span class="panel-subtitle">Jugadores ordenados por monto adeudado</span>
+        <div class="panel-head-row">
+          <div>
+            <h2 class="panel-title">Lista de deudores</h2>
+            <span class="panel-subtitle">Buscá y filtrá entre todos los jugadores con cuotas impagas</span>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <div class="search-control">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" placeholder="Buscar por nombre o DNI…"
+                   [(ngModel)]="busqueda" (ngModelChange)="onFiltrosChange()">
+          </div>
+
+          <div class="filter-control">
+            <app-custom-select [options]="categoriaOptions" placeholder="Todas las categorías"
+                                [(ngModel)]="selectedCategoria"
+                                (ngModelChange)="onFiltrosChange()"></app-custom-select>
+          </div>
+
+          <div class="filter-control">
+            <app-custom-select [options]="estadoOptions" placeholder="Todos los estados"
+                                [(ngModel)]="selectedEstado"
+                                (ngModelChange)="onFiltrosChange()"></app-custom-select>
+          </div>
+
+          @if (hayFiltrosActivos) {
+            <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">Limpiar filtros</button>
+          }
+        </div>
+
+        @if (!cargando) {
+          <p class="filter-count">Mostrando {{ debtors.length }} de {{ totalJugadores }} jugadores</p>
+        }
       </header>
 
       @if (cargando) {
@@ -50,6 +86,7 @@
               <tr>
                 <th class="col-rank">#</th>
                 <th>Jugador</th>
+                <th>DNI</th>
                 <th>Categoría</th>
                 <th class="align-right">Cuotas</th>
                 <th class="align-right">Deuda</th>
@@ -65,6 +102,7 @@
                     </span>
                   </td>
                   <td class="cell-player">{{ debtor.player }}</td>
+                  <td class="cell-muted">{{ debtor.dni }}</td>
                   <td class="cell-muted">{{ debtor.category }}</td>
                   <td class="align-right cell-muted">{{ debtor.instalments }}</td>
                   <td class="align-right cell-debt">{{ debtor.debt }}</td>
@@ -113,29 +151,47 @@
         }
       </article>
 
-      <!-- Distribution of debtors by how many instalments they owe -->
-      <article class="panel panel-distribution">
+      <!-- Where the debt is concentrated: which category/division to prioritize -->
+      <article class="panel panel-categorias">
         <header class="panel-head">
-          <h2 class="panel-title">Distribución por cuotas adeudadas</h2>
-          <span class="panel-subtitle">Cantidad de jugadores según cuántas cuotas deben</span>
+          <div class="panel-head-row">
+            <div>
+              <h2 class="panel-title">Deuda por categoría</h2>
+              <span class="panel-subtitle">Dónde enfocar la cobranza · clic para filtrar la lista</span>
+            </div>
+          </div>
+
+          <div class="periodo-toggle">
+            <button type="button" class="periodo-btn" [class.periodo-active]="periodoModo === 'mes'"
+                    (click)="cambiarPeriodo('mes')">{{ nombreMesActual }}</button>
+            <button type="button" class="periodo-btn" [class.periodo-active]="periodoModo === 'anio'"
+                    (click)="cambiarPeriodo('anio')">Todo {{ anioActual }}</button>
+          </div>
         </header>
 
-        <div class="distribution-list">
-          @for (bar of distribution; track bar.label; let i = $index) {
-            <div class="distribution-row">
-              <span class="distribution-label">{{ bar.label }}</span>
-
-              <div class="distribution-track">
-                <div class="distribution-bar"
-                    [style.width.%]="bar.width"
-                    [style.background]="bar.color"
-                    [style.animation-delay.ms]="i * 100">
-                  <span class="distribution-count">{{ bar.players }}</span>
+        @if (categoriaCargando) {
+          <p class="empty-state">Cargando…</p>
+        } @else if (categoriaBreakdown.length === 0) {
+          <p class="empty-state">Sin deuda registrada en este período.</p>
+        } @else {
+          <div class="categoria-list">
+            @for (fila of categoriaBreakdown; track fila.categoria; let i = $index) {
+              <button type="button" class="categoria-row"
+                      [class.categoria-row-active]="selectedCategoria === fila.categoria"
+                      [style.animation-delay.ms]="i * 70"
+                      (click)="filtrarPorCategoria(fila.categoria)">
+                <div class="categoria-row-top">
+                  <span class="categoria-name">{{ fila.categoria }}</span>
+                  <span class="categoria-total">{{ fila.total }}</span>
                 </div>
-              </div>
-            </div>
-          }
-        </div>
+                <div class="categoria-track">
+                  <div class="categoria-bar" [style.width.%]="fila.width" [style.animation-delay.ms]="i * 70 + 100"></div>
+                </div>
+                <span class="categoria-count">{{ fila.jugadores }} {{ fila.jugadores === 1 ? 'jugador' : 'jugadores' }}</span>
+              </button>
+            }
+          </div>
+        }
       </article>
 
     </div>

@@ -177,8 +177,10 @@
     color: var(--color-danger);
 }
 
-.panel-distribution {
+.panel-categorias {
     animation-delay: 240ms;
+    /* Ocupa el espacio libre que antes quedaba vacío en la columna lateral. */
+    flex: 1;
 }
 
 .panel-head {
@@ -186,6 +188,103 @@
     flex-direction: column;
     gap: 2px;
     margin-bottom: 14px;
+}
+
+/* Título a la izquierda, contador de resultados a la derecha */
+.panel-head-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* Buscador + filtros: en una lista que puede tener cientos de jugadores, esta
+   fila no es un extra, es lo que hace usable la tabla. */
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.search-control {
+    position: relative;
+    width: 220px;
+    flex-shrink: 0;
+}
+
+.search-icon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 15px;
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+.search-control input {
+    width: 100%;
+    height: 44px;
+    padding: 0 12px 0 34px;
+    box-sizing: border-box;
+    background: var(--action-field-bg);
+    border: 1px solid var(--action-border);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.search-control input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.8;
+}
+
+.search-control input:hover {
+    border-color: var(--color-brand);
+}
+
+.search-control input:focus {
+    background: var(--action-bg);
+    border-color: var(--action-accent);
+    box-shadow: var(--action-focus-ring);
+}
+
+.filter-control {
+    width: 170px;
+    flex-shrink: 0;
+}
+
+.filter-count {
+    margin: 10px 2px 0;
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.clear-filter-btn {
+    padding: 0 12px;
+    height: 44px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.clear-filter-btn:hover {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
 }
 
 .panel-title {
@@ -260,7 +359,9 @@
     border-bottom: none;
 }
 
-.align-right {
+/* Mayor especificidad que ".debtors-table th" (que fija text-align: left),
+   para que el encabezado quede alineado con sus datos y no a la izquierda. */
+.debtors-table .align-right {
     text-align: right;
 }
 
@@ -389,67 +490,111 @@
     flex-shrink: 0;
 }
 
-/* ===== DEBT AGE DISTRIBUTION ===== */
-.distribution-list {
+/* ===== DEUDA POR CATEGORÍA ===== */
+/* Toggle "Septiembre" / "Todo 2026" */
+.periodo-toggle {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.periodo-btn {
+    padding: 6px 12px;
+    background: var(--color-bg-page);
+    border: 1px solid transparent;
+    border-radius: 20px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.periodo-btn:hover {
+    color: var(--color-text);
+}
+
+.periodo-active {
+    background: var(--color-brand-tint);
+    border-color: var(--color-brand);
+    color: var(--color-brand-deep);
+}
+.categoria-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    flex: 1;
-    justify-content: center;
+    gap: 8px;
 }
 
-.distribution-row {
+.categoria-row {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+    padding: 8px 10px;
+    margin: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    animation: fadeSlideUp 0.4s ease both;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.categoria-row:hover {
+    background: var(--color-bg-hover);
+    transform: translateY(-1px);
+}
+
+.categoria-row-active {
+    background: var(--color-brand-tint);
+    border-color: var(--color-brand);
+}
+
+.categoria-row-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
     gap: 10px;
 }
 
-.distribution-label {
-    width: 66px;
-    font-size: 11px;
-    color: var(--color-text-muted);
+.categoria-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.categoria-total {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-danger);
+    white-space: nowrap;
     flex-shrink: 0;
 }
 
-.distribution-track {
-    flex: 1;
-    min-width: 0;
+.categoria-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 4px;
+    background: var(--color-bg-page);
+    overflow: hidden;
 }
 
-.distribution-bar {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    height: 18px;
-    padding-right: 8px;
-    border-radius: 5px;
-    box-sizing: border-box;
-    /* Keeps the count clipped while the bar is still growing */
-    overflow: hidden;
+.categoria-bar {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--color-brand), var(--color-brand-deep));
     animation: growWidth 0.6s ease backwards;
 }
 
-/* Un único destello que recorre la barra justo al terminar de crecer
-   (arranca cuando growWidth ya llegó al ancho final). */
-.distribution-bar::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -75%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-    animation: shimmerSweep 0.7s ease-out backwards;
-    animation-delay: 0.55s;
-    pointer-events: none;
-}
-
-.distribution-count {
-    position: relative;
-    color: var(--color-bg-card);
-    font-size: 11px;
-    font-weight: 700;
+.categoria-count {
+    font-size: 10.5px;
+    color: var(--color-text-muted);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -490,9 +635,15 @@
         row-gap: 10px;
     }
 
-    /* Label over bar, so the bar keeps a usable width */
-    .distribution-row {
-        flex-wrap: wrap;
-        row-gap: 4px;
+    /* Buscador y filtros apilados a ancho completo en vez de achicarse */
+    .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-control,
+    .filter-control,
+    .clear-filter-btn {
+        width: 100%;
     }
 }

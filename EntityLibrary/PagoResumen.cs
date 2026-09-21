@@ -5,12 +5,25 @@ namespace EntityLibrary
     {
         public int IdJugador { get; set; }
         public string NombreCompleto { get; set; } = string.Empty;
+        // Para que la búsqueda por documento y la columna DNI de la tabla no necesiten
+        // un endpoint aparte (mismo criterio que IdCategoria más abajo).
+        public string Dni { get; set; } = string.Empty;
         // HU-020: se expone el id (no solo el nombre) para poder armar el combo de categorías
         // del lado del cliente a partir de esta misma lista, sin necesitar un endpoint aparte.
         public int IdCategoria { get; set; }
         public string Categoria { get; set; } = string.Empty;
         public decimal MontoTotal { get; set; }
         public int CantidadCuotas { get; set; }
+    }
+
+    // Fila del panel "Deuda por categoría": deuda agrupada por categoría/división para un
+    // período dado (un mes puntual, o el año completo si no se pidió un mes).
+    public class CategoriaDeuda
+    {
+        public int IdCategoria { get; set; }
+        public string Categoria { get; set; } = string.Empty;
+        public decimal MontoTotal { get; set; }
+        public int CantidadJugadores { get; set; }
     }
 
     // Fila del panel "Últimos pagos": PAGOS.Estado = 1, más recientes primero.

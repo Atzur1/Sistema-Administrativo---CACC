@@ -284,7 +284,7 @@ namespace DaoLibrary
             // fragmento compartido con otras consultas y queda fuera del alcance de HU-020) para
             // que el barrido de morosos no quede detrás de un bloqueo de escritura.
             string query = $@"
-                SELECT j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, c.nombre_categoria,
+                SELECT j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria,
                        SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
                        COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 THEN 1 END) AS cantidad_cuotas
                 FROM PAGOS pg WITH (NOLOCK)
@@ -294,7 +294,7 @@ namespace DaoLibrary
                 JOIN CATEGORIAS c WITH (NOLOCK) ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE pg.estado = 0
                   AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
-                GROUP BY j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, c.nombre_categoria
+                GROUP BY j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria
                 HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
                 ORDER BY monto_total DESC";
 
@@ -311,6 +311,7 @@ namespace DaoLibrary
                 {
                     IdJugador = Convert.ToInt32(reader["PK_id_jugador"]),
                     NombreCompleto = $"{reader["apellido"].ToString()?.Trim()}, {reader["nombre"].ToString()?.Trim()}",
+                    Dni = reader["Dni"].ToString()?.Trim() ?? "",
                     IdCategoria = Convert.ToInt32(reader["FK_id_categoria"]),
                     Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? "",
                     MontoTotal = Convert.ToDecimal(reader["monto_total"]),
@@ -381,6 +382,50 @@ namespace DaoLibrary
             }
 
             return accounts;
+        }
+
+        public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null)
+        {
+            var resultado = new List<CategoriaDeuda>();
+
+            // No hace falta JOIN a PERSONA acá (no se necesita nombre/DNI, solo el total por
+            // categoría), así que la consulta queda liviana aunque el club tenga 700+ jugadores.
+            string query = $@"
+                SELECT j.FK_id_categoria, c.nombre_categoria,
+                       SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
+                       COUNT(DISTINCT CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 THEN j.PK_id_jugador END) AS cantidad_jugadores
+                FROM PAGOS pg WITH (NOLOCK)
+                {DescuentosSql.ApplyDescuentoActivo}
+                JOIN JUGADORES j WITH (NOLOCK) ON pg.FK_id_jugador = j.PK_id_jugador
+                JOIN CATEGORIAS c WITH (NOLOCK) ON j.FK_id_categoria = c.PK_id_categoria
+                WHERE pg.estado = 0
+                  AND pg.fecha_vencimiento IS NOT NULL
+                  AND YEAR(pg.fecha_vencimiento) = @anio
+                  AND (@mes IS NULL OR MONTH(pg.fecha_vencimiento) = @mes)
+                GROUP BY j.FK_id_categoria, c.nombre_categoria
+                HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
+                ORDER BY monto_total DESC";
+
+            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
+            conexion.Open();
+
+            using SqlCommand comando = new SqlCommand(query, conexion);
+            comando.Parameters.AddWithValue("@anio", anio);
+            comando.Parameters.AddWithValue("@mes", (object?)mes ?? DBNull.Value);
+
+            using SqlDataReader reader = comando.ExecuteReader();
+            while (reader.Read())
+            {
+                resultado.Add(new CategoriaDeuda
+                {
+                    IdCategoria = Convert.ToInt32(reader["FK_id_categoria"]),
+                    Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? "",
+                    MontoTotal = Convert.ToDecimal(reader["monto_total"]),
+                    CantidadJugadores = Convert.ToInt32(reader["cantidad_jugadores"])
+                });
+            }
+
+            return resultado;
         }
 
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top)

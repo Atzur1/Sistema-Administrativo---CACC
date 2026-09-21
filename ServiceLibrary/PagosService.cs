@@ -158,6 +158,8 @@ namespace ServiceLibrary
             return _pagosDao.GetPlayerAccounts(onlyDebtors);
         }
 
+        public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null) => _pagosDao.ObtenerDeudaPorCategoria(anio, mes);
+
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => _pagosDao.ObtenerUltimosPagos(top <= 0 ? 10 : top);
 
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => _pagosDao.ObtenerDeudaDetalle(idJugador);

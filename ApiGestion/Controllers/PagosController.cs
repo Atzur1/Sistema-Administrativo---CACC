@@ -58,6 +58,14 @@ namespace ApiGestion.Controllers
             }
         }
 
+        // GET api/pagos/deuda-por-categoria?anio=2026&mes=9 -> deuda de septiembre 2026 por categoría
+        // GET api/pagos/deuda-por-categoria?anio=2026 -> deuda de TODO el año 2026 por categoría (mes omitido)
+        [HttpGet("deuda-por-categoria")]
+        public IActionResult ObtenerDeudaPorCategoria([FromQuery] int? anio = null, [FromQuery] int? mes = null)
+        {
+            return Ok(_pagosService.ObtenerDeudaPorCategoria(anio ?? DateTime.Now.Year, mes));
+        }
+
         // GET api/pagos/recientes?top=10 -> panel "Últimos pagos"
         [HttpGet("recientes")]
         public IActionResult ObtenerUltimosPagos([FromQuery] int top = 10)
