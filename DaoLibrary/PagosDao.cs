@@ -310,6 +310,68 @@ namespace DaoLibrary
             return resultado;
         }
 
+        // HU-029: one row per player with what he or she owes. The debt is grouped in a single
+        // pass over PAGOS (no query per player) using the same formula as the "Deuda Global
+        // Total" indicator, so the amounts here add up to that figure and the debtors listed are
+        // exactly the "jugadores morosos" it counts. The pending-installments index
+        // (IX_PAGOS_Estado_Pendientes) covers the read.
+        //
+        // Without onlyDebtors every player comes back, owing 0 when up to date. With it the WHERE
+        // keeps only those whose balance is above zero, so a player whose benefit leaves every
+        // installment at $0 is not a debtor.
+        public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors)
+        {
+            var accounts = new List<PlayerAccount>();
+
+            string filter = onlyDebtors ? "WHERE d.monto_adeudado > 0" : "";
+            string order = onlyDebtors
+                ? "ORDER BY d.monto_adeudado DESC, p.apellido, p.nombre"
+                : "ORDER BY p.apellido, p.nombre";
+
+            string query = $@"
+                SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria,
+                       ISNULL(d.monto_adeudado, 0) AS monto_adeudado,
+                       ISNULL(d.cantidad_cuotas, 0) AS cantidad_cuotas
+                FROM JUGADORES j
+                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
+                LEFT JOIN (
+                    SELECT t.FK_id_jugador,
+                           SUM(t.saldo) AS monto_adeudado,
+                           COUNT(CASE WHEN t.saldo > 0 THEN 1 END) AS cantidad_cuotas
+                    FROM (
+                        SELECT pg.FK_id_jugador, ({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS saldo
+                        FROM PAGOS pg
+                        {DescuentosSql.ApplyDescuentoActivo}
+                        WHERE pg.estado = 0
+                    ) t
+                    GROUP BY t.FK_id_jugador
+                ) d ON d.FK_id_jugador = j.PK_id_jugador
+                {filter}
+                {order}";
+
+            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
+            conexion.Open();
+
+            using SqlCommand comando = new SqlCommand(query, conexion);
+            using SqlDataReader reader = comando.ExecuteReader();
+            while (reader.Read())
+            {
+                accounts.Add(new PlayerAccount
+                {
+                    PlayerId = Convert.ToInt32(reader["PK_id_jugador"]),
+                    FirstName = reader["nombre"].ToString()?.Trim() ?? "",
+                    LastName = reader["apellido"].ToString()?.Trim() ?? "",
+                    Dni = reader["Dni"].ToString()?.Trim() ?? "",
+                    Category = reader["nombre_categoria"].ToString()?.Trim() ?? "",
+                    AmountOwed = Convert.ToDecimal(reader["monto_adeudado"]),
+                    PendingInstallments = Convert.ToInt32(reader["cantidad_cuotas"])
+                });
+            }
+
+            return accounts;
+        }
+
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top)
         {
             var resultado = new List<PagoReciente>();

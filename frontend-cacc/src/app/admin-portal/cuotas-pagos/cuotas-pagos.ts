@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -13,6 +13,7 @@ import {
 import { ArancelesService } from '../../services/aranceles';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { PlayerRoster } from './player-roster/player-roster';
 
 const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -55,11 +56,15 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-cuotas-pagos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CustomSelect],
+  imports: [CommonModule, ReactiveFormsModule, CustomSelect, PlayerRoster],
   templateUrl: './cuotas-pagos.html',
   styleUrl: './cuotas-pagos.css',
 })
 export class CuotasPagos implements OnInit, OnDestroy {
+
+  // HU-029: padrón con el filtro "Alumnos Deudores". Se recarga después de cada pago para que
+  // nunca muestre una deuda que ya se cobró.
+  @ViewChild(PlayerRoster) private roster?: PlayerRoster;
 
   headerMetrics: HeaderMetric[] = [
     { value: '—', label: `Recaudado ${new Date().getFullYear()}` },
@@ -344,6 +349,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
         this.showSuggestions = false;
         this.showConfirmation(`Pago de ${jugador.nombreCompleto} registrado correctamente.`);
         this.cargarListas();
+        this.roster?.reload();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
