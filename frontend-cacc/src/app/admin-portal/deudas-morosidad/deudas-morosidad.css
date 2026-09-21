@@ -199,6 +199,100 @@
     flex-wrap: wrap;
 }
 
+/* ---- HU-021: exportar reporte ---- */
+.export-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 14px;
+    background: linear-gradient(135deg, var(--color-brand), var(--color-brand-deep));
+    border: none;
+    border-radius: 9px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.export-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 127, 62, 0.4);
+}
+
+.export-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.export-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.export-chevron {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    margin-left: -2px;
+}
+
+.export-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 30;
+    margin: 0;
+    padding: 6px;
+    width: 200px;
+    list-style: none;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16), 0 4px 10px rgba(15, 23, 42, 0.06);
+    animation: fadeIn 0.12s ease both;
+}
+
+.export-menu button {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.export-menu button:hover {
+    background: var(--color-brand-tint);
+}
+
+.export-menu-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.export-menu-hint {
+    font-size: 10.5px;
+    color: var(--color-text-muted);
+}
+
 /* Buscador + filtros: en una lista que puede tener cientos de jugadores, esta
    fila no es un extra, es lo que hace usable la tabla. */
 .filter-row {

@@ -1,26 +1,3 @@
-﻿/* ===== ANIMATIONS ===== */
-/* fadeSlideUp y fadeIn viven ahora en styles.css (global) */
-
-/* Chart bars grow from the baseline up */
-@keyframes columnGrow {
-    from {
-        transform: scaleY(0);
-    }
-    to {
-        transform: scaleY(1);
-    }
-}
-
-/* Horizontal bars grow from the left edge */
-@keyframes barGrow {
-    from {
-        transform: scaleX(0);
-    }
-    to {
-        transform: scaleX(1);
-    }
-}
-
 /* ===== LAYOUT ===== */
 .dashboard {
     display: flex;
@@ -31,12 +8,10 @@
     background: var(--color-bg-page);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: var(--color-text);
-    /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
 }
 
 /* ===== HEADER ===== */
-/* Sits directly on the page background, with no card of its own */
 .page-header {
     display: flex;
     align-items: center;
@@ -79,418 +54,231 @@
     color: var(--color-text-muted);
 }
 
-.header-metrics {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    flex-shrink: 0;
-}
-
-.header-metric {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 0 18px;
-}
-
-/* Separator between metrics */
-.header-metric + .header-metric {
-    border-left: 1px solid var(--color-border);
-}
-
-.header-metric-value {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.1;
-}
-
-.header-metric-label {
-    font-size: 9.5px;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    white-space: nowrap;
-}
-
 .header-divider {
     height: 1px;
     margin: 18px 0;
     background: var(--color-border);
 }
 
-/* ===== PANELS ===== */
-.panel {
+/* ===== CARDS ===== */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.report-card {
     display: flex;
     flex-direction: column;
+    gap: 10px;
     padding: 20px;
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
-    border-radius: 12px;
+    border-radius: 14px;
     box-shadow: var(--glass-shadow);
-    min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Stagger the panels as they come in */
-.panel-revenue {
-    margin-bottom: 16px;
-    animation-delay: 60ms;
+.report-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
 
-.panel-unpaid {
-    animation-delay: 140ms;
-}
-
-.panel-trend {
-    animation-delay: 220ms;
-}
-
-.panel-head {
+.report-card-head {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 14px;
-}
-
-.panel-title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.panel-subtitle {
-    font-size: 11px;
-    color: var(--color-text-muted);
-}
-
-/* ===== MONTHLY REVENUE CHART ===== */
-/* The label bands are declared once here and consumed by both the labels and
-   the average layer, so the line can never drift out of the bar band */
-.chart {
-    --amount-height: 13px;
-    --month-height: 15px;
-    --label-gap: 5px;
-
-    position: relative;
-    display: flex;
-    align-items: stretch;
-    gap: 8px;
-    /* Tall enough that the chart panel carries real visual weight on the page */
-    height: 190px;
-    /* Breathing room under the panel subtitle */
-    margin-top: 14px;
-}
-
-/* Inset to the bar band: the label rows above and below are excluded, so a
-   percentage inside this layer is a real percentage of the bars themselves */
-.chart-average-layer {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(var(--amount-height) + var(--label-gap));
-    bottom: calc(var(--month-height) + var(--label-gap));
-    pointer-events: none;
-}
-
-.chart-average {
-    position: absolute;
-    left: 0;
-    right: 0;
-    border-top: 2px dashed var(--color-info);
-    animation: fadeIn 0.5s ease 0.5s both;
-}
-
-.chart-column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--label-gap);
-    flex: 1;
-    min-width: 0;
-}
-
-/* Fixed label heights keep the average layer aligned with the bar band */
-.chart-amount {
-    height: var(--amount-height);
-    line-height: var(--amount-height);
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--color-text-muted);
-}
-
-.chart-month {
-    height: var(--month-height);
-    line-height: var(--month-height);
-    font-size: 11px;
-    color: var(--color-text-muted);
-}
-
-.chart-amount.is-empty,
-.chart-month.is-empty {
-    color: #c4c7c4;
-}
-
-/* The track holds the bar, anchors it to the bottom and draws the baseline */
-.chart-track {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    width: 100%;
-    flex: 1;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.chart-bar {
-    width: 100%;
-    max-width: 44px;
-    border-radius: 6px 6px 0 0;
-    transform-origin: bottom center;
-    animation: columnGrow 0.5s ease both;
-    transition: filter 0.2s ease;
-}
-
-.chart-column:hover .chart-bar {
-    filter: brightness(0.94);
-}
-
-/* Bar tones, in order of precedence */
-/* January is called out as a loss, matching the red used for debt elsewhere
-   in this dashboard, so it reads as a warning at a glance */
-.bar-loss {
-    background: var(--color-danger);
-}
-
-.bar-normal {
-    background: #8dd49d;
-}
-
-.bar-best {
-    background: var(--color-brand);
-}
-
-/* The month in progress gets its own colour instead of borrowing the best-
-   month green, so it never reads as a top performer it hasn't earned yet */
-.bar-current {
-    background: var(--color-info);
-}
-
-/* The weakest month of the season overrides the current-month highlight */
-.bar-low {
-    background: #eba83a;
-}
-
-/* Months of the season still to be collected */
-.bar-empty {
-    background: var(--color-bg-page);
-}
-
-/* ===== BOTTOM GRID ===== */
-.bottom-grid {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 16px;
-    /* Claims the leftover vertical space so the dashboard hugs the viewport,
-       but align-items: start keeps each panel at its own content height
-       instead of stretching the shorter one into a hollow card */
-    flex: 1;
-    min-height: 0;
-    align-items: start;
-}
-
-/* ===== UNPAID FEES ===== */
-.unpaid-total {
-    display: flex;
-    align-items: baseline;
-    gap: 9px;
-    margin-bottom: 16px;
-}
-
-.unpaid-total-value {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1;
-    color: var(--color-danger);
-}
-
-.unpaid-total-label {
-    font-size: 12px;
-    color: var(--color-text-muted);
-}
-
-.unpaid-list {
-    display: flex;
-    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 12px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
 }
 
-.unpaid-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.unpaid-label {
-    width: 34px;
-    font-size: 11px;
-    color: var(--color-text-muted);
-    flex-shrink: 0;
-}
-
-.unpaid-track {
-    flex: 1;
-    min-width: 0;
-    height: 18px;
-    border-radius: 5px;
-    background: var(--color-bg-hover);
-}
-
-.unpaid-bar {
-    display: block;
-    height: 100%;
-    border-radius: 5px;
-    background: var(--color-danger);
-    transform-origin: left center;
-    animation: barGrow 0.6s ease backwards;
-}
-
-.unpaid-count {
-    width: 24px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--color-danger);
-    text-align: right;
-    flex-shrink: 0;
-}
-
-/* ===== TREND CARDS ===== */
-.trend-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.trend-card {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: 11px;
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.trend-card:hover {
-    background: var(--color-bg-hover);
-    border-color: #d7dcd7;
-}
-
-.trend-icon {
+.report-card-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
     flex-shrink: 0;
 }
 
-.trend-icon svg {
-    width: 18px;
-    height: 18px;
+.report-card-icon svg {
+    width: 22px;
+    height: 22px;
 }
 
-.icon-average {
-    background: var(--color-info-bg);
-    color: var(--color-info);
-}
-
-.icon-best {
-    background: var(--color-brand-tint);
-    color: var(--color-brand);
-}
-
-.icon-low {
-    background: var(--color-warning-bg);
-    color: #eba83a;
-}
-
-.trend-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.trend-value {
-    font-size: 14px;
+.report-card-title {
+    margin: 0;
+    font-size: 15px;
     font-weight: 700;
 }
 
-.trend-label {
-    font-size: 11px;
+.report-card-description {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+}
+
+/* ---- Mini-resumen: lo que llena el espacio vacío de la caja con datos reales ---- */
+.report-card-stats {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.report-card-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    background: var(--color-bg-page);
+    border-radius: 10px;
+}
+
+.report-card-stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.15;
+}
+
+.report-card-stats.is-loading .report-card-stat-value {
+    color: var(--color-text-muted);
+}
+
+.report-card-stat-label {
+    font-size: 10px;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted);
+}
+
+/* ---- Botón "Exportar" con menú PDF/CSV (mismo patrón que Deudas y Morosidad) ---- */
+.export-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.export-csv-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 34px;
+    padding: 0 12px;
+    background: #ffffff;
+    border: 1px solid var(--color-brand);
+    border-radius: 8px;
+    color: var(--color-brand-deep);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.export-csv-btn:hover:not(:disabled) {
+    background: var(--color-brand);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.28);
+}
+
+.export-csv-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.excel-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    color: #1e7d3c;
+}
+
+.export-chevron {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+    margin-left: -1px;
+}
+
+.export-csv-btn:hover:not(:disabled) .excel-icon {
+    color: #ffffff;
+}
+
+.export-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 30;
+    margin: 0;
+    padding: 6px;
+    width: 190px;
+    list-style: none;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16), 0 4px 10px rgba(15, 23, 42, 0.06);
+    animation: fadeIn 0.12s ease both;
+}
+
+.export-menu button {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.export-menu button:hover {
+    background: var(--color-brand-tint);
+}
+
+.export-menu-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.export-menu-hint {
+    font-size: 10.5px;
     color: var(--color-text-muted);
 }
 
 /* ===== RESPONSIVE ===== */
-
-/* Tablet: the two bottom panels stack */
-@media (max-width: 1100px) {
-    .bottom-grid {
+@media (max-width: 900px) {
+    .cards-grid {
         grid-template-columns: 1fr;
     }
 }
 
-/* Mobile: metrics drop to their own line under the title */
-@media (max-width: 768px) {
-    .page-header {
-        flex-wrap: wrap;
-    }
-
-    .header-metrics {
-        width: 100%;
-        margin-left: 0;
-    }
-
-    .header-metric {
-        padding: 0 18px 0 0;
-    }
-
-    .header-metric + .header-metric {
-        padding-left: 18px;
-    }
-
-    /* Twelve amount labels no longer fit, so only the months stay */
-    .chart-amount {
-        visibility: hidden;
-    }
-}
-
-/* Small mobile: tighter padding and a narrower chart */
 @media (max-width: 520px) {
     .dashboard {
         padding: 14px;
     }
 
-    .header-metrics {
+    .report-card-head {
         flex-wrap: wrap;
-        row-gap: 10px;
     }
 
-    .chart {
-        gap: 4px;
-        height: 160px;
-    }
-
-    .chart-month {
-        font-size: 9px;
+    .export-csv-btn {
+        width: 100%;
+        justify-content: center;
     }
 }

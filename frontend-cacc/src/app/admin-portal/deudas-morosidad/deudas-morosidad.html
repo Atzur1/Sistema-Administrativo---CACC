@@ -40,6 +40,41 @@
             <h2 class="panel-title">Lista de deudores</h2>
             <span class="panel-subtitle">Buscá y filtrá entre todos los jugadores con cuotas impagas</span>
           </div>
+
+          <!-- HU-021: exporta la lista respetando el filtro de categoría activo -->
+          <div class="export-wrap">
+            <button type="button" class="export-btn" (click)="toggleExportMenu()" [disabled]="exportando"
+                    [attr.aria-expanded]="exportMenuOpen">
+              <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              {{ exportando ? 'Generando…' : 'Exportar Reporte' }}
+              <svg class="export-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+
+            @if (exportMenuOpen) {
+              <ul class="export-menu">
+                <li>
+                  <button type="button" (click)="exportarDeudores('pdf')">
+                    <span class="export-menu-label">PDF</span>
+                    <span class="export-menu-hint">Planilla imprimible</span>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" (click)="exportarDeudores('csv')">
+                    <span class="export-menu-label">CSV</span>
+                    <span class="export-menu-hint">Se abre en Excel</span>
+                  </button>
+                </li>
+              </ul>
+            }
+          </div>
         </div>
 
         <div class="filter-row">

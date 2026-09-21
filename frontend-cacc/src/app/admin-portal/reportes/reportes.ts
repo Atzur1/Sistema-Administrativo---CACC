@@ -1,33 +1,36 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, HostListener, NgZone, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpResponse } from '@angular/common/http';
+import { forkJoin, Observable } from 'rxjs';
+import { ReportesService } from '../../services/reportes';
+import { PagosService } from '../../services/pagos';
+import { DiscountService } from '../../services/discounts';
+import { ArancelesService } from '../../services/aranceles';
+import { NotificationService } from '../../shared/notifications/notification.service';
+import { triggerBlobDownload } from '../../shared/download-file';
+import { formatCompactCurrency } from '../../shared/format-currency';
 
-// Drives the bar color in the monthly revenue chart
-type BarTone = 'empty' | 'loss' | 'low' | 'best' | 'current' | 'normal';
+type ReportCardId = 'deudas' | 'cuotas' | 'becados' | 'aranceles';
+type ExportFormat = 'pdf' | 'csv';
 
-// One column of the monthly revenue chart
-interface MonthlyRevenue {
-    month: string;
-    // Months of the season that have not been collected yet carry no amount
-    amount: number | null;
-    label: string;
-    heightPercent: number;
-    tone: BarTone;
-}
-
-// One horizontal bar in the unpaid fees panel
-interface UnpaidMonth {
-    month: string;
-    count: number;
-    widthPercent: number;
-}
-
-// One card in the average and trend panel
-interface TrendCard {
-    icon: 'average' | 'best' | 'low';
+interface CardStat {
     value: string;
     label: string;
 }
 
+interface ReportCard {
+    id: ReportCardId;
+    title: string;
+    description: string;
+    icon: ReportCardId;
+    stats: CardStat[];
+}
+
+// Pantalla "Reportes": una caja por cada pantalla de Gestión que maneja datos,
+// con su propio resumen (para que no sea una caja vacía) y su exportación a
+// PDF o CSV — reemplaza los gráficos con datos hardcodeados que tenía antes
+// (recaudación mensual, cuotas impagas, etc.), que nunca estuvieron
+// conectados a datos reales.
 @Component({
     selector: 'app-reportes',
     standalone: true,
@@ -35,150 +38,145 @@ interface TrendCard {
     templateUrl: './reportes.html',
     styleUrl: './reportes.css',
 })
-export class Reportes {
+export class Reportes implements OnInit {
+    // Signal (no un array plano + ChangeDetectorRef): esta app usa FetchBackend
+    // por default y sus respuestas no siempre disparan la detección de cambios
+    // basada en zone.js (mismo problema ya resuelto en otras pantallas de acá).
+    // Los signals notifican a Angular directo, sin depender de la zona.
+    cards = signal<ReportCard[]>([
+        {
+            id: 'deudas',
+            title: 'Deudas y Morosidad',
+            description: 'Jugadores con cuotas pendientes: nombre, DNI, categoría, meses adeudados y monto.',
+            icon: 'deudas',
+            stats: [],
+        },
+        {
+            id: 'cuotas',
+            title: 'Cuotas y Pagos',
+            description: 'Historial de pagos recibidos: jugador, método de pago, monto y fecha.',
+            icon: 'cuotas',
+            stats: [],
+        },
+        {
+            id: 'becados',
+            title: 'Becados y Descuentos',
+            description: 'Todos los beneficios asignados, vigentes y no vigentes, con su período y valor.',
+            icon: 'becados',
+            stats: [],
+        },
+        {
+            id: 'aranceles',
+            title: 'Actualización de Aranceles',
+            description: 'Historial de aranceles por género: vigentes, programados y anteriores.',
+            icon: 'aranceles',
+            stats: [],
+        },
+    ]);
 
-    // Header
-    headerMetrics = [
-        { value: '$4.2M', label: 'Recaudado 2026' },
-        { value: '65', label: 'Cuotas impagas' },
-    ];
+    // Solo puede haber una exportación en curso a la vez: alcanza con saber
+    // CUÁL caja la está generando para deshabilitar únicamente su botón.
+    exportandoId = signal<ReportCardId | null>(null);
+    exportMenuOpenId = signal<ReportCardId | null>(null);
 
-    // Season in progress: only the first eight months have been collected
-    private readonly currentMonth = 'Ago';
+    constructor(
+        private reportesService: ReportesService,
+        private pagosService: PagosService,
+        private discountService: DiscountService,
+        private arancelesService: ArancelesService,
+        private notifications: NotificationService,
+        private elementRef: ElementRef<HTMLElement>,
+        private ngZone: NgZone,
+    ) {}
 
-    private readonly rawRevenue: { month: string; amount: number | null }[] = [
-        { month: 'Ene', amount: 380000 },
-        { month: 'Feb', amount: 420000 },
-        { month: 'Mar', amount: 510000 },
-        { month: 'Abr', amount: 490000 },
-        { month: 'May', amount: 530000 },
-        { month: 'Jun', amount: 480000 },
-        { month: 'Jul', amount: 560000 },
-        { month: 'Ago', amount: 389000 },
-        { month: 'Sep', amount: null },
-        { month: 'Oct', amount: null },
-        { month: 'Nov', amount: null },
-        { month: 'Dic', amount: null },
-    ];
+    ngOnInit(): void {
+        forkJoin({
+            resumenPagos: this.pagosService.getResumen(),
+            beneficios: this.discountService.getAllDiscounts(),
+            resumenAranceles: this.arancelesService.getResumen(),
+        }).subscribe({
+            next: ({ resumenPagos, beneficios, resumenAranceles }) => {
+                const vigentes = beneficios.filter((b) => b.isActive).length;
 
-    revenue: MonthlyRevenue[] = [];
-
-    // Where the dashed average line sits, as a percentage of the chart height
-    averageLinePercent = 0;
-
-    // Unpaid fees per period
-    unpaidTotal = 65;
-
-    // Full chronological view of the season so far, so the trend of unpaid
-    // fees building up towards the current month is visible at a glance
-    unpaidMonths: UnpaidMonth[] = [
-        { month: 'Ene', count: 1, widthPercent: 3 },
-        { month: 'Feb', count: 1, widthPercent: 3 },
-        { month: 'Mar', count: 2, widthPercent: 5 },
-        { month: 'Abr', count: 2, widthPercent: 5 },
-        { month: 'May', count: 3, widthPercent: 8 },
-        { month: 'Jun', count: 8, widthPercent: 21 },
-        { month: 'Jul', count: 9, widthPercent: 23 },
-        { month: 'Ago', count: 39, widthPercent: 100 },
-    ];
-
-    // Built from the same figures as the chart, so the panel can never
-    // disagree with the bars it is summarising
-    trendCards: TrendCard[] = [];
-
-    // Short labels are what the chart axis shows; the cards spell them out
-    private readonly monthNames: Record<string, string> = {
-        Ene: 'Enero', Feb: 'Febrero', Mar: 'Marzo', Abr: 'Abril',
-        May: 'Mayo', Jun: 'Junio', Jul: 'Julio', Ago: 'Agosto',
-        Sep: 'Septiembre', Oct: 'Octubre', Nov: 'Noviembre', Dic: 'Diciembre',
-    };
-
-    constructor() {
-        this.buildChart();
-    }
-
-    // Derives bar heights, tones and the average line from the raw amounts,
-    // so the chart stays correct if a month is added or corrected later
-    private buildChart() {
-        const collected = this.rawRevenue.filter(entry => entry.amount !== null);
-        const amounts = collected.map(entry => entry.amount as number);
-
-        const max = Math.max(...amounts);
-        const min = Math.min(...amounts);
-        const average = amounts.reduce((sum, value) => sum + value, 0) / amounts.length;
-
-        this.revenue = this.rawRevenue.map(entry => {
-            if (entry.amount === null) {
-                // Months still to come keep a stub bar so the axis stays even
-                return {
-                    month: entry.month,
-                    amount: null,
-                    label: '—',
-                    heightPercent: 3,
-                    tone: 'empty' as BarTone,
-                };
-            }
-
-            return {
-                month: entry.month,
-                amount: entry.amount,
-                label: this.toShortAmount(entry.amount),
-                heightPercent: (entry.amount / max) * 100,
-                tone: this.resolveTone(entry.month, entry.amount, min, max),
-            };
+                this.setStats('deudas', [
+                    { value: formatCompactCurrency(resumenPagos.deudaGlobalTotal), label: 'Deuda total' },
+                    { value: String(resumenPagos.jugadoresMorosos), label: 'Deudores' },
+                ]);
+                this.setStats('cuotas', [
+                    { value: formatCompactCurrency(resumenPagos.recaudadoAnioActual), label: `Recaudado ${new Date().getFullYear()}` },
+                    { value: String(resumenPagos.pagosDelMes), label: 'Pagos del mes' },
+                ]);
+                this.setStats('becados', [
+                    { value: String(vigentes), label: 'Vigentes' },
+                    { value: String(beneficios.length - vigentes), label: 'No vigentes' },
+                ]);
+                this.setStats('aranceles', [
+                    { value: resumenAranceles.arancelMasculinoVigente != null ? formatCompactCurrency(resumenAranceles.arancelMasculinoVigente) : '—', label: 'Arancel masc.' },
+                    { value: resumenAranceles.arancelFemeninoVigente != null ? formatCompactCurrency(resumenAranceles.arancelFemeninoVigente) : '—', label: 'Arancel fem.' },
+                ]);
+            },
+            error: () => {},
         });
-
-        this.averageLinePercent = (average / max) * 100;
-
-        const bestMonth = collected.find(entry => entry.amount === max)!;
-        const lowestMonth = collected.find(entry => entry.amount === min)!;
-
-        this.trendCards = [
-            {
-                icon: 'average',
-                value: this.toAmount(Math.round(average)),
-                label: `Promedio mensual (${collected.length} meses)`,
-            },
-            {
-                icon: 'best',
-                value: `${this.monthNames[bestMonth.month]} — ${this.toAmount(max)}`,
-                label: 'Mejor mes del año',
-            },
-            {
-                icon: 'low',
-                value: `${this.monthNames[lowestMonth.month]} — ${this.toAmount(min)}`,
-                label: 'Mes más bajo del año',
-            },
-        ];
     }
 
-    // 469875 -> "$469.875"
-    private toAmount(amount: number): string {
-        return `$${amount.toLocaleString('es-AR')}`;
+    private setStats(id: ReportCardId, stats: CardStat[]): void {
+        this.cards.update((cards) => cards.map((card) => (card.id === id ? { ...card, stats } : card)));
     }
 
-    // Precedence: January is flagged as a loss on sight regardless of where it
-    // ranks, then the single weakest month, then the single best one, then
-    // the current month gets its own colour — so a month in progress never
-    // reads as a top performer just because it shares the "best" green
-    private resolveTone(month: string, amount: number, min: number, max: number): BarTone {
-        if (month === 'Ene') {
-            return 'loss';
-        }
-        if (amount === min) {
-            return 'low';
-        }
-        if (amount === max) {
-            return 'best';
-        }
-        if (month === this.currentMonth) {
-            return 'current';
-        }
-        return 'normal';
+    toggleExportMenu(card: ReportCard): void {
+        this.ngZone.run(() => {
+            this.exportMenuOpenId.set(this.exportMenuOpenId() === card.id ? null : card.id);
+        });
     }
 
-    // 380000 -> "$380k"
-    private toShortAmount(amount: number): string {
-        return `$${Math.round(amount / 1000)}k`;
+    exportar(card: ReportCard, formato: ExportFormat): void {
+        if (this.exportandoId() !== null) return;
+
+        this.exportMenuOpenId.set(null);
+        this.exportandoId.set(card.id);
+
+        this.requestFor(card.id, formato).subscribe({
+            next: (response) => {
+                this.exportandoId.set(null);
+                triggerBlobDownload(response, `reporte-${card.id}.${formato}`);
+                this.notifications.notify(`Reporte de ${card.title} exportado correctamente.`, 'success');
+            },
+            error: () => {
+                this.exportandoId.set(null);
+                this.notifications.notify(`No se pudo exportar el reporte de ${card.title}. Intentá de nuevo.`, 'error');
+            },
+        });
+    }
+
+    // Cierra cualquier menú abierto si el click fue afuera de todas las cajas.
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent): void {
+        if (this.exportMenuOpenId() === null) return;
+
+        const target = event.target as Node;
+        const insideAnyMenu = Array.from(this.elementRef.nativeElement.querySelectorAll('.export-wrap'))
+            .some((wrap) => wrap.contains(target));
+
+        if (!insideAnyMenu) {
+            this.ngZone.run(() => this.exportMenuOpenId.set(null));
+        }
+    }
+
+    private requestFor(id: ReportCardId, formato: ExportFormat): Observable<HttpResponse<Blob>> {
+        if (formato === 'pdf') {
+            switch (id) {
+                case 'deudas': return this.reportesService.exportarDeudoresPdf();
+                case 'cuotas': return this.reportesService.exportarPagosRecientesPdf();
+                case 'becados': return this.reportesService.exportarBecadosPdf();
+                case 'aranceles': return this.reportesService.exportarArancelesPdf();
+            }
+        }
+
+        switch (id) {
+            case 'deudas': return this.reportesService.exportarDeudoresCsv();
+            case 'cuotas': return this.reportesService.exportarPagosRecientesCsv();
+            case 'becados': return this.reportesService.exportarBecadosCsv();
+            case 'aranceles': return this.reportesService.exportarArancelesCsv();
+        }
     }
 }
