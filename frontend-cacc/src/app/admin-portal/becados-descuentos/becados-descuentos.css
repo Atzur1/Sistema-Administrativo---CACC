@@ -1,25 +1,5 @@
-/* ===== ANIMATIONS ===== */
-/* Blocks fade in while sliding up on load */
-@keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* The confirmation message fades in on its own, without moving the layout */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
+﻿/* ===== ANIMATIONS ===== */
+/* fadeSlideUp y fadeIn viven ahora en styles.css (global) */
 
 /* ===== LAYOUT ===== */
 .dashboard {
@@ -28,9 +8,9 @@
     padding: 20px;
     min-height: 100%;
     box-sizing: border-box;
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #000000;
+    color: var(--color-text);
     /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
 }
@@ -51,8 +31,8 @@
     width: 52px;
     height: 52px;
     border-radius: 14px;
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
     flex-shrink: 0;
 }
 
@@ -76,7 +56,7 @@
 
 .header-subtitle {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .header-metrics {
@@ -96,7 +76,7 @@
 
 /* Separator between metrics */
 .header-metric + .header-metric {
-    border-left: 1px solid #e4e7e4;
+    border-left: 1px solid var(--color-border);
 }
 
 .header-metric-value {
@@ -109,30 +89,33 @@
     font-size: 9.5px;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
 .header-divider {
     height: 1px;
     margin: 14px 0;
-    background: #e4e7e4;
+    background: var(--color-border);
 }
 
 /* ===== ASSIGNMENT FORM ===== */
-/* The action panel of the dashboard, so it carries a heavier green frame */
+/* Panel de acción "deportivo institucional": blanco limpio, acento verde
+   sólido en el borde superior, sombra suave y difusa (ver el comentario
+   largo en cuotas-pagos.css / styles.css). */
 .form-panel {
     /* La animacion de entrada deja un transform aplicado, que crea un stacking
        context propio. Sin esto, las sugerencias del buscador quedan encerradas
        en esta tarjeta y el panel de abajo las tapa. */
     position: relative;
     z-index: 2;
-    padding: 16px;
+    padding: 18px 16px 16px;
     margin-bottom: 14px;
-    background: #ffffff;
-    border: 2px solid #00a651;
-    border-radius: 14px;
-    box-shadow: 0 2px 10px rgba(0, 166, 81, 0.12);
+    background: var(--action-bg);
+    border: 1px solid var(--action-border);
+    border-top: 4px solid var(--action-accent);
+    border-radius: 16px;
+    box-shadow: var(--action-shadow);
     animation: fadeSlideUp 0.4s ease both;
     animation-delay: 60ms;
 }
@@ -144,15 +127,16 @@
     margin-bottom: 14px;
 }
 
+/* Ícono como badge/pill discreto: fondo verde tenue, ícono en verde oscuro */
 .form-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: #00a651;
-    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: var(--action-badge-bg);
+    color: var(--action-badge-fg);
     flex-shrink: 0;
 }
 
@@ -170,13 +154,14 @@
 
 .form-title {
     margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text-dark);
 }
 
 .form-subtitle {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* Five fields: the player lookup takes the extra room */
@@ -219,35 +204,35 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--action-label);
 }
 
 .field-input {
     width: 100%;
     padding: 9px 11px;
     box-sizing: border-box;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--action-bg);
+    border: 1px solid var(--action-border-strong);
     border-radius: 9px;
     font-family: inherit;
     font-size: 12px;
-    color: #000000;
+    color: var(--color-text);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .field-input::placeholder {
-    color: #555a55;
+    color: var(--color-text-muted);
     opacity: 0.7;
 }
 
 .field-input:hover {
-    border-color: #c9d3c9;
+    border-color: var(--color-brand);
 }
 
 .field-input:focus {
-    border-color: #00a651;
-    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
+    border-color: var(--action-accent);
+    box-shadow: var(--action-focus-ring);
 }
 
 /* ===== PLAYER SUGGESTIONS ===== */
@@ -262,10 +247,10 @@
     list-style: none;
     max-height: 180px;
     overflow-y: auto;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--action-bg);
+    border: 1px solid var(--action-border);
     border-radius: 9px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
     animation: fadeIn 0.15s ease both;
 }
 
@@ -286,7 +271,7 @@
 
 .suggestion:hover,
 .suggestion:focus-visible {
-    background: #f9faf9;
+    background: var(--color-brand-tint);
     outline: none;
 }
 
@@ -297,26 +282,34 @@
 
 .suggestion-meta {
     font-size: 10.5px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== SUBMIT ===== */
 .submit-button {
     grid-column: span 5;
     padding: 11px;
-    background: #00a651;
+    background: var(--action-accent);
     border: none;
     border-radius: 9px;
-    color: #ffffff;
+    color: var(--color-bg-card);
     font-family: inherit;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: background 0.2s ease, opacity 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
+    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 .submit-button:hover:not(:disabled) {
-    background: #009148;
+    background: var(--action-accent-hover);
+    box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
+    transform: translateY(-1px);
+}
+
+.submit-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 79, 39, 0.2);
 }
 
 .submit-button:disabled {
@@ -329,11 +322,12 @@
 .form-feedback {
     margin: 12px 0 0;
     padding: 9px 11px;
-    background: #e7f4ea;
+    background: var(--color-brand-tint);
+    border: 1px solid rgba(0, 166, 81, 0.3);
     border-radius: 9px;
     font-size: 12px;
     font-weight: 600;
-    color: #00a651;
+    color: var(--color-brand-deep);
     animation: fadeIn 0.3s ease both;
     transition: opacity 0.3s ease;
 }
@@ -357,8 +351,8 @@
     display: flex;
     flex-direction: column;
     padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     min-width: 0;
@@ -384,7 +378,7 @@
 
 .panel-subtitle {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== BENEFITS TABLE ===== */
@@ -404,19 +398,19 @@
 
 .benefits-table th {
     padding: 0 10px 8px;
-    border-bottom: 1px solid #e4e7e4;
+    border-bottom: 1px solid var(--color-border);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     text-align: left;
     white-space: nowrap;
 }
 
 .benefits-table td {
     padding: 9px 10px;
-    border-bottom: 1px solid #f1f5f1;
+    border-bottom: 1px solid var(--color-bg-page);
     font-size: 12px;
     vertical-align: middle;
 }
@@ -426,7 +420,7 @@
 }
 
 .benefits-table tbody tr:hover {
-    background: #f9faf9;
+    background: var(--color-bg-hover);
 }
 
 .benefits-table tbody tr:last-child td {
@@ -446,7 +440,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    color: #ffffff;
+    color: var(--color-bg-card);
     font-size: 11px;
     font-weight: 700;
     flex-shrink: 0;
@@ -454,11 +448,11 @@
 
 /* Avatar background per benefit type */
 .avatar-scholarship {
-    background: #8b5cf6;
+    background: var(--color-accent);
 }
 
 .avatar-discount {
-    background: #3b82f6;
+    background: var(--color-info);
 }
 
 .player-identity {
@@ -478,7 +472,7 @@
 
 .player-category {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
@@ -488,7 +482,7 @@
 }
 
 .cell-muted {
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
@@ -504,24 +498,24 @@
 }
 
 .type-scholarship {
-    background: #f3eeff;
-    color: #8b5cf6;
+    background: var(--color-accent-bg);
+    color: var(--color-accent);
 }
 
 .type-discount {
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-info-bg);
+    color: var(--color-info);
 }
 
 /* A benefit still inside its range reads as valid, an old one as neutral */
 .status-active {
-    background: #e7f4ea;
-    color: #00a651;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
 }
 
 .status-expired {
-    background: #f1f5f1;
-    color: #555a55;
+    background: var(--color-bg-page);
+    color: var(--color-text-muted);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -584,12 +578,12 @@
    as scholarship or discount, so the real discount type name is shown instead
    of inventing that distinction in the front end. */
 .avatar-benefit {
-    background: #8b5cf6;
+    background: var(--color-accent);
 }
 
 .type-benefit {
-    background: #f3eeff;
-    color: #8b5cf6;
+    background: var(--color-accent-bg);
+    color: var(--color-accent);
 }
 
 /* Empty state, so nobody reads a blank table as a loading failure. */
@@ -604,10 +598,10 @@
 /* ===== ROW ACTION ===== */
 .row-action {
     padding: 5px 12px;
-    background: #ffffff;
-    border: 1px solid #00a651;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-brand);
     border-radius: 7px;
-    color: #00a651;
+    color: var(--color-brand);
     font-family: inherit;
     font-size: 11px;
     font-weight: 600;
@@ -617,8 +611,8 @@
 }
 
 .row-action:hover {
-    background: #00a651;
-    color: #ffffff;
+    background: var(--color-brand);
+    color: var(--color-bg-card);
 }
 
 /* ===== BENEFIT POPUP (HU-011) =====
@@ -637,6 +631,8 @@
     animation: dialogFade 0.18s ease both;
 }
 
+/* Mismo vidrio claro con resplandor verde que la caja "Asignar bonificación"
+   que la abre, para que la ventana emergente se sienta parte del mismo panel. */
 .dialog {
     width: 100%;
     max-width: 460px;
@@ -644,10 +640,11 @@
     overflow-y: auto;
     padding: 18px;
     box-sizing: border-box;
-    background: #ffffff;
-    border: 2px solid #00a651;
-    border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+    background: var(--action-bg);
+    border: 1px solid var(--action-border);
+    border-top: 4px solid var(--action-accent);
+    border-radius: 16px;
+    box-shadow: var(--action-shadow);
     animation: dialogRise 0.22s ease both;
 }
 
@@ -680,12 +677,12 @@
     margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: #000000;
+    color: var(--color-text);
 }
 
 .dialog-subtitle {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -699,9 +696,9 @@
     place-items: center;
     padding: 0;
     background: transparent;
-    border: 1px solid #e4e7e4;
+    border: 1px solid var(--action-border-strong);
     border-radius: 8px;
-    color: #555a55;
+    color: var(--color-text-muted);
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease;
 }
@@ -712,8 +709,8 @@
 }
 
 .dialog-close:hover {
-    background: #f4f6f4;
-    color: #000000;
+    background: var(--color-brand-tint);
+    color: var(--color-text);
 }
 
 /* ===== POPUP MESSAGES ===== */
@@ -721,11 +718,11 @@
 .dialog-form-error {
     margin: 0 0 12px;
     padding: 9px 11px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
+    background: var(--color-danger-bg);
+    border: 1px solid rgba(192, 57, 43, 0.3);
     border-radius: 9px;
     font-size: 12px;
-    color: #b91c1c;
+    color: var(--color-danger-strong);
 }
 
 .dialog-form-error {
@@ -737,14 +734,14 @@
     padding: 18px 0;
     text-align: center;
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .dialog-confirm {
     margin: 0 0 16px;
     font-size: 13px;
     line-height: 1.55;
-    color: #000000;
+    color: var(--color-text);
 }
 
 /* ===== ACTIVE BENEFIT CARD ===== */
@@ -753,8 +750,8 @@
     flex-direction: column;
     gap: 12px;
     padding: 14px;
-    background: #f8faf8;
-    border: 1px solid #e4e7e4;
+    background: var(--color-brand-tint);
+    border: 1px solid var(--action-border-strong);
     border-radius: 11px;
 }
 
@@ -770,19 +767,19 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .benefit-detail dd {
     margin: 2px 0 0;
     font-size: 13px;
-    color: #000000;
+    color: var(--color-text);
 }
 
 .benefit-detail .benefit-amount {
     font-size: 17px;
     font-weight: 700;
-    color: #00a651;
+    color: var(--color-brand-deep);
     font-variant-numeric: tabular-nums;
 }
 
@@ -807,11 +804,11 @@
 
 .field-hint {
     font-size: 10.5px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .field-hint-error {
-    color: #b91c1c;
+    color: var(--color-danger-strong);
 }
 
 /* Percentage and amount fields carry their unit inside the control */
@@ -830,7 +827,7 @@
     right: 11px;
     font-size: 12px;
     font-weight: 600;
-    color: #555a55;
+    color: var(--color-text-muted);
     pointer-events: none;
 }
 
@@ -862,38 +859,40 @@
     font-size: 12.5px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, color 0.2s ease;
 }
 
 .button-primary {
-    background: #00a651;
+    background: var(--action-accent);
     border: none;
-    color: #ffffff;
+    color: var(--color-bg-card);
+    box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
 }
 
 .button-primary:hover:not(:disabled) {
-    background: #009148;
+    background: var(--action-accent-hover);
+    box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
 }
 
 .button-ghost {
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
-    color: #555a55;
+    background: transparent;
+    border: 1px solid var(--action-border-strong);
+    color: var(--color-text-muted);
 }
 
 .button-ghost:hover:not(:disabled) {
-    background: #f4f6f4;
-    color: #000000;
+    background: var(--color-brand-tint);
+    color: var(--color-text);
 }
 
 .button-danger {
-    background: #dc2626;
+    background: var(--color-danger-strong);
     border: none;
-    color: #ffffff;
+    color: var(--color-bg-card);
 }
 
 .button-danger:hover:not(:disabled) {
-    background: #b91c1c;
+    background: var(--color-danger-strong);
 }
 
 .button-primary:disabled,
@@ -934,7 +933,7 @@
 
 /* Taken down by hand. Muted, because it is no longer in play. */
 .status-cancelled {
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     color: #8a908a;
     text-decoration: line-through;
 }
@@ -976,7 +975,7 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .benefit-history-list {
@@ -995,15 +994,15 @@
     align-items: center;
     gap: 9px;
     padding: 8px 10px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--action-border-strong);
     border-radius: 9px;
 }
 
 /* The one the card above is showing */
 .benefit-history-item.is-current {
-    border-color: #00a651;
-    background: #f8faf8;
+    border-color: var(--color-brand);
+    background: var(--color-brand-tint);
 }
 
 .benefit-history-text {
@@ -1017,12 +1016,12 @@
 .benefit-history-reason {
     font-size: 12px;
     font-weight: 600;
-    color: #000000;
+    color: var(--color-text);
 }
 
 .benefit-history-meta {
     font-size: 10.5px;
-    color: #555a55;
+    color: var(--color-text-muted);
     font-variant-numeric: tabular-nums;
 }
 
@@ -1036,11 +1035,11 @@
 
 /* Marked while the range is wrong, next to the message that explains why */
 .field-input.is-invalid {
-    border-color: #dc2626;
+    border-color: var(--color-danger-strong);
 }
 
 .field-input.is-invalid:focus {
-    border-color: #dc2626;
+    border-color: var(--color-danger-strong);
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
 }
 

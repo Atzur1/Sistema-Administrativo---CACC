@@ -5,3 +5,219 @@ html, body {
     padding: 0;
     height: 100%;
 }
+
+/* =====================================================================
+   DESIGN TOKENS
+   Fuente única de verdad para los colores repetidos a mano en cada
+   pantalla del admin-portal (y login/portales). Antes de este archivo,
+   el mismo verde institucional (#007f3e/#00b355/#00994c/#004d25) estaba
+   copiado idéntico en 5 hojas de estilo distintas.
+   ===================================================================== */
+:root {
+  /* Verde institucional "plano" (botones, iconos, checks, chips de estado) */
+  --color-brand: #00a651;
+  --color-brand-hover: #009148;
+  --color-brand-tint: #e7f4ea;
+
+  /* Verde institucional "degradé" (banners, sidebar, login, portales) */
+  --color-brand-deep: #007f3e;
+  --color-brand-light: #00b355;
+  --color-brand-strong: #00994c;
+  --color-brand-darkest: #004d25;
+
+  /* Degradé diagonal institucional: idéntico hoy en login.css y portales.css */
+  --gradient-institutional: linear-gradient(
+    135deg,
+    #007f3e 0%,
+    #0d4223 35%,
+    #082414 60%,
+    #030d07 85%,
+    #000000 100%
+  );
+
+  /* Neutros */
+  --color-text: #000000;
+  --color-text-dark: #1a1a1a;
+  --color-text-muted: #555a55;
+  --color-text-subtle: #6b7280;
+  --color-border: #e4e7e4;
+  --color-bg-page: #f1f5f1;
+  --color-bg-page-alt: #f4f7f4;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #f9faf9;
+
+  /* Estados */
+  --color-danger: #c0392b;
+  --color-danger-strong: #dc2626;
+  --color-danger-bg: #fdecea;
+
+  --color-warning-text: #8a5a0b;
+  --color-warning-bg: #fef4e3;
+
+  --color-info: #3b82f6;
+  --color-info-bg: #eff6ff;
+
+  --color-accent: #8b5cf6;
+  --color-accent-bg: #f3eeff;
+
+  /* Vidrio esmerilado: el mismo fondo translúcido que ya usaban resumen-general,
+     actividad-movimientos, portales y login, ahora disponible para cualquier caja. */
+  --glass-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 247, 0.94) 100%);
+  --glass-border: rgba(255, 255, 255, 0.9);
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+
+  /* Variante en rojo del vidrio, para cajas que señalan algo grave (ej.
+     jugadores inhabilitados) en vez de una acción de rutina. */
+  --glass-bg-danger: linear-gradient(160deg, rgba(255, 255, 255, 0.97) 0%, rgba(253, 226, 222, 0.85) 55%, rgba(255, 250, 249, 0.95) 100%);
+  --glass-border-danger: rgba(192, 57, 43, 0.3);
+  --glass-shadow-danger: 0 14px 34px rgba(192, 57, 43, 0.16), 0 2px 10px rgba(0, 0, 0, 0.05);
+
+  /* ===== Panel de acción "deportivo institucional" =====
+     Usado en las 3 cajas de acción (Registrar pago, Asignar bonificación,
+     Programar arancel) y en la ventana emergente de bonificaciones. Blanco
+     limpio + un acento verde sólido en el borde superior, sin fondos de
+     color ni brillos: reemplaza los experimentos anteriores (vidrio con
+     resplandor, HUD oscuro, y el dorado que tenía Programar arancel y
+     desentonaba con el resto de la paleta). Unifica los tres bajo la misma
+     identidad visual. */
+  --action-bg: #ffffff;
+  --action-field-bg: #f8fafc;
+  --action-border: #e2e8f0;
+  --action-border-strong: #cbd5e1;
+  --action-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.07);
+  --action-accent: var(--color-brand-deep);
+  --action-accent-hover: var(--color-brand-darkest);
+  --action-badge-bg: var(--color-brand-tint);
+  --action-badge-fg: var(--color-brand-deep);
+  --action-label: #475569;
+  --action-focus-ring: 0 0 0 3px rgba(0, 127, 62, 0.16);
+}
+
+/* =====================================================================
+   COMPONENTES COMPARTIDOS: panel de acción (Registrar pago, Asignar
+   bonificación, Programar arancel). Piezas reutilizables para que los tres
+   formularios usen las mismas clases en vez de repetir CSS por archivo.
+   ===================================================================== */
+
+/* Select nativo sin la flecha por defecto del navegador + chevron propio.
+   Sigue siendo un <select> real (accesibilidad y teclado nativos intactos);
+   lo único custom es su apariencia cerrada. La lista de opciones abierta la
+   sigue dibujando el sistema operativo/navegador, así que no se le puede
+   forzar un hover verde ahí sin reemplazarla por un listbox propio. */
+.field-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23007f3e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 15px;
+  padding-right: 30px !important;
+  cursor: pointer;
+}
+
+/* Input con ícono a la izquierda (buscador de jugador, etc.) */
+.input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 11px;
+  display: flex;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.input-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.field-input-icon {
+  padding-left: 32px !important;
+}
+
+/* Etiqueta discreta sobre el título de un panel de acción */
+.form-badge {
+  display: inline-block;
+  width: fit-content;
+  margin-bottom: 2px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--action-badge-bg);
+  color: var(--action-badge-fg);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* =====================================================================
+   ANIMACIONES COMPARTIDAS
+   Antes vivían duplicadas (o, en el caso de "barGrow", con el MISMO
+   nombre pero comportamiento distinto en dos archivos - una colisión
+   real porque Angular no aísla @keyframes por componente). Ahora hay
+   una sola definición de cada una.
+   ===================================================================== */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Barra que crece en ancho desde 0 (ej. distribución por antigüedad) */
+@keyframes growWidth {
+  from { width: 0; }
+}
+
+/* Franja de brillo que recorre un degradé horizontal (ya se usaba, sin
+   nombre compartido, en el borde superior de las tarjetas de portales.css) */
+@keyframes shimmerFlow {
+  to { background-position: -200% 0; }
+}
+
+/* Destello diagonal que atraviesa un elemento una vez (ya se usaba, sin
+   nombre compartido, en los botones de portales.css) */
+@keyframes shimmerSweep {
+  from { left: -75%; }
+  to { left: 125%; }
+}
+
+/* Cuenta regresiva/ascendente al recalcular un número destacado */
+@keyframes numberPulse {
+  0% { opacity: 0.4; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Un solo barrido de luz de punta a punta sobre un banner, con una pausa
+   larga antes de repetir (0%-28% recorre la franja, el resto queda quieta).
+   Usado por los banners de Resumen General, Actividad y Movimientos, y
+   Deudas y Morosidad. */
+@keyframes bannerShimmerCycle {
+  0% { left: -30%; }
+  28% { left: 130%; }
+  100% { left: 130%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

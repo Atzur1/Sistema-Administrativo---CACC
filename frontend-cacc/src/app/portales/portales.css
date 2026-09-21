@@ -1,21 +1,14 @@
-.main {
-  --primary-green: #007f3e;
-  --primary-light: #00b355;
-  --primary-hover: #00994c;
-  --primary-dark: #004d25;
-  --text-dark: #1a1a1a;
-  --text-muted: #6b7280;
+﻿.main {
+  --primary-green: var(--color-brand-deep);
+  --primary-light: var(--color-brand-light);
+  --primary-hover: var(--color-brand-strong);
+  --primary-dark: var(--color-brand-darkest);
+  --text-dark: var(--color-text-dark);
+  --text-muted: var(--color-text-subtle);
   --border-light: #e5e7eb;
 
   /* Degradé diagonal institucional continuo */
-  background: linear-gradient(
-    135deg,
-    #007f3e 0%,
-    #0d4223 35%,
-    #082414 60%,
-    #030d07 85%,
-    #000000 100%
-  );
+  background: var(--gradient-institutional);
 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   position: relative;
@@ -88,7 +81,7 @@
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  color: #ffffff;
+  color: var(--color-bg-card);
   border: 1px solid rgba(255, 255, 255, 0.25);
   padding: 9px 20px;
   border-radius: 30px;
@@ -134,7 +127,7 @@
 .page-title {
   font-size: 30px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-bg-card);
   letter-spacing: -0.5px;
   margin: 0;
 }
@@ -215,7 +208,7 @@
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, #007f3e, #00d666, #004d25, #00d666, #007f3e);
+  background: linear-gradient(90deg, var(--primary-green), #00d666, var(--primary-dark), #00d666, var(--primary-green));
   background-size: 200% 100%;
   opacity: 0.55;
   transition: opacity 0.3s ease, height 0.3s ease;
@@ -309,7 +302,7 @@
 
 /* Los chips se levantan en cascada al pasar el mouse por la tarjeta */
 .card-portal:hover .tag {
-  background: #ffffff;
+  background: var(--color-bg-card);
   border-color: #b6dcbf;
   transform: translateY(-3px);
   box-shadow: 0 6px 14px rgba(0, 127, 62, 0.12);
@@ -335,9 +328,9 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  background: linear-gradient(135deg, #00994c 0%, #007f3e 50%, #005a2b 100%);
+  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-green) 50%, #005a2b 100%);
   background-size: 200% auto;
-  color: #ffffff;
+  color: var(--color-bg-card);
   border: none;
   padding: 16px 12px;
   border-radius: 12px;
@@ -402,7 +395,7 @@
 @media (max-width: 992px) {
   .main {
     padding: 20px 10px;
-    background: linear-gradient(180deg, #007f3e 0%, #082414 60%, #000000 100%);
+    background: linear-gradient(180deg, var(--primary-green) 0%, #082414 60%, #000000 100%);
   }
 
   .content-wrapper {
