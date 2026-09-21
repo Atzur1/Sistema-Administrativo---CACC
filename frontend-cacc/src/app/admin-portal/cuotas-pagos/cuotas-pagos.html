@@ -1,4 +1,4 @@
-<!-- Cuotas y Pagos dashboard: header stamp, payment form, pending fees and latest payments -->
+<!-- Cuotas y Pagos dashboard: header stamp, global debt, payment form and the debtors / everyone / latest payments panel -->
 <div class="dashboard">
 
   <!-- ===== HEADER ===== -->
@@ -35,6 +35,24 @@
       }
     </div>
   </header>
+
+  <!-- Indicador destacado (HU-019): deuda global valorizada a saldo real de cada cuota
+       pendiente, no cantidad x arancel vigente hoy -->
+  <div class="deuda-global-banner" [class.is-clear]="deudaGlobal.morosos === 0">
+    <span class="deuda-global-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </span>
+    <div class="header-text">
+      <span class="deuda-global-label">Deuda Global Total</span>
+      <span class="header-subtitle">{{ deudaGlobal.moroLabel }}</span>
+    </div>
+    <span class="deuda-global-value">{{ deudaGlobal.monto }}</span>
+  </div>
 
   <div class="header-divider"></div>
 
@@ -141,87 +159,6 @@
     </form>
   </section>
 
-  <!-- ===== MAIN GRID ===== -->
-  <section class="main-grid">
-
-    <!-- Fees waiting to be collected -->
-    <article class="panel panel-pending">
-      <header class="panel-head">
-        <span class="panel-dot dot-pending"></span>
-        <h2 class="panel-title">Pendientes de cobro</h2>
-        <span class="panel-count">{{ pendingRows.length }}</span>
-      </header>
-
-      <ul class="row-list">
-        @for (row of pendingRows; track row.id) {
-          <li class="row row-clickable" (click)="irADeuda(row.id)">
-            <span class="row-avatar avatar-pending">{{ row.initials }}</span>
-            <div class="row-identity">
-              <span class="row-name">{{ row.name }}</span>
-              <span class="row-meta">{{ row.category }}</span>
-            </div>
-            <div class="row-figures">
-              <span class="row-amount amount-pending">{{ row.amount }}</span>
-              <span class="row-meta">{{ row.installments }}</span>
-            </div>
-          </li>
-        }
-      </ul>
-    </article>
-
-    <!-- Most recent payments -->
-    <article class="panel panel-payments">
-      <header class="panel-head">
-        <span class="panel-dot dot-paid"></span>
-        <h2 class="panel-title">Últimos pagos</h2>
-        <span class="panel-count">{{ paymentRows.length }}</span>
-
-        <div class="panel-search">
-          <input type="text" class="panel-search-input" placeholder="Buscar por nombre o DNI..."
-                 autocomplete="off"
-                 (input)="onPanelSearch($any($event.target).value)"
-                 (keydown.escape)="hidePanelSearchResults()" />
-          <span class="panel-search-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-
-          @if (showPanelSearchResults) {
-            <ul class="suggestions panel-suggestions">
-              @for (jugador of panelSearchResults; track jugador.idJugador) {
-                <li>
-                  <button type="button" class="suggestion" (click)="irAJugador(jugador.idJugador)">
-                    <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
-                    <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
-                  </button>
-                </li>
-              }
-            </ul>
-          }
-        </div>
-      </header>
-
-      <ul class="row-list">
-        @for (row of paymentRows; track row.id) {
-          <li class="row row-clickable" (click)="irAJugador(row.idJugador)">
-            <span class="row-avatar avatar-paid">{{ row.initials }}</span>
-            <div class="row-identity">
-              <span class="row-name">{{ row.name }}</span>
-              <span class="row-meta">{{ row.method }}</span>
-            </div>
-            <div class="row-figures">
-              <span class="row-amount amount-paid">{{ row.amount }}</span>
-              <span class="row-meta">{{ row.elapsed }}</span>
-            </div>
-          </li>
-        }
-      </ul>
-    </article>
-  </section>
-
-  <!-- ===== PADRÓN DE ALUMNOS (HU-029) ===== -->
-  <app-player-roster></app-player-roster>
+  <!-- ===== PANEL ÚNICO: deudores, todos y últimos pagos (HU-029) ===== -->
+  <app-player-roster [payments]="paymentRows"></app-player-roster>
 </div>

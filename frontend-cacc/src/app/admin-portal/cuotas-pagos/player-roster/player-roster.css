@@ -1,38 +1,75 @@
-/* ===== ROSTER (HU-029) ===== */
-/* Same white panel as the rest of Cuotas y Pagos */
+/* ===== PANEL DE ALUMNOS Y PAGOS (HU-029) ===== */
 .roster {
     display: flex;
     flex-direction: column;
     margin-top: 14px;
     padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     min-width: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #000000;
+    color: var(--color-text);
+    animation: fadeSlideUp 0.4s ease both;
+    animation-delay: 140ms;
 }
 
+/* ===== HEADER: pestañas a la izquierda, filtros a la derecha ===== */
 .roster-head {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
+    justify-content: space-between;
     gap: 10px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
 }
 
-.roster-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #c0392b;
-    flex-shrink: 0;
+.roster-tabs {
+    display: flex;
+    flex-wrap: wrap;
 }
 
-.roster-title {
-    margin: 0;
-    font-size: 14px;
+.roster-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: -1px;
+    padding: 9px 16px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-subtle);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.roster-tab:hover {
+    color: var(--color-text-dark);
+}
+
+.roster-tab.is-active {
+    border-bottom-color: var(--color-brand);
+    font-weight: 700;
+    color: var(--color-brand-deep);
+}
+
+.roster-tab-count {
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: var(--color-bg-page);
+    font-size: 11px;
     font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.roster-tab.is-active .roster-tab-count {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
 }
 
 .roster-controls {
@@ -40,35 +77,44 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    margin-left: auto;
+    padding-bottom: 6px;
+}
+
+.roster-category {
+    width: 190px;
+}
+
+/* El selector del sistema mide 44px: acá se acomoda a la altura del buscador */
+.roster-category ::ng-deep .cs-trigger {
+    height: 34px;
+    font-size: 12px;
 }
 
 .roster-search {
     width: 230px;
-    padding: 7px 11px;
+    height: 34px;
+    padding: 0 11px;
     box-sizing: border-box;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 9px;
     font-family: inherit;
     font-size: 12px;
-    color: #000000;
+    color: var(--color-text);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .roster-search::placeholder {
-    color: #555a55;
+    color: var(--color-text-muted);
     opacity: 0.7;
 }
 
 .roster-search:focus {
-    border-color: #00a651;
+    border-color: var(--color-brand);
     box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
 }
 
-/* The filter switch: outlined while off, solid red while on */
-.roster-toggle,
 .roster-clear,
 .roster-retry,
 .roster-page-btn {
@@ -81,32 +127,16 @@
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.roster-toggle {
-    background: #ffffff;
-    border: 1.5px solid #c0392b;
-    color: #a12a1e;
-}
-
-.roster-toggle:hover {
-    background: #fdecea;
-}
-
-.roster-toggle.is-active {
-    background: #c0392b;
-    border-color: #c0392b;
-    color: #ffffff;
-}
-
 .roster-clear,
 .roster-page-btn {
-    background: #ffffff;
-    border: 1px solid #c9cfc9;
-    color: #1f2a1f;
+    background: var(--color-bg-card);
+    border: 1px solid var(--action-border-strong);
+    color: var(--color-text-dark);
 }
 
 .roster-clear:hover,
 .roster-page-btn:hover:not(:disabled) {
-    background: #f1f5f1;
+    background: var(--color-bg-page);
 }
 
 .roster-page-btn:disabled {
@@ -114,60 +144,55 @@
     cursor: not-allowed;
 }
 
-.roster-toggle:focus-visible,
+.roster-tab:focus-visible,
 .roster-clear:focus-visible,
 .roster-retry:focus-visible,
 .roster-page-btn:focus-visible,
-.roster-link:focus-visible {
-    outline: 2px solid #00a651;
+.roster-link:focus-visible,
+.roster-sort:focus-visible {
+    outline: 2px solid var(--color-brand);
     outline-offset: 2px;
 }
 
-.roster-summary {
-    min-height: 18px;
-    margin: 10px 0 8px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #555a55;
-}
-
-/* Loading, empty and error messages share one block */
+/* ===== ESTADOS: carga, vacío y error comparten un bloque ===== */
 .roster-state {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
+    margin-top: 8px;
     padding: 28px 16px;
     border-radius: 10px;
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     font-size: 13px;
-    color: #555a55;
+    color: var(--color-text-muted);
     text-align: center;
 }
 
+/* Sin deudores es una buena noticia, se dice en verde */
 .roster-empty {
-    color: #1f6b3a;
-    background: #e7f4ea;
+    background: var(--color-brand-tint);
     font-weight: 600;
+    color: var(--color-brand-deep);
 }
 
 .roster-error {
     flex-wrap: wrap;
-    color: #7a2119;
-    background: #fdecea;
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
 }
 
 .roster-retry {
-    background: #c0392b;
-    border: 1px solid #c0392b;
-    color: #ffffff;
+    background: var(--color-danger);
+    border: 1px solid var(--color-danger);
+    color: var(--color-bg-card);
 }
 
 .roster-retry:hover {
-    background: #a12a1e;
+    background: var(--color-danger-strong);
 }
 
-/* ===== TABLE ===== */
+/* ===== TABLA ===== */
 .roster-table-wrap {
     overflow-x: auto;
 }
@@ -180,29 +205,45 @@
 
 .roster-table th {
     padding: 8px 10px;
-    border-bottom: 2px solid #e4e7e4;
-    font-size: 11px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 10.5px;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-align: left;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
 .roster-table td {
     padding: 10px;
-    border-bottom: 1px solid #f1f5f1;
+    border-bottom: 1px solid var(--color-bg-page);
     vertical-align: middle;
 }
 
 .roster-table tbody tr:hover {
-    background: #f7faf7;
+    background: var(--color-bg-hover);
 }
 
 .col-amount {
-    text-align: right;
+    text-align: right !important;
     white-space: nowrap;
+}
+
+/* Encabezado que ordena: parece texto, se comporta como botón */
+.roster-sort {
+    padding: 0;
+    background: none;
+    border: none;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.roster-sort:hover {
+    color: var(--color-brand-deep);
 }
 
 .roster-link {
@@ -212,7 +253,7 @@
     font-family: inherit;
     font-size: inherit;
     font-weight: 600;
-    color: #1f6b3a;
+    color: var(--color-brand-deep);
     text-align: left;
     cursor: pointer;
 }
@@ -221,43 +262,72 @@
     text-decoration: underline;
 }
 
-/* Debt is written out in red and also with the number of installments, never by color alone */
+.cell-muted {
+    color: var(--color-text-muted);
+}
+
+/* La deuda se escribe en rojo y además con la cantidad de cuotas: nunca solo con el color */
 .amount-owed {
     font-weight: 700;
-    color: #a12a1e;
+    color: var(--color-danger);
 }
 
 .amount-meta {
     display: block;
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
-.amount-clear {
+.amount-clear,
+.amount-paid {
     font-weight: 600;
-    color: #1f6b3a;
+    color: var(--color-brand-deep);
 }
 
-/* ===== PAGER ===== */
-.roster-pager {
+.amount-paid {
+    font-weight: 700;
+}
+
+/* ===== PIE: resumen, total adeudado y paginación ===== */
+.roster-foot {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
+    justify-content: space-between;
+    gap: 10px;
     margin-top: 12px;
 }
 
+.roster-summary,
+.roster-total,
 .roster-page-info {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
+}
+
+.roster-total strong {
+    color: var(--color-danger);
+}
+
+.roster-foot-end {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+}
+
+.roster-pager {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 @media (max-width: 768px) {
     .roster-controls {
         width: 100%;
-        margin-left: 0;
     }
 
+    .roster-category,
     .roster-search {
         flex: 1 1 100%;
         width: auto;

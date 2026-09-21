@@ -1,92 +1,173 @@
-<!-- Padrón de alumnos con su deuda (HU-029): filtro "Alumnos Deudores", búsqueda y paginación -->
-<section class="roster" aria-labelledby="roster-title">
+<!-- Panel único de alumnos y pagos (HU-029): pestañas Deudores / Todos / Últimos pagos,
+     buscador compartido, selector de categoría, columnas ordenables y paginación -->
+<section class="roster" aria-label="Alumnos y pagos">
 
   <header class="roster-head">
-    <span class="roster-dot"></span>
-    <h2 id="roster-title" class="roster-title">Padrón de alumnos</h2>
+    <div class="roster-tabs" role="tablist" aria-label="Vista del panel">
+      <button type="button" class="roster-tab" role="tab" id="tab-debtors"
+              [class.is-active]="activeTab === 'debtors'"
+              [attr.aria-selected]="activeTab === 'debtors'"
+              (click)="selectTab('debtors')">
+        Deudores <span class="roster-tab-count">{{ debtors.length }}</span>
+      </button>
+      <button type="button" class="roster-tab" role="tab" id="tab-all"
+              [class.is-active]="activeTab === 'all'"
+              [attr.aria-selected]="activeTab === 'all'"
+              (click)="selectTab('all')">
+        Todos <span class="roster-tab-count">{{ everyone.length }}</span>
+      </button>
+      <button type="button" class="roster-tab" role="tab" id="tab-payments"
+              [class.is-active]="activeTab === 'payments'"
+              [attr.aria-selected]="activeTab === 'payments'"
+              (click)="selectTab('payments')">
+        Últimos pagos <span class="roster-tab-count">{{ payments.length }}</span>
+      </button>
+    </div>
 
     <div class="roster-controls">
-      <input type="text" class="roster-search" placeholder="Buscar por nombre o DNI..."
-              autocomplete="off" aria-label="Buscar alumno por nombre o DNI"
-              [formControl]="searchControl" />
+      @if (!isPaymentsTab) {
+        <app-custom-select class="roster-category" [options]="categories"
+                           [formControl]="categoryControl"></app-custom-select>
+      }
 
-      <button type="button" class="roster-toggle" [class.is-active]="onlyDebtors"
-              [attr.aria-pressed]="onlyDebtors" (click)="toggleDebtors()">
-        Alumnos Deudores
-      </button>
+      <input type="text" class="roster-search" [placeholder]="searchPlaceholder"
+             autocomplete="off" aria-label="Buscar en el panel"
+             [formControl]="searchControl" />
 
-      @if (onlyDebtors || searchControl.value) {
-        <button type="button" class="roster-clear" (click)="showAll()">Ver todos</button>
+      @if (hasActiveFilters) {
+        <button type="button" class="roster-clear" (click)="clearFilters()">Limpiar filtros</button>
       }
     </div>
   </header>
 
-  <p class="roster-summary" aria-live="polite">
-    @if (!loading && !errorMessage) {
-      {{ summary }}
-      @if (onlyDebtors && matching.length > 0) {
-        · Total adeudado {{ formatAmount(totalOwed) }}
+  <div role="tabpanel" [attr.aria-labelledby]="'tab-' + activeTab">
+
+    @if (isPaymentsTab) {
+
+      <!-- ===== ÚLTIMOS PAGOS ===== -->
+      @if (matchingPayments.length === 0) {
+        <div class="roster-state roster-empty-plain">{{ emptyMessage }}</div>
+      } @else {
+        <div class="roster-table-wrap">
+          <table class="roster-table">
+            <thead>
+              <tr>
+                <th scope="col">Jugador</th>
+                <th scope="col">Método</th>
+                <th scope="col">Fecha</th>
+                <th scope="col" class="col-amount">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (payment of matchingPayments; track payment.id) {
+                <tr>
+                  <td>
+                    <button type="button" class="roster-link" (click)="openPaymentPlayer(payment)">
+                      {{ payment.name }}
+                    </button>
+                  </td>
+                  <td>{{ payment.method }}</td>
+                  <td class="cell-muted">{{ payment.elapsed }}</td>
+                  <td class="col-amount"><span class="amount-paid">{{ payment.amount }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+    } @else {
+
+      <!-- ===== DEUDORES / TODOS ===== -->
+      @if (errorMessage) {
+        <div class="roster-state roster-error" role="alert">
+          <span>{{ errorMessage }}</span>
+          <button type="button" class="roster-retry" (click)="reload()">Reintentar</button>
+        </div>
+      } @else if (loading) {
+        <div class="roster-state" aria-busy="true">Cargando alumnos...</div>
+      } @else if (matching.length === 0) {
+        <div class="roster-state" [class.roster-empty]="emptyIsGoodNews" [class.roster-empty-plain]="!emptyIsGoodNews">
+          {{ emptyMessage }}
+        </div>
+      } @else {
+        <div class="roster-table-wrap">
+          <table class="roster-table">
+            <thead>
+              <tr>
+                <th scope="col" [attr.aria-sort]="ariaSort('firstName')">
+                  <button type="button" class="roster-sort" (click)="sortBy('firstName')">
+                    Nombre <span aria-hidden="true">{{ sortIndicator('firstName') }}</span>
+                  </button>
+                </th>
+                <th scope="col" [attr.aria-sort]="ariaSort('lastName')">
+                  <button type="button" class="roster-sort" (click)="sortBy('lastName')">
+                    Apellido <span aria-hidden="true">{{ sortIndicator('lastName') }}</span>
+                  </button>
+                </th>
+                <th scope="col">DNI</th>
+                <th scope="col" [attr.aria-sort]="ariaSort('category')">
+                  <button type="button" class="roster-sort" (click)="sortBy('category')">
+                    Categoría <span aria-hidden="true">{{ sortIndicator('category') }}</span>
+                  </button>
+                </th>
+                <th scope="col" class="col-amount" [attr.aria-sort]="ariaSort('amountOwed')">
+                  <button type="button" class="roster-sort" (click)="sortBy('amountOwed')">
+                    Monto adeudado <span aria-hidden="true">{{ sortIndicator('amountOwed') }}</span>
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (account of visibleRows; track account.playerId) {
+                <tr>
+                  <td>
+                    <button type="button" class="roster-link" (click)="openPlayer(account)">
+                      {{ account.firstName }}
+                    </button>
+                  </td>
+                  <td>{{ account.lastName }}</td>
+                  <td>{{ account.dni }}</td>
+                  <td>{{ account.category }}</td>
+                  <td class="col-amount">
+                    @if (account.amountOwed > 0) {
+                      <span class="amount-owed">{{ formatAmount(account.amountOwed) }}</span>
+                      <span class="amount-meta">
+                        {{ account.pendingInstallments }}
+                        {{ account.pendingInstallments === 1 ? 'cuota' : 'cuotas' }}
+                      </span>
+                    } @else {
+                      <span class="amount-clear">Al día</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="roster-foot">
+          <span class="roster-summary" aria-live="polite">{{ summary }}</span>
+
+          <div class="roster-foot-end">
+            @if (activeTab === 'debtors') {
+              <span class="roster-total">
+                Total adeudado <strong>{{ formatAmount(totalOwed) }}</strong>
+              </span>
+            }
+
+            @if (totalPages > 1) {
+              <nav class="roster-pager" aria-label="Paginación del panel">
+                <button type="button" class="roster-page-btn" [disabled]="page === 1"
+                        (click)="goToPreviousPage()">Anterior</button>
+                <span class="roster-page-info">Página {{ page }} de {{ totalPages }}</span>
+                <button type="button" class="roster-page-btn" [disabled]="page === totalPages"
+                        (click)="goToNextPage()">Siguiente</button>
+              </nav>
+            }
+          </div>
+        </footer>
       }
     }
-  </p>
-
-  @if (errorMessage) {
-    <div class="roster-state roster-error" role="alert">
-      <span>{{ errorMessage }}</span>
-      <button type="button" class="roster-retry" (click)="reload()">Reintentar</button>
-    </div>
-  } @else if (loading) {
-    <div class="roster-state" aria-busy="true">Cargando alumnos...</div>
-  } @else if (matching.length === 0) {
-    <div class="roster-state roster-empty">{{ emptyMessage }}</div>
-  } @else {
-    <div class="roster-table-wrap">
-      <table class="roster-table">
-        <thead>
-          <tr>
-            <th scope="col">Nombre</th>
-            <th scope="col">Apellido</th>
-            <th scope="col">DNI</th>
-            <th scope="col">Categoría</th>
-            <th scope="col" class="col-amount">Monto adeudado</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (account of visibleRows; track account.playerId) {
-            <tr>
-              <td>
-                <button type="button" class="roster-link" (click)="openPlayer(account)">
-                  {{ account.firstName }}
-                </button>
-              </td>
-              <td>{{ account.lastName }}</td>
-              <td>{{ account.dni }}</td>
-              <td>{{ account.category }}</td>
-              <td class="col-amount">
-                @if (account.amountOwed > 0) {
-                  <span class="amount-owed">{{ formatAmount(account.amountOwed) }}</span>
-                  <span class="amount-meta">
-                    {{ account.pendingInstallments }}
-                    {{ account.pendingInstallments === 1 ? 'cuota' : 'cuotas' }}
-                  </span>
-                } @else {
-                  <span class="amount-clear">Al día</span>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    @if (totalPages > 1) {
-      <nav class="roster-pager" aria-label="Paginación del padrón">
-        <button type="button" class="roster-page-btn" [disabled]="page === 1"
-                (click)="goToPreviousPage()">Anterior</button>
-        <span class="roster-page-info">Página {{ page }} de {{ totalPages }}</span>
-        <button type="button" class="roster-page-btn" [disabled]="page === totalPages"
-                (click)="goToNextPage()">Siguiente</button>
-      </nav>
-    }
-  }
+  </div>
 </section>
