@@ -1,10 +1,5 @@
-/* Mismo lenguaje visual que jugador-perfil.css, pero tematizado en naranja/ámbar (pendiente)
-   en vez del verde institucional (pagado) */
-
-@keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+﻿/* Mismo lenguaje visual que jugador-perfil.css, pero tematizado en naranja/ámbar (pendiente)
+   en vez del verde institucional (pagado). fadeSlideUp vive ahora en styles.css (global). */
 
 .dashboard {
     display: flex;
@@ -12,9 +7,9 @@
     padding: 20px;
     min-height: 100%;
     box-sizing: border-box;
-    background: #f1f5f1;
+    background: var(--color-bg-page);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #000000;
+    color: var(--color-text);
     overflow-x: hidden;
 }
 
@@ -26,19 +21,19 @@
 
 .back-button {
     padding: 8px 14px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 9px;
     font-family: inherit;
     font-size: 12px;
     font-weight: 600;
-    color: #8a5a0b;
+    color: var(--color-warning-text);
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .back-button:hover {
-    background: #fef4e3;
+    background: var(--color-warning-bg);
     border-color: #eba83a;
 }
 
@@ -46,11 +41,11 @@
 .error-text {
     margin: 16px 0 0;
     font-size: 13px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .error-text {
-    color: #b3261e;
+    color: var(--color-danger-strong);
 }
 
 .profile-header {
@@ -69,8 +64,8 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: #fef4e3;
-    color: #8a5a0b;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
     font-size: 18px;
     font-weight: 700;
     flex-shrink: 0;
@@ -91,7 +86,7 @@
 
 .profile-meta {
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .profile-total {
@@ -106,30 +101,32 @@
 .profile-total-value {
     font-size: 20px;
     font-weight: 700;
-    color: #b3261e;
+    color: var(--color-danger-strong);
 }
 
 .profile-total-label {
     font-size: 10px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .header-divider {
     height: 1px;
     margin: 14px 0;
-    background: #e4e7e4;
+    background: var(--color-border);
 }
 
 .panel {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--glass-shadow);
     min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
     animation-delay: 120ms;
@@ -163,7 +160,7 @@
     margin-left: auto;
     font-size: 13px;
     font-weight: 700;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .deuda-empty {
@@ -171,7 +168,7 @@
     padding: 24px 0;
     text-align: center;
     font-size: 12.5px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== CUOTAS ===== */
@@ -206,7 +203,7 @@
 
 .cuota-original {
     font-size: 11.5px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 /* ===== ABONOS YA REALIZADOS ===== */
@@ -230,13 +227,13 @@
 
 .abono-meta {
     font-size: 11px;
-    color: #555a55;
+    color: var(--color-text-muted);
 }
 
 .abono-monto {
     font-size: 12px;
     font-weight: 700;
-    color: #00a651;
+    color: var(--color-brand);
 }
 
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
@@ -244,7 +241,7 @@
     display: inline-block;
     margin-bottom: 6px;
     padding: 3px 8px;
-    background: #e7f4ea;
+    background: var(--color-brand-tint);
     border-radius: 6px;
     font-size: 10.5px;
     font-weight: 700;
@@ -254,7 +251,7 @@
 .cuota-cubierta {
     margin: 10px 0 0;
     padding: 8px 10px;
-    background: #e7f4ea;
+    background: var(--color-brand-tint);
     border-radius: 8px;
     font-size: 11.5px;
     font-weight: 600;
@@ -276,13 +273,13 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #8a5a0b;
+    color: var(--color-warning-text);
 }
 
 .saldo-monto {
     font-size: 15px;
     font-weight: 700;
-    color: #b3261e;
+    color: var(--color-danger-strong);
 }
 
 /* ===== PAGAR SALDO (inline, sin salir de la pantalla) ===== */
@@ -296,7 +293,7 @@
     font-family: inherit;
     font-size: 12px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--color-bg-card);
     cursor: pointer;
     transition: background 0.2s ease;
 }
@@ -325,19 +322,19 @@
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #8a5a0b;
+    color: var(--color-warning-text);
 }
 
 .pagar-input {
     width: 100%;
     padding: 7px 9px;
     box-sizing: border-box;
-    background: #ffffff;
+    background: var(--color-bg-card);
     border: 1px solid #f6e2b8;
     border-radius: 8px;
     font-family: inherit;
     font-size: 12px;
-    color: #000000;
+    color: var(--color-text);
     outline: none;
 }
 
@@ -355,7 +352,7 @@
     left: 9px;
     transform: translateY(-50%);
     font-size: 12px;
-    color: #555a55;
+    color: var(--color-text-muted);
     pointer-events: none;
 }
 
@@ -372,36 +369,36 @@
 .pagar-cancelar {
     flex: 1;
     padding: 8px;
-    background: #ffffff;
-    border: 1px solid #e4e7e4;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     font-family: inherit;
     font-size: 11.5px;
     font-weight: 600;
-    color: #555a55;
+    color: var(--color-text-muted);
     cursor: pointer;
 }
 
 .pagar-cancelar:hover {
-    background: #f9faf9;
+    background: var(--color-bg-hover);
 }
 
 .pagar-confirmar {
     flex: 1.4;
     padding: 8px;
-    background: #00a651;
+    background: var(--color-brand);
     border: none;
     border-radius: 8px;
     font-family: inherit;
     font-size: 11.5px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--color-bg-card);
     cursor: pointer;
     transition: background 0.2s ease, opacity 0.2s ease;
 }
 
 .pagar-confirmar:hover:not(:disabled) {
-    background: #009148;
+    background: var(--color-brand-hover);
 }
 
 .pagar-confirmar:disabled {
@@ -413,17 +410,17 @@
     margin: 0;
     font-size: 10.5px;
     font-weight: 600;
-    color: #c0392b;
+    color: var(--color-danger);
 }
 
 .pago-exito-global {
     margin: 0 0 12px;
     padding: 9px 11px;
-    background: #e7f4ea;
+    background: var(--color-brand-tint);
     border-radius: 9px;
     font-size: 12px;
     font-weight: 600;
-    color: #00a651;
+    color: var(--color-brand);
 }
 
 /* ===== RESPONSIVE ===== */

@@ -48,12 +48,8 @@
 
       <div class="field">
         <label class="field-label" for="category">Categoría</label>
-        <select id="category" class="field-input" formControlName="category">
-          <option value="" disabled>Seleccionar categoría</option>
-          @for (category of categories; track category) {
-            <option [value]="category">{{ category }}</option>
-          }
-        </select>
+        <app-custom-select id="category" [options]="categories" placeholder="Seleccionar categoría"
+                            formControlName="category"></app-custom-select>
       </div>
 
       <div class="field">

@@ -36,24 +36,6 @@
     </div>
   </header>
 
-  <!-- Indicador destacado (HU-019): deuda global valorizada a saldo real de cada cuota
-       pendiente, no cantidad x arancel vigente hoy -->
-  <div class="deuda-global-banner" [class.is-clear]="deudaGlobal.morosos === 0">
-    <span class="deuda-global-icon">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
-    </span>
-    <div class="header-text">
-      <span class="deuda-global-label">Deuda Global Total</span>
-      <span class="header-subtitle">{{ deudaGlobal.moroLabel }}</span>
-    </div>
-    <span class="deuda-global-value">{{ deudaGlobal.monto }}</span>
-  </div>
-
   <div class="header-divider"></div>
 
   <!-- ===== PAYMENT FORM ===== -->
@@ -67,77 +49,88 @@
         </svg>
       </span>
       <div class="form-head-text">
-        <h2 class="form-title">Registrar pago</h2>
+        <span class="form-badge">Pagos</span>
+        <h2 class="form-title">Registrar cobro</h2>
         <span class="form-subtitle">Cargá un nuevo pago en segundos</span>
       </div>
     </header>
 
     <form class="form-grid" [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
 
-      <!-- Single unified lookup: matches both name and document number -->
-      <div class="field field-player">
-        <label class="field-label" for="player">Jugador</label>
-        <input id="player" type="text" class="field-input" formControlName="player"
-               placeholder="Buscar por nombre o DNI..." autocomplete="off"
-               (input)="onPlayerSearch($any($event.target).value)"
-               (keydown.escape)="hideSuggestions()" />
+      <!-- Fila 1: jugador, período, año -->
+      <div class="form-row form-row-lookup">
+        <!-- Single unified lookup: matches both name and document number -->
+        <div class="field field-player">
+          <label class="field-label" for="player">Jugador</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input id="player" type="text" class="field-input field-input-icon" formControlName="player"
+                   placeholder="Buscar por nombre o DNI..." autocomplete="off"
+                   (input)="onPlayerSearch($any($event.target).value)"
+                   (keydown.escape)="hideSuggestions()" />
+          </div>
 
-        @if (showSuggestions) {
-          <ul class="suggestions">
-            @for (jugador of matchingPlayers; track jugador.idJugador) {
-              <li>
-                <button type="button" class="suggestion" (click)="selectPlayer(jugador)">
-                  <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
-                  <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="period">Período</label>
-        <select id="period" class="field-input" formControlName="period">
-          <option value="" disabled>Seleccionar mes</option>
-          @for (period of periods; track period) {
-            <option [value]="period">{{ period }}</option>
+          @if (showSuggestions) {
+            <ul class="suggestions">
+              @for (jugador of matchingPlayers; track jugador.idJugador) {
+                <li>
+                  <button type="button" class="suggestion" (click)="selectPlayer(jugador)">
+                    <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
+                    <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
           }
-        </select>
-      </div>
+        </div>
 
-      <div class="field field-year">
-        <label class="field-label" for="year">Año</label>
-        <select id="year" class="field-input" formControlName="year">
-          @for (year of years; track year) {
-            <option [value]="year">{{ year }}</option>
-          }
-        </select>
-      </div>
+        <div class="field field-period">
+          <label class="field-label" for="period">Período</label>
+          <app-custom-select id="period" [options]="periods" placeholder="Seleccionar mes"
+                              formControlName="period"></app-custom-select>
+        </div>
 
-      <div class="field">
-        <label class="field-label" for="amount">Monto</label>
-        <div class="amount-wrapper">
-          <span class="amount-prefix">$</span>
-          <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
-                 [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
-                 placeholder="0" />
+        <div class="field field-year">
+          <label class="field-label" for="year">Año</label>
+          <app-custom-select id="year" [options]="years" formControlName="year"></app-custom-select>
         </div>
       </div>
 
-      <div class="field">
-        <label class="field-label" for="method">Método</label>
-        <select id="method" class="field-input" formControlName="method">
-          <option value="" disabled>Seleccionar método</option>
-          @for (method of methods; track method) {
-            <option [value]="method">{{ method }}</option>
-          }
-        </select>
-      </div>
+      <!-- Fila 2: monto, método y el botón de acción a la derecha -->
+      <div class="form-row form-row-action">
+        <div class="field field-amount">
+          <label class="field-label" for="amount">Monto</label>
+          <div class="amount-wrapper">
+            <span class="amount-prefix">$</span>
+            <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
+                   [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
+                   placeholder="0" />
+          </div>
+        </div>
 
-      <button type="submit" class="submit-button" [disabled]="paymentForm.invalid || enviando">
-        {{ enviando ? 'Registrando...' : 'Registrar pago' }}
-      </button>
+        <div class="field field-method">
+          <label class="field-label" for="method">Método</label>
+          <app-custom-select id="method" [options]="methods" placeholder="Seleccionar método"
+                              formControlName="method"></app-custom-select>
+        </div>
+
+        <button type="submit" class="submit-button" [disabled]="paymentForm.invalid || enviando">
+          @if (!enviando) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          }
+          {{ enviando ? 'Registrando...' : 'Registrar pago' }}
+        </button>
+      </div>
 
       @if (successMessage) {
         <p class="form-feedback" [class.is-leaving]="successLeaving">{{ successMessage }}</p>
