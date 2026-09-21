@@ -1,67 +1,56 @@
-import { Component, Input, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, effect, inject, signal } from '@angular/core';
+import { NotificationKind, NotificationService } from '../notifications/notification.service';
 
-export type ToastKind = 'success' | 'error';
-
-// Temporary confirmation, anchored to the bottom right corner of the screen.
-//
-// The markup and the timings are the ones the payments dashboard introduced in
-// HU-015 / HU-016; this component lifts them out so a second screen does not
-// have to copy them. That dashboard still carries its own copy: migrating it
-// means touching a story that has its own tests, and those cannot be run in this
-// environment, so it was left alone on purpose. Once they can be run, it should
-// use this component and drop its local version.
+// Confirmación flotante, anclada arriba a la derecha (cerca del avatar del
+// admin). Se monta una única vez en AdminPortal y escucha NotificationService:
+// las pantallas que disparan un pago/beneficio/arancel no la instancian ellas
+// mismas, solo llaman a NotificationService.notify(...).
 @Component({
     selector: 'app-toast',
     standalone: true,
     imports: [],
-    template: `
-        @if (message) {
-            <div class="toast" [class.toast-error]="kind === 'error'" [class.is-leaving]="leaving"
-                 role="status" aria-live="polite">
-                {{ message }}
-            </div>
-        }
-    `,
+    templateUrl: './toast.html',
     styleUrl: './toast.css',
 })
 export class Toast implements OnDestroy {
     private static readonly DURATION_MS = 3500;
     private static readonly FADE_MS = 300;
 
-    message = '';
-    kind: ToastKind = 'success';
-    leaving = false;
+    private notifications = inject(NotificationService);
 
-    // Setting this shows a toast. Passing the same text twice in a row still
-    // restarts the countdown, which is what someone saving twice expects.
-    @Input() set notification(value: { text: string; kind: ToastKind } | null) {
-        if (value === null) {
-            return;
-        }
-        this.show(value.text, value.kind);
-    }
+    message = signal('');
+    kind = signal<NotificationKind>('success');
+    leaving = signal(false);
 
     private fadeTimer?: ReturnType<typeof setTimeout>;
     private clearTimer?: ReturnType<typeof setTimeout>;
 
-    show(text: string, kind: ToastKind = 'success') {
+    constructor() {
+        effect(() => {
+            const event = this.notifications.toastEvent();
+            if (event) {
+                this.show(event.message, event.kind);
+            }
+        });
+    }
+
+    private show(text: string, kind: NotificationKind): void {
         clearTimeout(this.fadeTimer);
         clearTimeout(this.clearTimer);
 
-        this.message = text;
-        this.kind = kind;
-        this.leaving = false;
+        this.message.set(text);
+        this.kind.set(kind);
+        this.leaving.set(false);
 
-        // The fade starts before the node is removed so it does not blink out
-        this.fadeTimer = setTimeout(() => (this.leaving = true), Toast.DURATION_MS - Toast.FADE_MS);
+        // El fade arranca antes de sacar el nodo para que no desaparezca de golpe
+        this.fadeTimer = setTimeout(() => this.leaving.set(true), Toast.DURATION_MS - Toast.FADE_MS);
         this.clearTimer = setTimeout(() => {
-            this.message = '';
-            this.leaving = false;
+            this.message.set('');
+            this.leaving.set(false);
         }, Toast.DURATION_MS);
     }
 
-    // Leaving the screen mid-animation must not fire a callback on a dead view
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         clearTimeout(this.fadeTimer);
         clearTimeout(this.clearTimer);
     }

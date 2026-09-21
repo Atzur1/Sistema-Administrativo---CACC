@@ -4,11 +4,13 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { filter } from 'rxjs/operators';
+import { Toast } from '../shared/toast/toast';
+import { NotificationBell } from '../shared/notification-bell/notification-bell';
 
 @Component({
     selector: 'app-admin-portal',
     standalone: true,
-    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Toast, NotificationBell],
     templateUrl: './admin-portal.html',
     styleUrl: './admin-portal.css',
 })

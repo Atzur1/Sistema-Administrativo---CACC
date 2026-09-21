@@ -1,0 +1,187 @@
+.bell-wrap {
+    position: relative;
+}
+
+.bell-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.bell-trigger:hover {
+    background: var(--color-brand-tint);
+    border-color: var(--color-brand);
+    color: var(--color-brand-deep);
+    transform: translateY(-1px);
+}
+
+.bell-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.bell-badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e2695c, var(--color-danger));
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(192, 57, 43, 0.5), 0 0 0 2px var(--color-bg-card);
+}
+
+/* Panel flotante con la misma sensación de relieve que el toast: fondo
+   claro, sombra en capas y un highlight interior arriba. */
+.bell-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 60;
+    width: 320px;
+    max-height: 380px;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(160deg, #ffffff 0%, #f9fbf9 100%);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 14px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 2px 4px rgba(15, 23, 42, 0.05),
+        0 20px 44px rgba(15, 23, 42, 0.16);
+    animation: bellPanelIn 0.18s ease both;
+    overflow: hidden;
+}
+
+@keyframes bellPanelIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.bell-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--color-text-dark);
+    flex-shrink: 0;
+}
+
+.bell-clear {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.bell-clear:hover {
+    color: var(--color-danger);
+}
+
+.bell-empty {
+    margin: 0;
+    padding: 24px 14px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.bell-list {
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    overflow-y: auto;
+}
+
+.bell-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 8px;
+    border-radius: 9px;
+    transition: background 0.15s ease;
+}
+
+.bell-item:hover {
+    background: var(--color-bg-hover);
+}
+
+.bell-item-dot {
+    margin-top: 5px;
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--color-brand);
+    box-shadow: 0 0 0 3px var(--color-brand-tint);
+}
+
+.bell-item-dot.dot-error {
+    background: var(--color-danger);
+    box-shadow: 0 0 0 3px var(--color-danger-bg);
+}
+
+.bell-item-dot.dot-cancelled {
+    background: #8a5a0b;
+    box-shadow: 0 0 0 3px var(--color-warning-bg);
+}
+
+.bell-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.bell-item-message {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--color-text-dark);
+    line-height: 1.4;
+}
+
+.bell-item-time {
+    font-size: 10.5px;
+    color: var(--color-text-muted);
+}
+
+@media (max-width: 520px) {
+    .bell-panel {
+        position: fixed;
+        top: 60px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+    }
+}

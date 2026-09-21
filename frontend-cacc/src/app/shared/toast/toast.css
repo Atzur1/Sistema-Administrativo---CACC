@@ -1,51 +1,124 @@
-﻿/* Same look the payments dashboard established in HU-015 / HU-016, so a
-   confirmation reads the same wherever it appears. */
-
-.toast {
+/* Tarjeta flotante con sensación de relieve: fondo en degradé, sombra en
+   capas (ambiente + de contacto) y un highlight interior arriba, como si la
+   tarjeta estuviera "despegada" de la página en vez de pintada plana. */
+.toast-card {
     position: fixed;
+    top: 68px;
     right: 24px;
-    bottom: 24px;
-    z-index: 80;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     max-width: 360px;
-    padding: 12px 16px;
-    background: var(--color-brand-tint);
-    border-left: 4px solid var(--color-brand);
-    border-radius: 9px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    padding: 14px 18px 14px 14px;
+    background: linear-gradient(155deg, #ffffff 0%, var(--color-brand-tint) 130%);
+    border-radius: 14px;
+    border: 1px solid rgba(0, 166, 81, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 2px 4px rgba(15, 23, 42, 0.06),
+        0 4px 10px rgba(0, 0, 0, 0.08),
+        0 16px 34px rgba(0, 127, 62, 0.18);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    animation: toastPopIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-brand-light), var(--color-brand-deep));
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 127, 62, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.toast-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.toast-message {
     font-size: 13px;
     font-weight: 600;
+    line-height: 1.4;
     color: #00753a;
-    animation: toastFadeIn 0.3s ease both;
-    transition: opacity 0.3s ease;
 }
 
-.toast.toast-error {
-    background: #fdecec;
-    border-left-color: #c62828;
-    color: #c62828;
+/* ---- error ---- */
+.toast-card.toast-error {
+    background: linear-gradient(155deg, #ffffff 0%, var(--color-danger-bg) 130%);
+    border-color: rgba(192, 57, 43, 0.22);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 2px 4px rgba(15, 23, 42, 0.06),
+        0 4px 10px rgba(0, 0, 0, 0.08),
+        0 16px 34px rgba(192, 57, 43, 0.2);
 }
 
-.toast.is-leaving {
+.toast-card.toast-error .toast-icon {
+    background: linear-gradient(135deg, #e2695c, var(--color-danger));
+    box-shadow: 0 4px 10px rgba(192, 57, 43, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.toast-card.toast-error .toast-message {
+    color: var(--color-danger);
+}
+
+/* ---- cancelado: ni bien ni mal, un aviso neutro de "no se guardó" ---- */
+.toast-card.toast-cancelled {
+    background: linear-gradient(155deg, #ffffff 0%, var(--color-warning-bg) 130%);
+    border-color: rgba(138, 90, 11, 0.22);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 2px 4px rgba(15, 23, 42, 0.06),
+        0 4px 10px rgba(0, 0, 0, 0.08),
+        0 16px 34px rgba(138, 90, 11, 0.18);
+}
+
+.toast-card.toast-cancelled .toast-icon {
+    background: linear-gradient(135deg, #d6a34a, #8a5a0b);
+    box-shadow: 0 4px 10px rgba(138, 90, 11, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.toast-card.toast-cancelled .toast-message {
+    color: var(--color-warning-text);
+}
+
+.toast-card.is-leaving {
     opacity: 0;
+    transform: translateY(-6px) scale(0.97);
 }
 
-@keyframes toastFadeIn {
+@keyframes toastPopIn {
     from {
         opacity: 0;
+        transform: translateY(-12px) scale(0.9);
     }
     to {
         opacity: 1;
+        transform: translateY(0) scale(1);
     }
 }
 
-/* It sits above the benefit popup, so on a phone it spans the width instead of
-   hanging off the corner */
+/* En mobile se pasa abajo a todo el ancho, como antes: arriba se solaparía
+   con la topbar angosta. */
 @media (max-width: 640px) {
-    .toast {
+    .toast-card {
+        top: auto;
+        bottom: 16px;
         right: 16px;
         left: 16px;
-        bottom: 16px;
         max-width: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast-card {
+        animation: none;
     }
 }

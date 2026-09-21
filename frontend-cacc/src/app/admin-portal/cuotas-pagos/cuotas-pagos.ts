@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -13,6 +13,7 @@ import {
 import { ArancelesService } from '../../services/aranceles';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { NotificationService } from '../../shared/notifications/notification.service';
 
 const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -59,7 +60,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   templateUrl: './cuotas-pagos.html',
   styleUrl: './cuotas-pagos.css',
 })
-export class CuotasPagos implements OnInit, OnDestroy {
+export class CuotasPagos implements OnInit {
 
   headerMetrics: HeaderMetric[] = [
     { value: '—', label: `Recaudado ${new Date().getFullYear()}` },
@@ -96,9 +97,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
   panelSearchResults: JugadorResumen[] = [];
   showPanelSearchResults = false;
 
-  successMessage = '';
-  successLeaving = false;
-  errorMessage = '';
   enviando = false;
 
   cargandoJugadores = false;
@@ -106,9 +104,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   pendingRows: PendingRow[] = [];
   paymentRows: PaymentRow[] = [];
-
-  private fadeTimer?: ReturnType<typeof setTimeout>;
-  private clearTimer?: ReturnType<typeof setTimeout>;
 
   // Lo que se ve en el input de Monto ("1.000"). El control del form (paymentForm.get('amount'))
   // guarda el número limpio sin puntos ("1000"), que es lo que se valida y se manda al backend.
@@ -127,7 +122,8 @@ export class CuotasPagos implements OnInit, OnDestroy {
     private pagosService: PagosService,
     private arancelesService: ArancelesService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private notifications: NotificationService
   ) {
     this.paymentForm = this.fb.group({
       player: ['', [Validators.required, this.knownPlayerValidator]],
@@ -225,11 +221,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
       },
       error: () => {},
     });
-  }
-
-  ngOnDestroy() {
-    clearTimeout(this.fadeTimer);
-    clearTimeout(this.clearTimer);
   }
 
   private cargarJugadores() {
@@ -331,8 +322,6 @@ export class CuotasPagos implements OnInit, OnDestroy {
     const jugador = this.selectedPlayer;
 
     this.enviando = true;
-    this.errorMessage = '';
-    this.clearSuccessMessage();
 
     this.pagosService.registrarPago(jugador.idJugador, period, Number(year), Number(amount), method).subscribe({
       next: () => {
@@ -342,36 +331,17 @@ export class CuotasPagos implements OnInit, OnDestroy {
         this.selectedPlayer = null;
         this.matchingPlayers = [];
         this.showSuggestions = false;
-        this.showConfirmation(`Pago de ${jugador.nombreCompleto} registrado correctamente.`);
+        this.notifications.notify(`Pago de ${jugador.nombreCompleto} registrado correctamente.`, 'success');
         this.cargarListas();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.enviando = false;
-        this.errorMessage = err.error?.mensaje ?? 'No se pudo registrar el pago. Intentá de nuevo.';
+        const mensaje = err.error?.mensaje ?? 'No se pudo registrar el pago. Intentá de nuevo.';
+        this.notifications.notify(mensaje, 'error');
         this.cdr.detectChanges();
       },
     });
-  }
-
-  private showConfirmation(message: string) {
-    this.clearSuccessMessage();
-
-    this.successMessage = message;
-    this.successLeaving = false;
-
-    this.fadeTimer = setTimeout(() => (this.successLeaving = true), 2700);
-    this.clearTimer = setTimeout(() => {
-      this.successMessage = '';
-      this.successLeaving = false;
-    }, 3000);
-  }
-
-  private clearSuccessMessage() {
-    clearTimeout(this.fadeTimer);
-    clearTimeout(this.clearTimer);
-    this.successMessage = '';
-    this.successLeaving = false;
   }
 }
 

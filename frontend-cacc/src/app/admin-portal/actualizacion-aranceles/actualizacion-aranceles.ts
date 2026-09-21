@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,6 +6,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { ArancelesService, ArancelHistorialItem } from '../../services/aranceles';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { NotificationService } from '../../shared/notifications/notification.service';
 
 Chart.register(...registerables);
 
@@ -36,7 +37,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
     templateUrl: './actualizacion-aranceles.html',
     styleUrl: './actualizacion-aranceles.css',
 })
-export class ActualizacionAranceles implements OnInit, OnDestroy {
+export class ActualizacionAranceles implements OnInit {
 
     headerMetrics = [
         { value: '—', label: 'Arancel masculino' },
@@ -48,9 +49,6 @@ export class ActualizacionAranceles implements OnInit, OnDestroy {
 
     categories = ['Masculino', 'Femenino'];
 
-    successMessage = '';
-    successLeaving = false;
-    errorMessage = '';
     enviando = false;
 
     // Every fee ever set, newest first: past periods, the current one and the
@@ -135,15 +133,11 @@ export class ActualizacionAranceles implements OnInit, OnDestroy {
         },
     };
 
-    // Timers for the confirmation message, cleared on destroy so leaving the
-    // dashboard mid-animation never fires a callback on a dead component
-    private fadeTimer?: ReturnType<typeof setTimeout>;
-    private clearTimer?: ReturnType<typeof setTimeout>;
-
     constructor(
         private fb: FormBuilder,
         private arancelesService: ArancelesService,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private notifications: NotificationService
     ) {
         this.feeForm = this.fb.group({
             category: ['', [Validators.required]],
@@ -275,11 +269,6 @@ export class ActualizacionAranceles implements OnInit, OnDestroy {
         return `$${value.toLocaleString('es-AR')}`;
     }
 
-    ngOnDestroy() {
-        clearTimeout(this.fadeTimer);
-        clearTimeout(this.clearTimer);
-    }
-
     // El estado ya viene calculado desde el backend (Vigente/Programado/Anterior).
     status(row: FeeRow): 'current' | 'scheduled' | 'previous' {
         switch (row.estado) {
@@ -313,39 +302,23 @@ export class ActualizacionAranceles implements OnInit, OnDestroy {
         const { category, amount, validFrom } = this.feeForm.value;
 
         this.enviando = true;
-        this.errorMessage = '';
 
         this.arancelesService.programar(category, Number(amount), validFrom).subscribe({
             next: () => {
                 this.enviando = false;
                 this.feeForm.reset({ category: '', amount: '', validFrom: '' });
                 this.montoDisplay = '';
-                this.showConfirmation(`Nuevo arancel ${category} programado correctamente.`);
+                this.notifications.notify(`Nuevo arancel ${category} programado correctamente.`, 'success');
                 this.cargarDatos();
                 this.cdr.detectChanges();
             },
             error: (err: HttpErrorResponse) => {
                 this.enviando = false;
-                this.errorMessage = err.error?.mensaje ?? 'No se pudo programar el arancel. Intentá de nuevo.';
+                const mensaje = err.error?.mensaje ?? 'No se pudo programar el arancel. Intentá de nuevo.';
+                this.notifications.notify(mensaje, 'error');
                 this.cdr.detectChanges();
             },
         });
-    }
-
-    // Shows the inline confirmation, fades it out and clears it after 3s
-    private showConfirmation(message: string) {
-        clearTimeout(this.fadeTimer);
-        clearTimeout(this.clearTimer);
-
-        this.successMessage = message;
-        this.successLeaving = false;
-
-        // Start the fade before removing the node so it does not blink out
-        this.fadeTimer = setTimeout(() => (this.successLeaving = true), 2700);
-        this.clearTimer = setTimeout(() => {
-            this.successMessage = '';
-            this.successLeaving = false;
-        }, 3000);
     }
 }
 
