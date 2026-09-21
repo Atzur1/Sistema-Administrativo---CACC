@@ -143,6 +143,7 @@
     <span class="breadcrumb-current">{{ currentPageTitle }}</span>
     </div>
     <div class="topbar-user">
+    <app-notification-bell></app-notification-bell>
     <div class="user-info">
         <span class="user-name">{{ userName }}</span>
         <span class="user-email">{{ userEmail }}</span>
@@ -156,5 +157,9 @@
 <main class="admin-content">
     <router-outlet></router-outlet>
 </main>
+
+<!-- Notificación flotante de pagos/beneficios/aranceles: una sola instancia
+     para todo el portal, no una por pantalla. -->
+<app-toast></app-toast>
 
 </div>

@@ -1,9 +1,9 @@
-import { Component, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
-import { Toast } from '../../shared/toast/toast';
+import { NotificationService } from '../../shared/notifications/notification.service';
 import { DiscountService } from '../../services/discounts';
 import {
     BenefitValueType,
@@ -52,11 +52,11 @@ type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel';
 @Component({
     selector: 'app-becados-descuentos',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, DiscountBadge, Toast],
+    imports: [CommonModule, ReactiveFormsModule, DiscountBadge],
     templateUrl: './becados-descuentos.html',
     styleUrl: './becados-descuentos.css',
 })
-export class BecadosDescuentos implements OnInit, OnDestroy {
+export class BecadosDescuentos implements OnInit {
 
     // Header counters, derived from what the API returns. They start as dashes
     // so the screen never shows a made-up number while the request is in flight.
@@ -97,10 +97,6 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
     dialogError = signal('');
     saving = signal(false);
 
-    // Confirmation after a write. It only fires once the API answered, never on
-    // submit, so a failed save can never look like a successful one.
-    @ViewChild(Toast) private toast?: Toast;
-
     // Every benefit of the player the popup is about: what expired, what runs
     // today and what is scheduled. Since HU-012 a player can hold several.
     playerDiscounts = signal<DiscountModel[]>([]);
@@ -117,7 +113,8 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
     constructor(
         private fb: FormBuilder,
         private discountService: DiscountService,
-        private pagosService: PagosService
+        private pagosService: PagosService,
+        private notifications: NotificationService
     ) {
         this.lookupForm = this.fb.group({
             player: ['', [Validators.required, this.knownPlayerValidator]],
@@ -149,10 +146,6 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
             // popup says so instead of showing an empty dropdown.
             error: () => this.benefitReasons.set([]),
         });
-    }
-
-    ngOnDestroy() {
-        // The toast clears its own timers; nothing else is pending here
     }
 
     // ===== DATA LOADING =====
@@ -569,9 +562,25 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
             },
             error: (error: HttpErrorResponse) => {
                 this.saving.set(false);
-                this.dialogError.set(this.messageFor(error, editing ? 'editar' : 'guardar'));
+                const mensaje = this.messageFor(error, editing ? 'editar' : 'guardar');
+                this.dialogError.set(mensaje);
+                this.notifications.notify(mensaje, 'error');
             },
         });
+    }
+
+    // El único punto donde el admin descarta a propósito lo que estaba
+    // completando: por eso es el único lugar de esta pantalla que dispara la
+    // notificación de "cambios no guardados", a diferencia de cerrar el popup
+    // desde la tarjeta activa (ahí no había nada que perder).
+    cancelForm() {
+        this.notifications.notify('Cambios no guardados: se canceló la operación.', 'cancelled');
+
+        if (this.hasBenefits) {
+            this.backToActive();
+        } else {
+            this.closeDialog();
+        }
     }
 
     confirmCancelBenefit() {
@@ -593,7 +602,9 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
             error: (error: HttpErrorResponse) => {
                 this.saving.set(false);
                 this.dialogView.set('active');
-                this.dialogError.set(this.messageFor(error, 'cancelar'));
+                const mensaje = this.messageFor(error, 'cancelar');
+                this.dialogError.set(mensaje);
+                this.notifications.notify(mensaje, 'error');
             },
         });
     }
@@ -683,6 +694,6 @@ export class BecadosDescuentos implements OnInit, OnDestroy {
 
     // Only called after the API confirmed the write
     private notify(message: string) {
-        this.toast?.show(message, 'success');
+        this.notifications.notify(message, 'success');
     }
 }

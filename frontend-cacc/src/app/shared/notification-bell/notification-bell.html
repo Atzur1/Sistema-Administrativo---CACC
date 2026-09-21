@@ -1,0 +1,39 @@
+<div class="bell-wrap">
+  <button type="button" class="bell-trigger" (click)="toggle()" [attr.aria-expanded]="isOpen()" aria-label="Notificaciones">
+    <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+    </svg>
+    @if (unreadCount() > 0) {
+      <span class="bell-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+    }
+  </button>
+
+  @if (isOpen()) {
+    <div class="bell-panel">
+      <header class="bell-panel-head">
+        <span>Notificaciones</span>
+        @if (items().length > 0) {
+          <button type="button" class="bell-clear" (click)="clear()">Limpiar</button>
+        }
+      </header>
+
+      @if (items().length === 0) {
+        <p class="bell-empty">Sin notificaciones todavía.</p>
+      } @else {
+        <ul class="bell-list">
+          @for (item of items(); track item.id) {
+            <li class="bell-item">
+              <span class="bell-item-dot" [class.dot-error]="item.kind === 'error'"
+                    [class.dot-cancelled]="item.kind === 'cancelled'"></span>
+              <div class="bell-item-body">
+                <span class="bell-item-message">{{ item.message }}</span>
+                <span class="bell-item-time">{{ relativeTime(item.timestamp) }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

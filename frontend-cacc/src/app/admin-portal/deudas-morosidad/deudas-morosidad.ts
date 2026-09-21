@@ -1,10 +1,13 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { CategoriaDeuda, PagosService, PendienteJugador, ResumenPagos } from '../../services/pagos';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { ReportesService } from '../../services/reportes';
+import { NotificationService } from '../../shared/notifications/notification.service';
+import { triggerBlobDownload } from '../../shared/download-file';
 
 // One row in the debtors ranking table
 interface DebtorRow {
@@ -121,9 +124,21 @@ export class DeudasMorosidad implements OnInit {
     selectedEstado: string | null = null;
     busqueda = '';
 
+    // HU-021: exportar la lista de deudores (respeta el filtro de categoría
+    // activo, tal como pide el criterio de aceptación) a PDF o CSV.
+    exportMenuOpen = false;
+    exportando = false;
+
     private allPendientes: PendienteJugador[] = [];
 
-    constructor(private pagosService: PagosService, private cdr: ChangeDetectorRef) {}
+    constructor(
+        private pagosService: PagosService,
+        private reportesService: ReportesService,
+        private notifications: NotificationService,
+        private cdr: ChangeDetectorRef,
+        private elementRef: ElementRef<HTMLElement>,
+        private ngZone: NgZone,
+    ) {}
 
     ngOnInit(): void {
         forkJoin({
@@ -200,6 +215,57 @@ export class DeudasMorosidad implements OnInit {
         this.selectedEstado = null;
         this.busqueda = '';
         this.aplicarFiltro();
+    }
+
+    toggleExportMenu(): void {
+        this.ngZone.run(() => (this.exportMenuOpen = !this.exportMenuOpen));
+    }
+
+    // HU-021: el idCategoria activo (no el nombre) es lo que el backend necesita
+    // para acotar el reporte — se busca en la propia lista ya cargada, sin pedir
+    // un endpoint de categorías aparte.
+    private get idCategoriaActivo(): number | null {
+        if (!this.selectedCategoria) return null;
+        return this.allPendientes.find((p) => p.categoria === this.selectedCategoria)?.idCategoria ?? null;
+    }
+
+    exportarDeudores(formato: 'pdf' | 'csv'): void {
+        if (this.exportando) return;
+
+        this.exportMenuOpen = false;
+        this.exportando = true;
+        const idCategoria = this.idCategoriaActivo;
+        const request = formato === 'pdf'
+            ? this.reportesService.exportarDeudoresPdf(idCategoria)
+            : this.reportesService.exportarDeudoresCsv(idCategoria);
+
+        request.subscribe({
+            next: (response) => {
+                this.exportando = false;
+                triggerBlobDownload(response, `reporte-deudores.${formato}`);
+                this.notifications.notify('Reporte de deudores exportado correctamente.', 'success');
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.exportando = false;
+                this.notifications.notify('No se pudo exportar el reporte. Intentá de nuevo.', 'error');
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
+    // Cierra el menú Exportar si el click fue afuera. Busca ".export-wrap"
+    // puntualmente (no todo el host del componente, que es el dashboard entero)
+    // porque si no, cualquier click en la pantalla — un filtro, una fila de la
+    // tabla — quedaría "adentro" y el menú nunca se cerraría.
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent): void {
+        if (!this.exportMenuOpen) return;
+
+        const wrap = this.elementRef.nativeElement.querySelector('.export-wrap');
+        if (wrap && !wrap.contains(event.target as Node)) {
+            this.ngZone.run(() => (this.exportMenuOpen = false));
+        }
     }
 
     // Clic en una barra de "Deuda por categoría": salta directo al ranking de

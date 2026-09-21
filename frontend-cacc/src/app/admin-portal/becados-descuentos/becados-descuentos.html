@@ -356,7 +356,7 @@
 
           <footer class="dialog-actions">
             <button type="button" class="button-ghost"
-                    (click)="hasBenefits ? backToActive() : closeDialog()" [disabled]="saving()">
+                    (click)="cancelForm()" [disabled]="saving()">
               Cancelar
             </button>
             <!-- Stays disabled while any required field is missing or the date
@@ -371,7 +371,4 @@
     </div>
   </div>
 }
-
-<!-- Confirmation of a write. It only appears once the API answered. -->
-<app-toast />
 

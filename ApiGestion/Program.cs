@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// HU-021: licencia Community de QuestPDF (gratuita para orgs de este tamaño).
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddControllers();
 
@@ -14,7 +18,12 @@ builder.Services.AddCors(options =>
         {
             policy.AllowAnyOrigin()
                 .AllowAnyMethod()
-                .AllowAnyHeader();
+                .AllowAnyHeader()
+                // HU-021: sin esto el navegador recibe el Content-Disposition
+                // en la respuesta pero el JS del frontend no puede leerlo (CORS
+                // solo expone unos pocos headers "seguros" por default), y la
+                // descarga se queda sin el nombre de archivo que puso el backend.
+                .WithExposedHeaders("Content-Disposition");
         });
 });
 
