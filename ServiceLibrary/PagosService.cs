@@ -153,6 +153,11 @@ namespace ServiceLibrary
         // (ver ArancelesService.ProgramarArancel). Acá no se genera nada por fecha de hoy.
         public IReadOnlyList<PendienteJugador> ObtenerPendientes() => _pagosDao.ObtenerPendientesAgrupados();
 
+        public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors)
+        {
+            return _pagosDao.GetPlayerAccounts(onlyDebtors);
+        }
+
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => _pagosDao.ObtenerUltimosPagos(top <= 0 ? 10 : top);
 
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => _pagosDao.ObtenerDeudaDetalle(idJugador);

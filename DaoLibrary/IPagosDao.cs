@@ -37,6 +37,10 @@ namespace DaoLibrary
 
         IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados();
 
+        // Roster of players with what each one owes (HU-029). With onlyDebtors the query itself
+        // returns just the players that owe something, so the filter never depends on the client.
+        IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors);
+
         IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top);
 
         ResumenPagos ObtenerResumen();
