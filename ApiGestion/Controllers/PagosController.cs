@@ -1,6 +1,5 @@
 using ApiGestion.Models;
 using DaoLibrary.Exceptions;
-using EntityLibrary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLibrary;
@@ -12,12 +11,10 @@ namespace ApiGestion.Controllers
     [Authorize]
     public class PagosController : ControllerBase
     {
-        private readonly ILogger<PagosController> _logger;
         private readonly IPagosService _pagosService;
 
-        public PagosController(ILogger<PagosController> logger, IPagosService pagosService)
+        public PagosController(IPagosService pagosService)
         {
-            _logger = logger;
             _pagosService = pagosService;
         }
 
@@ -35,27 +32,6 @@ namespace ApiGestion.Controllers
         public IActionResult ObtenerPendientes([FromQuery] int? idCategoria = null)
         {
             return Ok(_pagosService.ObtenerPendientes(idCategoria));
-        }
-
-        // GET api/pagos/player-accounts?onlyDebtors=true -> roster of Cuotas y Pagos (HU-029).
-        // Without the flag it returns every player; with it, only the ones with a balance above
-        // zero, by the same rule as the "Deuda Global Total" indicator.
-        // 200:   [{ playerId, firstName, lastName, dni, category, amountOwed, pendingInstallments }]
-        [HttpGet("player-accounts")]
-        public IActionResult GetPlayerAccounts([FromQuery] bool onlyDebtors = false)
-        {
-            try
-            {
-                var accounts = _pagosService.GetPlayerAccounts(onlyDebtors);
-                _logger.LogInformation("Player accounts returned: {Count} (onlyDebtors: {OnlyDebtors})", accounts.Count, onlyDebtors);
-
-                return Ok(accounts.Select(MapToDto).ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "The player accounts could not be read");
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener los jugadores.", error = ex.Message });
-            }
         }
 
         // GET api/pagos/deuda-por-categoria?anio=2026&mes=9 -> deuda de septiembre 2026 por categoría
@@ -152,20 +128,6 @@ namespace ApiGestion.Controllers
             {
                 return StatusCode(500, new { exito = false, mensaje = "Error interno al procesar el cobro.", error = ex.Message });
             }
-        }
-
-        private static PlayerAccountResponseDTO MapToDto(PlayerAccount account)
-        {
-            return new PlayerAccountResponseDTO
-            {
-                PlayerId = account.PlayerId,
-                FirstName = account.FirstName,
-                LastName = account.LastName,
-                Dni = account.Dni,
-                Category = account.Category,
-                AmountOwed = account.AmountOwed,
-                PendingInstallments = account.PendingInstallments
-            };
         }
     }
 }

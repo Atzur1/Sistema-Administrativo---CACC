@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PlayerAccountModel } from '../models/PlayerAccountModel';
 
 export interface JugadorResumen {
   idJugador: number;
@@ -102,11 +101,6 @@ export class PagosService {
   getDeudaPorCategoria(anio: number, mes?: number | null): Observable<CategoriaDeuda[]> {
     const params = mes != null ? `anio=${anio}&mes=${mes}` : `anio=${anio}`;
     return this.http.get<CategoriaDeuda[]>(`${this.apiUrl}/pagos/deuda-por-categoria?${params}`);
-  }
-
-  // HU-029: with onlyDebtors the API itself returns just the players that owe something
-  getPlayerAccounts(onlyDebtors: boolean): Observable<PlayerAccountModel[]> {
-    return this.http.get<PlayerAccountModel[]>(`${this.apiUrl}/pagos/player-accounts?onlyDebtors=${onlyDebtors}`);
   }
 
   getRecientes(top: number = 10): Observable<PagoReciente[]> {
