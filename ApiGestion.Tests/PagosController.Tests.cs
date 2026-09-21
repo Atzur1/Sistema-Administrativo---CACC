@@ -204,7 +204,8 @@ public class PagosControllerTests
         // El controller bajo prueba solo llama a ObtenerResumen; nada más debería invocarse.
         public RegistrarPagoResultado RegistrarPago(RegistrarPagoRequest request) => throw new NotSupportedException();
         public CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request) => throw new NotSupportedException();
-        public IReadOnlyList<PendienteJugador> ObtenerPendientes() => throw new NotSupportedException();
+        public IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null) => throw new NotSupportedException();
+        public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null) => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => throw new NotSupportedException();
     }

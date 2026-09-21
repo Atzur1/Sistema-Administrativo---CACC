@@ -30,10 +30,11 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/pagos/pendientes -> panel "Pendientes de cobro"
+        // GET api/pagos/pendientes?idCategoria=5 -> HU-020: acota el padrón a esa categoría/división
         [HttpGet("pendientes")]
-        public IActionResult ObtenerPendientes()
+        public IActionResult ObtenerPendientes([FromQuery] int? idCategoria = null)
         {
-            return Ok(_pagosService.ObtenerPendientes());
+            return Ok(_pagosService.ObtenerPendientes(idCategoria));
         }
 
         // GET api/pagos/player-accounts?onlyDebtors=true -> roster of Cuotas y Pagos (HU-029).
@@ -55,6 +56,14 @@ namespace ApiGestion.Controllers
                 _logger.LogError(ex, "The player accounts could not be read");
                 return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener los jugadores.", error = ex.Message });
             }
+        }
+
+        // GET api/pagos/deuda-por-categoria?anio=2026&mes=9 -> deuda de septiembre 2026 por categoría
+        // GET api/pagos/deuda-por-categoria?anio=2026 -> deuda de TODO el año 2026 por categoría (mes omitido)
+        [HttpGet("deuda-por-categoria")]
+        public IActionResult ObtenerDeudaPorCategoria([FromQuery] int? anio = null, [FromQuery] int? mes = null)
+        {
+            return Ok(_pagosService.ObtenerDeudaPorCategoria(anio ?? DateTime.Now.Year, mes));
         }
 
         // GET api/pagos/recientes?top=10 -> panel "Últimos pagos"

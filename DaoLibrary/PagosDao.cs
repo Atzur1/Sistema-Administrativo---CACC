@@ -268,7 +268,10 @@ namespace DaoLibrary
             }
         }
 
-        public IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados()
+        // HU-020: idCategoria es opcional — null trae el padrón completo (comportamiento previo),
+        // con un valor acota el resultado a esa división. El filtro se resuelve en el propio WHERE
+        // (no en un HAVING aparte) para que el motor pueda usarlo antes de agrupar.
+        public IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null)
         {
             var resultado = new List<PendienteJugador>();
 
@@ -276,17 +279,22 @@ namespace DaoLibrary
             // (si tiene uno vigente para ese período), aunque la cuota se haya cargado antes de
             // asignarle el beneficio. Un jugador cuyo beneficio le deja todo en $0 desaparece de
             // este panel (HAVING > 0): no tiene nada pendiente de cobro de verdad.
+            //
+            // WITH (NOLOCK) en las tablas del padrón (no en JUGADORES_DESCUENTOS, que es un
+            // fragmento compartido con otras consultas y queda fuera del alcance de HU-020) para
+            // que el barrido de morosos no quede detrás de un bloqueo de escritura.
             string query = $@"
-                SELECT j.PK_id_jugador, p.nombre, p.apellido, c.nombre_categoria,
+                SELECT j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria,
                        SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
                        COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 THEN 1 END) AS cantidad_cuotas
-                FROM PAGOS pg
+                FROM PAGOS pg WITH (NOLOCK)
                 {DescuentosSql.ApplyDescuentoActivo}
-                JOIN JUGADORES j ON pg.FK_id_jugador = j.PK_id_jugador
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
-                JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
+                JOIN JUGADORES j WITH (NOLOCK) ON pg.FK_id_jugador = j.PK_id_jugador
+                JOIN PERSONA p WITH (NOLOCK) ON j.FK_id_persona = p.PK_id_persona
+                JOIN CATEGORIAS c WITH (NOLOCK) ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE pg.estado = 0
-                GROUP BY j.PK_id_jugador, p.nombre, p.apellido, c.nombre_categoria
+                  AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
+                GROUP BY j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria
                 HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
                 ORDER BY monto_total DESC";
 
@@ -294,6 +302,8 @@ namespace DaoLibrary
             conexion.Open();
 
             using SqlCommand comando = new SqlCommand(query, conexion);
+            comando.Parameters.AddWithValue("@idCategoria", (object?)idCategoria ?? DBNull.Value);
+
             using SqlDataReader reader = comando.ExecuteReader();
             while (reader.Read())
             {
@@ -301,6 +311,8 @@ namespace DaoLibrary
                 {
                     IdJugador = Convert.ToInt32(reader["PK_id_jugador"]),
                     NombreCompleto = $"{reader["apellido"].ToString()?.Trim()}, {reader["nombre"].ToString()?.Trim()}",
+                    Dni = reader["Dni"].ToString()?.Trim() ?? "",
+                    IdCategoria = Convert.ToInt32(reader["FK_id_categoria"]),
                     Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? "",
                     MontoTotal = Convert.ToDecimal(reader["monto_total"]),
                     CantidadCuotas = Convert.ToInt32(reader["cantidad_cuotas"])
@@ -370,6 +382,50 @@ namespace DaoLibrary
             }
 
             return accounts;
+        }
+
+        public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null)
+        {
+            var resultado = new List<CategoriaDeuda>();
+
+            // No hace falta JOIN a PERSONA acá (no se necesita nombre/DNI, solo el total por
+            // categoría), así que la consulta queda liviana aunque el club tenga 700+ jugadores.
+            string query = $@"
+                SELECT j.FK_id_categoria, c.nombre_categoria,
+                       SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
+                       COUNT(DISTINCT CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 THEN j.PK_id_jugador END) AS cantidad_jugadores
+                FROM PAGOS pg WITH (NOLOCK)
+                {DescuentosSql.ApplyDescuentoActivo}
+                JOIN JUGADORES j WITH (NOLOCK) ON pg.FK_id_jugador = j.PK_id_jugador
+                JOIN CATEGORIAS c WITH (NOLOCK) ON j.FK_id_categoria = c.PK_id_categoria
+                WHERE pg.estado = 0
+                  AND pg.fecha_vencimiento IS NOT NULL
+                  AND YEAR(pg.fecha_vencimiento) = @anio
+                  AND (@mes IS NULL OR MONTH(pg.fecha_vencimiento) = @mes)
+                GROUP BY j.FK_id_categoria, c.nombre_categoria
+                HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
+                ORDER BY monto_total DESC";
+
+            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
+            conexion.Open();
+
+            using SqlCommand comando = new SqlCommand(query, conexion);
+            comando.Parameters.AddWithValue("@anio", anio);
+            comando.Parameters.AddWithValue("@mes", (object?)mes ?? DBNull.Value);
+
+            using SqlDataReader reader = comando.ExecuteReader();
+            while (reader.Read())
+            {
+                resultado.Add(new CategoriaDeuda
+                {
+                    IdCategoria = Convert.ToInt32(reader["FK_id_categoria"]),
+                    Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? "",
+                    MontoTotal = Convert.ToDecimal(reader["monto_total"]),
+                    CantidadJugadores = Convert.ToInt32(reader["cantidad_jugadores"])
+                });
+            }
+
+            return resultado;
         }
 
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top)

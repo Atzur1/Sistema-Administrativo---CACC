@@ -11,6 +11,6 @@
     }
   },
   "ConnectionStrings": {
-    "ConexionSQL": "Server=TU_SERVIDOR;Database=TU_BASE;Trusted_Connection=True;TrustServerCertificate=True;"
+    "ConexionSQL": "Server=localhost;Database=ClubCamionerosPruebaCuatro;Trusted_Connection=True;TrustServerCertificate=True;"
   }
 }

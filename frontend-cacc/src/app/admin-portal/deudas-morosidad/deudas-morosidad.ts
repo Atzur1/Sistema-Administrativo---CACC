@@ -1,13 +1,16 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { PagosService, PendienteJugador, ResumenPagos } from '../../services/pagos';
+import { CategoriaDeuda, PagosService, PendienteJugador, ResumenPagos } from '../../services/pagos';
 import { formatCompactCurrency } from '../../shared/format-currency';
+import { CustomSelect } from '../../shared/custom-select/custom-select';
 
 // One row in the debtors ranking table
 interface DebtorRow {
     rank: number;
     player: string;
+    dni: string;
     category: string;
     instalments: string;
     debt: string;
@@ -23,13 +26,23 @@ interface DebtorHighlight {
     amount: string;
 }
 
-// One bar in the "distribución por cuotas adeudadas" panel
-interface DistributionBar {
-    label: string;
-    players: number;
+// One row in "Deuda por categoría": a la vista de negocio le importa dónde
+// está concentrada la deuda, no solo quién debe — esto responde "¿en qué
+// categoría/división hay que enfocar la cobranza?" de un vistazo. Puede ser
+// del mes en curso o del año completo, según periodoModo.
+interface CategoriaDeudaRow {
+    categoria: string;
+    total: string;
+    jugadores: number;
     width: number;
-    color: string;
 }
+
+type PeriodoModo = 'mes' | 'anio';
+
+const NOMBRES_MES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
 
 interface BannerMetric {
     value: string;
@@ -63,17 +76,18 @@ const CUOTAS_PARA_INHABILITAR = 2;
 @Component({
     selector: 'app-deudas-morosidad',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule, CustomSelect],
     templateUrl: './deudas-morosidad.html',
     styleUrl: './deudas-morosidad.css',
 })
 export class DeudasMorosidad implements OnInit {
     cargando = true;
 
-    // Banner
+    // Banner (siempre valores globales del club, no se ven afectados por los
+    // filtros de abajo)
     bannerMetrics: BannerMetric[] = [
         { value: '—', label: 'Deuda total' },
-        { value: '—', label: 'Morosos' },
+        { value: '—', label: 'Deudores' },
         { value: '—', label: 'Inhabilitados' },
     ];
 
@@ -83,8 +97,31 @@ export class DeudasMorosidad implements OnInit {
     // Jugadores inhabilitados (2+ cuotas), los de mayor deuda primero
     topInhabilitados: DebtorHighlight[] = [];
 
-    // Debt age distribution
-    distribution: DistributionBar[] = [];
+    // Deuda por categoría/división, mayor a menor: del mes en curso (default) o
+    // del año completo, según periodoModo. Global, no se ve afectada por los
+    // filtros de la tabla de abajo — es un panel de "dónde está el problema".
+    // Cada fila filtra la lista de deudores al hacer clic.
+    categoriaBreakdown: CategoriaDeudaRow[] = [];
+    categoriaCargando = true;
+    periodoModo: PeriodoModo = 'mes';
+
+    readonly anioActual = new Date().getFullYear();
+    readonly mesActual = new Date().getMonth() + 1;
+    readonly nombreMesActual = NOMBRES_MES[new Date().getMonth()];
+
+    // HU-020: filtros por categoría/división, estado y búsqueda por nombre. Con
+    // 700+ jugadores en el club la lista de deudores puede ser enorme, así que
+    // esto no es opcional — sin buscador/filtros la tabla sería inutilizable.
+    // Las opciones de categoría se arman de la propia lista de pendientes (sin
+    // pedir un endpoint aparte). Todo se aplica en el cliente sobre la lista ya
+    // cargada: cambiar cualquier filtro es instantáneo, sin ida y vuelta al servidor.
+    categoriaOptions: string[] = [];
+    estadoOptions: string[] = ['Inhabilitado', 'Solo entrenamientos'];
+    selectedCategoria: string | null = null;
+    selectedEstado: string | null = null;
+    busqueda = '';
+
+    private allPendientes: PendienteJugador[] = [];
 
     constructor(private pagosService: PagosService, private cdr: ChangeDetectorRef) {}
 
@@ -94,17 +131,48 @@ export class DeudasMorosidad implements OnInit {
             resumen: this.pagosService.getResumen(),
         }).subscribe({
             next: ({ pendientes, resumen }) => {
-                this.debtors = pendientes.map(mapDebtorRow);
-                this.topInhabilitados = pendientes
-                    .filter((p) => p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR)
-                    .slice(0, 5)
-                    .map(mapHighlight);
-                this.distribution = buildDistribution(pendientes);
+                this.allPendientes = pendientes;
+                this.categoriaOptions = Array.from(new Set(pendientes.map((p) => p.categoria))).sort((a, b) =>
+                    a.localeCompare(b, 'es'),
+                );
+                this.aplicarFiltro();
                 this.cargando = false;
+                // Las métricas del banner son totales del club: siempre sobre la lista
+                // completa, no la filtrada por categoría.
                 this.animateBannerMetrics(buildBannerTargets(resumen, pendientes));
             },
             error: () => {
                 this.cargando = false;
+                this.cdr.detectChanges();
+            },
+        });
+
+        this.cargarDeudaPorCategoria();
+    }
+
+    // "Deuda por categoría" viene de un endpoint aparte (agregado del lado del
+    // servidor, no derivado de la lista de pendientes) porque necesita filtrar
+    // por fecha_vencimiento — algo que la lista de deudores no trae desglosado
+    // por período. Con 700+ jugadores, ese agregado tiene que resolverse en SQL.
+    cambiarPeriodo(modo: PeriodoModo): void {
+        if (this.periodoModo === modo) return;
+        this.periodoModo = modo;
+        this.cargarDeudaPorCategoria();
+    }
+
+    private cargarDeudaPorCategoria(): void {
+        this.categoriaCargando = true;
+        const mes = this.periodoModo === 'mes' ? this.mesActual : null;
+
+        this.pagosService.getDeudaPorCategoria(this.anioActual, mes).subscribe({
+            next: (filas) => {
+                this.categoriaBreakdown = buildCategoriaRows(filas);
+                this.categoriaCargando = false;
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.categoriaBreakdown = [];
+                this.categoriaCargando = false;
                 this.cdr.detectChanges();
             },
         });
@@ -113,6 +181,61 @@ export class DeudasMorosidad implements OnInit {
     // The first three ranks are highlighted in the table
     isTopRank(rank: number): boolean {
         return rank <= 3;
+    }
+
+    onFiltrosChange(): void {
+        this.aplicarFiltro();
+    }
+
+    get hayFiltrosActivos(): boolean {
+        return !!this.selectedCategoria || !!this.selectedEstado || this.busqueda.trim().length > 0;
+    }
+
+    get totalJugadores(): number {
+        return this.allPendientes.length;
+    }
+
+    limpiarFiltros(): void {
+        this.selectedCategoria = null;
+        this.selectedEstado = null;
+        this.busqueda = '';
+        this.aplicarFiltro();
+    }
+
+    // Clic en una barra de "Deuda por categoría": salta directo al ranking de
+    // esa categoría, sin tener que ir a buscarla en el combo de arriba.
+    filtrarPorCategoria(categoria: string): void {
+        this.selectedCategoria = categoria;
+        this.aplicarFiltro();
+    }
+
+    private aplicarFiltro(): void {
+        let filtrados = this.allPendientes;
+
+        if (this.selectedCategoria) {
+            filtrados = filtrados.filter((p) => p.categoria === this.selectedCategoria);
+        }
+
+        if (this.selectedEstado) {
+            const buscaInhabilitado = this.selectedEstado === 'Inhabilitado';
+            filtrados = filtrados.filter(
+                (p) => (p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR) === buscaInhabilitado,
+            );
+        }
+
+        const termino = this.busqueda.trim().toLowerCase();
+        if (termino) {
+            filtrados = filtrados.filter(
+                (p) => p.nombreCompleto.toLowerCase().includes(termino) || p.dni.includes(termino),
+            );
+        }
+
+        this.debtors = filtrados.map(mapDebtorRow);
+        this.topInhabilitados = filtrados
+            .filter((p) => p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR)
+            .slice(0, 5)
+            .map(mapHighlight);
+        this.cdr.detectChanges();
     }
 
     // Cuenta de 0 hasta el valor real en vez de aparecer de golpe. Respeta
@@ -160,6 +283,7 @@ function mapDebtorRow(p: PendienteJugador, index: number): DebtorRow {
     return {
         rank: index + 1,
         player: p.nombreCompleto,
+        dni: p.dni,
         category: p.categoria,
         instalments: `${p.cantidadCuotas} ${p.cantidadCuotas === 1 ? 'cuota' : 'cuotas'}`,
         debt: CURRENCY_FULL.format(p.montoTotal),
@@ -177,33 +301,24 @@ function mapHighlight(p: PendienteJugador): DebtorHighlight {
     };
 }
 
-// Agrupa a los morosos por cantidad de cuotas impagas, en los mismos 3 baldes que ya usaba
-// el mock: 1 cuota / 2 cuotas / 3+. El ancho de cada barra es la proporción de morosos que
-// cae en ese balde (no un valor fijo hardcodeado).
-function buildDistribution(pendientes: PendienteJugador[]): DistributionBar[] {
-    let unaCuota = 0;
-    let dosCuotas = 0;
-    let tresOMas = 0;
-
-    for (const p of pendientes) {
-        if (p.cantidadCuotas <= 1) unaCuota++;
-        else if (p.cantidadCuotas === 2) dosCuotas++;
-        else tresOMas++;
-    }
-
-    const total = pendientes.length || 1;
-    return [
-        { label: '1 cuota', players: unaCuota, width: (unaCuota / total) * 100, color: '#8dd49d' },
-        { label: '2 cuotas', players: dosCuotas, width: (dosCuotas / total) * 100, color: '#eba83a' },
-        { label: '3+ cuotas', players: tresOMas, width: (tresOMas / total) * 100, color: 'var(--color-danger)' },
-    ];
+// El backend ya devuelve las categorías ordenadas por deuda descendente; acá solo
+// se calcula el ancho de la barra (relativo a la categoría con más deuda) y se
+// formatea el monto.
+function buildCategoriaRows(filas: CategoriaDeuda[]): CategoriaDeudaRow[] {
+    const maxTotal = filas[0]?.montoTotal || 1;
+    return filas.map((f) => ({
+        categoria: f.categoria,
+        total: formatCompactCurrency(f.montoTotal),
+        jugadores: f.cantidadJugadores,
+        width: (f.montoTotal / maxTotal) * 100,
+    }));
 }
 
 function buildBannerTargets(resumen: ResumenPagos, pendientes: PendienteJugador[]): BannerMetricTarget[] {
     const inhabilitados = pendientes.filter((p) => p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR).length;
     return [
         { label: 'Deuda total', raw: resumen.deudaGlobalTotal, format: formatCompactCurrency },
-        { label: 'Morosos', raw: resumen.jugadoresMorosos, format: (n) => String(n) },
+        { label: 'Deudores', raw: resumen.jugadoresMorosos, format: (n) => String(n) },
         { label: 'Inhabilitados', raw: inhabilitados, format: (n) => String(n) },
     ];
 }

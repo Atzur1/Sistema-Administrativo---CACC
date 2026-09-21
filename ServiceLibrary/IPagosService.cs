@@ -43,10 +43,12 @@ namespace ServiceLibrary
         // Cobro en lote de filas PAGOS preexistentes con estado pendiente (Estado = false).
         CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request);
 
-        IReadOnlyList<PendienteJugador> ObtenerPendientes();
+        IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null);
 
         // HU-029: roster of players with what each one owes; onlyDebtors keeps just the ones that owe.
         IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors);
+
+        IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null);
 
         IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador);
 
