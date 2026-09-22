@@ -101,21 +101,44 @@
 }
 
 /* ===== ESTADO COLAPSADO: solo íconos ===== */
-/* Fade en vez de display:none — el texto se desvanece y el recorte de
-   .sidebar-scroll (overflow-x: hidden) hace que se achique junto con la
-   columna del grid, en vez de cortarse de golpe. */
-/* display: none, no opacity: un elemento en opacity:0 sigue ocupando su
-   ancho — "Club Atlético Camioneros de Córdoba" (varias palabras) fuerza un
-   ancho mínimo mucho mayor a los 72px del modo colapsado aunque sea
-   invisible, lo que rompe todo el layout del sidebar (empuja el logo fuera
-   de vista y genera scroll horizontal). Sacarlo del flujo por completo es lo
-   único robusto acá; la animación "moderna" queda en el ancho del sidebar
-   (ya transiciona solo) y en la rotación del ícono de la flecha. */
+/* Fade de opacidad, no display:none (que cortaba de golpe y se veía tosco) —
+   pero con overflow: hidden en los cuatro: un elemento en overflow:visible
+   sigue forzando su ancho mínimo de contenido aunque esté en opacity:0 (por
+   eso "Club Atlético Camioneros de Córdoba" rompía el layout la vez pasada);
+   con overflow:hidden en un flex item, el ancho mínimo automático pasa a ser
+   0 y puede achicarse junto con la columna del sidebar sin forzar nada. */
+.sidebar-brand,
+.nav-group-title,
+.nav-item span,
+.nav-action span {
+  opacity: 1;
+  overflow: hidden;
+  transition: opacity 0.15s ease;
+}
+
+.nav-item span,
+.nav-action span {
+  white-space: nowrap;
+}
+
+/* Al colapsar, el texto se desvanece RÁPIDO y sin demora — para cuando el
+   ancho del sidebar recién arrancó a achicarse, el texto ya casi no se ve,
+   así no queda tiempo para notar el reacomodo/reflujo de las palabras. */
 .admin-layout.is-collapsed .sidebar-brand,
 .admin-layout.is-collapsed .nav-group-title,
 .admin-layout.is-collapsed .nav-item span,
 .admin-layout.is-collapsed .nav-action span {
-  display: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+/* Al expandir, el texto aparece recién cuando el sidebar ya casi terminó de
+   agrandarse (la columna tarda 0.3s), no a mitad de camino todavía angosto. */
+.admin-layout:not(.is-collapsed) .sidebar-brand,
+.admin-layout:not(.is-collapsed) .nav-group-title,
+.admin-layout:not(.is-collapsed) .nav-item span,
+.admin-layout:not(.is-collapsed) .nav-action span {
+  transition: opacity 0.18s ease 0.16s;
 }
 
 .admin-layout.is-collapsed .sidebar-header {
@@ -123,11 +146,56 @@
   padding: 18px 8px;
 }
 
+/* El título de cada grupo ("Monitoreo", "Gestión") ya está en opacity:0,
+   pero sin esto su caja seguía reservando alto (font-size + margin-bottom)
+   aunque invisible. */
+.admin-layout.is-collapsed .nav-group-title {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Cada grupo pasa a ser una columna centrada de botones cuadrados, todos
+   del mismo tamaño (--icon-btn) y separados por el mismo "gap" — así el
+   espaciado es exacto por diseño, no una suma de paddings/margins de
+   contenedores distintos (que es lo que se desalineaba antes). El grupo
+   siguiente ("Gestión") se separa del anterior con un poco más de aire en
+   vez de una línea divisoria, que se leía como un elemento roto/suelto. */
+.admin-layout.is-collapsed .nav-group {
+  --icon-btn: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+}
+
+.admin-layout.is-collapsed .nav-group + .nav-group {
+  margin-top: 8px;
+}
+
+/* Ítem colapsado: un cuadrado fijo (--icon-btn), centrado por flexbox en la
+   columna del grupo — el mismo tamaño y centrado exacto para los enlaces de
+   navegación y para los botones del pie, sin depender del padding de cada
+   contenedor padre (nav vs footer), que es lo que los desalineaba antes. */
 .admin-layout.is-collapsed .nav-item,
 .admin-layout.is-collapsed .nav-action {
+  flex: none;
+  width: var(--icon-btn, 40px);
+  height: var(--icon-btn, 40px);
   justify-content: center;
-  padding: 10px 0;
+  align-items: center;
+  padding: 0;
+  margin: 0;
   gap: 0;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+}
+
+.admin-layout.is-collapsed .nav-item.active {
+  box-shadow: none;
 }
 
 /* El hover normal corre el ítem 4px a la derecha (padding-left: 20px vs 16px);
@@ -137,9 +205,24 @@
   padding-left: 0;
 }
 
+.admin-layout.is-collapsed .nav-action {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 .admin-layout.is-collapsed .nav-action:hover {
   padding-left: 0;
   transform: none;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* El pie ("Cambiar portal" / "Cerrar sesión") usa el mismo layout en
+   columna centrada que los grupos de navegación, para que sus botones
+   queden exactamente alineados con los íconos de arriba. */
+.admin-layout.is-collapsed .sidebar-footer {
+  align-items: center;
+  padding: 10px 0;
+  gap: 6px;
 }
 
 /* Logo + brand block at the top */

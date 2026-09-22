@@ -1,4 +1,4 @@
-import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { Component, NgZone, OnInit, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
@@ -46,7 +46,8 @@ private destroyRef = inject(DestroyRef);
 
 constructor(
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private ngZone: NgZone
 ) {}
 
 ngOnInit() {
@@ -99,21 +100,29 @@ private updatePageTitle() {
     this.currentPageTitle = this.pageTitles[lastSegment] ?? '';
 }
 
-// Open/close the mobile sidebar drawer
+// Open/close the mobile sidebar drawer.
+// ngZone.run(): AdminPortal es el shell persistente de todo el portal — si
+// alguna pantalla hija (ej. los gráficos de Chart.js en Resumen General o
+// Actualización de Aranceles) saca el render a runOutsideAngular y la
+// navegación no vuelve a entrar a la zona, estos clicks cambian el estado
+// pero Angular no repinta hasta el próximo evento que sí corra adentro —
+// por eso "no pasaba nada" hasta recargar la página.
 toggleSidebar() {
-    this.sidebarOpen = !this.sidebarOpen;
+    this.ngZone.run(() => (this.sidebarOpen = !this.sidebarOpen));
 }
 
 closeSidebar() {
-    this.sidebarOpen = false;
+    this.ngZone.run(() => (this.sidebarOpen = false));
 }
 
 // Colapsa el sidebar a solo íconos en escritorio, para aprovechar el ancho
 // de pantalla en tablas y grillas que lo necesitan (Deudas y Morosidad,
 // Reportes, etc.). No tiene efecto en el drawer móvil, que es otro mecanismo.
 toggleCollapse() {
-    this.sidebarCollapsed = !this.sidebarCollapsed;
-    localStorage.setItem(AdminPortal.SIDEBAR_COLLAPSED_KEY, String(this.sidebarCollapsed));
+    this.ngZone.run(() => {
+        this.sidebarCollapsed = !this.sidebarCollapsed;
+        localStorage.setItem(AdminPortal.SIDEBAR_COLLAPSED_KEY, String(this.sidebarCollapsed));
+    });
 }
 
 // Go back to the portals selection screen
