@@ -1,0 +1,19 @@
+$kind: http-request
+description: "HU-029. El filtro solo admite true o false. Con un valor que no es booleano (onlyDebtors=abc) la API debe rechazar la petición con 400 y no devolver el padrón, en lugar de asumir un valor."
+url: "{{baseUrl}}/api/Pagos/player-accounts?onlyDebtors=abc"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code es 400", function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test("No devuelve datos de jugadores", function () {
+          pm.expect(pm.response.text()).to.not.include("amountOwed");
+      });
+    language: text/javascript
+order: 1789148400009

@@ -1,0 +1,26 @@
+$kind: http-request
+description: "HU-029 y HU-020. La pantalla Ver todos los deudores y la Lista de deudores de Deudas y Morosidad muestran la misma deuda, así que el filtro de deudores (player-accounts) y el listado de pendientes deben coincidir en cantidad de jugadores y en monto total, porque usan la misma regla de saldo real (con el beneficio de Becados y Descuentos aplicado). Depende de la request del filtro de deudores, que deja hu029Deudores y hu029MontoDeudores en el entorno."
+url: "{{baseUrl}}/api/Pagos/pendientes"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const respuesta = pm.response.json();
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("La cantidad de deudores es igual a la de la Lista de deudores", function () {
+          pm.expect(Number(pm.environment.get("hu029Deudores"))).to.equal(respuesta.length);
+      });
+
+      pm.test("La suma adeudada es igual a la de la Lista de deudores, al centavo", function () {
+          const suma = respuesta.reduce((acumulado, jugador) => acumulado + jugador.montoTotal, 0);
+          pm.expect(Math.round(Number(pm.environment.get("hu029MontoDeudores")) * 100)).to.equal(Math.round(suma * 100));
+      });
+    language: text/javascript
+order: 1789148400013

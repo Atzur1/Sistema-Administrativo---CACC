@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { CategoriaDeuda, PagosService, PendienteJugador, ResumenPagos } from '../../services/pagos';
+import { PlayerAccountModel } from '../../models/PlayerAccountModel';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { ReportesService } from '../../services/reportes';
@@ -19,6 +20,16 @@ interface DebtorRow {
     debt: string;
     status: 'suspended' | 'partial';
     statusLabel: string;
+}
+
+// Un alumno deudor (api/pagos/player-accounts?onlyDebtors=true), con lo que debe
+interface AlumnoRow {
+    idJugador: number;
+    nombreCompleto: string;
+    dni: string;
+    categoria: string;
+    cantidadCuotas: number;
+    montoTotal: number;
 }
 
 // One row in the "Inhabilitados" panel
@@ -115,8 +126,8 @@ export class DeudasMorosidad implements OnInit {
     // HU-020: filtros por categoría/división, estado y búsqueda por nombre. Con
     // 700+ jugadores en el club la lista de deudores puede ser enorme, así que
     // esto no es opcional — sin buscador/filtros la tabla sería inutilizable.
-    // Las opciones de categoría se arman de la propia lista de pendientes (sin
-    // pedir un endpoint aparte). Todo se aplica en el cliente sobre la lista ya
+    // Las opciones de categoría se arman de la propia lista cargada (sin pedir
+    // un endpoint aparte). Todo se aplica en el cliente sobre la lista ya
     // cargada: cambiar cualquier filtro es instantáneo, sin ida y vuelta al servidor.
     categoriaOptions: string[] = [];
     estadoOptions: string[] = ['Inhabilitado', 'Solo entrenamientos'];
@@ -129,6 +140,10 @@ export class DeudasMorosidad implements OnInit {
     exportMenuOpen = false;
     exportando = false;
 
+    // HU-029: la tabla muestra solo a los alumnos deudores (api/pagos/player-accounts),
+    // del que más cuotas debe al que menos (a igual cantidad, el de mayor monto primero).
+    // allPendientes sigue cargándose aparte: alimenta el banner y el idCategoria del export.
+    private allRows: AlumnoRow[] = [];
     private allPendientes: PendienteJugador[] = [];
 
     constructor(
@@ -147,22 +162,38 @@ export class DeudasMorosidad implements OnInit {
         }).subscribe({
             next: ({ pendientes, resumen }) => {
                 this.allPendientes = pendientes;
-                this.categoriaOptions = Array.from(new Set(pendientes.map((p) => p.categoria))).sort((a, b) =>
-                    a.localeCompare(b, 'es'),
-                );
-                this.aplicarFiltro();
-                this.cargando = false;
                 // Las métricas del banner son totales del club: siempre sobre la lista
                 // completa, no la filtrada por categoría.
                 this.animateBannerMetrics(buildBannerTargets(resumen, pendientes));
             },
             error: () => {
-                this.cargando = false;
                 this.cdr.detectChanges();
             },
         });
 
+        this.cargarPadron();
         this.cargarDeudaPorCategoria();
+    }
+
+    private cargarPadron(): void {
+        this.pagosService.getPlayerAccounts(true).subscribe({
+            next: (accounts) => {
+                this.allRows = accounts
+                    .map(mapAccountRow)
+                    .sort((a, b) => b.cantidadCuotas - a.cantidadCuotas || b.montoTotal - a.montoTotal);
+                this.categoriaOptions = Array.from(new Set(this.allRows.map((r) => r.categoria))).sort((a, b) =>
+                    a.localeCompare(b, 'es'),
+                );
+                this.aplicarFiltro();
+                this.cargando = false;
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.cargando = false;
+                this.notifications.notify('No se pudo cargar la lista de jugadores. Intentá de nuevo.', 'error');
+                this.cdr.detectChanges();
+            },
+        });
     }
 
     // "Deuda por categoría" viene de un endpoint aparte (agregado del lado del
@@ -207,7 +238,7 @@ export class DeudasMorosidad implements OnInit {
     }
 
     get totalJugadores(): number {
-        return this.allPendientes.length;
+        return this.allRows.length;
     }
 
     limpiarFiltros(): void {
@@ -276,17 +307,16 @@ export class DeudasMorosidad implements OnInit {
     }
 
     private aplicarFiltro(): void {
-        let filtrados = this.allPendientes;
+        let filtrados = this.allRows;
 
         if (this.selectedCategoria) {
             filtrados = filtrados.filter((p) => p.categoria === this.selectedCategoria);
         }
 
-        if (this.selectedEstado) {
-            const buscaInhabilitado = this.selectedEstado === 'Inhabilitado';
-            filtrados = filtrados.filter(
-                (p) => (p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR) === buscaInhabilitado,
-            );
+        if (this.selectedEstado === 'Inhabilitado') {
+            filtrados = filtrados.filter((p) => p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR);
+        } else if (this.selectedEstado === 'Solo entrenamientos') {
+            filtrados = filtrados.filter((p) => p.cantidadCuotas === 1);
         }
 
         const termino = this.busqueda.trim().toLowerCase();
@@ -344,7 +374,18 @@ function initialsOf(nombreCompleto: string): string {
     return `${apellido?.[0] ?? ''}${nombre?.[0] ?? ''}`.toUpperCase();
 }
 
-function mapDebtorRow(p: PendienteJugador, index: number): DebtorRow {
+function mapAccountRow(a: PlayerAccountModel): AlumnoRow {
+    return {
+        idJugador: a.playerId,
+        nombreCompleto: `${a.lastName}, ${a.firstName}`,
+        dni: a.dni,
+        categoria: a.category,
+        cantidadCuotas: a.pendingInstallments,
+        montoTotal: a.amountOwed,
+    };
+}
+
+function mapDebtorRow(p: AlumnoRow, index: number): DebtorRow {
     const inhabilitado = p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR;
     return {
         rank: index + 1,
@@ -358,7 +399,7 @@ function mapDebtorRow(p: PendienteJugador, index: number): DebtorRow {
     };
 }
 
-function mapHighlight(p: PendienteJugador): DebtorHighlight {
+function mapHighlight(p: AlumnoRow): DebtorHighlight {
     return {
         initials: initialsOf(p.nombreCompleto),
         player: p.nombreCompleto,
