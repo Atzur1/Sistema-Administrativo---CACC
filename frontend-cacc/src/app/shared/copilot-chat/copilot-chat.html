@@ -1,0 +1,141 @@
+<div class="copilot-wrap">
+
+  <!-- Botón flotante: ícono de bot/asistente cuando está cerrado, X cuando está abierto —
+       para que se identifique sin ambigüedad como el chatbot del sistema. -->
+  <button type="button" class="copilot-trigger" (click)="toggle()"
+          [attr.aria-expanded]="isOpen()" aria-label="Abrir el Copiloto CACC">
+    @if (!isOpen()) {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 8V4H8"></path>
+        <rect x="4" y="8" width="16" height="12" rx="2"></rect>
+        <path d="M2 14h2"></path>
+        <path d="M20 14h2"></path>
+        <path d="M9 13v2"></path>
+        <path d="M15 13v2"></path>
+      </svg>
+    } @else {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    }
+  </button>
+
+  <!-- Avatar "robot futbolista": cabeza de robot con antena rematada en
+       pelotita, reutilizado en el header y en cada mensaje del bot. -->
+  <ng-template #robotAvatar>
+    <svg viewBox="0 0 24 24" fill="none">
+      <line x1="12" y1="2.4" x2="12" y2="5.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"></line>
+      <circle cx="12" cy="2" r="1.3" fill="currentColor"></circle>
+      <rect x="4.5" y="5.4" width="15" height="11.6" rx="4" fill="currentColor"></rect>
+      <circle cx="9" cy="11.2" r="1.5" fill="#0d4223"></circle>
+      <circle cx="15" cy="11.2" r="1.5" fill="#0d4223"></circle>
+      <rect x="9.2" y="14" width="5.6" height="1.4" rx="0.7" fill="#0d4223" opacity="0.6"></rect>
+      <rect x="6" y="16.8" width="3" height="1.8" rx="0.6" fill="currentColor"></rect>
+      <rect x="15" y="16.8" width="3" height="1.8" rx="0.6" fill="currentColor"></rect>
+    </svg>
+  </ng-template>
+
+  @if (isOpen()) {
+    <div class="copilot-panel" role="dialog" aria-modal="true" aria-label="Copiloto CACC">
+
+      <header class="copilot-head">
+        <div class="copilot-head-info">
+          <span class="copilot-avatar">
+            <ng-container [ngTemplateOutlet]="robotAvatar"></ng-container>
+          </span>
+          <div class="copilot-head-text">
+            <span class="copilot-name">Copiloto CACC</span>
+            <span class="copilot-status">Te ayudo a moverte por el panel</span>
+          </div>
+        </div>
+        <button type="button" class="copilot-close" (click)="close()" aria-label="Cerrar Copiloto CACC">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+
+      <div class="copilot-messages">
+        @for (message of messages(); track message.id) {
+          @if (message.from === 'user') {
+            <div class="msg msg-user">{{ message.text }}</div>
+          } @else {
+            <div class="msg-row-bot">
+              <span class="msg-avatar">
+                <ng-container [ngTemplateOutlet]="robotAvatar"></ng-container>
+              </span>
+              <div class="msg msg-bot">
+                @if (message.text) {
+                  <p class="msg-text">{{ message.text }}</p>
+                }
+
+                @if (message.title) {
+                  <p class="msg-title">{{ message.title }}</p>
+                  <ol class="msg-steps">
+                    @for (step of message.steps; track step) {
+                      <li>{{ step }}</li>
+                    }
+                  </ol>
+                }
+
+                @if (message.action; as action) {
+                  <button type="button" class="msg-action" (click)="runAction(action)">
+                    <span>{{ action.label }}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                  </button>
+                }
+
+                @if (message.chips && message.chips.length > 0) {
+                  <div class="msg-chips">
+                    @for (chip of message.chips; track chip.intentId) {
+                      <button type="button" class="msg-chip" (click)="askIntent(chip.intentId, chip.label)">
+                        {{ chip.label }}
+                      </button>
+                    }
+                  </div>
+                }
+
+                @if (message.suggestedKeywords && message.suggestedKeywords.length > 0) {
+                  <p class="msg-keywords-label">Palabras clave que reconozco:</p>
+                  <div class="msg-keywords">
+                    @for (keyword of message.suggestedKeywords; track keyword) {
+                      <span class="msg-keyword">{{ keyword }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+        <div #scrollAnchor></div>
+      </div>
+
+      <div class="copilot-input-wrap">
+        @if (showClearHint()) {
+          <div class="copilot-clear-hint">
+            Tip: escribí <code>/clear</code> o <code>/limpiar</code> para reiniciar la conversación.
+          </div>
+        }
+        <div class="copilot-input-row">
+          <input type="text" class="copilot-input" placeholder="Escribí tu consulta..."
+                 [value]="draft()" (input)="updateDraft($any($event.target).value)"
+                 (keydown.enter)="send()" (focus)="onInputFocus()" (blur)="onInputBlur()"
+                 aria-label="Escribir consulta para el Copiloto CACC" />
+          <button type="button" class="copilot-send" (click)="send()" [disabled]="!draft().trim()" aria-label="Enviar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>

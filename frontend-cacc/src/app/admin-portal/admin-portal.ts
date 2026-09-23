@@ -6,11 +6,12 @@ import { AuthService } from '../services/auth';
 import { filter } from 'rxjs/operators';
 import { Toast } from '../shared/toast/toast';
 import { NotificationBell } from '../shared/notification-bell/notification-bell';
+import { CopilotChat } from '../shared/copilot-chat/copilot-chat';
 
 @Component({
     selector: 'app-admin-portal',
     standalone: true,
-    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Toast, NotificationBell],
+    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Toast, NotificationBell, CopilotChat],
     templateUrl: './admin-portal.html',
     styleUrl: './admin-portal.css',
 })
