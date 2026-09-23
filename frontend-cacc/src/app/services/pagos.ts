@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { PlayerAccountModel } from '../models/PlayerAccountModel';
 
 export interface JugadorResumen {
   idJugador: number;
@@ -95,6 +96,11 @@ export class PagosService {
       ? `${this.apiUrl}/pagos/pendientes?idCategoria=${idCategoria}`
       : `${this.apiUrl}/pagos/pendientes`;
     return this.http.get<PendienteJugador[]>(url);
+  }
+
+  // HU-029: con onlyDebtors la propia API devuelve solo a los jugadores que deben algo
+  getPlayerAccounts(onlyDebtors: boolean): Observable<PlayerAccountModel[]> {
+    return this.http.get<PlayerAccountModel[]>(`${this.apiUrl}/pagos/player-accounts?onlyDebtors=${onlyDebtors}`);
   }
 
   // mes: si se omite, trae la deuda del año completo en vez de un mes puntual.
