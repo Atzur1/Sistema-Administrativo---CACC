@@ -40,7 +40,7 @@ interface ChatMessage {
 // Se persiste la conversación en sessionStorage bajo esta clave: sobrevive
 // a cerrar/abrir el drawer y a recargar la pestaña, pero no se acumula
 // indefinidamente entre sesiones (se limpia sola al cerrar la pestaña).
-const STORAGE_KEY = 'cacc_copilot_state';
+const STORAGE_KEY = 'cacc_dt_admin_state';
 
 interface PersistedState {
     messages: ChatMessage[];
@@ -49,19 +49,20 @@ interface PersistedState {
 
 let nextMessageId = 1;
 
-// "El Copiloto CACC": drawer de ayuda flotante, siempre montado una sola vez
-// en el shell del portal admin (como app-toast) — no por pantalla. Es un bot
-// de intenciones por palabras clave (ver bot-knowledge-base.ts), no un LLM:
-// el objetivo de esta primera versión es reorientar al administrador con
-// pasos cortos y un acceso directo, no sostener una charla abierta.
+// "El DT Administrativo": drawer de ayuda flotante, siempre montado una
+// sola vez en el shell del portal admin (como app-toast) — no por pantalla.
+// Es un bot de intenciones por palabras clave (ver bot-knowledge-base.ts),
+// no un LLM: el objetivo de esta primera versión es reorientar al
+// administrador con pasos cortos y un acceso directo, no sostener una
+// charla abierta.
 @Component({
-    selector: 'app-copilot-chat',
+    selector: 'app-dt-admin-chat',
     standalone: true,
     imports: [CommonModule],
-    templateUrl: './copilot-chat.html',
-    styleUrl: './copilot-chat.css',
+    templateUrl: './dt-admin-chat.html',
+    styleUrl: './dt-admin-chat.css',
 })
-export class CopilotChat {
+export class DtAdminChat {
     private router = inject(Router);
     private ngZone = inject(NgZone);
 

@@ -12,7 +12,7 @@ import {
   relatedTopics,
 } from './bot-knowledge-base';
 
-// Cubre el matching de intenciones del Copiloto CACC: los dos ejemplos que
+// Cubre el matching de intenciones de El DT Administrativo: los dos ejemplos que
 // dispararon esta HU ("¿Cómo registro un pago?" y "Necesito ver los
 // deudores y bajar el reporte"), más los casos de borde (vacío, sin match).
 describe('matchIntent', () => {
@@ -111,7 +111,7 @@ describe('isClearIntent', () => {
 
 describe('fallback: texto y palabras clave sugeridas', () => {
   it('el mensaje de fallback explica el propósito y los límites del bot', () => {
-    expect(FALLBACK_TEXT).toContain('asistente del sistema');
+    expect(FALLBACK_TEXT).toContain('DT Administrativo');
     expect(FALLBACK_TEXT).toContain('pagos');
     expect(FALLBACK_TEXT).toContain('deudores');
   });

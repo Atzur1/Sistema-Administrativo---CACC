@@ -1,8 +1,8 @@
-// Base de conocimiento de "El Copiloto CACC": diccionario de intenciones por
-// palabras clave. No hay NLP real acá — es un match de substring sobre texto
-// normalizado (sin acentos, en minúsculas), a propósito simple porque el
-// alcance de esta primera versión es guiar al administrador con respuestas
-// cortas y accesos directos, no sostener una conversación abierta.
+// Base de conocimiento de "El DT Administrativo": diccionario de intenciones
+// por palabras clave. No hay NLP real acá — es un match de substring sobre
+// texto normalizado (sin acentos, en minúsculas), a propósito simple porque
+// el alcance de esta primera versión es guiar al administrador con
+// respuestas cortas y accesos directos, no sostener una conversación abierta.
 import { normalizeText } from '../normalize-text';
 
 export interface QuickAction {
@@ -208,12 +208,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
 export const FALLBACK_INTENT_IDS = ['pagos', 'deudores', 'jugadores', 'reportes', 'aranceles'];
 
 export const GREETING_TEXT =
-    '¡Hola! Soy el Copiloto CACC 👋 Contame qué necesitás hacer, o elegí uno de estos accesos rápidos:';
+    '¡Hola! Soy El DT Administrativo 📋⚽ Contame qué jugada necesitás hacer, o elegí uno de estos accesos rápidos:';
 
 // Deja claro el límite del bot en vez de un genérico "no entendí": qué hace
 // y qué no, para que el administrador no siga probando temas fuera de tema.
 export const FALLBACK_TEXT =
-    'Disculpá, no reconozco esa consulta. Mi función es ayudarte como asistente del sistema para guiarte en los procesos operativos del club (cargar pagos, consultar deudores, reportes o tarifas). Solo puedo responder a esas tareas puntuales.';
+    'Disculpá, no reconozco esa indicación. Como DT Administrativo, mi tarea es marcarte la cancha y guiarte en los procesos del club (pagos, deudores, reportes o tarifas). Solo puedo responder a esas tareas puntuales.';
 
 // Se listan además de los botones de acceso rápido, como pista de qué
 // palabras sueltas reconoce el bot si el administrador prefiere escribir en
