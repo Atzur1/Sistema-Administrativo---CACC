@@ -180,7 +180,7 @@
 }
 
 /* Fila del bot: avatar + burbuja, para que cada respuesta quede "firmada"
-   por el Copiloto en vez de flotar sin identidad como la del usuario. */
+   por el DT en vez de flotar sin identidad como la del usuario. */
 .msg-row-bot {
     align-self: flex-start;
     display: flex;

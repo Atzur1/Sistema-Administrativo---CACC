@@ -3,7 +3,7 @@
   <!-- Botón flotante: ícono de bot/asistente cuando está cerrado, X cuando está abierto —
        para que se identifique sin ambigüedad como el chatbot del sistema. -->
   <button type="button" class="copilot-trigger" (click)="toggle()"
-          [attr.aria-expanded]="isOpen()" aria-label="Abrir el Copiloto CACC">
+          [attr.aria-expanded]="isOpen()" aria-label="Abrir El DT Administrativo">
     @if (!isOpen()) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 8V4H8"></path>
@@ -37,7 +37,7 @@
   </ng-template>
 
   @if (isOpen()) {
-    <div class="copilot-panel" role="dialog" aria-modal="true" aria-label="Copiloto CACC">
+    <div class="copilot-panel" role="dialog" aria-modal="true" aria-label="El DT Administrativo">
 
       <header class="copilot-head">
         <div class="copilot-head-info">
@@ -45,11 +45,11 @@
             <ng-container [ngTemplateOutlet]="robotAvatar"></ng-container>
           </span>
           <div class="copilot-head-text">
-            <span class="copilot-name">Copiloto CACC</span>
-            <span class="copilot-status">Te ayudo a moverte por el panel</span>
+            <span class="copilot-name">El DT Administrativo</span>
+            <span class="copilot-status">Tu DT para moverte por el panel</span>
           </div>
         </div>
-        <button type="button" class="copilot-close" (click)="close()" aria-label="Cerrar Copiloto CACC">
+        <button type="button" class="copilot-close" (click)="close()" aria-label="Cerrar El DT Administrativo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -125,7 +125,7 @@
           <input type="text" class="copilot-input" placeholder="Escribí tu consulta..."
                  [value]="draft()" (input)="updateDraft($any($event.target).value)"
                  (keydown.enter)="send()" (focus)="onInputFocus()" (blur)="onInputBlur()"
-                 aria-label="Escribir consulta para el Copiloto CACC" />
+                 aria-label="Escribir consulta para El DT Administrativo" />
           <button type="button" class="copilot-send" (click)="send()" [disabled]="!draft().trim()" aria-label="Enviar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>

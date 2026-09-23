@@ -1,24 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
-import { CopilotChat } from './copilot-chat';
+import { DtAdminChat } from './dt-admin-chat';
 
 // Cubre los dos comportamientos con estado nuevos de esta vuelta: el
 // comando /clear y la persistencia de la conversación entre aperturas
 // (sessionStorage). El matching de intenciones ya está cubierto en
 // bot-knowledge-base.spec.ts.
-describe('CopilotChat', () => {
-  let fixture: ComponentFixture<CopilotChat>;
-  let component: CopilotChat;
+describe('DtAdminChat', () => {
+  let fixture: ComponentFixture<DtAdminChat>;
+  let component: DtAdminChat;
 
   beforeEach(async () => {
     sessionStorage.clear();
     await TestBed.configureTestingModule({
-      imports: [CopilotChat],
+      imports: [DtAdminChat],
       providers: [provideRouter([])],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(CopilotChat);
+    fixture = TestBed.createComponent(DtAdminChat);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -82,7 +82,7 @@ describe('CopilotChat', () => {
 
     const messages = component.messages();
     const lastBotMessage = messages[messages.length - 1];
-    expect(lastBotMessage.text).toContain('asistente del sistema');
+    expect(lastBotMessage.text).toContain('DT Administrativo');
     expect(lastBotMessage.chips).toHaveLength(5);
     expect(lastBotMessage.suggestedKeywords).toEqual([
       'pagos',
@@ -128,7 +128,7 @@ describe('CopilotChat', () => {
 
     // Simula cerrar y volver a abrir el drawer: un componente nuevo, como
     // pasaría si Angular lo recrea (o si se recarga la pestaña).
-    const fixture2 = TestBed.createComponent(CopilotChat);
+    const fixture2 = TestBed.createComponent(DtAdminChat);
     const component2 = fixture2.componentInstance;
     fixture2.detectChanges();
 
