@@ -39,6 +39,10 @@ namespace DaoLibrary
         // valor, HU-020 acota el padrón de morosos a esa división únicamente.
         IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null);
 
+        // HU-029: padrón de jugadores con lo que debe cada uno. Con onlyDebtors la propia consulta
+        // devuelve solo a quien debe algo, así el filtro nunca depende del cliente.
+        IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors);
+
         // Deuda agrupada por categoría/división para un período: un mes puntual (mes != null)
         // o el año completo (mes == null). Se filtra por fecha_vencimiento de la cuota (el
         // período que cubre, no cuándo se cargó), mismo criterio que el resto de HU-020.

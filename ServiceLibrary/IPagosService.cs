@@ -47,6 +47,9 @@ namespace ServiceLibrary
 
         IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null);
 
+        // HU-029: padrón de jugadores con su deuda; onlyDebtors deja solo a los que deben.
+        IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors);
+
         IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador);
 
         IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top);
