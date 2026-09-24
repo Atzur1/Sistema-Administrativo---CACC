@@ -8,3 +8,13 @@ values:
     value: ''
   - key: adminPassword
     value: ''
+  - key: hu029Padron
+    value: ''
+  - key: hu029Deudores
+    value: ''
+  - key: hu029MontoDeudores
+    value: ''
+  - key: hu029PrimerDeudorId
+    value: ''
+  - key: hu029PrimerDeudorMonto
+    value: ''
