@@ -4,3 +4,7 @@ values:
     value: ''
   - key: authToken
     value: ''
+  - key: adminUser
+    value: ''
+  - key: adminPassword
+    value: ''

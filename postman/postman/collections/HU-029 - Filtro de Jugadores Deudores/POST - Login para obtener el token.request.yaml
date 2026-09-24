@@ -1,10 +1,10 @@
 $kind: http-request
-description: "Paso previo de la HU-029. Inicia sesión con el administrador de prueba y guarda el token en authToken, que usan las demás requests de esta carpeta. La API debe responder 200 con un token."
+description: "Paso previo de la HU-029. Inicia sesión con el administrador de prueba y guarda el token en authToken, que usan las demás requests de esta carpeta. El usuario y la contraseña salen de las variables adminUser y adminPassword del entorno Local, que se cargan solo en Current value para que no queden guardadas en el repositorio. La API debe responder 200 con un token."
 url: "{{baseUrl}}/api/Auth/login"
 method: POST
 body:
   type: json
-  content: "{\n    \"Usuario\": \"admin@cacc.com\",\n    \"Contrasena\": \"admin123\"\n}"
+  content: "{\n    \"Usuario\": \"{{adminUser}}\",\n    \"Contrasena\": \"{{adminPassword}}\"\n}"
 scripts:
   - type: afterResponse
     code: |-

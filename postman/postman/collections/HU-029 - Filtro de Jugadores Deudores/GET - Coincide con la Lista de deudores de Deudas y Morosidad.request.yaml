@@ -1,5 +1,5 @@
 $kind: http-request
-description: "HU-029 y HU-020. La pantalla Ver todos los deudores y la Lista de deudores de Deudas y Morosidad muestran la misma deuda, así que el filtro de deudores (player-accounts) y el listado de pendientes deben coincidir en cantidad de jugadores y en monto total, porque usan la misma regla de saldo real (con el beneficio de Becados y Descuentos aplicado). Depende de la request del filtro de deudores, que deja hu029Deudores y hu029MontoDeudores en el entorno."
+description: "HU-029 y HU-020. La Lista de deudores de Deudas y Morosidad se arma con el filtro de deudores (player-accounts), y el reporte de deudores y el banner usan el listado de pendientes. Los dos tienen que mostrar la misma deuda, así que deben coincidir en cantidad de jugadores y en monto total, porque usan la misma regla de saldo real (con el beneficio de Becados y Descuentos aplicado). Depende de la request del filtro de deudores, que deja hu029Deudores y hu029MontoDeudores en el entorno."
 url: "{{baseUrl}}/api/Pagos/pendientes"
 method: GET
 headers:
