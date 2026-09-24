@@ -112,8 +112,12 @@
 
       @if (cargando) {
         <p class="empty-state">Cargando morosos…</p>
+      } @else if (totalJugadores === 0) {
+        <!-- HU-029: nobody in the club owes anything -->
+        <p class="empty-state">No se registran alumnos con cuotas atrasadas en este momento.</p>
       } @else if (debtors.length === 0) {
-        <p class="empty-state">No hay jugadores con cuotas pendientes.</p>
+        <!-- There are debtors, but none matches the search or the active filters -->
+        <p class="empty-state">Ningún deudor coincide con la búsqueda o los filtros aplicados.</p>
       } @else {
         <div class="table-wrapper">
           <table class="debtors-table">
