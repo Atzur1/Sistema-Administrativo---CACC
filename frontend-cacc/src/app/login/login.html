@@ -18,7 +18,8 @@
           </span>
           <input type="text" class="form-control" id="TituloUsuario" formControlName="usuario" placeholder="Ingresá tu usuario">
         </div>
-        <small *ngIf="loginForm.get('usuario')?.invalid && loginForm.get('usuario')?.touched" class="error" style="color: red; font-size: 12px; margin-top: 4px; display: block;">
+        <small *ngIf="loginForm.get('usuario')?.invalid && loginForm.get('usuario')?.touched" class="field-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           El campo usuario es requerido.
         </small>
       </div>
@@ -60,16 +61,23 @@
           </span>
 
         </div>
-        <small *ngIf="loginForm.get('contrasena')?.invalid && loginForm.get('contrasena')?.touched" class="error" style="color: red; font-size: 12px; margin-top: 4px; display: block;">
+        <small *ngIf="loginForm.get('contrasena')?.invalid && loginForm.get('contrasena')?.touched" class="field-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           El campo contraseña es requerido.
         </small>
       </div>
 
-      <div *ngIf="mensajeError" class="alert-error" style="color: red; margin-bottom: 10px; font-weight: 500;">
-        {{ mensajeError }}
+      <div *ngIf="mensajeError" class="alert-banner alert-banner-error" role="alert">
+        <span class="alert-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </span>
+        <span class="alert-text">{{ mensajeError }}</span>
       </div>
-      <div *ngIf="mensajeExito" class="alert-success" style="color: green; margin-bottom: 10px; font-weight: 500;">
-        {{ mensajeExito }}
+      <div *ngIf="mensajeExito" class="alert-banner alert-banner-success" role="status">
+        <span class="alert-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </span>
+        <span class="alert-text">{{ mensajeExito }}</span>
       </div>
 
       <div class="form-check">
