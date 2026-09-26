@@ -51,6 +51,22 @@ export class AuthService {
   }
 }
 
+// Exige sesión iniciada, sin importar el rol. Para pantallas que cualquier
+// usuario logueado puede ver (ej. "/portales", la elección de entorno) —
+// a diferencia de adminGuard, que además exige rol Admin.
+export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isAuthenticated()) {
+    alert('Debes iniciar sesión para acceder a esta sección.');
+    router.navigate(['/']);
+    return false;
+  }
+
+  return true;
+};
+
 export const adminGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
