@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,11 +20,14 @@ export class Login implements OnInit {
   mensajeError: string = '';
   mensajeExito: string = '';
   mostrarPassword: boolean = false;
+  isSubmitting: boolean = false;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.loginForm = this.fb.group({
       usuario: ['', [Validators.required]],
@@ -46,6 +49,11 @@ export class Login implements OnInit {
   }
 
   onSubmit() {
+    // Reenvío bloqueado mientras hay una petición en curso (doble click,
+    // Enter repetido). La validación de formulario sigue su propio camino
+    // debajo para no perder el mensaje de "completá los campos".
+    if (this.isSubmitting) return;
+
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       this.mensajeError = 'Deberá completar los campos para continuar.';
@@ -53,27 +61,49 @@ export class Login implements OnInit {
     }
 
     const { usuario, contrasena, recordarme } = this.loginForm.value;
+    this.isSubmitting = true;
+    this.mensajeError = '';
 
     this.authService.login(usuario, contrasena).subscribe({
+      // ngZone.run() + cdr.detectChanges(): la respuesta de
+      // authService.login() (HttpClient) no está disparando change
+      // detection en este proyecto — confirmado inspeccionando el
+      // componente en vivo: el campo se actualiza (mensajeError/
+      // isSubmitting quedan bien) pero la vista se queda congelada hasta
+      // el próximo evento que sí corra dentro de la zona. NgZone.run() solo
+      // no alcanzó acá (a diferencia del sidebar/notificaciones), así que
+      // se fuerza detectChanges() explícitamente como red de seguridad.
       next: () => {
-        // Only persisted on a successful login, so a wrong attempt never
-        // saves a username that turned out not to exist
-        if (recordarme) {
-          localStorage.setItem(REMEMBERED_USER_KEY, usuario);
-        } else {
-          localStorage.removeItem(REMEMBERED_USER_KEY);
-        }
+        this.ngZone.run(() => {
+          // Only persisted on a successful login, so a wrong attempt never
+          // saves a username that turned out not to exist
+          if (recordarme) {
+            localStorage.setItem(REMEMBERED_USER_KEY, usuario);
+          } else {
+            localStorage.removeItem(REMEMBERED_USER_KEY);
+          }
 
-        this.mensajeExito = `¡Bienvenido al sistema del CACC!`;
-        this.mensajeError = '';
-        setTimeout(() => {
-          this.router.navigate(['/portales']);
-        }, 1500);
+          this.mensajeExito = `¡Bienvenido al sistema del CACC!`;
+          this.mensajeError = '';
+          this.cdr.detectChanges();
+
+          // isSubmitting se mantiene en true durante estos 1.5s: la
+          // navegación es inminente, así que soltar el overlay acá solo
+          // generaría un parpadeo (el form reaparece un instante y
+          // enseguida esta pantalla se destruye al navegar).
+          setTimeout(() => {
+            this.ngZone.run(() => this.router.navigate(['/portales']));
+          }, 1500);
+        });
       },
       error: (err) => {
-        console.error('Error de autenticación:', err);
-        this.mensajeError = 'Usuario o contraseña incorrectos en la base de datos.';
-        this.mensajeExito = '';
+        this.ngZone.run(() => {
+          console.error('Error de autenticación:', err);
+          this.isSubmitting = false;
+          this.mensajeError = 'Usuario o contraseña incorrectos en la base de datos.';
+          this.mensajeExito = '';
+          this.cdr.detectChanges();
+        });
       }
     });
   }

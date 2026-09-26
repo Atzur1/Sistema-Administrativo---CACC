@@ -203,6 +203,13 @@
   box-shadow: 0 4px 12px rgba(0, 127, 62, 0.25);
 }
 
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0, 127, 62, 0.25);
+}
+
 .divider {
   display: flex;
   align-items: center;
@@ -247,6 +254,98 @@
 .login-footer a:hover {
   color: var(--primary-light);
   text-decoration: underline;
+}
+
+/* ===== OVERLAY DE CARGA ===== */
+/* Siempre montado; la visibilidad se anima por clase en vez de *ngIf, así
+   el fade-out se ve (un *ngIf saca el elemento del DOM de un tajo). */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(3, 13, 7, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+}
+
+.loading-dots {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loading-dots span {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--color-brand-deep, #15803d);
+  box-shadow: 0 2px 8px rgba(0, 127, 62, 0.5);
+  animation: loadingDotPulse 1.2s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes loadingDotPulse {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Texto solo para lectores de pantalla: el feedback visual son los puntos,
+   pero role="status" + aria-live necesitan contenido textual para anunciar
+   algo cuando el overlay aparece. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-overlay {
+    transition: none;
+  }
+
+  .loading-dots span {
+    animation: none;
+    opacity: 1;
+    transform: scale(0.85);
+  }
 }
 
 /* Responsive */
