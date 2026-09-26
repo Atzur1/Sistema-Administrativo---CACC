@@ -12,6 +12,7 @@ using EntityLibrary;
 // concepto de "jugador" que ya resuelve JugadoresController/JugadoresDao.
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PlayersController : ControllerBase
 {
     private readonly ILogger<PlayersController> _logger;
@@ -112,7 +113,6 @@ public class PlayersController : ControllerBase
     // the same player: on any given date, only one benefit can apply. The check
     // lives in the DAO, inside the transaction that inserts, so a direct call to
     // the API and a race between two requests hit the same rule.
-    [Authorize]
     [HttpPost("{playerId}/discount")]
     public IActionResult AssignDiscount(long playerId, DiscountRequestDTO request)
     {
@@ -152,7 +152,6 @@ public class PlayersController : ControllerBase
 
     // Edits a benefit the player already holds. Only a benefit that was not
     // cancelled can be touched: a cancelled one stays as it was granted.
-    [Authorize]
     [HttpPut("{playerId}/discount")]
     public IActionResult UpdateDiscount(long playerId, DiscountRequestDTO request, long discountId = 0)
     {
@@ -209,7 +208,6 @@ public class PlayersController : ControllerBase
     // Cancelling is for taking a benefit down before its time. A benefit that
     // simply ran its course does not need this: it expires on its own the day
     // after its end date, and frees the period for a new one.
-    [Authorize]
     [HttpDelete("{playerId}/discount")]
     public IActionResult CancelDiscount(long playerId, long discountId = 0)
     {

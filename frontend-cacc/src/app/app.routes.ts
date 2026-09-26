@@ -3,7 +3,7 @@ import { Login } from './login/login';
 import { Portales } from './portales/portales';
 import { AdminPortal } from './admin-portal/admin-portal';
 import { ResumenGeneral } from './admin-portal/resumen-general/resumen-general';
-import { adminGuard } from './services/auth';
+import { adminGuard, authGuard } from './services/auth';
 import { ActividadMovimientos } from './admin-portal/actividad-movimientos/actividad-movimientos';
 import { DeudasMorosidad } from './admin-portal/deudas-morosidad/deudas-morosidad';
 import { Usuarios } from './admin-portal/usuarios-y-permisos/usuarios-y-permisos';
@@ -16,7 +16,9 @@ import { BecadosDescuentos } from './admin-portal/becados-descuentos/becados-des
 
 export const routes: Routes = [
   { path: '', component: Login },
-  { path: 'portales', component: Portales },
+  // authGuard, no adminGuard: esta pantalla es la elección de entorno para
+  // cualquier usuario logueado, no exclusiva de Admin.
+  { path: 'portales', component: Portales, canActivate: [authGuard] },
 
   // Admin portal (parent) with its dashboards as children
   {
