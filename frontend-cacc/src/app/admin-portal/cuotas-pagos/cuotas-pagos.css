@@ -125,6 +125,44 @@
     background: var(--color-border);
 }
 
+/* HU-019: indicador destacado y único, no repartido en tarjetas separadas —
+   fondo tintado en el mismo lenguaje visual que las alertas del resto de la
+   app (--color-danger-bg), ya que es plata que el club todavía no cobró. */
+.deuda-global-highlight {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: var(--color-danger-bg);
+    border: 1px solid rgba(192, 57, 43, 0.18);
+    color: var(--color-danger);
+    font-size: 13.5px;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.deuda-global-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.deuda-global-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.deuda-global-text strong {
+    font-weight: 700;
+}
+
+.deuda-global-morosos {
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
 /* ===== PAYMENT FORM ===== */
 /* Panel de acción "deportivo institucional": blanco limpio, acento verde
    sólido en el borde superior, sombra suave y difusa. Nada de fondos de

@@ -68,6 +68,13 @@ export class CuotasPagos implements OnInit {
     { value: '—', label: 'Pendientes' },
   ];
 
+  // HU-019: indicador destacado y ÚNICO (monto + cantidad de morosos juntos,
+  // no como dos métricas separadas) — el criterio de aceptación pide
+  // exactamente ese formato combinado, ej. "Deuda Global Total: $1.480.000
+  // (32 jugadores morosos)".
+  deudaGlobalTotalTexto = '—';
+  jugadoresMorososTexto = '';
+
   paymentForm: FormGroup;
 
   periods = [
@@ -263,6 +270,11 @@ export class CuotasPagos implements OnInit {
     this.pagosService.getResumen().subscribe({
       next: (resumen) => {
         this.headerMetrics = mapResumen(resumen);
+        // HU-019: formato completo (no compacto) para el monto, tal como pide el
+        // ejemplo del criterio de aceptación ("$1.480.000", no "$1,48 M").
+        this.deudaGlobalTotalTexto = CURRENCY_FULL.format(resumen.deudaGlobalTotal);
+        this.jugadoresMorososTexto =
+          `${resumen.jugadoresMorosos} ${resumen.jugadoresMorosos === 1 ? 'jugador moroso' : 'jugadores morosos'}`;
         this.cdr.detectChanges();
       },
       error: () => {},

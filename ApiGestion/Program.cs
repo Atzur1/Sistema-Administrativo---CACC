@@ -46,6 +46,10 @@ builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
     new DaoLibrary.EstadisticasDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 
+// Categorías: catálogo para el selector de Deudas y Morosidad (HU-020)
+builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
+    new DaoLibrary.CategoriasDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
 // Aranceles: DAO + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
     new DaoLibrary.ArancelesDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
