@@ -23,12 +23,15 @@ namespace DaoLibrary
         // (que es cuándo se procesó el cobro y puede ser cualquier mes, ej. pagar diciembre en
         // septiembre). Comparar contra fecha_pago mezclaría ambos conceptos y dejaría pasar
         // duplicados del mismo período pagados en fechas distintas.
+        //
+        // HU-033: solo cuotas. La inscripción de un jugador cae en el mes de su alta, y sin este
+        // filtro cobrar la cuota de ese mes podría tomar la inscripción.
         public Pago? ObtenerPagoAbonadoDeJugadorEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio)
         {
             string query = @"
                 SELECT PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado
                 FROM PAGOS WITH (UPDLOCK, ROWLOCK)
-                WHERE FK_id_jugador = @idJugador AND estado = 1
+                WHERE FK_id_jugador = @idJugador AND estado = 1 AND concepto = 'Cuota'
                   AND fecha_vencimiento IS NOT NULL AND MONTH(fecha_vencimiento) = @mes AND YEAR(fecha_vencimiento) = @anio";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
@@ -45,7 +48,7 @@ namespace DaoLibrary
             string query = @"
                 SELECT PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado
                 FROM PAGOS WITH (UPDLOCK, ROWLOCK)
-                WHERE FK_id_jugador = @idJugador AND estado = 0
+                WHERE FK_id_jugador = @idJugador AND estado = 0 AND concepto = 'Cuota'
                   AND fecha_vencimiento IS NOT NULL AND MONTH(fecha_vencimiento) = @mes AND YEAR(fecha_vencimiento) = @anio";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
@@ -160,9 +163,11 @@ namespace DaoLibrary
                           AND vigente_desde <= EOMONTH(@primerDiaMes)
                         ORDER BY vigente_desde DESC
                     ) AS arancel
+                    -- Solo cuotas (HU-033): una inscripción en ese mes no reemplaza la cuota.
                     WHERE NOT EXISTS (
                         SELECT 1 FROM PAGOS p2
                         WHERE p2.FK_id_jugador = j.PK_id_jugador
+                          AND p2.concepto = 'Cuota'
                           AND p2.fecha_vencimiento IS NOT NULL
                           AND MONTH(p2.fecha_vencimiento) = @mes AND YEAR(p2.fecha_vencimiento) = @anio
                     );";
@@ -283,10 +288,13 @@ namespace DaoLibrary
             // WITH (NOLOCK) en las tablas del padrón (no en JUGADORES_DESCUENTOS, que es un
             // fragmento compartido con otras consultas y queda fuera del alcance de HU-020) para
             // que el barrido de morosos no quede detrás de un bloqueo de escritura.
+            //
+            // HU-033: monto_total suma cuotas e inscripción; cantidad_cuotas cuenta solo cuotas,
+            // porque de ella sale el estado deportivo (Solo entrenamientos / Inhabilitado).
             string query = $@"
                 SELECT j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria,
                        SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
-                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 THEN 1 END) AS cantidad_cuotas
+                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 AND pg.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas
                 FROM PAGOS pg WITH (NOLOCK)
                 {DescuentosSql.ApplyDescuentoActivo}
                 JOIN JUGADORES j WITH (NOLOCK) ON pg.FK_id_jugador = j.PK_id_jugador
@@ -352,9 +360,9 @@ namespace DaoLibrary
                 LEFT JOIN (
                     SELECT t.FK_id_jugador,
                            SUM(t.saldo) AS monto_adeudado,
-                           COUNT(CASE WHEN t.saldo > 0 THEN 1 END) AS cantidad_cuotas
+                           COUNT(CASE WHEN t.saldo > 0 AND t.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas
                     FROM (
-                        SELECT pg.FK_id_jugador, ({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS saldo
+                        SELECT pg.FK_id_jugador, pg.concepto, ({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS saldo
                         FROM PAGOS pg WITH (NOLOCK)
                         {DescuentosSql.ApplyDescuentoActivo}
                         WHERE pg.estado = 0
@@ -443,17 +451,21 @@ namespace DaoLibrary
             // que verse como UN solo pago de $70.000 — no dos líneas separadas. Por eso se agrupa
             // por jugador+período: se suman los montos, se toma la fecha del abono que la completó,
             // y su método de pago (el de la última fila del grupo) representa al conjunto.
+            //
+            // HU-033: el grupo es jugador + período + concepto. Una inscripción pendiente del mes
+            // del alta no esconde la cuota de ese mes ya pagada, ni sus abonos se suman juntos.
             string query = @"
                 ;WITH Completos AS (
                     SELECT pg.PK_id_pago, pg.FK_id_jugador, pg.metodo_pago,
-                        SUM(pg.monto_final) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento) AS monto_grupo,
-                        MAX(pg.fecha_pago) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento) AS fecha_grupo,
-                        ROW_NUMBER() OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento ORDER BY pg.fecha_pago DESC, pg.PK_id_pago DESC) AS rn
+                        SUM(pg.monto_final) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento, pg.concepto) AS monto_grupo,
+                        MAX(pg.fecha_pago) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento, pg.concepto) AS fecha_grupo,
+                        ROW_NUMBER() OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento, pg.concepto ORDER BY pg.fecha_pago DESC, pg.PK_id_pago DESC) AS rn
                     FROM PAGOS pg
                     WHERE pg.estado = 1 AND pg.fecha_pago IS NOT NULL
                       AND NOT EXISTS (
                           SELECT 1 FROM PAGOS pendiente
                           WHERE pendiente.FK_id_jugador = pg.FK_id_jugador
+                            AND pendiente.concepto = pg.concepto
                             AND pendiente.estado = 0
                             AND pendiente.fecha_vencimiento IS NOT NULL AND pg.fecha_vencimiento IS NOT NULL
                             AND MONTH(pendiente.fecha_vencimiento) = MONTH(pg.fecha_vencimiento)
@@ -501,14 +513,14 @@ namespace DaoLibrary
             // jugador tiene uno activo cuya vigencia cubre el mes de esta cuota) — no importa que
             // la cuota se haya cargado antes de asignarle el beneficio, se resuelve acá al leer.
             string queryPendientes = $@"
-                SELECT pg.PK_id_pago, pg.monto_base, pg.monto_final, pg.fecha_vencimiento,
+                SELECT pg.PK_id_pago, pg.monto_base, pg.monto_final, pg.fecha_vencimiento, pg.concepto,
                        d.tipo_valor, d.porcentaje, d.monto_fijo, td.tipo_descuento AS motivo,
                        ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
                 LEFT JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento
                 WHERE pg.FK_id_jugador = @idJugador AND pg.estado = 0
-                ORDER BY pg.fecha_vencimiento";
+                ORDER BY pg.fecha_vencimiento, pg.concepto";
 
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
             conexion.Open();
@@ -527,6 +539,7 @@ namespace DaoLibrary
                     {
                         IdPago = Convert.ToInt32(reader["PK_id_pago"]),
                         Periodo = $"{MesesCompletos[periodoBase.Month - 1]} {periodoBase.Year}",
+                        Concepto = reader["concepto"].ToString()?.Trim() ?? "",
                         MontoOriginal = Convert.ToDecimal(reader["monto_base"]),
                         SaldoPendiente = saldoAjustado < 0 ? 0 : saldoAjustado,
                         TieneBeneficio = tieneBeneficio,
@@ -544,9 +557,10 @@ namespace DaoLibrary
             }
 
             // Todos los abonos (estado = 1) del jugador, para matchear por período (mes/año de
-            // fecha_vencimiento) contra cada cuota pendiente de arriba.
+            // fecha_vencimiento) y concepto contra cada cargo pendiente de arriba: la inscripción
+            // y la cuota del mes del alta comparten período (HU-033).
             string queryAbonos = @"
-                SELECT monto_final, metodo_pago, fecha_pago, fecha_vencimiento
+                SELECT monto_final, metodo_pago, fecha_pago, fecha_vencimiento, concepto
                 FROM PAGOS
                 WHERE FK_id_jugador = @idJugador AND estado = 1 AND fecha_vencimiento IS NOT NULL
                 ORDER BY fecha_pago";
@@ -558,8 +572,10 @@ namespace DaoLibrary
                 while (reader.Read())
                 {
                     var fechaVencimiento = Convert.ToDateTime(reader["fecha_vencimiento"]);
+                    var concepto = reader["concepto"].ToString()?.Trim() ?? "";
                     var cuota = pendientes.FirstOrDefault(c =>
-                        c.Periodo == $"{MesesCompletos[fechaVencimiento.Month - 1]} {fechaVencimiento.Year}");
+                        c.Concepto == concepto
+                        && c.Periodo == $"{MesesCompletos[fechaVencimiento.Month - 1]} {fechaVencimiento.Year}");
 
                     cuota?.Abonos.Add(new AbonoDetalle
                     {
@@ -577,6 +593,7 @@ namespace DaoLibrary
         {
             // cantidad_pendientes solo cuenta cuotas con saldo real > 0: una cuota que un
             // beneficio de Becados y Descuentos dejó en $0 ya no es algo pendiente de cobrar.
+            // Las inscripciones (HU-033) no son cuotas: suman a la deuda pero no a este conteo.
             //
             // deuda_global_total / jugadores_morosos (HU-019): mismo criterio de saldo real que
             // cantidad_pendientes, pero uno suma $ (por jugador, no por cuota) y el otro cuenta
@@ -600,7 +617,7 @@ namespace DaoLibrary
                         SELECT ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
                         FROM PAGOS pg WITH (NOLOCK)
                         {DescuentosSql.ApplyDescuentoActivo}
-                        WHERE pg.estado = 0
+                        WHERE pg.estado = 0 AND pg.concepto = 'Cuota'
                     ) t WHERE saldo_ajustado > 0) AS cantidad_pendientes,
                     (SELECT ISNULL(SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}), 0)
                         FROM PAGOS pg WITH (NOLOCK)
@@ -645,30 +662,33 @@ namespace DaoLibrary
             // abono cuando paga contra una cuota pendiente — antes se perdía al borrarse la cuota).
             // id_descuento_grupo: qué beneficio (si hubo uno) se le aplicó a esos abonos, para
             // mostrar el motivo/tipo/valor y explicar por qué monto_grupo < monto_base_grupo.
+            //
+            // HU-033: cada grupo es período + concepto, así la inscripción no se suma a la cuota
+            // del mes del alta (comparten fecha de período).
             string queryPeriodos = @"
                 ;WITH Agrupado AS (
-                    SELECT PK_id_pago, fecha_vencimiento,
+                    SELECT PK_id_pago, fecha_vencimiento, concepto,
                         COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)) AS clave_periodo,
-                        SUM(monto_final) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE))) AS monto_grupo,
-                        MAX(monto_base) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE))) AS monto_base_grupo,
-                        MAX(FK_id_jugador_descuento) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE))) AS id_descuento_grupo,
-                        MAX(fecha_pago) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE))) AS fecha_grupo,
-                        ROW_NUMBER() OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)) ORDER BY fecha_pago DESC, PK_id_pago DESC) AS rn
+                        SUM(monto_final) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)), concepto) AS monto_grupo,
+                        MAX(monto_base) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)), concepto) AS monto_base_grupo,
+                        MAX(FK_id_jugador_descuento) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)), concepto) AS id_descuento_grupo,
+                        MAX(fecha_pago) OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)), concepto) AS fecha_grupo,
+                        ROW_NUMBER() OVER (PARTITION BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)), concepto ORDER BY fecha_pago DESC, PK_id_pago DESC) AS rn
                     FROM PAGOS
                     WHERE FK_id_jugador = @idJugador AND estado = 1
                 )
-                SELECT COUNT(*) OVER() AS total_count, a.clave_periodo, a.monto_grupo, a.monto_base_grupo,
+                SELECT COUNT(*) OVER() AS total_count, a.clave_periodo, a.concepto, a.monto_grupo, a.monto_base_grupo,
                        a.fecha_grupo, a.fecha_vencimiento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo, td.tipo_descuento AS motivo
                 FROM Agrupado a
                 LEFT JOIN JUGADORES_DESCUENTOS jd ON jd.PK_id_jugador_descuento = a.id_descuento_grupo
                 LEFT JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
                 WHERE a.rn = 1
-                ORDER BY a.fecha_grupo DESC, a.clave_periodo DESC
+                ORDER BY a.fecha_grupo DESC, a.clave_periodo DESC, a.concepto
                 OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY";
 
-            // (clave_periodo, PagoHistorialItem) en el orden en que vinieron, para después
+            // (clave_periodo, concepto, PagoHistorialItem) en el orden en que vinieron, para después
             // completar cada uno con sus abonos sin perder el orden de fecha_grupo DESC.
-            var itemsPorClave = new List<(DateTime clave, PagoHistorialItem item)>();
+            var itemsPorClave = new List<(DateTime clave, string concepto, PagoHistorialItem item)>();
 
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
             conexion.Open();
@@ -690,10 +710,12 @@ namespace DaoLibrary
                         : clave; // fallback: pagos históricos sin fecha_vencimiento cargada
 
                     var tieneBeneficio = reader["motivo"] != DBNull.Value;
+                    var concepto = reader["concepto"].ToString()?.Trim() ?? "";
 
                     var item = new PagoHistorialItem
                     {
                         Periodo = $"{MesesCompletos[periodoBase.Month - 1]} {periodoBase.Year}",
+                        Concepto = concepto,
                         MontoTotal = Convert.ToDecimal(reader["monto_grupo"]),
                         MontoOriginal = Convert.ToDecimal(reader["monto_base_grupo"]),
                         TieneBeneficio = tieneBeneficio,
@@ -702,23 +724,24 @@ namespace DaoLibrary
                         PorcentajeBeneficio = reader["porcentaje"] != DBNull.Value ? Convert.ToDecimal(reader["porcentaje"]) : null,
                         MontoFijoBeneficio = reader["monto_fijo"] != DBNull.Value ? Convert.ToDecimal(reader["monto_fijo"]) : null
                     };
-                    itemsPorClave.Add((clave, item));
+                    itemsPorClave.Add((clave, concepto, item));
                     resultado.Items.Add(item);
                 }
             }
 
             // Los abonos de cada período de esta página, todos de una.
-            foreach (var (clave, item) in itemsPorClave)
+            foreach (var (clave, concepto, item) in itemsPorClave)
             {
                 string queryAbonos = @"
                     SELECT monto_final, metodo_pago, fecha_pago
                     FROM PAGOS
-                    WHERE FK_id_jugador = @idJugador AND estado = 1
+                    WHERE FK_id_jugador = @idJugador AND estado = 1 AND concepto = @concepto
                       AND COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)) = @clavePeriodo
                     ORDER BY fecha_pago, PK_id_pago";
 
                 using SqlCommand comando = new SqlCommand(queryAbonos, conexion);
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
+                comando.Parameters.AddWithValue("@concepto", concepto);
                 comando.Parameters.AddWithValue("@clavePeriodo", clave);
 
                 using SqlDataReader reader = comando.ExecuteReader();

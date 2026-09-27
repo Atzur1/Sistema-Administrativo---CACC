@@ -14,6 +14,7 @@ namespace EntityLibrary
     public class PagoHistorialItem
     {
         public string Periodo { get; set; } = string.Empty; // "Enero 2026", derivado de fecha_vencimiento; "-" si no está cargado
+        public string Concepto { get; set; } = "Cuota"; // PAGOS.concepto: "Cuota" | "Inscripcion" (HU-033)
         public decimal MontoTotal { get; set; } // Lo que efectivamente se cobró (suma de los abonos)
         public decimal MontoOriginal { get; set; } // El valor completo de la cuota, antes del beneficio (si tiene uno)
 

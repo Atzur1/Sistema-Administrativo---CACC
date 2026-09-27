@@ -70,6 +70,7 @@ namespace DaoLibrary
 
         // Agrupa jugadores por cuántas cuotas con saldo real > 0 tienen: 0 / 1 / 2+. Una cuota
         // que un beneficio de Becados y Descuentos dejó en $0 no cuenta como deuda impaga.
+        // La inscripción (HU-033) no es una cuota y no mueve al jugador de franja.
         private static void ObtenerBucketsDeDeuda(SqlConnection conexion, ResumenGeneralInfo info)
         {
             string query = $@"
@@ -84,7 +85,7 @@ namespace DaoLibrary
                         SELECT pg.PK_id_pago, pg.FK_id_jugador, ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
                         FROM PAGOS pg
                         {DescuentosSql.ApplyDescuentoActivo}
-                        WHERE pg.estado = 0
+                        WHERE pg.estado = 0 AND pg.concepto = 'Cuota'
                     ) ca ON ca.FK_id_jugador = j.PK_id_jugador AND ca.saldo_ajustado > 0
                     GROUP BY j.PK_id_jugador
                 ) t";
@@ -142,7 +143,8 @@ namespace DaoLibrary
 
         // Últimos 6 meses: % de jugadores que registraron al menos un pago abonado ese mes.
         // Mismo criterio que ObtenerRecaudacionMensual: por período de la cuota, con fecha_pago
-        // como respaldo para los pagos históricos sin fecha_vencimiento cargada.
+        // como respaldo para los pagos históricos sin fecha_vencimiento cargada. Solo cuotas: pagar
+        // la inscripción (HU-033) no es haber cubierto la cuota del mes.
         private static List<PuntoCoberturaMensual> ObtenerCoberturaMensual(SqlConnection conexion, int totalJugadores)
         {
             string query = @"
@@ -150,7 +152,7 @@ namespace DaoLibrary
                 FROM (
                     SELECT FK_id_jugador, COALESCE(fecha_vencimiento, fecha_pago) AS periodo
                     FROM PAGOS
-                    WHERE estado = 1
+                    WHERE estado = 1 AND concepto = 'Cuota'
                 ) x
                 WHERE periodo IS NOT NULL AND periodo <= GETDATE()
                 GROUP BY YEAR(periodo), MONTH(periodo)
@@ -180,11 +182,12 @@ namespace DaoLibrary
         private static List<PendienteJugador> ObtenerMayorDeudaPendiente(SqlConnection conexion)
         {
             // Mismo criterio que PagosDao.ObtenerPendientesAgrupados: saldo ya con el beneficio
-            // aplicado, y afuera si un beneficio le deja todo en $0.
+            // aplicado, y afuera si un beneficio le deja todo en $0. El monto suma la inscripción;
+            // la cantidad de cuotas no (HU-033).
             string query = $@"
                 SELECT TOP (5) j.PK_id_jugador, p.nombre, p.apellido, c.nombre_categoria,
                        SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
-                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 THEN 1 END) AS cantidad_cuotas
+                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 AND pg.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
                 JOIN JUGADORES j ON pg.FK_id_jugador = j.PK_id_jugador

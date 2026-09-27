@@ -9,11 +9,15 @@ namespace DaoLibrary
         // OUTER APPLY contra "pg" (una fila de PAGOS), en un FROM PAGOS pg. Expone
         // tipo_valor/porcentaje/monto_fijo del beneficio activo cuya vigencia cubre el mes de
         // esa cuota (fecha_vencimiento), o todo NULL si no tiene ninguno.
+        //
+        // HU-033: el beneficio solo descuenta la cuota mensual. Sobre una inscripción el APPLY
+        // no encuentra nada y su saldo queda igual a monto_final.
         public const string ApplyDescuentoActivo = @"
             OUTER APPLY (
                 SELECT TOP (1) jd.FK_id_descuento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo
                 FROM JUGADORES_DESCUENTOS jd
                 WHERE jd.FK_id_jugador = pg.FK_id_jugador AND jd.estado_activo = 1
+                  AND pg.concepto = 'Cuota'
                   AND jd.fecha_inicio <= EOMONTH(pg.fecha_vencimiento) AND jd.fecha_fin >= pg.fecha_vencimiento
                 ORDER BY jd.fecha_inicio DESC
             ) AS d";
