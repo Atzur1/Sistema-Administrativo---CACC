@@ -9,12 +9,21 @@ namespace DaoLibrary
         // OUTER APPLY contra "pg" (una fila de PAGOS), en un FROM PAGOS pg. Expone
         // tipo_valor/porcentaje/monto_fijo del beneficio activo cuya vigencia cubre el mes de
         // esa cuota (fecha_vencimiento), o todo NULL si no tiene ninguno.
+        //
+        // A propósito NO filtra por "jd.estado_activo = 1" a secas: eso haría que cancelar un
+        // beneficio le borre el descuento a TODAS las cuotas que cubrió alguna vez, incluidas
+        // las de meses ya pasados que estuvieron correctamente cubiertas mientras estuvo activo.
+        // Un beneficio cancelado sigue contando para una cuota si esa cuota venció el mismo día
+        // de la cancelación o antes (fecha_cancelacion, seteada por DiscountDao.DeactivateDiscount);
+        // para las de después, no. Uno que nunca se canceló (fecha_cancelacion NULL) sigue el
+        // rango fecha_inicio/fecha_fin de siempre.
         public const string ApplyDescuentoActivo = @"
             OUTER APPLY (
                 SELECT TOP (1) jd.FK_id_descuento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo
                 FROM JUGADORES_DESCUENTOS jd
-                WHERE jd.FK_id_jugador = pg.FK_id_jugador AND jd.estado_activo = 1
+                WHERE jd.FK_id_jugador = pg.FK_id_jugador
                   AND jd.fecha_inicio <= EOMONTH(pg.fecha_vencimiento) AND jd.fecha_fin >= pg.fecha_vencimiento
+                  AND (jd.fecha_cancelacion IS NULL OR pg.fecha_vencimiento <= jd.fecha_cancelacion)
                 ORDER BY jd.fecha_inicio DESC
             ) AS d";
 

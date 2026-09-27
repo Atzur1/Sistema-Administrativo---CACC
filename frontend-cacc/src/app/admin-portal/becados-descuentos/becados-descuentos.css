@@ -940,6 +940,16 @@
   color: var(--color-text);
 }
 
+/* La advertencia de que Anular reabre deuda en meses pasados: tiene que notarse más que el
+   párrafo de arriba, no perderse entre el resto del texto de confirmación. */
+.dialog-confirm-warning {
+  padding: 9px 11px;
+  background: var(--color-danger-bg);
+  border: 1px solid rgba(192, 57, 43, 0.25);
+  border-radius: 9px;
+  color: var(--color-danger-strong);
+}
+
 /* ===== ACTIVE BENEFIT CARD ===== */
 .benefit-card {
   display: flex;
@@ -1105,9 +1115,34 @@
   background: var(--color-danger-strong);
 }
 
+/* Mismo tamaño/forma que .button-ghost, pero en rojo: distinto de "Cancelar"/"Asignar otro
+   período" a propósito — anular es la acción más seria de las tres, hay que poder
+   distinguirla de un vistazo sin que sea un botón sólido lleno de rojo como .button-danger
+   (ese queda para la confirmación en sí, no para el disparador). */
+.button-void {
+  padding: 9px 16px;
+  background: transparent;
+  border: 1px solid rgba(192, 57, 43, 0.35);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-danger-strong);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.button-void:hover:not(:disabled) {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-strong);
+}
+
 .button-primary:disabled,
 .button-ghost:disabled,
-.button-danger:disabled {
+.button-danger:disabled,
+.button-void:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -1147,6 +1182,13 @@
 .status-cancelled {
   background: var(--color-danger-bg);
   color: var(--color-danger-strong);
+}
+
+/* Anulada: gris neutro, no rojo como Cancelada — no es un estado "activo hasta hace poco",
+   es más bien "esto no debería haber pasado", ya resuelto. */
+.status-voided {
+  background: var(--color-bg-page);
+  color: var(--color-text-muted);
 }
 
 /* ===== BENEFIT CARD ===== */
