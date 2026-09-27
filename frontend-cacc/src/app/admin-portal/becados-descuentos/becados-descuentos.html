@@ -100,9 +100,60 @@
   <section class="main-grid">
     <article class="panel panel-benefits">
       <header class="panel-head">
-        <h2 class="panel-title">Beneficios asignados</h2>
-        <span class="panel-subtitle">Becas y descuentos vigentes e históricos</span>
+        <div>
+          <h2 class="panel-title">Beneficios asignados</h2>
+          <span class="panel-subtitle">Becas y descuentos vigentes e históricos</span>
+        </div>
       </header>
+
+      <form class="filter-row" [formGroup]="filterForm">
+        <div class="search-control">
+          <svg
+            class="search-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" placeholder="Buscar por nombre…" formControlName="busqueda" />
+        </div>
+
+        <div class="filter-control">
+          <app-custom-select
+            [options]="estadoOptions"
+            placeholder="Todos los estados"
+            formControlName="estado"
+          ></app-custom-select>
+        </div>
+
+        <div class="filter-control">
+          <app-custom-select
+            [options]="motivoOptions"
+            placeholder="Todos los motivos"
+            formControlName="motivo"
+          ></app-custom-select>
+        </div>
+
+        @if (hayFiltrosActivos) {
+          <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        }
+      </form>
+
+      @if (benefitsLoaded()) {
+        <p class="filter-count">
+          Mostrando {{ pagedRows.length }} de {{ filteredRows.length }} beneficios
+          @if (filteredRows.length !== benefitRows().length) {
+            ({{ benefitRows().length }} en total)
+          }
+        </p>
+      }
 
       <div class="table-wrapper">
         <table class="benefits-table">
@@ -118,7 +169,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (row of benefitRows(); track row.id) {
+            @for (row of pagedRows; track row.id) {
               <tr>
                 <td>
                   <div class="cell-player">
@@ -148,7 +199,13 @@
                   </span>
                 </td>
                 <td>
-                  <button type="button" class="row-action" (click)="openDialogForRow(row)">
+                  <button
+                    type="button"
+                    class="row-action"
+                    (click)="openDialogForRow(row)"
+                    [disabled]="row.status === 'Cancelled'"
+                    [title]="row.status === 'Cancelled' ? 'Esta bonificación fue cancelada' : ''"
+                  >
                     Gestionar
                   </button>
                 </td>
@@ -159,8 +216,34 @@
 
         @if (benefitsLoaded() && benefitRows().length === 0) {
           <p class="panel-empty">No hay beneficios asignados.</p>
+        } @else if (benefitsLoaded() && filteredRows.length === 0) {
+          <p class="panel-empty">
+            Ningún beneficio coincide con la búsqueda o los filtros aplicados.
+          </p>
         }
       </div>
+
+      @if (totalPaginas > 1) {
+        <div class="pagination">
+          <button
+            type="button"
+            class="pagination-button"
+            (click)="irAPagina(page - 1)"
+            [disabled]="page <= 1"
+          >
+            ← Anterior
+          </button>
+          <span class="pagination-status">Página {{ page }} de {{ totalPaginas }}</span>
+          <button
+            type="button"
+            class="pagination-button"
+            (click)="irAPagina(page + 1)"
+            [disabled]="page >= totalPaginas"
+          >
+            Siguiente →
+          </button>
+        </div>
+      }
     </article>
   </section>
 </div>
@@ -269,7 +352,13 @@
                   <span class="status-pill" [ngClass]="statusClassOf(item)">{{
                     statusOf(item)
                   }}</span>
-                  <button type="button" class="row-action" (click)="startEditing(item)">
+                  <button
+                    type="button"
+                    class="row-action"
+                    (click)="startEditing(item)"
+                    [disabled]="item.status === 'Cancelled'"
+                    [title]="item.status === 'Cancelled' ? 'Esta bonificación fue cancelada' : ''"
+                  >
                     Editar
                   </button>
                 </li>
@@ -319,29 +408,31 @@
       <!-- ----- ASSIGNMENT / EDIT FORM ----- -->
       @if (dialogView() === 'form') {
         <form class="dialog-form" [formGroup]="benefitForm" (ngSubmit)="onSubmit()">
-          <div class="field">
-            <label class="field-label" for="reason">Motivo</label>
-            <app-custom-select
-              id="reason"
-              [options]="benefitReasons()"
-              placeholder="Seleccionar motivo"
-              formControlName="reason"
-            ></app-custom-select>
-            @if (benefitReasons().length === 0) {
-              <span class="field-hint field-hint-error">
-                No se pudieron cargar los motivos. Verificá la conexión con la API.
-              </span>
-            }
-          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="reason">Motivo</label>
+              <app-custom-select
+                id="reason"
+                [options]="benefitReasons()"
+                placeholder="Seleccionar motivo"
+                formControlName="reason"
+              ></app-custom-select>
+              @if (benefitReasons().length === 0) {
+                <span class="field-hint field-hint-error">
+                  No se pudieron cargar los motivos. Verificá la conexión con la API.
+                </span>
+              }
+            </div>
 
-          <div class="field">
-            <label class="field-label" for="valueType">Tipo de valor</label>
-            <app-custom-select
-              id="valueType"
-              [options]="valueTypes"
-              placeholder="Seleccionar tipo"
-              formControlName="valueType"
-            ></app-custom-select>
+            <div class="field">
+              <label class="field-label" for="valueType">Tipo de valor</label>
+              <app-custom-select
+                id="valueType"
+                [options]="valueTypes"
+                placeholder="Seleccionar tipo"
+                formControlName="valueType"
+              ></app-custom-select>
+            </div>
           </div>
 
           <!-- Only one of the two is ever on screen: a benefit is percentage

@@ -260,7 +260,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     return Math.max(0, Math.floor((Date.now() - vencimiento.getTime()) / (1000 * 60 * 60 * 24)));
   }
 
-  // Texto del badge de beneficio: "Beca Completa (100%)" o "Descuento por Hermanos ($15.000)".
+  // Texto del badge de beneficio: "Becado (100%)" o "Descuento ($15.000)".
   beneficioTexto(cuota: CuotaPendienteDetalle): string {
     if (!cuota.tieneBeneficio) {
       return '';
