@@ -41,9 +41,20 @@ export interface PagoReciente {
   idPago: number;
   idJugador: number;
   nombreCompleto: string;
+  categoria: string;
+  periodo: string;
   metodoPago: string;
   monto: number;
+  estado: 'Pagado' | 'Parcial';
   fechaPago: string;
+  // Momento exacto en que se grabó el pago; null para los registrados antes de que
+  // existiera esta columna, que solo tienen el día (fechaPago).
+  fechaHoraRegistro: string | null;
+}
+
+export interface ResumenPagosHoy {
+  pagosHoy: number;
+  recaudadoHoy: number;
 }
 
 export interface ResumenPagos {
@@ -128,8 +139,18 @@ export class PagosService {
     return this.http.get<PagoReciente[]>(`${this.apiUrl}/pagos/recientes?top=${top}`);
   }
 
+  // Todos los pagos, sin límite: para la tabla "Pagos registrados" de Actividad y
+  // Movimientos, que filtra y pagina del lado del cliente sobre la lista entera.
+  getPagosRegistrados(): Observable<PagoReciente[]> {
+    return this.http.get<PagoReciente[]>(`${this.apiUrl}/pagos/registrados`);
+  }
+
   getResumen(): Observable<ResumenPagos> {
     return this.http.get<ResumenPagos>(`${this.apiUrl}/pagos/resumen`);
+  }
+
+  getResumenHoy(): Observable<ResumenPagosHoy> {
+    return this.http.get<ResumenPagosHoy>(`${this.apiUrl}/pagos/resumen-hoy`);
   }
 
   getDeuda(idJugador: number): Observable<CuotaPendienteDetalle[]> {

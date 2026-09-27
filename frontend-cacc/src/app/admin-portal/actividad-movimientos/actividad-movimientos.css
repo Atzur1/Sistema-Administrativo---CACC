@@ -180,19 +180,175 @@
   color: var(--text-muted);
 }
 
-.panel-link {
-  color: var(--primary-green);
-  font-size: 12.5px;
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: color 0.2s ease, transform 0.2s ease;
+/* ===== FILTROS (mismo patrón que Becados y Descuentos) ===== */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
-.panel-link:hover {
-  color: var(--primary-light);
-  transform: translateX(2px);
+.search-control {
+  position: relative;
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-control input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  box-sizing: border-box;
+  background: var(--action-field-bg);
+  border: 1px solid var(--action-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.search-control input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+.search-control input:hover {
+  border-color: var(--primary-green);
+}
+
+.search-control input:focus {
+  background: var(--action-bg);
+  border-color: var(--action-accent);
+  box-shadow: var(--action-focus-ring);
+}
+
+.filter-control {
+  width: 170px;
+  flex-shrink: 0;
+}
+
+.filter-count {
+  margin: 0 2px 10px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.clear-filter-btn {
+  padding: 0 12px;
+  height: 38px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.clear-filter-btn:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 20px 4px;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.panel-empty p {
+  margin: 0;
+}
+
+.retry-btn {
+  padding: 7px 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--primary-green);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.retry-btn:hover {
+  background: var(--color-brand-tint);
+}
+
+/* ===== PAGINACIÓN ===== */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-bg-page);
+}
+
+.pagination-button {
+  padding: 7px 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--primary-green);
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: var(--color-brand-tint);
+}
+
+.pagination-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-status {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-control,
+  .filter-control,
+  .clear-filter-btn {
+    width: 100%;
+  }
 }
 
 /* ===== TABLA DE PAGOS ===== */
@@ -217,6 +373,13 @@
   white-space: nowrap;
 }
 
+/* .align-right (0,1,0) por sí sola pierde contra ".payments-table th" (0,1,1): sin este
+   selector más específico, el título "Monto" queda a la izquierda mientras los valores
+   de abajo (td, sin text-align propio) sí quedan a la derecha — desalineados entre sí. */
+.payments-table th.align-right {
+  text-align: right;
+}
+
 .payments-table td {
   padding: 12px;
   border-bottom: 1px solid #edf2ee;
@@ -226,6 +389,10 @@
 
 .payments-table tbody tr {
   transition: background 0.2s ease;
+}
+
+.payments-table tbody tr.row-clickable {
+  cursor: pointer;
 }
 
 .payments-table tbody tr:hover {
@@ -339,16 +506,6 @@
   color: var(--color-info);
 }
 
-.event-debt {
-  background: #fef7ec;
-  color: var(--color-warning-text);
-}
-
-.event-suspended {
-  background: #fdf2f1;
-  color: var(--color-danger-strong);
-}
-
 .activity-text {
   display: flex;
   flex-direction: column;
@@ -378,16 +535,6 @@
 .badge-partial {
   background: var(--color-info-bg);
   color: var(--color-info);
-}
-
-.badge-debt {
-  background: #fef7ec;
-  color: #b45309;
-}
-
-.badge-suspended {
-  background: #fdf2f1;
-  color: var(--color-danger-strong);
 }
 
 .activity-elapsed {

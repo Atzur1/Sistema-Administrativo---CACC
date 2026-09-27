@@ -50,7 +50,11 @@ namespace DaoLibrary
 
         IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top);
 
+        IReadOnlyList<PagoReciente> ObtenerTodosLosPagos();
+
         ResumenPagos ObtenerResumen();
+
+        ResumenPagosHoy ObtenerResumenHoy();
 
         HistorialPagosResultado ObtenerHistorialPagos(int idJugador, int page, int pageSize);
 

@@ -162,9 +162,13 @@ namespace ServiceLibrary
 
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => _pagosDao.ObtenerUltimosPagos(top <= 0 ? 10 : top);
 
+        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => _pagosDao.ObtenerTodosLosPagos();
+
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => _pagosDao.ObtenerDeudaDetalle(idJugador);
 
         public ResumenPagos ObtenerResumen() => _pagosDao.ObtenerResumen();
+
+        public ResumenPagosHoy ObtenerResumenHoy() => _pagosDao.ObtenerResumenHoy();
 
         // Cuánto queda realmente pendiente de una cuota tras aplicar el beneficio (si tiene uno):
         // "%" descuenta ese porcentaje del monto ORIGINAL de la cuota, "$" descuenta un monto fijo.

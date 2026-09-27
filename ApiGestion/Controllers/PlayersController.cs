@@ -254,6 +254,20 @@ public class PlayersController : ControllerBase
             return BadRequest("The discount id must be greater than zero.");
         }
 
+        // Un beneficio que ya cumplió su fecha de cierre sin haber sido cancelado antes
+        // (Expired) es intocable: esos meses ya se dieron por saldados y anularlo generaría
+        // deuda sobre un período que el club ya considera cerrado. Sólo uno que fue cortado
+        // antes de tiempo (Cancelled) puede anularse.
+        Discount? current = FindDiscount(playerId, discountId);
+        if (current == null)
+        {
+            return NotFound($"Player {playerId} has no such benefit to void.");
+        }
+        if (current.Status == DiscountStatus.Expired)
+        {
+            return Conflict("This benefit already ran its full course; it cannot be voided.");
+        }
+
         if (!_discountDao.VoidDiscount(playerId, discountId))
         {
             return NotFound($"Player {playerId} has no such benefit to void.");

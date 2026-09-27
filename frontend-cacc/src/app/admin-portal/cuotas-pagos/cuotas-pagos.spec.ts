@@ -26,6 +26,7 @@ async function create(resumen: ResumenPagos): Promise<ComponentFixture<CuotasPag
     getPendientes: vi.fn(() => response([])),
     getRecientes: vi.fn(() => response([])),
     getResumen: vi.fn(() => response(resumen)),
+    getCategorias: vi.fn(() => response([])),
   };
   const arancelesService = {
     getResumen: vi.fn(() => response(EMPTY_ARANCEL_RESUMEN)),

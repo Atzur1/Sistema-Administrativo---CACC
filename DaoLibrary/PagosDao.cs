@@ -202,9 +202,11 @@ namespace DaoLibrary
                 nuevoId = (int)comandoId.ExecuteScalar();
             }
 
+            // fecha_hora_registro = GETDATE() (no un parámetro): el momento real en que la fila
+            // se graba, tomado del reloj del servidor de base de datos, no del app server.
             string queryInsert = @"
-                INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado)
-                VALUES (@id, @idJugador, @montoBase, @idJugadorDescuento, @montoFinal, @fechaPago, @metodoPago, @fechaVencimiento, @estado)";
+                INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, fecha_hora_registro)
+                VALUES (@id, @idJugador, @montoBase, @idJugadorDescuento, @montoFinal, @fechaPago, @metodoPago, @fechaVencimiento, @estado, GETDATE())";
 
             using SqlCommand comando = new SqlCommand(queryInsert, conexion, transaccion);
             comando.Parameters.AddWithValue("@id", nuevoId);
@@ -259,7 +261,7 @@ namespace DaoLibrary
             var (clausulaIn, parametros) = ConstruirClausulaIn("id", ids);
             string query = $@"
                 UPDATE PAGOS
-                SET estado = 1, fecha_pago = @fechaPago, metodo_pago = @metodoPago
+                SET estado = 1, fecha_pago = @fechaPago, metodo_pago = @metodoPago, fecha_hora_registro = GETDATE()
                 WHERE PK_id_pago IN ({clausulaIn}) AND estado = 0";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
@@ -437,65 +439,115 @@ namespace DaoLibrary
             return resultado;
         }
 
-        public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top)
+        public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => ObtenerPagosAgrupados($"TOP ({top})");
+
+        // Sin límite: la tabla "Pagos registrados" de Actividad y Movimientos trae todo y
+        // filtra/pagina del lado del cliente, mismo criterio que Becados y Descuentos.
+        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => ObtenerPagosAgrupados(null);
+
+        // Si una cuota se terminó de pagar (o se viene pagando) en VARIOS abonos (ej. $20.000 +
+        // $50.000), acá tiene que verse como UN solo renglón de $70.000 — no dos líneas
+        // separadas. Por eso se agrupa por jugador+período: se suman los montos, se toma la
+        // fecha/hora del abono más reciente, y su método de pago representa al conjunto.
+        //
+        // es_parcial distingue las dos situaciones sin filtrar ninguna: si todavía queda una
+        // cuota pendiente (estado = 0) de ese mismo jugador+período, lo abonado hasta ahora es
+        // un abono PARCIAL (la cuota sigue abierta); si no queda ninguna, ese grupo terminó de
+        // cubrir el total y es un pago COMPLETO. Antes esta consulta solo traía los completos.
+        //
+        // topClause: "TOP (n)" (el n ya viene validado como int por el controller, no hace
+        // falta parametrizarlo) o null para traer todos.
+        private IReadOnlyList<PagoReciente> ObtenerPagosAgrupados(string? topClause)
         {
             var resultado = new List<PagoReciente>();
 
-            // Un abono (estado = 1) solo aparece acá si YA NO queda una cuota pendiente (estado =
-            // 0) de ese mismo jugador para ese mismo período — o sea, si terminó de cubrir el
-            // total. Mientras la cuota siga con saldo (pendiente todavía viva), el abono parcial
-            // no se lista, aunque ya esté guardado en la base.
-            //
-            // Si una cuota se terminó de pagar en VARIOS abonos (ej. $20.000 + $50.000), acá tiene
-            // que verse como UN solo pago de $70.000 — no dos líneas separadas. Por eso se agrupa
-            // por jugador+período: se suman los montos, se toma la fecha del abono que la completó,
-            // y su método de pago (el de la última fila del grupo) representa al conjunto.
-            string query = @"
-                ;WITH Completos AS (
-                    SELECT pg.PK_id_pago, pg.FK_id_jugador, pg.metodo_pago,
+            // WITH (NOLOCK) a propósito, mismo motivo que ObtenerResumenHoy: es un panel de
+            // lectura (Actividad y Movimientos), no un comprobante — sin esto, esta consulta
+            // se queda esperando detrás de cualquier transacción de cobro que esté a mitad de
+            // camino (InsertarPago/MarcarPagosComoAbonados corren dentro de una transacción con
+            // TABLOCKX), y la pantalla queda "colgada" sin datos ni error hasta que esa
+            // transacción termine.
+            string query = $@"
+                ;WITH Grupos AS (
+                    SELECT pg.PK_id_pago, pg.FK_id_jugador, pg.metodo_pago, pg.fecha_vencimiento,
                         SUM(pg.monto_final) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento) AS monto_grupo,
                         MAX(pg.fecha_pago) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento) AS fecha_grupo,
-                        ROW_NUMBER() OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento ORDER BY pg.fecha_pago DESC, pg.PK_id_pago DESC) AS rn
-                    FROM PAGOS pg
+                        MAX(pg.fecha_hora_registro) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento) AS fecha_hora_grupo,
+                        ROW_NUMBER() OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento ORDER BY pg.fecha_pago DESC, pg.PK_id_pago DESC) AS rn,
+                        CASE WHEN EXISTS (
+                            SELECT 1 FROM PAGOS pendiente WITH (NOLOCK)
+                            WHERE pendiente.FK_id_jugador = pg.FK_id_jugador
+                              AND pendiente.estado = 0
+                              AND pendiente.fecha_vencimiento IS NOT NULL AND pg.fecha_vencimiento IS NOT NULL
+                              AND MONTH(pendiente.fecha_vencimiento) = MONTH(pg.fecha_vencimiento)
+                              AND YEAR(pendiente.fecha_vencimiento) = YEAR(pg.fecha_vencimiento)
+                        ) THEN 1 ELSE 0 END AS es_parcial
+                    FROM PAGOS pg WITH (NOLOCK)
                     WHERE pg.estado = 1 AND pg.fecha_pago IS NOT NULL
-                      AND NOT EXISTS (
-                          SELECT 1 FROM PAGOS pendiente
-                          WHERE pendiente.FK_id_jugador = pg.FK_id_jugador
-                            AND pendiente.estado = 0
-                            AND pendiente.fecha_vencimiento IS NOT NULL AND pg.fecha_vencimiento IS NOT NULL
-                            AND MONTH(pendiente.fecha_vencimiento) = MONTH(pg.fecha_vencimiento)
-                            AND YEAR(pendiente.fecha_vencimiento) = YEAR(pg.fecha_vencimiento)
-                      )
                 )
-                SELECT TOP (@top) c.PK_id_pago, c.FK_id_jugador, p.nombre, p.apellido, c.metodo_pago,
-                    c.monto_grupo AS monto_final, c.fecha_grupo AS fecha_pago
-                FROM Completos c
-                JOIN JUGADORES j ON c.FK_id_jugador = j.PK_id_jugador
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
-                WHERE c.rn = 1
-                ORDER BY c.fecha_grupo DESC, c.PK_id_pago DESC";
+                SELECT {(topClause != null ? topClause + " " : "")}g.PK_id_pago, g.FK_id_jugador, p.nombre, p.apellido, c.nombre_categoria,
+                    g.metodo_pago, g.monto_grupo AS monto_final, g.fecha_grupo AS fecha_pago,
+                    g.fecha_hora_grupo AS fecha_hora_registro, g.es_parcial, g.fecha_vencimiento
+                FROM Grupos g
+                JOIN JUGADORES j WITH (NOLOCK) ON g.FK_id_jugador = j.PK_id_jugador
+                JOIN PERSONA p WITH (NOLOCK) ON j.FK_id_persona = p.PK_id_persona
+                JOIN CATEGORIAS c WITH (NOLOCK) ON j.FK_id_categoria = c.PK_id_categoria
+                WHERE g.rn = 1
+                ORDER BY g.fecha_hora_grupo DESC, g.fecha_grupo DESC, g.PK_id_pago DESC";
 
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
             conexion.Open();
 
             using SqlCommand comando = new SqlCommand(query, conexion);
-            comando.Parameters.AddWithValue("@top", top);
 
             using SqlDataReader reader = comando.ExecuteReader();
             while (reader.Read())
             {
+                var periodo = Convert.ToDateTime(reader["fecha_vencimiento"]);
+                var esParcial = Convert.ToInt32(reader["es_parcial"]) == 1;
+
                 resultado.Add(new PagoReciente
                 {
                     IdPago = Convert.ToInt32(reader["PK_id_pago"]),
                     IdJugador = Convert.ToInt32(reader["FK_id_jugador"]),
                     NombreCompleto = $"{reader["apellido"].ToString()?.Trim()}, {reader["nombre"].ToString()?.Trim()}",
+                    Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? "",
+                    Periodo = $"{MesesCompletos[periodo.Month - 1]} {periodo.Year}",
                     MetodoPago = reader["metodo_pago"].ToString()?.Trim() ?? "",
                     Monto = Convert.ToDecimal(reader["monto_final"]),
-                    FechaPago = Convert.ToDateTime(reader["fecha_pago"])
+                    Estado = esParcial ? "Parcial" : "Pagado",
+                    FechaPago = Convert.ToDateTime(reader["fecha_pago"]),
+                    FechaHoraRegistro = reader["fecha_hora_registro"] == DBNull.Value
+                        ? null
+                        : Convert.ToDateTime(reader["fecha_hora_registro"])
                 });
             }
 
             return resultado;
+        }
+
+        // Métricas del banner de "Actividad y Movimientos": puntuales de HOY, a diferencia de
+        // ObtenerResumen (año/mes). WITH (NOLOCK) por el mismo motivo que ahí: es un panel, no
+        // un comprobante, y así nunca queda detrás del TABLOCKX breve de InsertarPago.
+        public ResumenPagosHoy ObtenerResumenHoy()
+        {
+            string query = @"
+                SELECT
+                    (SELECT COUNT(*) FROM PAGOS WITH (NOLOCK) WHERE estado = 1 AND CAST(fecha_pago AS DATE) = CAST(GETDATE() AS DATE)) AS pagos_hoy,
+                    (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WITH (NOLOCK) WHERE estado = 1 AND CAST(fecha_pago AS DATE) = CAST(GETDATE() AS DATE)) AS recaudado_hoy";
+
+            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
+            conexion.Open();
+
+            using SqlCommand comando = new SqlCommand(query, conexion);
+            using SqlDataReader reader = comando.ExecuteReader();
+            reader.Read();
+
+            return new ResumenPagosHoy
+            {
+                PagosHoy = Convert.ToInt32(reader["pagos_hoy"]),
+                RecaudadoHoy = Convert.ToDecimal(reader["recaudado_hoy"])
+            };
         }
 
         // Detalle de deuda de un jugador: cada cuota todavía pendiente (estado = 0), con lo que

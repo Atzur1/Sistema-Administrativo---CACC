@@ -26,15 +26,31 @@ namespace EntityLibrary
         public int CantidadJugadores { get; set; }
     }
 
-    // Fila del panel "Últimos pagos": PAGOS.Estado = 1, más recientes primero.
+    // Fila del panel "Últimos pagos": PAGOS.Estado = 1, más recientes primero. Incluye tanto
+    // cuotas ya completadas (Estado = "Pagado") como cuotas que siguen con un saldo pendiente
+    // pero ya recibieron algún abono (Estado = "Parcial") — ver PagosDao.ObtenerUltimosPagos.
     public class PagoReciente
     {
         public int IdPago { get; set; }
         public int IdJugador { get; set; }
         public string NombreCompleto { get; set; } = string.Empty;
+        public string Categoria { get; set; } = string.Empty;
+        public string Periodo { get; set; } = string.Empty;
         public string MetodoPago { get; set; } = string.Empty;
         public decimal Monto { get; set; }
+        public string Estado { get; set; } = string.Empty; // "Pagado" | "Parcial"
         public DateTime FechaPago { get; set; }
+        // Momento exacto en que se grabó (columna agregada después): null para pagos
+        // registrados antes de esa migración, que solo tienen el día en FechaPago.
+        public DateTime? FechaHoraRegistro { get; set; }
+    }
+
+    // Métricas del banner de "Actividad y Movimientos": a diferencia de ResumenPagos (año/mes),
+    // esto es puntual del día de hoy.
+    public class ResumenPagosHoy
+    {
+        public int PagosHoy { get; set; }
+        public decimal RecaudadoHoy { get; set; }
     }
 
     // Métricas del header de "Cuotas y Pagos".

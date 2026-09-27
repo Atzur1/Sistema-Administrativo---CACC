@@ -424,12 +424,16 @@ public class DiscountDao
     // del mes haya arrancado fecha_inicio.
     public bool VoidDiscount(long playerId, long discountId)
     {
+        // Guarda de más: un beneficio Expired (estado_activo = 1 y ya pasó fecha_fin sin haber
+        // sido cancelado antes) queda afuera aunque el controller ya lo valida antes de llamar
+        // acá — cubre la ventana entre esa lectura y este UPDATE.
         string query = @"
             UPDATE JUGADORES_DESCUENTOS
             SET estado_activo = 0,
                 fecha_cancelacion = EOMONTH(fecha_inicio, -1)
             WHERE FK_id_jugador = @playerId
-              AND PK_id_jugador_descuento = @discountId;";
+              AND PK_id_jugador_descuento = @discountId
+              AND NOT (estado_activo = 1 AND CAST(GETDATE() AS DATE) > fecha_fin);";
 
         int affectedRows;
 

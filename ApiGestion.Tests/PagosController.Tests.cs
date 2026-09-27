@@ -282,5 +282,7 @@ public class PagosControllerTests
         public CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request) => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => throw new NotSupportedException();
+        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => throw new NotSupportedException();
+        public ResumenPagosHoy ObtenerResumenHoy() => throw new NotSupportedException();
     }
 }
