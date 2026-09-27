@@ -55,6 +55,10 @@ builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
     new DaoLibrary.ArancelesDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 builder.Services.AddScoped<ServiceLibrary.IArancelesService, ServiceLibrary.ArancelesService>();
 
+// Inscripción única de la rama masculina (HU-033)
+builder.Services.AddScoped<DaoLibrary.EnrollmentFeeDAO>(provider =>
+    new DaoLibrary.EnrollmentFeeDAO(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+
 // Becados y descuentos
 builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
     new DaoLibrary.DiscountDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
