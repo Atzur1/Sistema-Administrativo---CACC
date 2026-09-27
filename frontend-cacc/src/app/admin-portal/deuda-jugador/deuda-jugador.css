@@ -1,440 +1,598 @@
-﻿/* Mismo lenguaje visual que jugador-perfil.css, pero tematizado en naranja/ámbar (pendiente)
+/* Mismo lenguaje visual que jugador-perfil.css, pero tematizado en naranja/ámbar (pendiente)
    en vez del verde institucional (pagado). fadeSlideUp vive ahora en styles.css (global). */
 
 .dashboard {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    min-height: 100%;
-    box-sizing: border-box;
-    background: var(--color-bg-page);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--color-text);
-    overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Centrado en vez de estirarse a lo ancho: una sola columna angosta se veía perdida
+       en el medio de una pantalla grande, con muchísimo aire vacío a los costados. */
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--color-bg-page);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text);
+  overflow-x: hidden;
 }
 
 .page-header {
-    display: flex;
-    align-items: center;
-    animation: fadeSlideUp 0.4s ease both;
+  display: flex;
+  align-items: center;
+  animation: fadeSlideUp 0.4s ease both;
 }
 
 .back-button {
-    padding: 8px 14px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-warning-text);
-    cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-warning-text);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.back-button svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .back-button:hover {
-    background: var(--color-warning-bg);
-    border-color: #eba83a;
+  background: var(--color-warning-bg);
+  border-color: #eba83a;
+  transform: translateX(-2px);
 }
 
 .loading-text,
 .error-text {
-    margin: 16px 0 0;
-    font-size: 13px;
-    color: var(--color-text-muted);
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
 .error-text {
-    color: var(--color-danger-strong);
+  color: var(--color-danger-strong);
+}
+
+/* ===== TARJETA DE PERFIL ===== */
+/* Antes el avatar + nombre flotaban directo sobre el fondo de la página, sin ningún borde
+   ni sombra propios — quedaba desconectado del resto (que sí usa tarjetas .panel). Ahora
+   es una tarjeta más, con una franja superior de acento del color del estado. */
+.profile-card {
+  position: relative;
+  padding: 18px 18px 16px;
+  margin-top: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.05),
+    0 12px 28px rgba(15, 23, 42, 0.06);
+  animation: fadeSlideUp 0.4s ease both;
+  animation-delay: 60ms;
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #eba83a, #f4c568);
 }
 
 .profile-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 16px;
-    animation: fadeSlideUp 0.4s ease both;
-    animation-delay: 60ms;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .profile-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--color-warning-bg);
-    color: var(--color-warning-text);
-    font-size: 18px;
-    font-weight: 700;
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, var(--color-warning-bg) 0%, #fbe4bb 100%);
+  color: var(--color-warning-text);
+  font-size: 19px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    0 3px 10px rgba(235, 168, 58, 0.25);
 }
 
 .profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .profile-name {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 700;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
 }
 
 .profile-meta {
-    font-size: 12px;
-    color: var(--color-text-muted);
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
-.profile-total {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    margin-left: auto;
-    flex-shrink: 0;
+/* ===== STATS (Total adeudado / cantidad de cuotas) ===== */
+.profile-stats {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(235, 168, 58, 0.35);
 }
 
-.profile-total-value {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--color-danger-strong);
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.profile-total-label {
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
+.profile-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
-.header-divider {
-    height: 1px;
-    margin: 14px 0;
-    background: var(--color-border);
+.profile-stat-danger {
+  color: var(--color-danger-strong);
+}
+
+.profile-stat-label {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.profile-stat-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--color-border);
 }
 
 .panel {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    box-shadow: var(--glass-shadow);
-    min-width: 0;
-    animation: fadeSlideUp 0.4s ease both;
-    animation-delay: 120ms;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  margin-top: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  /* Sombra más marcada que la variable global --glass-shadow (pensada para convivir con
+       otros elementos vistosos al lado): acá el panel es prácticamente todo el contenido de
+       la pantalla, así que necesita su propia elevación para no leerse plano. */
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.05),
+    0 14px 32px rgba(15, 23, 42, 0.07);
+  min-width: 0;
+  animation: fadeSlideUp 0.4s ease both;
+  animation-delay: 120ms;
 }
 
 .panel-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .panel-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .dot-pending {
-    background: #eba83a;
+  background: #eba83a;
 }
 
 .panel-title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .panel-count {
-    margin-left: auto;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-text-muted);
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
 }
 
 .deuda-empty {
-    margin: 0;
-    padding: 24px 0;
-    text-align: center;
-    font-size: 12.5px;
-    color: var(--color-text-muted);
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+/* ===== ESTADO VACÍO ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 34px 20px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
+}
+
+.empty-state-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
 }
 
 /* ===== CUOTAS ===== */
 .cuota-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .cuota-card {
-    padding: 12px;
-    background: #fffaf1;
-    border: 1px solid #f6e2b8;
-    border-radius: 10px;
+  padding: 13px 14px;
+  background: #fffaf1;
+  /* Acento a la izquierda en vez de un borde parejo en las cuatro caras: marca de un
+       vistazo que la tarjeta está "en naranja" (pendiente), igual que el criterio ya usado
+       en Deudas y Morosidad para la fila activa. */
+  border: 1px solid #f6e2b8;
+  border-left: 3px solid #eba83a;
+  border-radius: 10px;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.cuota-card:hover {
+  box-shadow: 0 4px 14px rgba(235, 168, 58, 0.16);
+  transform: translateY(-1px);
+}
+
+.cuota-card-cubierta {
+  border-left-color: var(--color-brand);
 }
 
 .cuota-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 
 .cuota-periodo {
-    font-size: 13px;
-    font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 700;
 }
 
 .cuota-original {
-    font-size: 11.5px;
-    color: var(--color-text-muted);
+  font-size: 11.5px;
+  color: var(--color-text-muted);
 }
 
 /* ===== ABONOS YA REALIZADOS ===== */
 .abono-list {
-    display: flex;
-    flex-direction: column;
-    margin: 6px 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px dashed #f6e2b8;
-    border-bottom: 1px dashed #f6e2b8;
+  display: flex;
+  flex-direction: column;
+  margin: 6px 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px dashed #f6e2b8;
+  border-bottom: 1px dashed #f6e2b8;
 }
 
 .abono-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 6px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
 }
 
 .abono-meta {
-    font-size: 11px;
-    color: var(--color-text-muted);
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .abono-monto {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-brand);
 }
 
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
 .cuota-beneficio-badge {
-    display: inline-block;
-    margin-bottom: 6px;
-    padding: 3px 8px;
-    background: var(--color-brand-tint);
-    border-radius: 6px;
-    font-size: 10.5px;
-    font-weight: 700;
-    color: #00874a;
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 3px 8px;
+  background: var(--color-brand-tint);
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #00874a;
 }
 
 .cuota-cubierta {
-    margin: 10px 0 0;
-    padding: 8px 10px;
-    background: var(--color-brand-tint);
-    border-radius: 8px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #00874a;
-    text-align: center;
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #00874a;
+  text-align: right;
 }
 
-/* ===== SALDO ===== */
+/* ===== SALDO + BOTÓN DE PAGO, en la misma fila ===== */
+.cuota-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+}
+
 .cuota-saldo {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .saldo-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--color-warning-text);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-warning-text);
 }
 
 .saldo-monto {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--color-danger-strong);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-danger-strong);
 }
 
 /* ===== PAGAR SALDO (inline, sin salir de la pantalla) ===== */
+/* Antes era una barra sólida de ancho completo — visualmente muy pesada para lo que es
+   (una acción más, no LA acción de la pantalla). Ahora es un botón compacto con ícono,
+   alineado a la derecha junto al saldo, mismo lenguaje que "Registrar pago" del dashboard. */
 .pagar-button {
-    margin-top: 10px;
-    padding: 8px 12px;
-    width: 100%;
-    background: #eba83a;
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-bg-card);
-    cursor: pointer;
-    transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 14px;
+  height: 36px;
+  background: #eba83a;
+  border: none;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-bg-card);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.pagar-button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .pagar-button:hover {
-    background: #d6941f;
+  background: #d6941f;
+  box-shadow: 0 4px 12px rgba(235, 168, 58, 0.35);
+  transform: translateY(-1px);
 }
 
 .pagar-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #f6e2b8;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f6e2b8;
 }
 
 .pagar-field {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .pagar-label {
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--color-warning-text);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-warning-text);
 }
 
 .pagar-input {
-    width: 100%;
-    padding: 7px 9px;
-    box-sizing: border-box;
-    background: var(--color-bg-card);
-    border: 1px solid #f6e2b8;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 12px;
-    color: var(--color-text);
-    outline: none;
+  width: 100%;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  background: var(--color-bg-card);
+  border: 1px solid #f6e2b8;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s ease;
 }
 
 .pagar-input:focus {
-    border-color: #eba83a;
+  border-color: #eba83a;
 }
 
 .pagar-amount-wrapper {
-    position: relative;
+  position: relative;
 }
 
 .pagar-amount-prefix {
-    position: absolute;
-    top: 50%;
-    left: 9px;
-    transform: translateY(-50%);
-    font-size: 12px;
-    color: var(--color-text-muted);
-    pointer-events: none;
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .pagar-amount-input {
-    padding-left: 20px;
+  padding-left: 22px;
 }
 
 .pagar-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 2px;
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .pagar-cancelar {
-    flex: 1;
-    padding: 8px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    cursor: pointer;
+  flex: 1;
+  padding: 9px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .pagar-cancelar:hover {
-    background: var(--color-bg-hover);
+  background: var(--color-bg-hover);
 }
 
 .pagar-confirmar {
-    flex: 1.4;
-    padding: 8px;
-    background: var(--color-brand);
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--color-bg-card);
-    cursor: pointer;
-    transition: background 0.2s ease, opacity 0.2s ease;
+  flex: 1.4;
+  padding: 9px;
+  background: var(--color-brand);
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-bg-card);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .pagar-confirmar:hover:not(:disabled) {
-    background: var(--color-brand-hover);
+  background: var(--color-brand-hover);
+  box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+  transform: translateY(-1px);
 }
 
 .pagar-confirmar:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .pagar-error {
-    margin: 0;
-    font-size: 10.5px;
-    font-weight: 600;
-    color: var(--color-danger);
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-danger);
 }
 
 .pago-exito-global {
-    margin: 0 0 12px;
-    padding: 9px 11px;
-    background: var(--color-brand-tint);
-    border-radius: 9px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-brand);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: var(--color-brand-tint);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-brand);
+  animation: fadeSlideUp 0.3s ease both;
+}
+
+.pago-exito-global svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 520px) {
-    .dashboard {
-        padding: 14px;
-    }
+  .dashboard {
+    padding: 14px;
+  }
 
-    .profile-header {
-        flex-wrap: wrap;
-    }
+  .profile-header {
+    flex-wrap: wrap;
+  }
 
-    .profile-total {
-        align-items: flex-start;
-        margin-left: 70px;
-    }
+  .cuota-footer {
+    flex-wrap: wrap;
+  }
+
+  .pagar-button {
+    width: 100%;
+    justify-content: center;
+  }
 }

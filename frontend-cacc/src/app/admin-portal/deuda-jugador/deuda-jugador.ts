@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { JugadoresService } from '../../services/jugadores';
 import { CuotaPendienteDetalle, JugadorResumen, PagosService } from '../../services/pagos';
+import { CustomSelect } from '../../shared/custom-select/custom-select';
 
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -18,7 +19,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-deuda-jugador',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CustomSelect],
   templateUrl: './deuda-jugador.html',
   styleUrl: './deuda-jugador.css',
 })
@@ -50,7 +51,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     private router: Router,
     private jugadoresService: JugadoresService,
     private pagosService: PagosService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {
@@ -169,22 +170,24 @@ export class DeudaJugador implements OnInit, OnDestroy {
     this.enviandoPago = true;
     this.errorPago = '';
 
-    this.pagosService.registrarPago(this.idJugador, nombreMes, anio, monto, this.metodoPago).subscribe({
-      next: () => {
-        this.enviandoPago = false;
-        this.pagandoId = null;
-        this.montoPagoDisplay = '';
-        this.metodoPago = '';
-        this.mostrarExito(`Pago de ${this.formatMonto(monto)} registrado correctamente.`);
-        this.cargarDeuda(); // refresca saldos/abonos (y hace desaparecer la cuota si quedó completa)
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.enviandoPago = false;
-        this.errorPago = err.error?.mensaje ?? 'No se pudo registrar el pago. Intentá de nuevo.';
-        this.cdr.detectChanges();
-      },
-    });
+    this.pagosService
+      .registrarPago(this.idJugador, nombreMes, anio, monto, this.metodoPago)
+      .subscribe({
+        next: () => {
+          this.enviandoPago = false;
+          this.pagandoId = null;
+          this.montoPagoDisplay = '';
+          this.metodoPago = '';
+          this.mostrarExito(`Pago de ${this.formatMonto(monto)} registrado correctamente.`);
+          this.cargarDeuda(); // refresca saldos/abonos (y hace desaparecer la cuota si quedó completa)
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.enviandoPago = false;
+          this.errorPago = err.error?.mensaje ?? 'No se pudo registrar el pago. Intentá de nuevo.';
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   private mostrarExito(texto: string) {
@@ -197,7 +200,11 @@ export class DeudaJugador implements OnInit, OnDestroy {
   }
 
   formatFecha(iso: string): string {
-    return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date(iso).toLocaleDateString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   }
 
   formatMonto(valor: number): string {
