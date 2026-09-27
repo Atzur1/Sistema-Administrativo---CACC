@@ -75,6 +75,66 @@ public class PagosControllerTests
         Assert.NotNull(typeof(PagosController).GetCustomAttribute<AuthorizeAttribute>());
     }
 
+    // ---- Pendientes / deuda-por-categoria (HU-020) ----
+    // El filtro idCategoria en sí (JOIN contra CATEGORIAS, sin bloqueos, etc.) se validó con
+    // la API real (QA, 23-24/09); acá solo se cubre que el controller pasa el parámetro tal
+    // cual al service, sin transformarlo ni perderlo.
+
+    [Fact]
+    public void GetPendientes_WithoutACategoryFilter_AsksTheServiceForEveryDebtor()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+
+        controller.ObtenerPendientes();
+
+        Assert.Equal(new int?[] { null }, pagosService.PendientesCalls);
+    }
+
+    [Fact]
+    public void GetPendientes_WithACategoryFilter_PassesTheIdCategoriaThroughUnchanged()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+
+        controller.ObtenerPendientes(idCategoria: 5);
+
+        Assert.Equal(new int?[] { 5 }, pagosService.PendientesCalls);
+    }
+
+    [Fact]
+    public void GetPendientes_ReturnsOkWithTheServiceResultUnchanged()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        pagosService.PendientesResult = new List<PendienteJugador>
+        {
+            new() { IdJugador = 1, NombreCompleto = "PRUEBA, SANTIAGO", Dni = "99000001", IdCategoria = 1, Categoria = "AFA 20067", MontoTotal = 92_000m, CantidadCuotas = 1 },
+        };
+
+        IActionResult result = controller.ObtenerPendientes(idCategoria: 1);
+
+        OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
+        Assert.Same(pagosService.PendientesResult, ok.Value);
+    }
+
+    [Fact]
+    public void GetDeudaPorCategoria_DefaultsToTheCurrentYearWhenNoneIsGiven()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+
+        controller.ObtenerDeudaPorCategoria();
+
+        Assert.Equal(new[] { (DateTime.Now.Year, (int?)null) }, pagosService.DeudaPorCategoriaCalls);
+    }
+
+    [Fact]
+    public void GetDeudaPorCategoria_PassesTheGivenAnioAndMesThrough()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+
+        controller.ObtenerDeudaPorCategoria(anio: 2025, mes: 9);
+
+        Assert.Equal(new[] { (2025, (int?)9) }, pagosService.DeudaPorCategoriaCalls);
+    }
+
     // ---- Player accounts (HU-029) ----
     // The debt rule lives in SQL (PagosDao.GetPlayerAccounts) and is checked against the real
     // database by the Postman collection "HU-029 - Filtro de Jugadores Deudores". Here only the
@@ -186,6 +246,10 @@ public class PagosControllerTests
         public IReadOnlyList<PlayerAccount> PlayerAccountsResult { get; set; } = new List<PlayerAccount>();
         public Exception? PlayerAccountsError { get; set; }
         public List<bool> PlayerAccountsCalls { get; } = new();
+        public IReadOnlyList<PendienteJugador> PendientesResult { get; set; } = new List<PendienteJugador>();
+        public List<int?> PendientesCalls { get; } = new();
+        public IReadOnlyList<CategoriaDeuda> DeudaPorCategoriaResult { get; set; } = new List<CategoriaDeuda>();
+        public List<(int Anio, int? Mes)> DeudaPorCategoriaCalls { get; } = new();
 
         public ResumenPagos ObtenerResumen() => ResumenResult;
 
@@ -201,11 +265,21 @@ public class PagosControllerTests
             return PlayerAccountsResult;
         }
 
-        // El controller bajo prueba solo llama a ObtenerResumen; nada más debería invocarse.
+        public IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null)
+        {
+            PendientesCalls.Add(idCategoria);
+            return PendientesResult;
+        }
+
+        public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null)
+        {
+            DeudaPorCategoriaCalls.Add((anio, mes));
+            return DeudaPorCategoriaResult;
+        }
+
+        // El controller bajo prueba no llama a estos métodos; nada más debería invocarse.
         public RegistrarPagoResultado RegistrarPago(RegistrarPagoRequest request) => throw new NotSupportedException();
         public CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request) => throw new NotSupportedException();
-        public IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null) => throw new NotSupportedException();
-        public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null) => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => throw new NotSupportedException();
     }
