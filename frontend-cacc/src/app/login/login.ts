@@ -8,6 +8,15 @@ import { AuthService } from '../services/auth';
 // from the 'usuario' key AuthService uses to store the active session
 const REMEMBERED_USER_KEY = 'usuarioRecordado';
 
+// Cuánto tiempo queda el mensaje "¡Bienvenido!" solo en pantalla, sin el overlay
+// tapándolo, para que se alcance a leer antes de que vuelva la pantalla de carga.
+// Exportadas (no solo locales) para que login.spec.ts verifique la secuencia real
+// en vez de hardcodear los mismos números por separado.
+export const LECTURA_MENSAJE_EXITO_MS = 1400;
+// Cuánto dura la segunda pasada del overlay (la de "ya confirmé, ahora te llevo a
+// portales") antes de navegar. Corta a propósito: es una transición, no una espera real.
+export const TRANSICION_A_PORTALES_MS = 700;
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -20,14 +29,20 @@ export class Login implements OnInit {
   mensajeError: string = '';
   mensajeExito: string = '';
   mostrarPassword: boolean = false;
+  // Bloquea el botón/el form durante todo el flujo (llamada + lectura del mensaje +
+  // transición). No controla el overlay directamente — ver mostrarOverlay.
   isSubmitting: boolean = false;
+  // Visibilidad del overlay de carga, independiente de isSubmitting: se apaga a
+  // propósito mientras se lee el mensaje de éxito, para que se vea limpio sin el
+  // blur encima, y se prende de nuevo un instante antes de navegar a portales.
+  mostrarOverlay: boolean = false;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private authService: AuthService,
     private ngZone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {
     this.loginForm = this.fb.group({
       usuario: ['', [Validators.required]],
@@ -62,6 +77,7 @@ export class Login implements OnInit {
 
     const { usuario, contrasena, recordarme } = this.loginForm.value;
     this.isSubmitting = true;
+    this.mostrarOverlay = true;
     this.mensajeError = '';
 
     this.authService.login(usuario, contrasena).subscribe({
@@ -85,26 +101,34 @@ export class Login implements OnInit {
 
           this.mensajeExito = `¡Bienvenido al sistema del CACC!`;
           this.mensajeError = '';
+          // Se apaga el overlay acá a propósito: el mensaje de éxito tiene que
+          // verse limpio, sin el blur encima, antes de que vuelva la pantalla
+          // de carga y recién ahí se navegue a portales.
+          this.mostrarOverlay = false;
           this.cdr.detectChanges();
 
-          // isSubmitting se mantiene en true durante estos 1.5s: la
-          // navegación es inminente, así que soltar el overlay acá solo
-          // generaría un parpadeo (el form reaparece un instante y
-          // enseguida esta pantalla se destruye al navegar).
           setTimeout(() => {
-            this.ngZone.run(() => this.router.navigate(['/portales']));
-          }, 1500);
+            this.ngZone.run(() => {
+              this.mostrarOverlay = true;
+              this.cdr.detectChanges();
+
+              setTimeout(() => {
+                this.ngZone.run(() => this.router.navigate(['/portales']));
+              }, TRANSICION_A_PORTALES_MS);
+            });
+          }, LECTURA_MENSAJE_EXITO_MS);
         });
       },
       error: (err) => {
         this.ngZone.run(() => {
           console.error('Error de autenticación:', err);
           this.isSubmitting = false;
+          this.mostrarOverlay = false;
           this.mensajeError = 'Usuario o contraseña incorrectos en la base de datos.';
           this.mensajeExito = '';
           this.cdr.detectChanges();
         });
-      }
+      },
     });
   }
 
