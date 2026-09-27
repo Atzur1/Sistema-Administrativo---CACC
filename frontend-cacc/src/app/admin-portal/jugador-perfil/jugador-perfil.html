@@ -1,26 +1,48 @@
 <!-- Perfil de jugador: datos básicos + historial de pagos paginado -->
 <div class="dashboard">
-
   <!-- ===== HEADER ===== -->
   <header class="page-header">
-    <button type="button" class="back-button" (click)="volver()">← Volver a Cuotas y Pagos</button>
+    <button type="button" class="back-button" (click)="volver()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      Volver a Cuotas y Pagos
+    </button>
   </header>
 
   @if (cargandoJugador) {
     <p class="loading-text">Cargando jugador...</p>
   } @else if (jugador) {
-    <div class="profile-header">
-      <span class="profile-avatar">{{ iniciales }}</span>
-      <div class="profile-info">
-        <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
-        <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+    <div class="profile-card">
+      <div class="profile-header">
+        <span class="profile-avatar">{{ iniciales }}</span>
+        <div class="profile-info">
+          <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
+          <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+        </div>
       </div>
+
+      @if (historial && historial.total > 0) {
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-stat-value">{{ historial.total }}</span>
+            <span class="profile-stat-label">{{
+              historial.total === 1 ? 'Pago registrado' : 'Pagos registrados'
+            }}</span>
+          </div>
+        </div>
+      }
     </div>
   } @else if (errorMessage) {
     <p class="error-text">{{ errorMessage }}</p>
   }
-
-  <div class="header-divider"></div>
 
   <!-- ===== HISTORIAL DE PAGOS ===== -->
   <section class="panel panel-historial">
@@ -35,7 +57,24 @@
     @if (cargandoHistorial) {
       <p class="historial-empty">Cargando historial...</p>
     } @else if (!historial || historial.items.length === 0) {
-      <p class="historial-empty">No se registran pagos realizados para este jugador.</p>
+      <div class="empty-state">
+        <span class="empty-state-icon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </span>
+        <p>No se registran pagos realizados para este jugador.</p>
+      </div>
     } @else {
       <ul class="periodo-list">
         @for (item of historial.items; track item.periodo) {
@@ -47,7 +86,9 @@
 
             @if (item.tieneBeneficio) {
               <div class="periodo-beneficio">
-                <span class="periodo-cuota-original">Cuota: {{ formatMonto(item.montoOriginal) }}</span>
+                <span class="periodo-cuota-original"
+                  >Cuota: {{ formatMonto(item.montoOriginal) }}</span
+                >
                 <span class="periodo-beneficio-badge">🎓 {{ beneficioTexto(item) }}</span>
               </div>
             }
@@ -55,7 +96,9 @@
             <ul class="abono-list">
               @for (abono of item.abonos; track $index) {
                 <li class="abono-row">
-                  <span class="abono-meta">{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span>
+                  <span class="abono-meta"
+                    >{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span
+                  >
                   <span class="abono-monto">{{ formatMonto(abono.monto) }}</span>
                 </li>
               }
@@ -66,11 +109,21 @@
 
       @if (totalPaginas > 1) {
         <div class="pagination">
-          <button type="button" class="pagination-button" (click)="irAPagina(page - 1)" [disabled]="page <= 1">
+          <button
+            type="button"
+            class="pagination-button"
+            (click)="irAPagina(page - 1)"
+            [disabled]="page <= 1"
+          >
             ← Anterior
           </button>
           <span class="pagination-status">Página {{ page }} de {{ totalPaginas }}</span>
-          <button type="button" class="pagination-button" (click)="irAPagina(page + 1)" [disabled]="page >= totalPaginas">
+          <button
+            type="button"
+            class="pagination-button"
+            (click)="irAPagina(page + 1)"
+            [disabled]="page >= totalPaginas"
+          >
             Siguiente →
           </button>
         </div>
