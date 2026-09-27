@@ -598,7 +598,7 @@ namespace DaoLibrary
                     (SELECT COUNT(*) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR(GETDATE()) AND MONTH(fecha_pago) = MONTH(GETDATE())) AS pagos_del_mes,
                     (SELECT COUNT(*) FROM (
                         SELECT ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
-                        FROM PAGOS pg
+                        FROM PAGOS pg WITH (NOLOCK)
                         {DescuentosSql.ApplyDescuentoActivo}
                         WHERE pg.estado = 0
                     ) t WHERE saldo_ajustado > 0) AS cantidad_pendientes,
