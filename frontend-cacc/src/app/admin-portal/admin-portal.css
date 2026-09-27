@@ -67,84 +67,71 @@
   overflow-x: hidden;
 }
 
-/* ===== ESTADO EN REPOSO: solo íconos ===== */
-/* Fade de opacidad, no display:none (que cortaba de golpe y se veía tosco) —
-   pero con overflow: hidden en los cuatro: un elemento en overflow:visible
-   sigue forzando su ancho mínimo de contenido aunque esté en opacity:0 (por
-   eso "Club Atlético Camioneros de Córdoba" rompía el layout si no). */
+/* ===== TEXTO QUE APARECE/DESAPARECE AL EXPANDIR =====
+   Regla de oro para que la animación sea fluida de punta a punta: SOLO se
+   anima con propiedades que el navegador puede interpolar de verdad
+   (max-width, max-height, opacity, padding). "justify-content", "display",
+   "align-items" y "height: auto" NO son animables — el navegador los aplica
+   de un salto sin importar qué transición tengan puesta, así que ninguno de
+   los dos estados (reposo/expandido) los usa como diferenciador: layout
+   constante, solo cambian valores interpolables. Eso es lo que se veía
+   "raro": esos saltos a mitad de una animación de ancho que sí corría
+   suave. max-width en vez de width:auto por el mismo motivo — "auto" tampoco
+   se puede animar, así que se anima hacia un tope fijo (más ancho que
+   cualquier etiqueta real) que termina actuando como si fuera "auto". */
 .sidebar-brand,
-.nav-group-title,
 .nav-item span,
 .nav-action span {
-  opacity: 0;
+  max-width: 0;
   overflow: hidden;
-  transition: opacity 0.12s ease;
+  opacity: 0;
+  transition: max-width 0.22s ease, opacity 0.12s ease;
 }
 
 .nav-item span,
 .nav-action span {
   white-space: nowrap;
-  /* El bug real de los íconos desalineados: el cuadrado de 40px ya estaba
-     bien centrado en el riel, pero adentro, con justify-content:center e
-     ícono + span como dos ítems flex, el span (aunque invisible) seguía
-     resolviendo a un ancho positivo (~20px) — el cálculo de flex-shrink no
-     lo lleva a 0 solo porque puede, se detiene apenas el total ya entra en
-     el contenedor. Sin este ancho forzado a 0, ese resto de espacio corría
-     el ícono hacia la izquierda en vez de dejarlo realmente centrado. */
-  flex: none;
-  width: 0;
 }
 
-/* Al expandir, el texto aparece recién cuando el sidebar ya casi terminó de
-   agrandarse (crecer tarda 0.3s), no a mitad de camino todavía angosto. Al
-   achicarse (dejar de cumplir este selector) el texto vuelve a la regla de
-   arriba: 0.12s sin demora, para que no quede tiempo de notar el reflujo. */
 .sidebar:hover .sidebar-brand,
-.sidebar:hover .nav-group-title,
 .sidebar:hover .nav-item span,
 .sidebar:hover .nav-action span,
 .sidebar:focus-within .sidebar-brand,
-.sidebar:focus-within .nav-group-title,
 .sidebar:focus-within .nav-item span,
 .sidebar:focus-within .nav-action span,
 .sidebar.is-open .sidebar-brand,
-.sidebar.is-open .nav-group-title,
 .sidebar.is-open .nav-item span,
 .sidebar.is-open .nav-action span {
+  max-width: 220px;
   opacity: 1;
-  transition: opacity 0.18s ease 0.16s;
+  /* Un poco más lento que el achique y con demora: el texto no aparece
+     hasta que el riel ya ganó buena parte del ancho nuevo. */
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease 0.12s;
 }
 
-.sidebar:hover .nav-item span,
-.sidebar:hover .nav-action span,
-.sidebar:focus-within .nav-item span,
-.sidebar:focus-within .nav-action span,
-.sidebar.is-open .nav-item span,
-.sidebar.is-open .nav-action span {
-  flex: initial;
-  width: auto;
-}
-
-/* Logo + brand block at the top */
+/* Logo + brand block at the top. justify-content queda SIEMPRE flex-start
+   (no es animable) — el centrado del logo en reposo se logra con
+   padding-left calculado, no cambiando cómo se alinean los hijos. */
 .sidebar-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
-  padding: 18px 8px;
+  padding: 18px 16px 18px 18px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar:hover .sidebar-header,
 .sidebar:focus-within .sidebar-header,
 .sidebar.is-open .sidebar-header {
-  justify-content: flex-start;
-  padding: 18px 16px;
+  padding-left: 16px;
 }
 
 .sidebar-logo {
   width: 36px;
   height: 36px;
+  flex-shrink: 0;
   object-fit: contain;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
 }
@@ -152,6 +139,10 @@
 .sidebar-brand {
   display: flex;
   flex-direction: column;
+  /* Tope fijo de alto, no animado: sin esto, con max-width angostándose
+     hacia 0 el nombre del club intentaría hacer wrap letra por letra y
+     podría inflar el alto del header aunque esté invisible por opacity. */
+  max-height: 60px;
 }
 
 .brand-name {
@@ -180,86 +171,81 @@
   overflow-x: hidden;
 }
 
-/* En reposo: columna centrada de cuadrados, todos del mismo tamaño
-   (--icon-btn) y separados por el mismo "gap" — el espaciado es exacto por
-   diseño, no una suma de paddings/margins de contenedores distintos. */
+/* Siempre en columna (nunca cambia a "block"/flex — "display" tampoco es
+   animable). El centrado del ícono ya no lo hace este contenedor: lo hace
+   el padding-left del propio .nav-item (ver más abajo), así que acá no hace
+   falta distinguir reposo/expandido en absoluto — un solo layout constante. */
 .nav-group {
-  --icon-btn: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
   padding: 6px 0;
 }
 
-/* Sin el título de sección visible, el aire extra entre grupos hace de
-   separador. Al expandir, el título reaparece y ya cumple ese rol, así que
-   ese aire extra se retira (ver override de abajo). */
+/* Separación fija entre grupos — antes cambiaba (8px reposo / 0 expandido)
+   para compensar el título de sección, pero esa diferencia era mínima y
+   sacarla suma una transición menos de la que preocuparse. */
 .nav-group + .nav-group {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
-.sidebar:hover .nav-group,
-.sidebar:focus-within .nav-group,
-.sidebar.is-open .nav-group {
-  display: block;
-  padding: 6px 0;
-}
-
-.sidebar:hover .nav-group + .nav-group,
-.sidebar:focus-within .nav-group + .nav-group,
-.sidebar.is-open .nav-group + .nav-group {
-  margin-top: 0;
-}
-
-/* Títulos de sección (MONITOREO, GESTIÓN): sin alto en reposo (además de
-   opacity:0 de la regla compartida) — si no, dejaban un hueco de aire
-   irregular entre íconos aunque el texto ya fuera invisible. */
+/* Títulos de sección (MONITOREO, GESTIÓN): max-height en vez de
+   height:auto — "auto" no es un valor animable, así que el texto reaparecía
+   de un salto en vez de desplegarse. Con un tope fijo (más alto que
+   cualquier título real) sí se puede animar de verdad. */
 .nav-group-title {
   display: block;
   padding: 0 16px;
-  height: 0;
+  max-height: 0;
   margin-bottom: 0;
+  overflow: hidden;
+  opacity: 0;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: #7ee0a6;
+  transition: max-height 0.22s ease, opacity 0.12s ease, margin-bottom 0.22s ease;
 }
 
 .sidebar:hover .nav-group-title,
 .sidebar:focus-within .nav-group-title,
 .sidebar.is-open .nav-group-title {
-  height: auto;
+  max-height: 24px;
   margin-bottom: 6px;
+  opacity: 0.85;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease 0.12s, margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Enlaces de navegación: en reposo, un cuadrado fijo (--icon-btn) centrado
-   por flexbox en la columna del grupo — el mismo tamaño exacto para los
-   enlaces de navegación y los botones del pie, sin depender del padding de
-   cada contenedor padre (nav vs footer). */
+/* Enlaces de navegación: ancho y layout CONSTANTES (calc + margen fijo, no
+   "40px cuadrado" vs "100% fila" — eso obligaba a cambiar justify-content,
+   que no es animable). El ancho real en px lo pone la grilla de arriba, que
+   ya anima sola; acá solo se anima el padding-left, para que el ícono se
+   deslice de "centrado en el riel angosto" a "pegado a la izquierda de la
+   fila ancha" en vez de saltar de un layout a otro. */
 .nav-item {
   display: flex;
-  flex: none;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   box-sizing: border-box;
-  width: var(--icon-btn, 40px);
-  height: var(--icon-btn, 40px);
-  padding: 0;
-  margin: 0;
-  gap: 0;
+  width: calc(100% - 8px);
+  height: 40px;
+  /* Solo margen a la derecha: el borde izquierdo queda pegado al borde real
+     del sidebar (como una pestaña), no redondeado — así el acento de
+     "activo" (border-left) no choca contra una esquina curva. Redondeado
+     solo del lado del contenido. */
+  margin: 0 8px 0 0;
+  border-radius: 0 10px 10px 0;
+  /* Centra un ícono de 18px en los 72px del riel colapsado, descontando los
+     3px reservados del border-left: (72 - 18) / 2 - 3 = 24px. */
+  padding-left: 24px;
+  gap: 12px;
   color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
   text-decoration: none;
   border: none;
-  border-radius: 10px;
+  border-left: 3px solid transparent;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease, color 0.2s ease;
 }
 
-/* Resalte simple sobre el cuadrado — sin corrimiento de padding, no tiene
-   sentido en un ícono centrado. El corrimiento de 4px solo aplica expandido. */
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
@@ -268,13 +254,7 @@
 .sidebar:hover .nav-item,
 .sidebar:focus-within .nav-item,
 .sidebar.is-open .nav-item {
-  width: 100%;
-  height: auto;
-  justify-content: flex-start;
-  padding: 10px 16px;
-  gap: 12px;
-  border-left: 3px solid transparent;
-  border-radius: 0;
+  padding-left: 16px;
 }
 
 .sidebar:hover .nav-item:hover,
@@ -283,19 +263,12 @@
   padding-left: 20px;
 }
 
-/* Ítem activo: brillo verde esmeralda. El borde iluminado y la sombra
-   interior solo se ven expandido — en el cuadrado colapsado, el propio
-   degradé ya alcanza como indicador, un borde a la izquierda ahí se vería
-   como una muesca en vez de un acento. */
+/* Ítem activo: brillo verde esmeralda y borde iluminado — visible siempre
+   igual, colapsado y expandido, ya no hace falta ocultarlo en un estado. */
 .nav-item.active {
   background: linear-gradient(90deg, rgba(0, 179, 85, 0.35) 0%, rgba(0, 127, 62, 0.08) 100%);
   color: #ffffff;
   font-weight: 600;
-}
-
-.sidebar:hover .nav-item.active,
-.sidebar:focus-within .nav-item.active,
-.sidebar.is-open .nav-item.active {
   border-left: 3px solid #00d666;
   box-shadow: inset 0 0 15px rgba(0, 214, 102, 0.12);
 }
@@ -326,22 +299,20 @@
   color: #ff6b6b;
 }
 
-.sidebar:hover .nav-item-disabled:hover,
-.sidebar:focus-within .nav-item-disabled:hover,
-.sidebar.is-open .nav-item-disabled:hover {
-  padding-left: 16px;
-}
-
 .nav-item-disabled .nav-icon {
   opacity: 0.7;
 }
 
 /* ===== FOOTER (ACCIONES INFERIORES) ===== */
-/* En reposo, mismo layout en columna centrada que los grupos de arriba, así
-   sus botones quedan exactamente alineados con los íconos de navegación. */
+/* align-items:stretch queda constante — ya no hace falta distinguir
+   reposo/expandido, los botones controlan su propio ancho (calc + margin
+   fijo en .nav-item, ver arriba). */
 .sidebar-footer {
   margin-top: auto;
-  align-items: center;
+  align-items: stretch;
+  /* Sin padding horizontal: los botones se alinean solos (margin de
+     .nav-item), igual que los íconos de navegación de arriba — con padding
+     acá quedarían corridos respecto a esos íconos. */
   padding: 10px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
@@ -349,48 +320,43 @@
   gap: 6px;
 }
 
-.sidebar:hover .sidebar-footer,
-.sidebar:focus-within .sidebar-footer,
-.sidebar.is-open .sidebar-footer {
-  align-items: stretch;
-  padding: 12px 10px;
-}
-
-/* Botones translúcidos de pie: en reposo heredan el cuadrado de .nav-item
-   (misma clase en el elemento), pero al ser <button> (no <a>) el navegador
-   les pone su propio fondo/borde nativos si no se resetean acá — por eso el
-   fondo/borde/color explícitos, aunque coincidan con los de .nav-item. El
-   look de "píldora" traslúcida completa aparece recién expandido. */
+/* Botones de pie: mismo cuadro que .nav-item (ancho, alto, padding-left,
+   margen — comparten clase). Son accesos importantes (cambiar de portal,
+   cerrar sesión), así que necesitan leerse como botones reales, no como un
+   link más — la "píldora" de fondo aparece apenas el sidebar se expande
+   (sin necesidad de estar pasando el mouse justo por ese botón), y sube de
+   intensidad si además se lo hoverea puntualmente. Colapsado (riel angosto)
+   se mantiene plano como los íconos de arriba, para no verse como una caja
+   suelta y desconectada del resto. Al ser <button> (no <a>) el navegador le
+   pone su propio fondo/borde nativos si no se resetean acá. */
 .nav-action {
   background: transparent;
-  border: none;
+  /* border-style siempre "solid" (constante, no animable) — solo cambia el
+     color, transparente a visible, para que la transición sea de verdad
+     suave y no un salto de "sin borde" a "con borde". */
+  border: 1px solid transparent;
   color: rgba(255, 255, 255, 0.8);
   font-family: inherit;
   text-align: left;
   box-sizing: border-box;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, backdrop-filter 0.2s ease;
 }
 
 .sidebar:hover .nav-action,
 .sidebar:focus-within .nav-action,
 .sidebar.is-open .nav-action {
-  width: 100%;
-  height: auto;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 9px 14px;
-  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
-.sidebar:hover .nav-action:hover,
-.sidebar:focus-within .nav-action:hover,
-.sidebar.is-open .nav-action:hover {
+.nav-action:hover {
   background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: #ffffff;
-  padding-left: 16px;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
@@ -606,8 +572,11 @@
     transition: none;
   }
 
-  .sidebar {
-    transition: none;
+  /* Catch-all: más simple y seguro que listar cada selector con su propia
+     transición (padding-left, max-width, max-height...) uno por uno. */
+  .sidebar,
+  .sidebar * {
+    transition: none !important;
   }
 
   .sidebar-backdrop {
