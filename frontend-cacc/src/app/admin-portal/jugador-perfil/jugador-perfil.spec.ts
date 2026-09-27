@@ -182,7 +182,7 @@ describe('JugadorPerfil - historial de pagos', () => {
       expect(texto(el.querySelector('.empty-state p'))).toBe(
         'No se registran pagos realizados para este jugador.',
       );
-      expect(el.querySelectorAll('.periodo-card').length).toBe(0);
+      expect(el.querySelectorAll('.periodo-row').length).toBe(0);
     });
 
     it('no muestra la paginación', async () => {
@@ -198,14 +198,14 @@ describe('JugadorPerfil - historial de pagos', () => {
     });
   });
 
-  describe('grilla de períodos', () => {
+  describe('lista de períodos', () => {
     it('lista cada período con su monto total', async () => {
       const { el } = await crear({
         historialPorPagina: () =>
           historial([periodo('Septiembre 2026', 85000), periodo('Agosto 2026', 92000)]),
       });
 
-      const tarjetas = Array.from(el.querySelectorAll('.periodo-card'));
+      const tarjetas = Array.from(el.querySelectorAll('.periodo-row'));
       expect(tarjetas.length).toBe(2);
       expect(texto(tarjetas[0].querySelector('.periodo-nombre'))).toBe('Septiembre 2026');
       expect(texto(tarjetas[0].querySelector('.periodo-total'))).toMatch(/\$\s?85\.000/);
@@ -271,8 +271,8 @@ describe('JugadorPerfil - historial de pagos', () => {
         historialPorPagina: () => historial([periodo('Septiembre 2026', 85000), conBeca]),
       });
 
-      const tarjetas = Array.from(el.querySelectorAll('.periodo-card'));
-      expect(tarjetas[0].querySelector('.periodo-beneficio')).toBeNull();
+      const tarjetas = Array.from(el.querySelectorAll('.periodo-row'));
+      expect(tarjetas[0].querySelector('.periodo-beneficio-badge')).toBeNull();
       expect(texto(tarjetas[1].querySelector('.periodo-beneficio-badge'))).toContain(
         'Media Beca (50%)',
       );

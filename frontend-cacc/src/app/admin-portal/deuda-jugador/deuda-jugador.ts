@@ -13,6 +13,23 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 0,
 });
 
+const NOMBRES_MES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+export type EstadoCuota = 'vencida' | 'parcial' | 'proxima';
+
 // Deuda pendiente de un jugador: mismo layout que Perfil de Jugador (Historial de Pagos), pero
 // mostrando lo que TODAVÍA debe en vez de lo que ya pagó. Se llega acá haciendo click en un
 // jugador desde "Pendientes de cobro" en Cuotas y Pagos.
@@ -209,6 +226,38 @@ export class DeudaJugador implements OnInit, OnDestroy {
 
   formatMonto(valor: number): string {
     return CURRENCY_FULL.format(valor);
+  }
+
+  // La cuota no trae una fecha de vencimiento propia, solo "Agosto 2026" — se asume
+  // vencida al cierre del mes que nombra (mismo criterio que usa el club para cobrar:
+  // la cuota de un mes se paga durante ese mes).
+  private vencimientoDe(periodo: string): Date | null {
+    const [nombreMes, anioTexto] = periodo.split(' ');
+    const mesIndex = NOMBRES_MES.indexOf(nombreMes.toLowerCase());
+    const anio = Number(anioTexto);
+    if (mesIndex === -1 || !anio) {
+      return null;
+    }
+    return new Date(anio, mesIndex + 1, 0); // día 0 del mes siguiente = último día de "mesIndex"
+  }
+
+  // VENCIDA: ya pasó el cierre del mes y todavía tiene saldo. PARCIAL: no venció aún pero
+  // ya tiene algún abono cargado. PRÓXIMA: todavía no venció y no se abonó nada.
+  // (Cubierta por beneficio se maneja aparte, en el template, con saldoPendiente <= 0.)
+  estadoCuota(cuota: CuotaPendienteDetalle): EstadoCuota {
+    const vencimiento = this.vencimientoDe(cuota.periodo);
+    if (vencimiento && new Date() > vencimiento) {
+      return 'vencida';
+    }
+    return cuota.abonos.length > 0 ? 'parcial' : 'proxima';
+  }
+
+  diasVencida(cuota: CuotaPendienteDetalle): number {
+    const vencimiento = this.vencimientoDe(cuota.periodo);
+    if (!vencimiento) {
+      return 0;
+    }
+    return Math.max(0, Math.floor((Date.now() - vencimiento.getTime()) / (1000 * 60 * 60 * 24)));
   }
 
   // Texto del badge de beneficio: "Beca Completa (100%)" o "Descuento por Hermanos ($15.000)".

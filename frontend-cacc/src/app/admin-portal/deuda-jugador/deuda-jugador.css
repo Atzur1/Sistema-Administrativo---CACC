@@ -4,10 +4,11 @@
 .dashboard {
   display: flex;
   flex-direction: column;
-  /* Centrado en vez de estirarse a lo ancho: una sola columna angosta se veía perdida
-       en el medio de una pantalla grande, con muchísimo aire vacío a los costados. */
+  /* Centrado, pero bastante más ancho que antes: con esto + la grilla de .cuota-list de
+     más abajo entran 2-3 cuotas por fila en vez de una sola columna angosta perdida en
+     medio de una pantalla grande. */
   width: 100%;
-  max-width: 760px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 20px;
   min-height: 100%;
@@ -16,6 +17,17 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--color-text);
   overflow-x: hidden;
+
+  /* Paleta "pendiente": ámbar/bronce en vez del naranja saturado de antes — mismo mensaje
+     (esto es una deuda, no un estado neutro) pero más elegante. El rojo de --saldo-monto
+     es aparte, siempre el mismo, y no depende de esta paleta. */
+  --pending: #b45309;
+  --pending-strong: #92400e;
+  --pending-soft: #d97706;
+  --pending-bg: #fdf6ea;
+  --pending-bg-alt: #f6e3bd;
+  --pending-border: #ecd9b3;
+  --pending-shadow: 180, 83, 9;
 }
 
 .page-header {
@@ -35,7 +47,7 @@
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-warning-text);
+  color: var(--pending-strong);
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -50,8 +62,8 @@
 }
 
 .back-button:hover {
-  background: var(--color-warning-bg);
-  border-color: #eba83a;
+  background: var(--pending-bg);
+  border-color: var(--pending);
   transform: translateX(-2px);
 }
 
@@ -94,7 +106,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #eba83a, #f4c568);
+  background: linear-gradient(90deg, var(--pending), var(--pending-soft));
 }
 
 .profile-header {
@@ -110,14 +122,14 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(150deg, var(--color-warning-bg) 0%, #fbe4bb 100%);
-  color: var(--color-warning-text);
+  background: linear-gradient(150deg, var(--pending-bg) 0%, var(--pending-bg-alt) 100%);
+  color: var(--pending-strong);
   font-size: 19px;
   font-weight: 700;
   flex-shrink: 0;
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.6),
-    0 3px 10px rgba(235, 168, 58, 0.25);
+    0 3px 10px rgba(var(--pending-shadow), 0.22);
 }
 
 .profile-info {
@@ -145,7 +157,7 @@
   gap: 18px;
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px dashed rgba(235, 168, 58, 0.35);
+  border-top: 1px dashed rgba(var(--pending-shadow), 0.3);
 }
 
 .profile-stat {
@@ -213,7 +225,7 @@
 }
 
 .dot-pending {
-  background: #eba83a;
+  background: var(--pending);
 }
 
 .panel-title {
@@ -270,65 +282,147 @@
 }
 
 /* ===== CUOTAS ===== */
+/* Lista vertical de filas de ancho completo (no una grilla de tarjetas): cada cuota es una
+   fila con toda su información en una sola línea — pill de estado, período, monto y acción
+   alineados horizontalmente —, más legible y "de planilla seria" que una grilla de tarjetas. */
 .cuota-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
+
+  /* Paleta sobria del estado de cada cuota: la seriedad de una pantalla de deuda se
+     transmite con tipografía/jerarquía y un pill discreto, no con la fila entera teñida de
+     color. Escalada acá (no en .dashboard) para no tocar el resto de la pantalla — el
+     pedido fue rediseñar solo la lista de deuda. */
+  --state-vencida-bg: #f5e3e2;
+  --state-vencida-text: #7a2a28;
+  --state-vencida-border: #d98a86;
+  --state-parcial-bg: #f2e6d6;
+  --state-parcial-text: #7a4d1f;
+  --state-proxima-bg: #e8eaed;
+  --state-proxima-text: #475467;
+  --state-cubierta-bg: #e2efe6;
+  --state-cubierta-text: #1f6b3a;
+  /* Único acento fuerte de la fila: el botón de acción. Terracota, no el ámbar/naranja
+     saturado de antes. */
+  --action: #b5541f;
+  --action-hover: #8c4017;
 }
 
-.cuota-card {
-  padding: 13px 14px;
-  background: #fffaf1;
-  /* Acento a la izquierda en vez de un borde parejo en las cuatro caras: marca de un
-       vistazo que la tarjeta está "en naranja" (pendiente), igual que el criterio ya usado
-       en Deudas y Morosidad para la fila activa. */
-  border: 1px solid #f6e2b8;
-  border-left: 3px solid #eba83a;
-  border-radius: 10px;
+.cuota-row {
+  padding: 16px 20px;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  /* Barra de acento a la izquierda, más marcada que el borde parejo del resto — el mismo
+     recurso que ya usa "Deuda por categoría" para la fila activa, ahora aplicado acá. */
+  border-left: 4px solid #d1d5db;
+  border-radius: 8px;
   transition:
     box-shadow 0.2s ease,
-    transform 0.2s ease;
+    border-color 0.2s ease;
 }
 
-.cuota-card:hover {
-  box-shadow: 0 4px 14px rgba(235, 168, 58, 0.16);
-  transform: translateY(-1px);
+.cuota-row:hover {
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
-.cuota-card-cubierta {
-  border-left-color: var(--color-brand);
+/* Único toque de color fuerte de la fila (aparte del botón): la barra de la vencida, que es
+   la que más urge. El resto de los estados se distingue solo por el pill, sin teñir la fila. */
+.cuota-row-vencida {
+  border-left-color: var(--state-vencida-border);
 }
 
-.cuota-head {
+.cuota-row-cubierta {
+  background: #fbfdfc;
+}
+
+/* ===== FILA PRINCIPAL: pill + período | vencida-hace-X | saldo | botón ===== */
+.cuota-row-main {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.cuota-row-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 2 1 260px;
+  min-width: 0;
+}
+
+.cuota-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cuota-row-meta {
+  flex: 1 1 140px;
+  text-align: right;
+}
+
+.estado-pill {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.estado-vencida {
+  background: var(--state-vencida-bg);
+  color: var(--state-vencida-text);
+}
+
+.estado-parcial {
+  background: var(--state-parcial-bg);
+  color: var(--state-parcial-text);
+}
+
+.estado-proxima {
+  background: var(--state-proxima-bg);
+  color: var(--state-proxima-text);
+}
+
+.estado-cubierta {
+  background: var(--state-cubierta-bg);
+  color: var(--state-cubierta-text);
+}
+
+.cuota-vencida-desde {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--state-vencida-text);
 }
 
 .cuota-periodo {
-  font-size: 13.5px;
-  font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #16181d;
 }
 
 .cuota-original {
   font-size: 11.5px;
-  color: var(--color-text-muted);
+  color: #6b7280;
 }
 
-/* ===== ABONOS YA REALIZADOS ===== */
+/* ===== ABONOS YA REALIZADOS (fila completa, debajo de la principal) ===== */
 .abono-list {
   display: flex;
   flex-direction: column;
-  margin: 6px 0;
-  padding: 0;
+  margin: 10px 0 0;
+  padding: 10px 0 0;
   list-style: none;
-  border-top: 1px dashed #f6e2b8;
-  border-bottom: 1px dashed #f6e2b8;
+  border-top: 1px solid #eceef1;
 }
 
 .abono-row {
@@ -341,7 +435,7 @@
 
 .abono-meta {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: #6b7280;
 }
 
 .abono-monto {
@@ -353,7 +447,7 @@
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
 .cuota-beneficio-badge {
   display: inline-block;
-  margin-bottom: 6px;
+  margin-top: 10px;
   padding: 3px 8px;
   background: var(--color-brand-tint);
   border-radius: 6px;
@@ -370,59 +464,56 @@
   text-align: right;
 }
 
-/* ===== SALDO + BOTÓN DE PAGO, en la misma fila ===== */
-.cuota-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.cuota-saldo {
+/* ===== SALDO + BOTÓN DE PAGO: última sección de la fila principal ===== */
+.cuota-row-saldo {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1 1 120px;
+  text-align: right;
 }
 
 .saldo-label {
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-warning-text);
+  color: #6b7280;
 }
 
+/* Gris casi negro, no rojo: la seriedad la marca el pill de estado + la tipografía, no un
+   monto en rojo chillón — más elegante y menos "alarma" para una pantalla que ya de por sí
+   trata de dinero adeudado. */
 .saldo-monto {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
-  color: var(--color-danger-strong);
+  color: #16181d;
 }
 
 /* ===== PAGAR SALDO (inline, sin salir de la pantalla) ===== */
-/* Antes era una barra sólida de ancho completo — visualmente muy pesada para lo que es
-   (una acción más, no LA acción de la pantalla). Ahora es un botón compacto con ícono,
-   alineado a la derecha junto al saldo, mismo lenguaje que "Registrar pago" del dashboard. */
+/* Botón compacto con ícono, alineado a la derecha junto al saldo. Terracota apagado en vez
+   del ámbar saturado de antes, esquinas menos redondeadas y sin el "lift" al hover — un
+   botón más serio, no un CTA de marketing. */
 .pagar-button {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  padding: 0 14px;
-  height: 36px;
-  background: #eba83a;
+  padding: 0 16px;
+  height: 34px;
+  background: var(--action);
   border: none;
-  border-radius: 9px;
+  border-radius: 7px;
   font-family: inherit;
   font-size: 12px;
-  font-weight: 700;
-  color: var(--color-bg-card);
+  font-weight: 600;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
   transition:
     background 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+    box-shadow 0.2s ease;
 }
 
 .pagar-button svg {
@@ -432,24 +523,27 @@
 }
 
 .pagar-button:hover {
-  background: #d6941f;
-  box-shadow: 0 4px 12px rgba(235, 168, 58, 0.35);
-  transform: translateY(-1px);
+  background: var(--action-hover);
+  box-shadow: 0 2px 6px rgba(181, 84, 31, 0.28);
 }
 
+/* Fila ya de ancho completo: Monto + Método comparten una línea en vez de apilarse en una
+   sola columna angosta con mucho aire libre al lado. */
 .pagar-form {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 10px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f6e2b8;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #eceef1;
 }
 
 .pagar-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1 1 200px;
 }
 
 .pagar-label {
@@ -457,7 +551,7 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--color-warning-text);
+  color: #6b7280;
 }
 
 .pagar-input {
@@ -465,7 +559,7 @@
   padding: 8px 10px;
   box-sizing: border-box;
   background: var(--color-bg-card);
-  border: 1px solid #f6e2b8;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-family: inherit;
   font-size: 12.5px;
@@ -475,7 +569,7 @@
 }
 
 .pagar-input:focus {
-  border-color: #eba83a;
+  border-color: var(--action);
 }
 
 .pagar-amount-wrapper {
@@ -499,7 +593,7 @@
 .pagar-actions {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  flex: 1 1 220px;
 }
 
 .pagar-cancelar {
@@ -551,6 +645,7 @@
 }
 
 .pagar-error {
+  flex: 1 1 100%;
   margin: 0;
   font-size: 10.5px;
   font-weight: 600;
@@ -587,8 +682,9 @@
     flex-wrap: wrap;
   }
 
-  .cuota-footer {
-    flex-wrap: wrap;
+  .cuota-row-saldo {
+    align-items: flex-start;
+    text-align: left;
   }
 
   .pagar-button {

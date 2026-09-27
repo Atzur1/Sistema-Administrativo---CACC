@@ -4,10 +4,10 @@
 .dashboard {
   display: flex;
   flex-direction: column;
-  /* Centrado en vez de estirarse a lo ancho: una sola columna angosta se veía perdida
-       en el medio de una pantalla grande, con muchísimo aire vacío a los costados. */
+  /* Mismo ancho que Deuda Pendiente, para que las dos pantallas a las que se llega desde
+     Cuotas y Pagos se vean consistentes entre sí. */
   width: 100%;
-  max-width: 760px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 20px;
   min-height: 100%;
@@ -260,70 +260,109 @@
 }
 
 /* ===== PERÍODOS PAGADOS ===== */
-/* Cada período es una tarjeta con el total arriba y, adentro, TODOS los abonos que lo
-   componen (puede ser uno solo, o varios si se pagó de a partes) */
+/* Mismo patrón que la lista de Deuda Pendiente (fila de ancho completo, barra de acento a
+   la izquierda, pill de estado + período a la izquierda, monto a la derecha) pero en verde:
+   es el color que el sistema ya usa para todo lo pagado/cobrado. */
 .periodo-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.periodo-card {
-  padding: 13px 14px;
-  background: #f6fbf7;
-  /* Acento a la izquierda en vez de un borde parejo en las cuatro caras: marca de un
-       vistazo que la tarjeta está "en verde" (pagado), igual que el criterio ya usado
-       en Deudas y Morosidad para la fila activa. */
-  border: 1px solid #cdeada;
-  border-left: 3px solid var(--color-brand);
-  border-radius: 10px;
-  transition:
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+.periodo-row {
+  padding: 16px 20px;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid var(--color-brand);
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
 }
 
-.periodo-card:hover {
-  box-shadow: 0 4px 14px rgba(0, 127, 62, 0.14);
-  transform: translateY(-1px);
+.periodo-row:hover {
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
-.periodo-head {
+.periodo-row-main {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.periodo-row-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 2 1 260px;
+  min-width: 0;
+}
+
+.periodo-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.periodo-row-meta {
+  flex: 1 1 140px;
+  text-align: right;
+}
+
+.periodo-row-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1 1 120px;
+  text-align: right;
+}
+
+.estado-pill {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.estado-pagado {
+  background: #e2efe6;
+  color: #1f6b3a;
 }
 
 .periodo-nombre {
-  font-size: 13.5px;
-  font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #16181d;
+}
+
+.periodo-cuota-original {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.periodo-total-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
 }
 
 .periodo-total {
-  font-size: 14.5px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-brand);
 }
 
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
-.periodo-beneficio {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-
-.periodo-cuota-original {
-  font-size: 11px;
-  color: var(--color-text-muted);
-}
-
 .periodo-beneficio-badge {
   padding: 3px 8px;
   background: var(--color-brand-tint);
@@ -333,13 +372,14 @@
   color: #00874a;
 }
 
-/* ===== ABONOS DENTRO DE CADA PERÍODO ===== */
+/* ===== ABONOS DENTRO DE CADA PERÍODO (fila completa, debajo de la principal) ===== */
 .abono-list {
   display: flex;
   flex-direction: column;
-  margin: 0;
-  padding: 0;
+  margin: 10px 0 0;
+  padding: 10px 0 0;
   list-style: none;
+  border-top: 1px solid #eceef1;
 }
 
 .abono-row {
@@ -347,17 +387,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 5px 0;
-  border-top: 1px dashed #cdeada;
-}
-
-.abono-row:first-child {
-  border-top: none;
+  padding: 4px 0;
 }
 
 .abono-meta {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: #6b7280;
 }
 
 .abono-monto {

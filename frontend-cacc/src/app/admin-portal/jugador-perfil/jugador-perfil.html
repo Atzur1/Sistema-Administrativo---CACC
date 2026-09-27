@@ -78,31 +78,44 @@
     } @else {
       <ul class="periodo-list">
         @for (item of historial.items; track item.periodo) {
-          <li class="periodo-card">
-            <div class="periodo-head">
-              <span class="periodo-nombre">{{ item.periodo }}</span>
-              <span class="periodo-total">{{ formatMonto(item.montoTotal) }}</span>
+          <li class="periodo-row">
+            <div class="periodo-row-main">
+              <div class="periodo-row-identity">
+                <span class="estado-pill estado-pagado">Pagado</span>
+                <div class="periodo-row-text">
+                  <span class="periodo-nombre">{{ item.periodo }}</span>
+                  @if (item.tieneBeneficio) {
+                    <span class="periodo-cuota-original"
+                      >Cuota: {{ formatMonto(item.montoOriginal) }}</span
+                    >
+                  }
+                </div>
+              </div>
+
+              <div class="periodo-row-meta">
+                @if (item.tieneBeneficio) {
+                  <span class="periodo-beneficio-badge">🎓 {{ beneficioTexto(item) }}</span>
+                }
+              </div>
+
+              <div class="periodo-row-total">
+                <span class="periodo-total-label">Total pagado</span>
+                <span class="periodo-total">{{ formatMonto(item.montoTotal) }}</span>
+              </div>
             </div>
 
-            @if (item.tieneBeneficio) {
-              <div class="periodo-beneficio">
-                <span class="periodo-cuota-original"
-                  >Cuota: {{ formatMonto(item.montoOriginal) }}</span
-                >
-                <span class="periodo-beneficio-badge">🎓 {{ beneficioTexto(item) }}</span>
-              </div>
+            @if (item.abonos.length > 0) {
+              <ul class="abono-list">
+                @for (abono of item.abonos; track $index) {
+                  <li class="abono-row">
+                    <span class="abono-meta"
+                      >{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span
+                    >
+                    <span class="abono-monto">{{ formatMonto(abono.monto) }}</span>
+                  </li>
+                }
+              </ul>
             }
-
-            <ul class="abono-list">
-              @for (abono of item.abonos; track $index) {
-                <li class="abono-row">
-                  <span class="abono-meta"
-                    >{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span
-                  >
-                  <span class="abono-monto">{{ formatMonto(abono.monto) }}</span>
-                </li>
-              }
-            </ul>
           </li>
         }
       </ul>
