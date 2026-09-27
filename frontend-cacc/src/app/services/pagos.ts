@@ -30,6 +30,13 @@ export interface CategoriaDeuda {
   cantidadJugadores: number;
 }
 
+// HU-020: catálogo completo de categorías (las 13 del club), independiente de
+// quién debe o no — para el selector de "Deudas y Morosidad".
+export interface Categoria {
+  idCategoria: number;
+  nombre: string;
+}
+
 export interface PagoReciente {
   idPago: number;
   idJugador: number;
@@ -92,21 +99,29 @@ export class PagosService {
 
   // idCategoria: HU-020, acota el padrón a esa categoría/división del lado del servidor.
   getPendientes(idCategoria?: number | null): Observable<PendienteJugador[]> {
-    const url = idCategoria != null
-      ? `${this.apiUrl}/pagos/pendientes?idCategoria=${idCategoria}`
-      : `${this.apiUrl}/pagos/pendientes`;
+    const url =
+      idCategoria != null
+        ? `${this.apiUrl}/pagos/pendientes?idCategoria=${idCategoria}`
+        : `${this.apiUrl}/pagos/pendientes`;
     return this.http.get<PendienteJugador[]>(url);
   }
 
   // HU-029: con onlyDebtors la propia API devuelve solo a los jugadores que deben algo
   getPlayerAccounts(onlyDebtors: boolean): Observable<PlayerAccountModel[]> {
-    return this.http.get<PlayerAccountModel[]>(`${this.apiUrl}/pagos/player-accounts?onlyDebtors=${onlyDebtors}`);
+    return this.http.get<PlayerAccountModel[]>(
+      `${this.apiUrl}/pagos/player-accounts?onlyDebtors=${onlyDebtors}`,
+    );
   }
 
   // mes: si se omite, trae la deuda del año completo en vez de un mes puntual.
   getDeudaPorCategoria(anio: number, mes?: number | null): Observable<CategoriaDeuda[]> {
     const params = mes != null ? `anio=${anio}&mes=${mes}` : `anio=${anio}`;
     return this.http.get<CategoriaDeuda[]>(`${this.apiUrl}/pagos/deuda-por-categoria?${params}`);
+  }
+
+  // HU-020: las 13 categorías del club, tengan o no jugadores morosos hoy.
+  getCategorias(): Observable<Categoria[]> {
+    return this.http.get<Categoria[]>(`${this.apiUrl}/categorias`);
   }
 
   getRecientes(top: number = 10): Observable<PagoReciente[]> {
@@ -121,7 +136,13 @@ export class PagosService {
     return this.http.get<CuotaPendienteDetalle[]>(`${this.apiUrl}/pagos/deuda/${idJugador}`);
   }
 
-  registrarPago(idJugador: number, periodo: string, anio: number, monto: number, metodoPago: string): Observable<RegistrarPagoResponse> {
+  registrarPago(
+    idJugador: number,
+    periodo: string,
+    anio: number,
+    monto: number,
+    metodoPago: string,
+  ): Observable<RegistrarPagoResponse> {
     return this.http.post<RegistrarPagoResponse>(`${this.apiUrl}/pagos/registrar`, {
       idJugador,
       periodo,

@@ -296,7 +296,9 @@ namespace DaoLibrary
                   AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
                 GROUP BY j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria
                 HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
-                ORDER BY monto_total DESC";
+                -- HU-021 (QA, 24/09): el reporte exportado tiene que salir en el mismo orden que la
+                -- grilla de Deudas y Morosidad (cantidad de cuotas primero, monto como desempate).
+                ORDER BY cantidad_cuotas DESC, monto_total DESC";
 
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
             conexion.Open();

@@ -11,7 +11,7 @@ namespace ApiGestion.Reports
     {
         private static readonly CultureInfo Ars = CultureInfo.GetCultureInfo("es-AR");
 
-        public static byte[] BuildCsv(IReadOnlyList<PendienteJugador> deudores, string categoriaLabel)
+        public static byte[] BuildCsv(IReadOnlyList<PendienteJugador> deudores, string categoriaLabel, string periodoLabel)
         {
             var totalAdeudado = deudores.Sum(d => d.MontoTotal);
 
@@ -20,6 +20,7 @@ namespace ApiGestion.Reports
                 new[] { "Club Atlético Camioneros de Córdoba" },
                 new[] { "Reporte de Jugadores Deudores" },
                 new[] { "Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm") },
+                new[] { "Período consultado", periodoLabel },
                 new[] { "Categoría", categoriaLabel },
                 new[] { "Total adeudado", totalAdeudado.ToString("C0", Ars) },
             };
@@ -38,13 +39,14 @@ namespace ApiGestion.Reports
             return CsvBuilder.Build(meta, columns, rows);
         }
 
-        public static byte[] BuildPdf(IReadOnlyList<PendienteJugador> deudores, string categoriaLabel)
+        public static byte[] BuildPdf(IReadOnlyList<PendienteJugador> deudores, string categoriaLabel, string periodoLabel)
         {
             var totalAdeudado = deudores.Sum(d => d.MontoTotal);
 
             var meta = new List<PdfMetaItem>
             {
                 new("Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm")),
+                new("Período consultado", periodoLabel),
                 new("Categoría consultada", categoriaLabel),
                 new("Total adeudado", totalAdeudado.ToString("C0", Ars), Highlight: true),
             };

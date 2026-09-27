@@ -19,12 +19,18 @@ namespace ApiGestion.Controllers
         private readonly IPagosService _pagosService;
         private readonly IArancelesService _arancelesService;
         private readonly DiscountDao _discountDao;
+        private readonly ICategoriasDao _categoriasDao;
 
-        public ReportesController(IPagosService pagosService, IArancelesService arancelesService, DiscountDao discountDao)
+        public ReportesController(
+            IPagosService pagosService,
+            IArancelesService arancelesService,
+            DiscountDao discountDao,
+            ICategoriasDao categoriasDao)
         {
             _pagosService = pagosService;
             _arancelesService = arancelesService;
             _discountDao = discountDao;
+            _categoriasDao = categoriasDao;
         }
 
         // GET api/reportes/deudores/pdf?idCategoria=5 -> HU-021: planilla imprimible
@@ -32,7 +38,7 @@ namespace ApiGestion.Controllers
         public IActionResult ExportarDeudoresPdf([FromQuery] int? idCategoria = null)
         {
             var deudores = _pagosService.ObtenerPendientes(idCategoria);
-            byte[] pdf = DeudoresReportBuilder.BuildPdf(deudores, CategoriaLabel(deudores, idCategoria));
+            byte[] pdf = DeudoresReportBuilder.BuildPdf(deudores, CategoriaLabel(idCategoria), PeriodoLabel());
             return File(pdf, "application/pdf", $"reporte-deudores_{Timestamp()}.pdf");
         }
 
@@ -41,7 +47,7 @@ namespace ApiGestion.Controllers
         public IActionResult ExportarDeudoresCsv([FromQuery] int? idCategoria = null)
         {
             var deudores = _pagosService.ObtenerPendientes(idCategoria);
-            byte[] csv = DeudoresReportBuilder.BuildCsv(deudores, CategoriaLabel(deudores, idCategoria));
+            byte[] csv = DeudoresReportBuilder.BuildCsv(deudores, CategoriaLabel(idCategoria), PeriodoLabel());
             return File(csv, "text/csv", $"reporte-deudores_{Timestamp()}.csv");
         }
 
@@ -98,16 +104,25 @@ namespace ApiGestion.Controllers
 
         private static string Timestamp() => DateTime.Now.ToString("yyyyMMdd_HHmm");
 
-        // El filtro solo viaja como id; el nombre para mostrar en el encabezado del
-        // reporte se toma de la propia fila (ya lo trae el padrón), sin necesitar
-        // consultar la tabla de categorías aparte.
-        private static string CategoriaLabel(IReadOnlyList<PendienteJugador> deudores, int? idCategoria)
+        // QA (24/09, HU-021): con una categoría filtrada sin deudores hoy, el nombre
+        // salía como "Categoría #N" porque se leía de la propia fila del padrón (que
+        // queda vacía en ese caso). Se busca en el catálogo de categorías en vez de
+        // inferirlo de los deudores, así el nombre siempre es el real.
+        private string CategoriaLabel(int? idCategoria)
         {
             if (idCategoria == null)
             {
                 return "Todas";
             }
-            return deudores.FirstOrDefault()?.Categoria ?? $"Categoría #{idCategoria}";
+            return _categoriasDao.ObtenerTodas()
+                .FirstOrDefault(c => c.IdCategoria == idCategoria)?.Nombre
+                ?? $"Categoría #{idCategoria}";
         }
+
+        // HU-021 (QA, 24/09): "Período consultado" faltaba en el encabezado. El
+        // padrón de deudores no está acotado a un período (es la deuda pendiente de
+        // HOY, no de un mes puntual), así que se informa como la temporada vigente
+        // hasta la fecha de emisión — mismo criterio que sugirió QA en la revisión.
+        private static string PeriodoLabel() => $"Temporada {DateTime.Now.Year}, hasta {DateTime.Now:dd/MM/yyyy}";
     }
 }
