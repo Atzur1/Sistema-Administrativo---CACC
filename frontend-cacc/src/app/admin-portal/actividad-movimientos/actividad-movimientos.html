@@ -21,15 +21,48 @@
   <!-- ===== MAIN GRID ===== -->
   <section class="main-grid">
 
-    <!-- Latest registered payments -->
+    <!-- All registered payments: filterable/paginated, same pattern as Becados y Descuentos -->
     <article class="panel panel-payments">
       <header class="panel-head">
         <div class="panel-head-text">
-          <h2 class="panel-title">Últimos pagos registrados</h2>
-          <span class="panel-subtitle">Movimientos de las últimas horas</span>
+          <h2 class="panel-title">Pagos registrados</h2>
+          <span class="panel-subtitle">Historial completo de pagos</span>
         </div>
-        <a class="panel-link" routerLink="/admin/portal/cuotas-pagos">Ver todos →</a>
       </header>
+
+      <form class="filter-row" [formGroup]="filterForm">
+        <div class="search-control">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" placeholder="Buscar jugador…" formControlName="busqueda" />
+        </div>
+
+        <div class="filter-control">
+          <app-custom-select
+            [options]="estadoOptions"
+            placeholder="Todos los estados"
+            formControlName="estado"
+          ></app-custom-select>
+        </div>
+
+        @if (hayFiltrosActivos) {
+          <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        }
+      </form>
+
+      @if (paymentsLoaded) {
+        <p class="filter-count">
+          Mostrando {{ pagedPayments.length }} de {{ filteredPayments.length }} pagos
+          @if (filteredPayments.length !== allPaymentsCount) {
+            ({{ allPaymentsCount }} en total)
+          }
+        </p>
+      }
 
       <div class="table-wrapper">
         <table class="payments-table">
@@ -43,8 +76,8 @@
             </tr>
           </thead>
           <tbody>
-            @for (payment of payments; track payment.player) {
-              <tr>
+            @for (payment of pagedPayments; track payment.id) {
+              <tr class="row-clickable" (click)="irAJugador(payment.idJugador)">
                 <td>
                   <div class="cell-player">
                     <span class="player-name">{{ payment.player }}</span>
@@ -56,13 +89,36 @@
                 <td class="cell-muted">{{ payment.method }}</td>
                 <td>
                   <span class="status-pill"
-                        [ngClass]="'status-' + payment.status">{{ payment.statusLabel }}</span>
+                        [ngClass]="payment.status === 'Parcial' ? 'status-partial' : 'status-paid'">{{ payment.status }}</span>
                 </td>
               </tr>
             }
           </tbody>
         </table>
+
+        @if (paymentsLoadError) {
+          <div class="panel-empty">
+            <p>No se pudieron cargar los pagos. Puede ser una demora del servidor.</p>
+            <button type="button" class="retry-btn" (click)="reintentarPagos()">Reintentar</button>
+          </div>
+        } @else if (paymentsLoaded && allPaymentsCount === 0) {
+          <p class="panel-empty">No hay pagos registrados.</p>
+        } @else if (paymentsLoaded && filteredPayments.length === 0) {
+          <p class="panel-empty">Ningún pago coincide con la búsqueda o los filtros aplicados.</p>
+        }
       </div>
+
+      @if (totalPaginas > 1) {
+        <div class="pagination">
+          <button type="button" class="pagination-button" (click)="irAPagina(page - 1)" [disabled]="page <= 1">
+            ← Anterior
+          </button>
+          <span class="pagination-status">Página {{ page }} de {{ totalPaginas }}</span>
+          <button type="button" class="pagination-button" (click)="irAPagina(page + 1)" [disabled]="page >= totalPaginas">
+            Siguiente →
+          </button>
+        </div>
+      }
     </article>
 
     <!-- Right column: activity feed on top, shortcuts below -->
@@ -82,42 +138,14 @@
             <div class="activity-item" [style.animation-delay.ms]="320 + i * 50">
 
               <span class="activity-icon" [ngClass]="'event-' + event.type">
-                @switch (event.type) {
-                  @case ('payment') {
-                    <!-- Invoice -->
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                      <line x1="1" y1="10" x2="23" y2="10"></line>
-                    </svg>
-                  }
-                  @case ('partial') {
-                    <!-- Trend -->
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                      <polyline points="17 6 23 6 23 12"></polyline>
-                    </svg>
-                  }
-                  @case ('debt') {
-                    <!-- Circular alert -->
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="12" r="9"></circle>
-                      <line x1="12" y1="8" x2="12" y2="12.5"></line>
-                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                    </svg>
-                  }
-                  @default {
-                    <!-- Triangular alert -->
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                      <line x1="12" y1="9" x2="12" y2="13"></line>
-                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  }
-                }
+                <!-- Billete: tanto "pago" como "parcial" son eventos de plata — antes tenían
+                     una factura y una flecha de tendencia sin relación entre sí. -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                  <circle cx="12" cy="12" r="2"></circle>
+                  <path d="M6 12h.01M18 12h.01"></path>
+                </svg>
               </span>
 
               <div class="activity-text">
@@ -128,6 +156,15 @@
             </div>
           }
         </div>
+
+        @if (activityLoadError) {
+          <div class="panel-empty">
+            <p>No se pudo cargar la actividad. Puede ser una demora del servidor.</p>
+            <button type="button" class="retry-btn" (click)="reintentarActividad()">Reintentar</button>
+          </div>
+        } @else if (activityLoaded && activity.length === 0) {
+          <p class="panel-empty">Sin actividad reciente.</p>
+        }
       </article>
 
       <!-- Quick access shortcuts -->

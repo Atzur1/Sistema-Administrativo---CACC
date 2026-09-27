@@ -74,6 +74,21 @@ namespace ApiGestion.Controllers
             return Ok(_pagosService.ObtenerUltimosPagos(top));
         }
 
+        // GET api/pagos/resumen-hoy -> banner de "Actividad y Movimientos" (pagos y recaudado de HOY)
+        [HttpGet("resumen-hoy")]
+        public IActionResult ObtenerResumenHoy()
+        {
+            return Ok(_pagosService.ObtenerResumenHoy());
+        }
+
+        // GET api/pagos/registrados -> tabla "Pagos registrados" de Actividad y Movimientos:
+        // todos los pagos (sin límite), filtrados/paginados del lado del cliente.
+        [HttpGet("registrados")]
+        public IActionResult ObtenerTodosLosPagos()
+        {
+            return Ok(_pagosService.ObtenerTodosLosPagos());
+        }
+
         // GET api/pagos/deuda/5 -> detalle de deuda de un jugador (cuotas pendientes + abonos parciales)
         [HttpGet("deuda/{idJugador}")]
         public IActionResult ObtenerDeudaDetalle(int idJugador)

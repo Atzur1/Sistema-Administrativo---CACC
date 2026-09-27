@@ -134,7 +134,7 @@
             </thead>
             <tbody>
               @for (debtor of debtors; track debtor.rank) {
-                <tr>
+                <tr class="row-clickable" (click)="irADeuda(debtor.idJugador)">
                   <td class="col-rank">
                     <span class="rank-badge" [class.rank-top]="isTopRank(debtor.rank)">
                       {{ debtor.rank }}
@@ -175,7 +175,8 @@
         } @else {
           <div class="suspended-list">
             @for (player of topInhabilitados; track player.player; let i = $index) {
-              <div class="suspended-item" [style.animation-delay.ms]="320 + i * 80">
+              <div class="suspended-item row-clickable" [style.animation-delay.ms]="320 + i * 80"
+                   (click)="irADeuda(player.idJugador)">
                 <span class="suspended-avatar">{{ player.initials }}</span>
 
                 <div class="suspended-info">

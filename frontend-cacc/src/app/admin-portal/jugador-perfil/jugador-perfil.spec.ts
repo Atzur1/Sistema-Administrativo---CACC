@@ -166,12 +166,12 @@ describe('JugadorPerfil - historial de pagos', () => {
       expect(component.cargandoHistorial).toBe(false);
     });
 
-    it('el botón Volver regresa a Cuotas y Pagos', async () => {
+    it('el botón Volver regresa a Actividad y Movimientos', async () => {
       const { el, navigate } = await crear();
 
       (el.querySelector('.back-button') as HTMLButtonElement).click();
 
-      expect(navigate).toHaveBeenCalledWith(['/admin/portal/cuotas-pagos']);
+      expect(navigate).toHaveBeenCalledWith(['/admin/portal/actividad-movimientos']);
     });
   });
 

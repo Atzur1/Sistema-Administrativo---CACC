@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import {
   Categoria,
@@ -26,6 +27,7 @@ import { triggerBlobDownload } from '../../shared/download-file';
 // One row in the debtors ranking table
 interface DebtorRow {
   rank: number;
+  idJugador: number;
   player: string;
   dni: string;
   category: string;
@@ -47,6 +49,7 @@ interface AlumnoRow {
 
 // One row in the "Inhabilitados" panel
 interface DebtorHighlight {
+  idJugador: number;
   initials: string;
   player: string;
   detail: string;
@@ -192,7 +195,14 @@ export class DeudasMorosidad implements OnInit {
     private cdr: ChangeDetectorRef,
     private elementRef: ElementRef<HTMLElement>,
     private ngZone: NgZone,
+    private router: Router,
   ) {}
+
+  // No es solo informativa: clic en cualquier deudor va directo a su deuda puntual
+  // (misma pantalla que "Pendientes de cobro" en Cuotas y Pagos).
+  irADeuda(idJugador: number): void {
+    this.router.navigate(['/admin/portal/jugadores', idJugador, 'deuda']);
+  }
 
   ngOnInit(): void {
     forkJoin({
@@ -495,6 +505,7 @@ function mapDebtorRow(p: AlumnoRow, index: number): DebtorRow {
   const inhabilitado = p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR;
   return {
     rank: index + 1,
+    idJugador: p.idJugador,
     player: p.nombreCompleto,
     dni: p.dni,
     category: p.categoria,
@@ -507,6 +518,7 @@ function mapDebtorRow(p: AlumnoRow, index: number): DebtorRow {
 
 function mapHighlight(p: AlumnoRow): DebtorHighlight {
   return {
+    idJugador: p.idJugador,
     initials: initialsOf(p.nombreCompleto),
     player: p.nombreCompleto,
     detail: `${p.categoria} · ${p.cantidadCuotas} cuotas`,

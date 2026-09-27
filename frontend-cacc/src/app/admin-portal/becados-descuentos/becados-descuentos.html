@@ -382,9 +382,11 @@
               Cancelar bonificación
             </button>
           }
-          @if (discount.status === 'Cancelled' || discount.status === 'Expired') {
+          @if (discount.status === 'Cancelled') {
             <!-- Distinto de Cancelar: para cuando la bonificación se asignó por error, no para
-                 dar de baja una que corrió bien un tiempo. -->
+                 dar de baja una que corrió bien un tiempo. Solo para Cancelled: una Expired
+                 cumplió su fecha de cierre sin que nadie la cortara antes, esos meses ya se
+                 dieron por saldados y no se tocan. -->
             <button type="button" class="button-void" (click)="askVoidConfirmation()">
               Anular
             </button>

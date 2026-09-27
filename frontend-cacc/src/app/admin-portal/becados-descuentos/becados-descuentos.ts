@@ -125,7 +125,10 @@ export class BecadosDescuentos implements OnInit {
   estadoOptions: { value: DiscountStatus; label: string }[] = [
     { value: 'Active', label: 'Activa' },
     { value: 'Scheduled', label: 'Programada' },
-    { value: 'Expired', label: 'Expirada' },
+    // "Finalizados": llegó a su fecha de cierre sin que nadie la cortara antes. Distinto
+    // de Cancelada (interrumpida antes de tiempo) y de Anulada (nunca debió otorgarse) —
+    // ese filtro es el suyo propio, este es solo para las que corrieron su curso completo.
+    { value: 'Expired', label: 'Finalizados' },
     { value: 'Cancelled', label: 'Cancelada' },
     { value: 'Voided', label: 'Anulada' },
   ];
@@ -774,6 +777,11 @@ export class BecadosDescuentos implements OnInit {
   // server answers in English; what reaches the screen is always in Spanish.
   private messageFor(error: HttpErrorResponse, action: string): string {
     if (error.status === 409) {
+      // Anular's 409 is never an overlap (it takes no date range) — it means the benefit
+      // already ran its full course and is protected from voiding.
+      if (action === 'anular') {
+        return 'Esta bonificación ya cumplió su fecha de cierre: esos meses ya se consideran saldados y no se puede anular.';
+      }
       // The API names the benefit in the way and its period, which is what
       // the administrator needs to fix the dates. It answers in English,
       // so only the period is lifted out of it.

@@ -106,8 +106,10 @@ export class JugadorPerfil implements OnInit {
     this.cargarHistorial();
   }
 
+  // Única pantalla que enlaza acá desde que "Últimos pagos" se mudó por completo a
+  // Actividad y Movimientos (antes era Cuotas y Pagos).
   volver() {
-    this.router.navigate(['/admin/portal/cuotas-pagos']);
+    this.router.navigate(['/admin/portal/actividad-movimientos']);
   }
 
   formatFecha(iso: string): string {
