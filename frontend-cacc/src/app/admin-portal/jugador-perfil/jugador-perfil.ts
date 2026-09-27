@@ -1,7 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HistorialPagosResultado, JugadoresService, PagoHistorialItem } from '../../services/jugadores';
+import {
+  HistorialPagosResultado,
+  JugadoresService,
+  PagoHistorialItem,
+} from '../../services/jugadores';
 import { JugadorResumen } from '../../services/pagos';
 import { formatCompactCurrency } from '../../shared/format-currency';
 
@@ -35,7 +39,7 @@ export class JugadorPerfil implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private jugadoresService: JugadoresService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {
@@ -107,7 +111,11 @@ export class JugadorPerfil implements OnInit {
   }
 
   formatFecha(iso: string): string {
-    return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date(iso).toLocaleDateString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   }
 
   formatMonto(valor: number): string {
@@ -118,7 +126,7 @@ export class JugadorPerfil implements OnInit {
     return formatCompactCurrency(valor);
   }
 
-  // Texto del badge de beneficio: "Media Beca ($5.000)" o "Descuento por Hermanos (20%)".
+  // Texto del badge de beneficio: "Becado ($5.000)" o "Descuento (20%)".
   beneficioTexto(item: PagoHistorialItem): string {
     if (!item.tieneBeneficio) {
       return '';

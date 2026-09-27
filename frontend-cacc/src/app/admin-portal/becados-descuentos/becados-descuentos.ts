@@ -17,6 +17,7 @@ import {
   BenefitValueType,
   DiscountModel,
   DiscountRequest,
+  DiscountStatus,
   formatBenefitValue,
   formatIsoDate,
   formatValidity,
@@ -113,6 +114,26 @@ export class BecadosDescuentos implements OnInit {
   benefitRows = signal<DiscountModel[]>([]);
   benefitsLoaded = signal(false);
 
+  // ===== FILTROS DE LA TABLA =====
+  // Con ~700 jugadores en el club, "todos los beneficios de siempre" sin filtrar es
+  // inmanejable. Reactive Forms en vez de ngModel simple: es el mismo patrón que ya usa
+  // el resto de este componente (lookupForm/benefitForm), no hace falta importar
+  // FormsModule aparte solo para esto. Se arma en el constructor (como las otras dos),
+  // no acá arriba: this.fb todavía no está asignado en este punto de la clase.
+  filterForm: FormGroup;
+
+  estadoOptions: { value: DiscountStatus; label: string }[] = [
+    { value: 'Active', label: 'Activa' },
+    { value: 'Scheduled', label: 'Programada' },
+    { value: 'Expired', label: 'Expirada' },
+    { value: 'Cancelled', label: 'Cancelada' },
+  ];
+
+  motivoOptions = ['Becado', 'Descuento'];
+
+  page = 1;
+  readonly pageSize = 10;
+
   // Active discounts indexed by player, resolved by the backend.
   // Held in a signal so the table repaints when the response arrives.
   private discounts = signal(new Map<number, DiscountModel>());
@@ -139,6 +160,17 @@ export class BecadosDescuentos implements OnInit {
       },
       { validators: [this.benefitValueValidator, this.dateRangeValidator] },
     );
+
+    this.filterForm = this.fb.group({
+      busqueda: [''],
+      estado: [null as DiscountStatus | null],
+      motivo: [null as string | null],
+    });
+
+    // Cualquier cambio de filtro vuelve a la página 1: si estabas en la página 3 de
+    // "Cancelada" y filtrás por "Activa", esa página 3 puede ni existir en el nuevo
+    // resultado.
+    this.filterForm.valueChanges.subscribe(() => (this.page = 1));
 
     // Antes esto colgaba de (change) en el <select> nativo del template; se mueve acá
     // porque CustomSelect (ControlValueAccessor) no emite un evento (change) del DOM —
@@ -203,6 +235,54 @@ export class BecadosDescuentos implements OnInit {
       { value: active.toString(), label: 'Vigentes' },
       { value: (benefits.length - active).toString(), label: 'No vigentes' },
     ];
+  }
+
+  // ===== FILTROS Y PAGINACIÓN DE LA TABLA =====
+  // Nada de esto llama a la API de nuevo: getAllDiscounts() ya trajo todo una vez
+  // (mismo criterio que el resto del sistema, ej. Deudas y Morosidad), y de acá para
+  // abajo es filtrar/paginar en el cliente sobre esa misma lista en memoria.
+
+  get filteredRows(): DiscountModel[] {
+    const { busqueda, estado, motivo } = this.filterForm.value;
+    const term = normalizeText((busqueda ?? '').trim().toLowerCase());
+
+    return this.benefitRows().filter((row) => {
+      if (estado && row.status !== estado) {
+        return false;
+      }
+      if (motivo && row.type !== motivo) {
+        return false;
+      }
+      if (term && !normalizeText(row.playerName.toLowerCase()).includes(term)) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  get totalPaginas(): number {
+    return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize));
+  }
+
+  get pagedRows(): DiscountModel[] {
+    const start = (this.page - 1) * this.pageSize;
+    return this.filteredRows.slice(start, start + this.pageSize);
+  }
+
+  get hayFiltrosActivos(): boolean {
+    const { busqueda, estado, motivo } = this.filterForm.value;
+    return !!(busqueda ?? '').trim() || !!estado || !!motivo;
+  }
+
+  limpiarFiltros() {
+    this.filterForm.reset({ busqueda: '', estado: null, motivo: null });
+  }
+
+  irAPagina(nuevaPagina: number) {
+    if (nuevaPagina < 1 || nuevaPagina > this.totalPaginas || nuevaPagina === this.page) {
+      return;
+    }
+    this.page = nuevaPagina;
   }
 
   // ===== PLAYER LOOKUP =====
