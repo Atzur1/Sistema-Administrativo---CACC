@@ -57,14 +57,21 @@ namespace DaoLibrary
             return reader.Read() ? LeerPago(reader) : null;
         }
 
+        // Mismo criterio que DescuentosSql.ApplyDescuentoActivo (duplicado acá porque este
+        // camino registra un pago contra una transacción SQL abierta, no encaja con el OUTER
+        // APPLY sobre PAGOS que usa esa clase): un beneficio cancelado sigue aplicando a un
+        // período que venció el mismo día de la cancelación o antes; para períodos posteriores,
+        // no. Sin esto, cancelar un beneficio le impediría cobrarse con descuento a una cuota
+        // atrasada de un mes en que el beneficio sí estuvo vigente.
         public DescuentoAplicable? ObtenerDescuentoAplicableEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime fechaVencimiento)
         {
             string query = @"
                 SELECT TOP (1) jd.PK_id_jugador_descuento, td.tipo_descuento AS motivo, jd.tipo_valor, jd.porcentaje, jd.monto_fijo
                 FROM JUGADORES_DESCUENTOS jd
                 JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
-                WHERE jd.FK_id_jugador = @idJugador AND jd.estado_activo = 1
+                WHERE jd.FK_id_jugador = @idJugador
                   AND jd.fecha_inicio <= EOMONTH(@fechaVencimiento) AND jd.fecha_fin >= @fechaVencimiento
+                  AND (jd.fecha_cancelacion IS NULL OR @fechaVencimiento <= jd.fecha_cancelacion)
                 ORDER BY jd.fecha_inicio DESC";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);

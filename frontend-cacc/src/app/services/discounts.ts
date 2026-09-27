@@ -70,6 +70,13 @@ export class DiscountService {
         return this.http.delete<void>(`${this.API_URL}/players/${playerId}/discount${query}`);
     }
 
+    // Para un beneficio asignado por error: a diferencia de cancelDiscount, esto no respeta los
+    // meses que ya pasaron con ese beneficio aplicado — lo saca a todos, como si nunca se
+    // hubiera otorgado.
+    voidDiscount(playerId: number, discountId: number): Observable<void> {
+        return this.http.delete<void>(`${this.API_URL}/players/${playerId}/discount/void?discountId=${discountId}`);
+    }
+
     // The grids look discounts up by player, so they are handed over indexed and
     // walked only once. Avoids filtering the whole array on every rendered row.
     getDiscountMap(): Observable<Map<number, DiscountModel>> {

@@ -56,7 +56,7 @@ interface HeaderMetric {
 
 // What the popup is showing at any moment. Keeping it in one field instead of a
 // handful of booleans means the dialog can never be in two states at once.
-type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel';
+type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel' | 'confirmVoid';
 
 @Component({
   selector: 'app-becados-descuentos',
@@ -127,6 +127,7 @@ export class BecadosDescuentos implements OnInit {
     { value: 'Scheduled', label: 'Programada' },
     { value: 'Expired', label: 'Expirada' },
     { value: 'Cancelled', label: 'Cancelada' },
+    { value: 'Voided', label: 'Anulada' },
   ];
 
   motivoOptions = ['Becado', 'Descuento'];
@@ -357,7 +358,9 @@ export class BecadosDescuentos implements OnInit {
     this.openDialog(this.selectedPlayer);
   }
 
-  // Entry point from a row of the table
+  // Entry point from a row of the table. Pasa el id de esa fila puntual: si el jugador tiene
+  // varios beneficios (uno activo y otros cancelados/anulados), "Gestionar" tiene que abrir
+  // el que se clickeó, no cualquiera que esté vigente.
   openDialogForRow(row: DiscountModel) {
     const player = this.players().find((candidate) => candidate.id === row.playerId);
 
@@ -370,10 +373,11 @@ export class BecadosDescuentos implements OnInit {
         document: '',
         category: row.category,
       },
+      row.id,
     );
   }
 
-  private openDialog(player: PlayerModel) {
+  private openDialog(player: PlayerModel, targetDiscountId?: number) {
     this.dialogPlayer.set(player);
     this.dialogError.set('');
     this.currentDiscount.set(null);
@@ -389,9 +393,12 @@ export class BecadosDescuentos implements OnInit {
       next: (discounts) => {
         this.playerDiscounts.set(discounts);
 
-        // The one that applies today, or failing that the next scheduled
-        // one: that is what the card shows and what editing acts on.
+        // Si se abrió desde una fila puntual de la tabla, esa es la que se muestra, sea cual
+        // sea su estado. Si no (se abrió desde el buscador de arriba), se cae al criterio de
+        // siempre: la que aplica hoy o, si no hay, la próxima programada.
+        const target = targetDiscountId != null ? discounts.find((b) => b.id === targetDiscountId) : undefined;
         const current =
+          target ??
           discounts.find((benefit) => benefit.status === 'Active') ??
           discounts.find((benefit) => benefit.status === 'Scheduled') ??
           null;
@@ -458,6 +465,14 @@ export class BecadosDescuentos implements OnInit {
   askCancelConfirmation() {
     this.dialogError.set('');
     this.dialogView.set('confirmCancel');
+  }
+
+  // Para un beneficio asignado por error: a diferencia de Cancelar, esto le saca el beneficio
+  // a TODOS los meses que cubrió, pasados incluidos — por eso tiene su propia confirmación,
+  // con su propia advertencia, en vez de compartir la de Cancelar.
+  askVoidConfirmation() {
+    this.dialogError.set('');
+    this.dialogView.set('confirmVoid');
   }
 
   // Back out of the form. With benefits already loaded it returns to the card;
@@ -705,6 +720,33 @@ export class BecadosDescuentos implements OnInit {
         this.saving.set(false);
         this.dialogView.set('active');
         const mensaje = this.messageFor(error, 'cancelar');
+        this.dialogError.set(mensaje);
+        this.notifications.notify(mensaje, 'error');
+      },
+    });
+  }
+
+  confirmVoidBenefit() {
+    const player = this.dialogPlayer();
+    const target = this.currentDiscount();
+    if (player === null || target === null || this.saving()) {
+      return;
+    }
+
+    this.saving.set(true);
+    this.dialogError.set('');
+
+    this.discountService.voidDiscount(player.id, target.id).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.closeDialog();
+        this.refreshFromServer();
+        this.notify('Bonificación anulada correctamente.');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.dialogView.set('active');
+        const mensaje = this.messageFor(error, 'anular');
         this.dialogError.set(mensaje);
         this.notifications.notify(mensaje, 'error');
       },

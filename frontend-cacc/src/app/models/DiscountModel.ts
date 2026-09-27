@@ -35,7 +35,7 @@ export interface DiscountModel {
 
 export type BenefitValueType = '%' | '$';
 
-export type DiscountStatus = 'Scheduled' | 'Active' | 'Expired' | 'Cancelled';
+export type DiscountStatus = 'Scheduled' | 'Active' | 'Expired' | 'Cancelled' | 'Voided';
 
 // The state as the club reads it. Code travels in English, the screen speaks
 // Spanish.
@@ -44,6 +44,9 @@ const STATUS_LABELS: Record<DiscountStatus, string> = {
     Active: 'Activa',
     Expired: 'Expirada',
     Cancelled: 'Cancelada',
+    // Asignado por error: a diferencia de Cancelada, no cuenta ni para los meses que ya
+    // pasaron — el backend lo excluye por completo del cálculo de deuda.
+    Voided: 'Anulada',
 };
 
 export function statusLabel(status: DiscountStatus): string {

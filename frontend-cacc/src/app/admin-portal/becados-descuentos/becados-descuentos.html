@@ -199,12 +199,14 @@
                   </span>
                 </td>
                 <td>
+                  <!-- Cancelada sí se puede abrir (para poder Anularla si hace falta); Anulada
+                       no tiene ya nada que hacer. -->
                   <button
                     type="button"
                     class="row-action"
                     (click)="openDialogForRow(row)"
-                    [disabled]="row.status === 'Cancelled'"
-                    [title]="row.status === 'Cancelled' ? 'Esta bonificación fue cancelada' : ''"
+                    [disabled]="row.status === 'Voided'"
+                    [title]="row.status === 'Voided' ? 'Esta bonificación fue anulada' : ''"
                   >
                     Gestionar
                   </button>
@@ -270,6 +272,9 @@
               }
               @case ('confirmCancel') {
                 Cancelar bonificación
+              }
+              @case ('confirmVoid') {
+                Anular bonificación
               }
               @default {
                 {{ isEditing ? 'Editar bonificación' : 'Asignar bonificación' }}
@@ -356,8 +361,12 @@
                     type="button"
                     class="row-action"
                     (click)="startEditing(item)"
-                    [disabled]="item.status === 'Cancelled'"
-                    [title]="item.status === 'Cancelled' ? 'Esta bonificación fue cancelada' : ''"
+                    [disabled]="item.status === 'Cancelled' || item.status === 'Voided'"
+                    [title]="
+                      item.status === 'Cancelled' || item.status === 'Voided'
+                        ? 'Esta bonificación ya no está vigente'
+                        : ''
+                    "
                   >
                     Editar
                   </button>
@@ -368,17 +377,28 @@
         }
 
         <footer class="dialog-actions">
-          <button type="button" class="button-ghost" (click)="askCancelConfirmation()">
-            Cancelar bonificación
-          </button>
+          @if (discount.status === 'Active' || discount.status === 'Scheduled') {
+            <button type="button" class="button-ghost" (click)="askCancelConfirmation()">
+              Cancelar bonificación
+            </button>
+          }
+          @if (discount.status === 'Cancelled' || discount.status === 'Expired') {
+            <!-- Distinto de Cancelar: para cuando la bonificación se asignó por error, no para
+                 dar de baja una que corrió bien un tiempo. -->
+            <button type="button" class="button-void" (click)="askVoidConfirmation()">
+              Anular
+            </button>
+          }
           <!-- Possible since HU-012: what the API refuses is an overlapping
                period, not a second benefit -->
           <button type="button" class="button-ghost" (click)="startNewBenefit()">
             Asignar otro período
           </button>
-          <button type="button" class="button-primary" (click)="startEditing()">
-            Editar bonificación
-          </button>
+          @if (discount.status === 'Active' || discount.status === 'Scheduled') {
+            <button type="button" class="button-primary" (click)="startEditing()">
+              Editar bonificación
+            </button>
+          }
         </footer>
       }
 
@@ -401,6 +421,34 @@
             [disabled]="saving()"
           >
             {{ saving() ? 'Cancelando…' : 'Sí, cancelar' }}
+          </button>
+        </footer>
+      }
+
+      <!-- ----- CONFIRM VOID (asignación por error) ----- -->
+      @if (dialogView() === 'confirmVoid') {
+        <p class="dialog-confirm">
+          ¿Confirmás que querés anular la bonificación de
+          <strong>{{ dialogPlayer()?.fullName }}</strong
+          >?
+        </p>
+        <p class="dialog-confirm dialog-confirm-warning">
+          A diferencia de cancelar, esto le saca el beneficio a
+          <strong>todos los meses que cubrió, incluidos los que ya pasaron</strong> — van a
+          volver a figurar como deuda. Usalo solo si esta bonificación se asignó por error.
+        </p>
+
+        <footer class="dialog-actions">
+          <button type="button" class="button-ghost" (click)="backToActive()" [disabled]="saving()">
+            Volver
+          </button>
+          <button
+            type="button"
+            class="button-danger"
+            (click)="confirmVoidBenefit()"
+            [disabled]="saving()"
+          >
+            {{ saving() ? 'Anulando…' : 'Sí, anular' }}
           </button>
         </footer>
       }
