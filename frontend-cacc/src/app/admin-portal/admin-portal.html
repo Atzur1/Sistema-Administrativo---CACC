@@ -1,27 +1,15 @@
 <!-- Admin portal layout: fixed sidebar on the left, content area on the right -->
-<div class="admin-layout" [class.is-collapsed]="sidebarCollapsed">
+<div class="admin-layout">
 
 <!-- ===== SIDEBAR ===== -->
+<!-- En escritorio no hay botón ni estado persistido: el sidebar arranca
+     angosto (solo íconos) y se expande solo mientras el mouse está encima
+     (:hover) o hay foco por teclado adentro (:focus-within), tapando el
+     contenido en vez de empujarlo — así no hay ningún salto de layout cada
+     vez que se pasa el mouse. En móvil sigue siendo el drawer de siempre,
+     con .is-open controlado por el botón hamburguesa. -->
 <aside class="sidebar" [class.is-open]="sidebarOpen">
 
-    <!-- Achica el sidebar a solo íconos para aprovechar el ancho de pantalla en
-         tablas/grillas. Vive AFUERA de .sidebar-scroll (que es la que recorta
-         el contenido) para no cortarse nunca, aunque quede a caballo del borde.
-         Sutil por default (baja opacidad), se resalta al pasar el mouse por el
-         sidebar. Solo tiene sentido en escritorio: en móvil el sidebar ya es un
-         drawer que se abre y cierra por completo. -->
-    <button type="button" class="sidebar-collapse-btn" (click)="toggleCollapse()"
-            [attr.aria-expanded]="!sidebarCollapsed"
-            [attr.aria-label]="sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'">
-    <svg class="collapse-icon" [class.is-collapsed]="sidebarCollapsed" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 6 9 12 15 18"></polyline>
-    </svg>
-    </button>
-
-    <!-- Todo lo que scrollea/recorta va acá adentro, separado del botón de
-         arriba, para que el ancho angosto del modo colapsado nunca le corte
-         el círculo al botón. -->
     <div class="sidebar-scroll">
 
     <!-- Club logo and current user role -->
