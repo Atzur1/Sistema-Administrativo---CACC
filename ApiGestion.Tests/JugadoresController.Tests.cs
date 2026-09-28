@@ -236,5 +236,7 @@ public class JugadoresControllerTests
         public ResumenPagosHoy ObtenerResumenHoy() => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public void GenerarCuotasPendientesDelMes(string genero, int mes, int anio) => throw new NotSupportedException();
+        public void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string genero, int mes, int anio) => throw new NotSupportedException();
+        public void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal) => throw new NotSupportedException();
     }
 }

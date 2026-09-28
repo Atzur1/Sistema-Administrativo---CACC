@@ -17,10 +17,11 @@ public class PlayerEnrollmentControllerTests
 {
     private const long PlayerId = 6;
 
-    private static (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) CreateController()
+    private static (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) CreateController(EnrollmentFee? currentFee = null)
     {
         FakeEnrollmentDAO dao = new FakeEnrollmentDAO();
-        return (new PlayerEnrollmentController(NullLogger<PlayerEnrollmentController>.Instance, dao), dao);
+        FakeEnrollmentFeeDAO feeDao = new FakeEnrollmentFeeDAO { Current = currentFee };
+        return (new PlayerEnrollmentController(NullLogger<PlayerEnrollmentController>.Instance, dao, feeDao), dao);
     }
 
     private static Enrollment PendingEnrollment(decimal balance)
@@ -111,13 +112,13 @@ public class PlayerEnrollmentControllerTests
     }
 
     [Fact]
-    public void CreateEnrollmentPayment_WithoutEnrollmentFee_ReturnsNotFound()
+    public void CreateEnrollmentPayment_WithoutEnrollmentFeeAndNoExistingEnrollment_ReturnsConflict()
     {
         (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController();
 
         IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
 
-        Assert.IsType<NotFoundObjectResult>(result);
+        Assert.IsType<ConflictObjectResult>(result);
         Assert.Null(dao.LastAmount);
     }
 
@@ -195,5 +196,14 @@ public class PlayerEnrollmentControllerTests
             LastPaymentDate = paymentDate;
             return new EnrollmentPayment { Id = 99, Amount = amount, PaymentMethod = paymentMethod, PaymentDate = paymentDate };
         }
+    }
+
+    private class FakeEnrollmentFeeDAO : EnrollmentFeeDAO
+    {
+        public EnrollmentFee? Current { get; set; }
+
+        public FakeEnrollmentFeeDAO() : base("") { }
+
+        public override EnrollmentFee? GetCurrentEnrollmentFee() => Current;
     }
 }
