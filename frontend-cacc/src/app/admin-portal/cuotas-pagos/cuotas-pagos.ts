@@ -1,4 +1,6 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -11,6 +13,10 @@ import {
   ResumenPagos,
 } from '../../services/pagos';
 import { ArancelesService } from '../../services/aranceles';
+import { EnrollmentFeeService } from '../../services/enrollment-fees';
+import { findCurrentEnrollmentFee } from '../../models/EnrollmentFeeModel';
+import { EnrollmentService } from '../../services/enrollment';
+import { EnrollmentModel } from '../../models/EnrollmentModel';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
@@ -40,6 +46,7 @@ interface PaymentRow {
   method: string;
   amount: string;
   elapsed: string;
+  concepto: 'Cuota' | 'Inscripcion';
 }
 
 interface HeaderMetric {
@@ -60,7 +67,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   templateUrl: './cuotas-pagos.html',
   styleUrl: './cuotas-pagos.css',
 })
-export class CuotasPagos implements OnInit {
+export class CuotasPagos implements OnInit, OnDestroy {
 
   headerMetrics: HeaderMetric[] = [
     { value: '—', label: `Recaudado ${new Date().getFullYear()}` },
@@ -123,11 +130,30 @@ export class CuotasPagos implements OnInit {
   // precisión de "cuánto debe puntualmente" vive en Deuda Pendiente, no acá.
   arancelMasculinoTexto = '';
   arancelFemeninoTexto = '';
+  inscripcionTexto = '';
+  private currentEnrollmentFeeAmount: number | null = null;
+
+  // ===== PANEL MODE TOGGLE =====
+  panelMode: 'cuota' | 'inscripcion' = 'cuota';
+
+  // ===== INSCRIPCIÓN TAB STATE =====
+  inscripcionForm: FormGroup;
+  inscripcionMontoDisplay = '';
+  inscripcionMatchingPlayers: JugadorResumen[] = [];
+  inscripcionShowSuggestions = false;
+  private selectedInscripcionPlayer: JugadorResumen | null = null;
+  enrollmentData: EnrollmentModel | null = null;
+  enrollmentSinRegistro = false;
+  cargandoEnrollment = false;
+  enviandoInscripcion = false;
+  private cancelEnrollment$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private pagosService: PagosService,
     private arancelesService: ArancelesService,
+    private enrollmentFeeService: EnrollmentFeeService,
+    private enrollmentService: EnrollmentService,
     private cdr: ChangeDetectorRef,
     private router: Router,
     private notifications: NotificationService
@@ -136,6 +162,10 @@ export class CuotasPagos implements OnInit {
       player: ['', [Validators.required, this.knownPlayerValidator]],
       period: ['', [Validators.required]],
       year: [new Date().getFullYear(), [Validators.required]],
+      amount: ['', [Validators.required, Validators.min(1)]],
+      method: ['', [Validators.required]],
+    });
+    this.inscripcionForm = this.fb.group({
       amount: ['', [Validators.required, Validators.min(1)]],
       method: ['', [Validators.required]],
     });
@@ -209,10 +239,180 @@ export class CuotasPagos implements OnInit {
     this.showPanelSearchResults = false;
   }
 
+  ngOnDestroy() {
+    this.cancelEnrollment$.next();
+    this.cancelEnrollment$.complete();
+  }
+
   ngOnInit() {
     this.cargarJugadores();
     this.cargarListas();
     this.cargarArancelesResumen();
+  }
+
+  switchPanelMode(mode: 'cuota' | 'inscripcion') {
+    this.panelMode = mode;
+  }
+
+  onInscripcionPlayerSearch(term: string) {
+    this.cancelEnrollment$.next(); // cancela cualquier carga en vuelo al cambiar búsqueda
+    this.selectedInscripcionPlayer = null;
+    this.enrollmentData = null;
+    this.enrollmentSinRegistro = false;
+    this.cargandoEnrollment = false;
+
+    const needle = normalizeTexto(term.trim().toLowerCase());
+    if (!needle) {
+      this.inscripcionMatchingPlayers = [];
+      this.inscripcionShowSuggestions = false;
+      return;
+    }
+
+    const digits = needle.replace(/\D/g, '');
+    this.inscripcionMatchingPlayers = this.jugadores
+      .filter(
+        (jugador) =>
+          normalizeTexto(jugador.nombreCompleto.toLowerCase()).includes(needle) ||
+          (digits.length > 0 && jugador.dni.replace(/\D/g, '').includes(digits))
+      )
+      .slice(0, 20);
+    this.inscripcionShowSuggestions = this.inscripcionMatchingPlayers.length > 0;
+  }
+
+  selectInscripcionPlayer(jugador: JugadorResumen) {
+    this.selectedInscripcionPlayer = jugador;
+    this.inscripcionMatchingPlayers = [];
+    this.inscripcionShowSuggestions = false;
+    this.cargarEnrollment(jugador.idJugador);
+  }
+
+  hideInscripcionSuggestions() {
+    this.inscripcionShowSuggestions = false;
+  }
+
+  onInscripcionMontoInput(target: HTMLInputElement) {
+    const cursorPos = target.selectionStart ?? target.value.length;
+    const digitsBeforeCursor = target.value.slice(0, cursorPos).replace(/\D/g, '').length;
+
+    const digitsOnly = target.value.replace(/\D/g, '').slice(0, 12);
+    const formatted = digitsOnly ? Number(digitsOnly).toLocaleString('es-AR') : '';
+
+    target.value = formatted;
+    this.inscripcionMontoDisplay = formatted;
+    this.inscripcionForm.patchValue({ amount: digitsOnly });
+
+    queueMicrotask(() => {
+      let newPos = digitsBeforeCursor === 0 ? 0 : formatted.length;
+      let digitsSeen = 0;
+      for (let i = 0; i < formatted.length && digitsBeforeCursor > 0; i++) {
+        if (/\d/.test(formatted[i])) {
+          digitsSeen++;
+        }
+        if (digitsSeen === digitsBeforeCursor) {
+          newPos = i + 1;
+          break;
+        }
+      }
+      target.setSelectionRange(newPos, newPos);
+    });
+  }
+
+  private cargarEnrollment(playerId: number) {
+    this.cancelEnrollment$.next(); // cancela cualquier llamada anterior en vuelo
+    this.cargandoEnrollment = true;
+    this.enrollmentData = null;
+    this.enrollmentSinRegistro = false;
+    this.enrollmentService.getEnrollmentByPlayer(playerId).pipe(takeUntil(this.cancelEnrollment$)).subscribe({
+      next: (data) => {
+        this.enrollmentData = data;
+        if (data.pendingBalance > 0) {
+          const saldoFormateado = data.pendingBalance.toLocaleString('es-AR');
+          this.inscripcionForm.patchValue({ amount: String(Math.round(data.pendingBalance)) });
+          this.inscripcionMontoDisplay = saldoFormateado;
+        }
+        this.cargandoEnrollment = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoEnrollment = false;
+        if (err.status === 404) {
+          this.enrollmentSinRegistro = true;
+          // Pre-fill the amount with the full current fee so the admin only
+          // needs to change it for a partial payment
+          if (this.currentEnrollmentFeeAmount != null) {
+            const monto = Math.round(this.currentEnrollmentFeeAmount);
+            this.inscripcionForm.patchValue({ amount: String(monto) });
+            this.inscripcionMontoDisplay = monto.toLocaleString('es-AR');
+          }
+        }
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onSubmitInscripcion() {
+    if (this.inscripcionForm.invalid || !this.selectedInscripcionPlayer) {
+      this.inscripcionForm.markAllAsTouched();
+      return;
+    }
+
+    const jugador = this.selectedInscripcionPlayer;
+    const { amount, method } = this.inscripcionForm.value;
+
+    this.enviandoInscripcion = true;
+
+    this.enrollmentService.registerEnrollmentPayment(jugador.idJugador, {
+      amount: Number(amount),
+      paymentMethod: method,
+    }).subscribe({
+      next: () => {
+        this.enviandoInscripcion = false;
+        this.inscripcionForm.reset({ amount: '', method: '' });
+        this.inscripcionMontoDisplay = '';
+        this.selectedInscripcionPlayer = null;
+        this.enrollmentData = null;
+        this.enrollmentSinRegistro = false;
+        this.notifications.notify(`Pago de inscripción de ${jugador.nombreCompleto} registrado correctamente.`, 'success');
+        this.cargarListas();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoInscripcion = false;
+        const mensaje =
+          (typeof err.error === 'string' ? err.error : null) ??
+          err.error?.mensaje ??
+          'No se pudo registrar el pago de inscripción. Intentá de nuevo.';
+        this.notifications.notify(mensaje, 'error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  get inscripcionPlayerText(): string {
+    return this.selectedInscripcionPlayer?.nombreCompleto ?? '';
+  }
+
+  get selectedInscripcionPlayerName(): string {
+    return this.selectedInscripcionPlayer?.nombreCompleto ?? '';
+  }
+
+  initialsOfPublic(nombreCompleto: string): string {
+    return initialsOf(nombreCompleto);
+  }
+
+  get inscripcionFormValid(): boolean {
+    const tieneJugador = this.selectedInscripcionPlayer !== null;
+    const tienesDatos = this.enrollmentData !== null || this.enrollmentSinRegistro;
+    return this.inscripcionForm.valid && tieneJugador && tienesDatos;
+  }
+
+  formatCurrencyLocal(value: number): string {
+    return CURRENCY_FULL.format(value);
+  }
+
+  formatDateLocal(isoDate: string): string {
+    const [year, month, day] = isoDate.slice(0, 10).split('-');
+    return `${day}/${month}/${year}`;
   }
 
   private cargarArancelesResumen() {
@@ -223,6 +423,18 @@ export class CuotasPagos implements OnInit {
           : '';
         this.arancelFemeninoTexto = resumen.arancelFemeninoVigente != null
           ? `Arancel Femenino ${CURRENCY_ARANCEL.format(resumen.arancelFemeninoVigente)}`
+          : '';
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+
+    this.enrollmentFeeService.getAllEnrollmentFees().subscribe({
+      next: (fees) => {
+        const current = findCurrentEnrollmentFee(fees);
+        this.currentEnrollmentFeeAmount = current?.amount ?? null;
+        this.inscripcionTexto = current != null
+          ? `Inscripción ${CURRENCY_ARANCEL.format(current.amount)}`
           : '';
         this.cdr.detectChanges();
       },
@@ -402,6 +614,7 @@ function mapReciente(p: PagoReciente): PaymentRow {
     method: p.metodoPago,
     amount: CURRENCY_FULL.format(p.monto),
     elapsed: formatElapsed(p.fechaPago),
+    concepto: p.concepto ?? 'Cuota',
   };
 }
 

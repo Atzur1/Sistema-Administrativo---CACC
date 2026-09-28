@@ -85,6 +85,12 @@
     background: var(--color-text-muted);
 }
 
+.arancel-badge-inscripcion {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+    border: 1px solid var(--color-brand-deep);
+}
+
 .header-metrics {
     display: flex;
     align-items: center;
@@ -232,6 +238,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    padding-top: 16px;
 }
 
 .form-row {
@@ -446,6 +453,200 @@
     color: var(--color-danger-strong);
 }
 
+/* ===== PANEL TOGGLE (tabs Pago de cuota / Inscripción) ===== */
+
+.form-icon-inscripcion {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.form-badge-inscripcion {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.panel-toggle-bar {
+    display: flex;
+    gap: 0;
+    margin: 14px 0 0;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.panel-tab {
+    padding: 8px 22px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    font-family: inherit;
+    border-top: 2px solid transparent;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    margin-top: 0;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.panel-tab:hover:not(.panel-tab-active-cuota):not(.panel-tab-active-inscripcion) {
+    color: var(--color-text);
+}
+
+.panel-tab-active-cuota {
+    color: var(--color-brand-deep);
+    border-bottom-color: var(--color-brand-deep);
+}
+
+.panel-tab-active-inscripcion {
+    color: var(--color-brand-deep);
+    border-bottom-color: var(--color-brand-deep);
+}
+
+/* ===== INSCRIPCIÓN TAB CONTENT ===== */
+.insc-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 16px;
+}
+
+
+.insc-loading {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    padding: 8px 0;
+}
+
+.insc-sin-registro {
+    font-size: 13px;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+/* Card informativa del jugador seleccionado */
+.insc-jugador-card {
+    background: var(--color-brand-tint);
+    border: 1px solid rgba(0, 127, 62, 0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.insc-jugador-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.insc-jugador-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.insc-jugador-name {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.insc-alta-chip {
+    margin-left: auto;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    font-size: 10px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+/* Grilla de montos: inscripción / abonado / saldo */
+.insc-montos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+@media (max-width: 580px) {
+    .insc-montos-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.insc-monto-box {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.insc-monto-box.insc-monto-saldo {
+    background: var(--color-warning-bg);
+    border-color: transparent;
+}
+
+.insc-monto-label {
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.insc-monto-label.insc-monto-label-warn {
+    color: var(--color-warning-text);
+}
+
+.insc-monto-value {
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.insc-monto-value.insc-monto-value-warn {
+    color: var(--color-warning-text);
+}
+
+.insc-monto-sub {
+    font-size: 10px;
+    color: var(--color-text-muted);
+}
+
+.insc-monto-sub.insc-monto-sub-warn {
+    color: var(--color-warning-text);
+}
+
+/* Botón de inscripción (violeta, mismo tamaño que el verde) */
+.submit-button-inscripcion {
+    background: var(--color-brand);
+}
+
+.submit-button-inscripcion:hover:not(:disabled) {
+    background: var(--color-brand-hover);
+    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+}
+
+.submit-button-inscripcion:focus-visible {
+    box-shadow: 0 0 0 2px var(--action-bg), 0 0 0 4px var(--color-brand);
+}
+
 /* ===== MAIN GRID ===== */
 .main-grid {
     display: grid;
@@ -617,6 +818,25 @@
 .avatar-paid {
     background: var(--color-brand-tint);
     color: var(--color-brand);
+}
+
+.avatar-inscripcion {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.row-concepto-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-right: 4px;
+    vertical-align: middle;
 }
 
 .row-identity {
