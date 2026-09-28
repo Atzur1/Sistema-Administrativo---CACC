@@ -32,6 +32,7 @@ function periodo(
 ): PagoHistorialItem {
   return {
     periodo: nombre,
+    concepto: 'Cuota',
     montoTotal: monto,
     montoOriginal: monto,
     tieneBeneficio: false,
