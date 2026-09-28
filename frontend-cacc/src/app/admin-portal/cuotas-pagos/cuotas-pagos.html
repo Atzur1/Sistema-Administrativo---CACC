@@ -4,11 +4,11 @@
   <!-- ===== HEADER ===== -->
   <header class="page-header">
     <!-- Ícono + título agrupados: en pantallas chicas ocupan el primer
-         renglón completo y empujan aranceles y métricas al de abajo. -->
+    renglón completo y empujan aranceles y métricas al de abajo. -->
     <div class="header-lead">
       <span class="header-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="5" width="20" height="14" rx="2"></rect>
           <path d="M2 10h20"></path>
           <path d="M6 15h4"></path>
@@ -66,7 +66,7 @@
     <header class="form-head">
       <span class="form-icon" [class.form-icon-inscripcion]="panelMode === 'inscripcion'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 5v14"></path>
           <path d="M5 12h14"></path>
         </svg>
@@ -101,15 +101,15 @@
           <div class="input-icon-wrap">
             <span class="input-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="7"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
             </span>
             <input id="player" type="text" class="field-input field-input-icon" formControlName="player"
-                   placeholder="Buscar por nombre o DNI..." autocomplete="off"
-                   (input)="onPlayerSearch($any($event.target).value)"
-                   (keydown.escape)="hideSuggestions()" />
+                  placeholder="Buscar por nombre o DNI..." autocomplete="off"
+                  (input)="onPlayerSearch($any($event.target).value)"
+                  (keydown.escape)="hideSuggestions()" />
           </div>
 
           @if (showSuggestions) {
@@ -332,6 +332,7 @@
         <span class="panel-dot dot-pending"></span>
         <h2 class="panel-title">Pendientes de cobro</h2>
         <span class="panel-count">{{ pendingRows.length }}</span>
+        <a class="panel-link" routerLink="/admin/portal/actividad-movimientos">Ver historial de pagos →</a>
       </header>
 
       <div class="filter-row">

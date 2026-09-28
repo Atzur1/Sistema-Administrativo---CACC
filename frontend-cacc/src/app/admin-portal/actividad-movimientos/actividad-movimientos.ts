@@ -199,7 +199,7 @@ export class ActividadMovimientos implements OnInit {
     // ===== DATA LOADING =====
 
     private loadResumenHoy() {
-        this.pagosService.getResumenHoy().subscribe({
+        this.pagosService.getResumenHoy().pipe(timeout(ActividadMovimientos.LOAD_TIMEOUT_MS)).subscribe({
             next: (resumen) => {
                 this.bannerMetrics[0].target = resumen.pagosHoy;
                 this.bannerMetrics[1].target = Math.round(resumen.recaudadoHoy);
