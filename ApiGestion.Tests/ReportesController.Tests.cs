@@ -141,7 +141,9 @@ public class ReportesControllerTests
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors) => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => throw new NotSupportedException();
+        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => throw new NotSupportedException();
         public ResumenPagos ObtenerResumen() => throw new NotSupportedException();
+        public ResumenPagosHoy ObtenerResumenHoy() => throw new NotSupportedException();
     }
 
     private class FakeCategoriasDao : ICategoriasDao

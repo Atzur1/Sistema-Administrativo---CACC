@@ -443,6 +443,12 @@
     transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+/* La tabla y "Jugadores inhabilitados" no son solo informativas: llevan a la deuda
+   puntual de ese jugador (ver irADeuda). */
+.row-clickable {
+    cursor: pointer;
+}
+
 .debtors-table tbody tr:hover {
     background: var(--color-bg-hover);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);

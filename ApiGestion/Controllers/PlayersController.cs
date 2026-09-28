@@ -324,6 +324,46 @@ public class PlayersController : ControllerBase
         return NoContent();
     }
 
+    // Anula un beneficio asignado por error. A diferencia de CancelDiscount, esto no respeta
+    // los meses que ya pasaron: los saca a todos, como si el beneficio nunca se hubiera
+    // otorgado. Pensado para corregir una asignación equivocada, no para dar de baja una que
+    // corrió bien un tiempo y se quiere terminar antes — para eso está Cancelar.
+    [HttpDelete("{playerId}/discount/void")]
+    public IActionResult VoidDiscount(long playerId, long discountId)
+    {
+        if (playerId <= 0)
+        {
+            return BadRequest("The player id must be greater than zero.");
+        }
+        if (discountId <= 0)
+        {
+            return BadRequest("The discount id must be greater than zero.");
+        }
+
+        // Un beneficio que ya cumplió su fecha de cierre sin haber sido cancelado antes
+        // (Expired) es intocable: esos meses ya se dieron por saldados y anularlo generaría
+        // deuda sobre un período que el club ya considera cerrado. Sólo uno que fue cortado
+        // antes de tiempo (Cancelled) puede anularse.
+        Discount? current = FindDiscount(playerId, discountId);
+        if (current == null)
+        {
+            return NotFound($"Player {playerId} has no such benefit to void.");
+        }
+        if (current.Status == DiscountStatus.Expired)
+        {
+            return Conflict("This benefit already ran its full course; it cannot be voided.");
+        }
+
+        if (!_discountDao.VoidDiscount(playerId, discountId))
+        {
+            return NotFound($"Player {playerId} has no such benefit to void.");
+        }
+
+        _logger.LogInformation("Benefit {DiscountId} voided for player {PlayerId}", discountId, playerId);
+
+        return NoContent();
+    }
+
     // The two checks every write shares: the player has to exist and the reason
     // has to be one of the catalogue rows.
     //

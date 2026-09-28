@@ -29,5 +29,9 @@ public enum DiscountStatus
     Expired = 2,
 
     // Taken down by an administrator, whatever the range says
-    Cancelled = 3
+    Cancelled = 3,
+
+    // Asignado por error y anulado: a diferencia de Cancelled, ni siquiera cuenta para los
+    // meses que ya pasaron — es como si nunca se hubiera otorgado. Ver DiscountDao.VoidDiscount.
+    Voided = 4
 }

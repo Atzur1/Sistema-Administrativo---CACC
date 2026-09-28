@@ -54,6 +54,10 @@ namespace ServiceLibrary
 
         IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top);
 
+        IReadOnlyList<PagoReciente> ObtenerTodosLosPagos();
+
         ResumenPagos ObtenerResumen();
+
+        ResumenPagosHoy ObtenerResumenHoy();
     }
 }

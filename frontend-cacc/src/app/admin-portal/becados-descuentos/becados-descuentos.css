@@ -3,100 +3,100 @@
 
 /* ===== LAYOUT ===== */
 .dashboard {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    min-height: 100%;
-    box-sizing: border-box;
-    background: var(--color-bg-page);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--color-text);
-    /* Never scroll sideways, no matter how narrow the viewport gets */
-    overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--color-bg-page);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text);
+  /* Never scroll sideways, no matter how narrow the viewport gets */
+  overflow-x: hidden;
 }
 
 /* ===== HEADER ===== */
 /* Sits directly on the page background, with no card of its own */
 .page-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    animation: fadeSlideUp 0.4s ease both;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: fadeSlideUp 0.4s ease both;
 }
 
 .header-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
-    background: var(--color-brand-tint);
-    color: var(--color-brand);
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
+  flex-shrink: 0;
 }
 
 .header-icon svg {
-    width: 26px;
-    height: 26px;
+  width: 26px;
+  height: 26px;
 }
 
 .header-text {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .header-title {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 700;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
 }
 
 .header-subtitle {
-    font-size: 12px;
-    color: var(--color-text-muted);
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
 .header-metrics {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .header-metric {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 0 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 18px;
 }
 
 /* Separator between metrics */
 .header-metric + .header-metric {
-    border-left: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
 }
 
 .header-metric-value {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.1;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .header-metric-label {
-    font-size: 9.5px;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    white-space: nowrap;
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .header-divider {
-    height: 1px;
-    margin: 14px 0;
-    background: var(--color-border);
+  height: 1px;
+  margin: 14px 0;
+  background: var(--color-border);
 }
 
 /* ===== ASSIGNMENT FORM ===== */
@@ -104,281 +104,436 @@
    sólido en el borde superior, sombra suave y difusa (ver el comentario
    largo en cuotas-pagos.css / styles.css). */
 .form-panel {
-    /* La animacion de entrada deja un transform aplicado, que crea un stacking
+  /* La animacion de entrada deja un transform aplicado, que crea un stacking
        context propio. Sin esto, las sugerencias del buscador quedan encerradas
        en esta tarjeta y el panel de abajo las tapa. */
-    position: relative;
-    z-index: 2;
-    padding: 18px 16px 16px;
-    margin-bottom: 14px;
-    background: var(--action-bg);
-    border: 1px solid var(--action-border);
-    border-top: 4px solid var(--action-accent);
-    border-radius: 16px;
-    box-shadow: var(--action-shadow);
-    animation: fadeSlideUp 0.4s ease both;
-    animation-delay: 60ms;
+  position: relative;
+  z-index: 2;
+  padding: 18px 16px 16px;
+  margin-bottom: 14px;
+  background: var(--action-bg);
+  border: 1px solid var(--action-border);
+  border-top: 4px solid var(--action-accent);
+  border-radius: 16px;
+  box-shadow: var(--action-shadow);
+  animation: fadeSlideUp 0.4s ease both;
+  animation-delay: 60ms;
 }
 
 .form-head {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 14px;
 }
 
 /* Ícono como badge/pill discreto: fondo verde tenue, ícono en verde oscuro */
 .form-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
-    background: var(--action-badge-bg);
-    color: var(--action-badge-fg);
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--action-badge-bg);
+  color: var(--action-badge-fg);
+  flex-shrink: 0;
 }
 
 .form-icon svg {
-    width: 18px;
-    height: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .form-head-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .form-title {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--color-text-dark);
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-dark);
 }
 
 .form-subtitle {
-    font-size: 11px;
-    color: var(--color-text-muted);
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 /* Five fields: the player lookup takes the extra room */
 .form-grid {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
-    gap: 12px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+  gap: 12px;
 }
 
 /* Since HU-011 the panel only looks the player up: the benefit itself is filled
    in the popup, so the row is just the search field and the button that opens
    it. */
 .lookup-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
-    gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
 }
 
 .lookup-grid .submit-button {
-    grid-column: auto;
-    padding: 9px 18px;
-    white-space: nowrap;
+  grid-column: auto;
+  padding: 9px 18px;
+  white-space: nowrap;
 }
 
 .field {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
 }
 
 /* Anchor for the suggestions dropdown */
 .field-player {
-    position: relative;
+  position: relative;
 }
 
 .field-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--action-label);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--action-label);
 }
 
 .field-input {
-    width: 100%;
-    padding: 9px 11px;
-    box-sizing: border-box;
-    background: var(--action-bg);
-    border: 1px solid var(--action-border-strong);
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 12px;
-    color: var(--color-text);
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  padding: 9px 11px;
+  box-sizing: border-box;
+  background: var(--action-bg);
+  border: 1px solid var(--action-border-strong);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-text);
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .field-input::placeholder {
-    color: var(--color-text-muted);
-    opacity: 0.7;
+  color: var(--color-text-muted);
+  opacity: 0.7;
 }
 
 .field-input:hover {
-    border-color: var(--color-brand);
+  border-color: var(--color-brand);
 }
 
 .field-input:focus {
-    border-color: var(--action-accent);
-    box-shadow: var(--action-focus-ring);
+  border-color: var(--action-accent);
+  box-shadow: var(--action-focus-ring);
 }
 
 /* ===== PLAYER SUGGESTIONS ===== */
 .suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 5;
-    margin: 4px 0 0;
-    padding: 4px;
-    list-style: none;
-    max-height: 180px;
-    overflow-y: auto;
-    background: var(--action-bg);
-    border: 1px solid var(--action-border);
-    border-radius: 9px;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
-    animation: fadeIn 0.15s ease both;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--action-bg);
+  border: 1px solid var(--action-border);
+  border-radius: 9px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+  animation: fadeIn 0.15s ease both;
 }
 
 .suggestion {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    width: 100%;
-    padding: 7px 9px;
-    background: none;
-    border: none;
-    border-radius: 7px;
-    font-family: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 7px 9px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .suggestion:hover,
 .suggestion:focus-visible {
-    background: var(--color-brand-tint);
-    outline: none;
+  background: var(--color-brand-tint);
+  outline: none;
 }
 
 .suggestion-name {
-    font-size: 12px;
-    font-weight: 600;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .suggestion-meta {
-    font-size: 10.5px;
-    color: var(--color-text-muted);
+  font-size: 10.5px;
+  color: var(--color-text-muted);
 }
 
 /* ===== SUBMIT ===== */
 .submit-button {
-    grid-column: span 5;
-    padding: 11px;
-    background: var(--action-accent);
-    border: none;
-    border-radius: 9px;
-    color: var(--color-bg-card);
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
-    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  grid-column: span 5;
+  padding: 11px;
+  background: var(--action-accent);
+  border: none;
+  border-radius: 9px;
+  color: var(--color-bg-card);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .submit-button:hover:not(:disabled) {
-    background: var(--action-accent-hover);
-    box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
-    transform: translateY(-1px);
+  background: var(--action-accent-hover);
+  box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
+  transform: translateY(-1px);
 }
 
 .submit-button:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(0, 79, 39, 0.2);
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 79, 39, 0.2);
 }
 
 .submit-button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Confirmation of a persisted operation: fades in, then fades out before being
    removed. It only shows after the API answered, never on submit. */
 .form-feedback {
-    margin: 12px 0 0;
-    padding: 9px 11px;
-    background: var(--color-brand-tint);
-    border: 1px solid rgba(0, 166, 81, 0.3);
-    border-radius: 9px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-brand-deep);
-    animation: fadeIn 0.3s ease both;
-    transition: opacity 0.3s ease;
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  background: var(--color-brand-tint);
+  border: 1px solid rgba(0, 166, 81, 0.3);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-brand-deep);
+  animation: fadeIn 0.3s ease both;
+  transition: opacity 0.3s ease;
 }
 
 .form-feedback.is-leaving {
-    opacity: 0;
+  opacity: 0;
 }
 
 /* ===== MAIN GRID ===== */
 .main-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    /* Fills the remaining height so nothing is left empty below */
-    flex: 1;
-    min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  /* Fills the remaining height so nothing is left empty below */
+  flex: 1;
+  min-height: 0;
 }
 
 /* ===== PANELS ===== */
 .panel {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    min-width: 0;
-    animation: fadeSlideUp 0.4s ease both;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  min-width: 0;
+  animation: fadeSlideUp 0.4s ease both;
 }
 
 .panel-benefits {
-    animation-delay: 140ms;
+  animation-delay: 140ms;
 }
 
 .panel-head {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
 }
 
 .panel-title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .panel-subtitle {
-    font-size: 11px;
-    color: var(--color-text-muted);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* ===== FILTROS DE LA TABLA ===== */
+/* Con ~700 jugadores en el club esta tabla no se puede recorrer a ojo — buscar por
+   nombre y filtrar por estado/motivo es lo que la hace usable. Mismo patrón visual que
+   ya usa Deudas y Morosidad para sus propios filtros. */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.search-control {
+  position: relative;
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-control input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px 0 34px;
+  box-sizing: border-box;
+  background: var(--action-field-bg);
+  border: 1px solid var(--action-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--color-text);
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.search-control input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+.search-control input:hover {
+  border-color: var(--color-brand);
+}
+
+.search-control input:focus {
+  background: var(--action-bg);
+  border-color: var(--action-accent);
+  box-shadow: var(--action-focus-ring);
+}
+
+.filter-control {
+  width: 170px;
+  flex-shrink: 0;
+}
+
+.filter-count {
+  margin: 10px 2px 0;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.clear-filter-btn {
+  padding: 0 12px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.clear-filter-btn:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+/* ===== PAGINACIÓN ===== */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-bg-page);
+}
+
+.pagination-button {
+  padding: 7px 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-brand);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: var(--color-brand-tint);
+}
+
+.pagination-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-status {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-control,
+  .filter-control,
+  .clear-filter-btn {
+    width: 100%;
+  }
 }
 
 /* ===== BENEFITS TABLE ===== */
@@ -386,539 +541,629 @@
 /* overflow-x fuerza a recortar también en vertical, así que se reserva espacio
    arriba para que el globo de la insignia de la primera fila no quede cortado. */
 .table-wrapper {
-    overflow-x: auto;
-    padding-top: 34px;
-    margin-top: -34px;
+  overflow-x: auto;
+  padding-top: 34px;
+  margin-top: -34px;
 }
 
 .benefits-table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
 
 .benefits-table th {
-    padding: 0 10px 8px;
-    border-bottom: 1px solid var(--color-border);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    text-align: left;
-    white-space: nowrap;
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: left;
+  white-space: nowrap;
 }
 
 .benefits-table td {
-    padding: 9px 10px;
-    border-bottom: 1px solid var(--color-bg-page);
-    font-size: 12px;
-    vertical-align: middle;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--color-bg-page);
+  font-size: 12px;
+  vertical-align: middle;
 }
 
 .benefits-table tbody tr {
-    transition: background 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .benefits-table tbody tr:hover {
-    background: var(--color-bg-hover);
+  background: var(--color-bg-hover);
 }
 
 .benefits-table tbody tr:last-child td {
-    border-bottom: none;
+  border-bottom: none;
 }
 
 .cell-player {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .player-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    color: var(--color-bg-card);
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--color-bg-card);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* Avatar background per benefit type */
 .avatar-scholarship {
-    background: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .avatar-discount {
-    background: var(--color-info);
+  background: var(--color-info);
 }
 
 .player-identity {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
 .player-name {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 600;
-    white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .player-category {
-    font-size: 11px;
-    color: var(--color-text-muted);
-    white-space: nowrap;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .cell-benefit {
-    font-weight: 700;
-    white-space: nowrap;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .cell-muted {
-    color: var(--color-text-muted);
-    white-space: nowrap;
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 /* ===== PILLS ===== */
 .type-pill,
 .status-pill {
-    display: inline-block;
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .type-scholarship {
-    background: var(--color-accent-bg);
-    color: var(--color-accent);
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
 }
 
 .type-discount {
-    background: var(--color-info-bg);
-    color: var(--color-info);
+  background: var(--color-info-bg);
+  color: var(--color-info);
 }
 
 /* A benefit still inside its range reads as valid, an old one as neutral */
 .status-active {
-    background: var(--color-brand-tint);
-    color: var(--color-brand);
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
 }
 
 .status-expired {
-    background: var(--color-bg-page);
-    color: var(--color-text-muted);
+  background: var(--color-bg-page);
+  color: var(--color-text-muted);
 }
 
 /* ===== RESPONSIVE ===== */
 
 /* Tablet: the form drops to two fields per row */
 @media (max-width: 1100px) {
-    .form-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 
-    /* The button and the message still span the whole form */
-    .submit-button,
-    .form-feedback {
-        grid-column: span 2;
-    }
+  /* The button and the message still span the whole form */
+  .submit-button,
+  .form-feedback {
+    grid-column: span 2;
+  }
 }
 
 /* Mobile: metrics drop to their own line under the title */
 @media (max-width: 768px) {
-    .page-header {
-        flex-wrap: wrap;
-    }
+  .page-header {
+    flex-wrap: wrap;
+  }
 
-    .header-metrics {
-        width: 100%;
-        margin-left: 0;
-    }
+  .header-metrics {
+    width: 100%;
+    margin-left: 0;
+  }
 
-    .header-metric {
-        padding: 0 18px 0 0;
-    }
+  .header-metric {
+    padding: 0 18px 0 0;
+  }
 
-    .header-metric + .header-metric {
-        padding-left: 18px;
-    }
+  .header-metric + .header-metric {
+    padding-left: 18px;
+  }
 }
 
 /* Small mobile: one field per row, tighter padding */
 @media (max-width: 520px) {
-    .dashboard {
-        padding: 14px;
-    }
+  .dashboard {
+    padding: 14px;
+  }
 
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .submit-button,
-    .form-feedback {
-        grid-column: span 1;
-    }
+  .submit-button,
+  .form-feedback {
+    grid-column: span 1;
+  }
 
-    .header-metrics {
-        flex-wrap: wrap;
-        row-gap: 10px;
-    }
+  .header-metrics {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
 }
 
 /* Neutral pill and avatar: the database has no column that classifies a benefit
    as scholarship or discount, so the real discount type name is shown instead
    of inventing that distinction in the front end. */
 .avatar-benefit {
-    background: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .type-benefit {
-    background: var(--color-accent-bg);
-    color: var(--color-accent);
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
 }
 
 /* Empty state, so nobody reads a blank table as a loading failure. */
 .panel-empty {
-    margin: 0;
-    padding: 1.25rem 0.25rem;
-    color: #64748b;
-    font-size: 0.8rem;
-    text-align: center;
+  margin: 0;
+  padding: 1.25rem 0.25rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 /* ===== ROW ACTION ===== */
 .row-action {
-    padding: 5px 12px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-brand);
-    border-radius: 7px;
-    color: var(--color-brand);
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s ease, color 0.2s ease;
+  padding: 5px 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-brand);
+  border-radius: 7px;
+  color: var(--color-brand);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
-.row-action:hover {
-    background: var(--color-brand);
-    color: var(--color-bg-card);
+.row-action:hover:not(:disabled) {
+  background: var(--color-brand);
+  color: var(--color-bg-card);
+}
+
+/* Una bonificación cancelada es historia cerrada: nada que gestionar o editar ahí. Para
+   asignar una nueva se usa "Asignar bonificación" arriba, no este botón. */
+.row-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
 }
 
 /* ===== BENEFIT POPUP (HU-011) =====
    Sits above the dashboard. The backdrop closes it on click; the panel stops the
    propagation so clicking inside never dismisses a half filled form. */
 .dialog-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: rgba(17, 24, 20, 0.45);
-    backdrop-filter: blur(2px);
-    animation: dialogFade 0.18s ease both;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(17, 24, 20, 0.45);
+  backdrop-filter: blur(2px);
+  animation: dialogFade 0.18s ease both;
 }
 
-/* Mismo vidrio claro con resplandor verde que la caja "Asignar bonificación"
-   que la abre, para que la ventana emergente se sienta parte del mismo panel. */
+/* Violeta claro en vez del verde institucional: es el mismo tono que ya usa el badge
+   "Becado" de la tabla, así el popup se siente parte de esta sección puntual y no de
+   cualquier otra pantalla del sistema. Ancho subido de 460px a 640px — con Motivo, Tipo
+   de valor y el rango de fechas adentro, 460px quedaba apretado y complicaba completarlo.
+   Las variables de acá abajo son las MISMAS que ya usan los botones, el selector y los
+   inputs del formulario (--action-*, --color-brand-tint, --color-brand-deep) — al
+   redefinirlas en este scope, todo lo de adentro se retematiza solo, sin tocar esos
+   componentes compartidos ni afectar al resto de la pantalla. */
 .dialog {
-    width: 100%;
-    max-width: 460px;
-    max-height: calc(100vh - 40px);
-    overflow-y: auto;
-    padding: 18px;
-    box-sizing: border-box;
-    background: var(--action-bg);
-    border: 1px solid var(--action-border);
-    border-top: 4px solid var(--action-accent);
-    border-radius: 16px;
-    box-shadow: var(--action-shadow);
-    animation: dialogRise 0.22s ease both;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 26px 28px;
+  box-sizing: border-box;
+
+  --action-bg: #faf9ff;
+  --action-field-bg: #f5f3ff;
+  --action-border: #ddd6fe;
+  --action-border-strong: #c4b5fd;
+  --action-accent: #7c3aed;
+  --action-accent-hover: #6d28d9;
+  --action-focus-ring: 0 0 0 3px rgba(124, 58, 237, 0.16);
+  --action-shadow: 0 2px 6px rgba(124, 58, 237, 0.08), 0 20px 44px rgba(124, 58, 237, 0.16);
+  --color-brand-tint: #ede9fe;
+  --color-brand-deep: #5b21b6;
+
+  background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%);
+  border: 1px solid var(--action-border);
+  border-top: 4px solid var(--action-accent);
+  border-radius: 18px;
+  box-shadow: var(--action-shadow);
+  animation: dialogRise 0.22s ease both;
 }
 
 @keyframes dialogFade {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes dialogRise {
-    from { opacity: 0; transform: translateY(12px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .dialog-head {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .dialog-head-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
 .dialog-title {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--color-text);
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
 .dialog-subtitle {
-    font-size: 12px;
-    color: var(--color-text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dialog-close {
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    display: grid;
-    place-items: center;
-    padding: 0;
-    background: transparent;
-    border: 1px solid var(--action-border-strong);
-    border-radius: 8px;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--action-border-strong);
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .dialog-close svg {
-    width: 14px;
-    height: 14px;
+  width: 14px;
+  height: 14px;
 }
 
 .dialog-close:hover {
-    background: var(--color-brand-tint);
-    color: var(--color-text);
+  background: var(--color-brand-tint);
+  color: var(--color-text);
 }
 
 /* ===== POPUP MESSAGES ===== */
 .dialog-error,
 .dialog-form-error {
-    margin: 0 0 12px;
-    padding: 9px 11px;
-    background: var(--color-danger-bg);
-    border: 1px solid rgba(192, 57, 43, 0.3);
-    border-radius: 9px;
-    font-size: 12px;
-    color: var(--color-danger-strong);
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  background: var(--color-danger-bg);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  border-radius: 9px;
+  font-size: 12px;
+  color: var(--color-danger-strong);
 }
 
 .dialog-form-error {
-    margin: 4px 0 0;
+  margin: 4px 0 0;
 }
 
 .dialog-loading {
-    margin: 0;
-    padding: 18px 0;
-    text-align: center;
-    font-size: 12px;
-    color: var(--color-text-muted);
+  margin: 0;
+  padding: 18px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
 .dialog-confirm {
-    margin: 0 0 16px;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--color-text);
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+/* La advertencia de que Anular reabre deuda en meses pasados: tiene que notarse más que el
+   párrafo de arriba, no perderse entre el resto del texto de confirmación. */
+.dialog-confirm-warning {
+  padding: 9px 11px;
+  background: var(--color-danger-bg);
+  border: 1px solid rgba(192, 57, 43, 0.25);
+  border-radius: 9px;
+  color: var(--color-danger-strong);
 }
 
 /* ===== ACTIVE BENEFIT CARD ===== */
 .benefit-card {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-    background: var(--color-brand-tint);
-    border: 1px solid var(--action-border-strong);
-    border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-brand-tint);
+  border: 1px solid var(--action-border-strong);
+  border-radius: 11px;
 }
 
 .benefit-detail {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 11px;
-    margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  margin: 0;
 }
 
 .benefit-detail dt {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .benefit-detail dd {
-    margin: 2px 0 0;
-    font-size: 13px;
-    color: var(--color-text);
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--color-text);
 }
 
 .benefit-detail .benefit-amount {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--color-brand-deep);
-    font-variant-numeric: tabular-nums;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-brand-deep);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Assigned but outside its date window: the slot is taken, so it has to be
    explained instead of just looking like an ordinary active benefit. */
 .benefit-warning {
-    margin: 0;
-    padding: 8px 10px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    font-size: 11.5px;
-    color: #92400e;
+  margin: 0;
+  padding: 8px 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #92400e;
 }
 
 /* ===== POPUP FORM ===== */
 .dialog-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .field-hint {
-    font-size: 10.5px;
-    color: var(--color-text-muted);
+  font-size: 10.5px;
+  color: var(--color-text-muted);
 }
 
 .field-hint-error {
-    color: var(--color-danger-strong);
+  color: var(--color-danger-strong);
 }
 
 /* Percentage and amount fields carry their unit inside the control */
 .field-affix {
-    position: relative;
-    display: flex;
-    align-items: center;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .field-affix .field-input {
-    padding-right: 30px;
+  padding-right: 30px;
 }
 
 .field-affix-label {
-    position: absolute;
-    right: 11px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    pointer-events: none;
+  position: absolute;
+  right: 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .field-affix-left {
-    right: auto;
-    left: 11px;
+  right: auto;
+  left: 11px;
 }
 
 .field-affix .field-affix-left ~ .field-input,
 .field-affix:has(.field-affix-left) .field-input {
-    padding-left: 24px;
-    padding-right: 11px;
+  padding-left: 24px;
+  padding-right: 11px;
 }
 
 /* ===== POPUP ACTIONS ===== */
 .dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 9px;
-    margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 16px;
 }
 
 .button-primary,
 .button-ghost,
 .button-danger {
-    padding: 9px 16px;
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 12.5px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+  padding: 9px 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease,
+    color 0.2s ease;
 }
 
 .button-primary {
-    background: var(--action-accent);
-    border: none;
-    color: var(--color-bg-card);
-    box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
+  background: var(--action-accent);
+  border: none;
+  color: var(--color-bg-card);
+  box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
 }
 
 .button-primary:hover:not(:disabled) {
-    background: var(--action-accent-hover);
-    box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
+  background: var(--action-accent-hover);
+  box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
+}
+
+/* Sombra del botón primario dentro del popup: el verde de arriba es para el resto de la
+   pantalla (fuera del dialog); acá adentro todo es violeta, sombra incluida. */
+.dialog .button-primary {
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.22);
+}
+
+.dialog .button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.32);
 }
 
 .button-ghost {
-    background: transparent;
-    border: 1px solid var(--action-border-strong);
-    color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--action-border-strong);
+  color: var(--color-text-muted);
 }
 
 .button-ghost:hover:not(:disabled) {
-    background: var(--color-brand-tint);
-    color: var(--color-text);
+  background: var(--color-brand-tint);
+  color: var(--color-text);
 }
 
 .button-danger {
-    background: var(--color-danger-strong);
-    border: none;
-    color: var(--color-bg-card);
+  background: var(--color-danger-strong);
+  border: none;
+  color: var(--color-bg-card);
 }
 
 .button-danger:hover:not(:disabled) {
-    background: var(--color-danger-strong);
+  background: var(--color-danger-strong);
+}
+
+/* Mismo tamaño/forma que .button-ghost, pero en rojo: distinto de "Cancelar"/"Asignar otro
+   período" a propósito — anular es la acción más seria de las tres, hay que poder
+   distinguirla de un vistazo sin que sea un botón sólido lleno de rojo como .button-danger
+   (ese queda para la confirmación en sí, no para el disparador). */
+.button-void {
+  padding: 9px 16px;
+  background: transparent;
+  border: 1px solid rgba(192, 57, 43, 0.35);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-danger-strong);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.button-void:hover:not(:disabled) {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-strong);
 }
 
 .button-primary:disabled,
 .button-ghost:disabled,
-.button-danger:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.button-danger:disabled,
+.button-void:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ===== NARROW SCREENS ===== */
 @media (max-width: 640px) {
-    .lookup-grid {
-        grid-template-columns: 1fr;
-    }
+  .lookup-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .benefit-detail {
-        grid-template-columns: 1fr;
-    }
+  .benefit-detail {
+    grid-template-columns: 1fr;
+  }
 
-    .dialog-actions {
-        flex-direction: column-reverse;
-    }
+  .dialog-actions {
+    flex-direction: column-reverse;
+  }
 
-    .dialog-actions button {
-        width: 100%;
-    }
+  .dialog-actions button {
+    width: 100%;
+  }
 }
 
 /* ===== VALIDITY STATES (HU-012) =====
@@ -927,128 +1172,145 @@
 
 /* Granted but not started yet: amber, the colour of something pending */
 .status-scheduled {
-    background: #fef3c7;
-    color: #92400e;
+  background: #fef3c7;
+  color: #92400e;
 }
 
-/* Taken down by hand. Muted, because it is no longer in play. */
+/* Taken down por mano del administrador — se muestra en rojo suave (mismo criterio que el
+   resto del sistema usa para "inactivo/rechazado"), no como el gris tachado de antes: se leía
+   apagado en vez de claro, y una raya sobre el texto de un pill así de chico se ve rota. */
 .status-cancelled {
-    background: var(--color-bg-page);
-    color: #8a908a;
-    text-decoration: line-through;
+  background: var(--color-danger-bg);
+  color: var(--color-danger-strong);
+}
+
+/* Anulada: gris neutro, no rojo como Cancelada — no es un estado "activo hasta hace poco",
+   es más bien "esto no debería haber pasado", ya resuelto. */
+.status-voided {
+  background: var(--color-bg-page);
+  color: var(--color-text-muted);
 }
 
 /* ===== BENEFIT CARD ===== */
 .benefit-card-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 /* The validity reads as one line, so it takes the full width of the grid */
 .benefit-detail-wide {
-    grid-column: 1 / -1;
+  grid-column: 1 / -1;
 }
 
 /* A scheduled benefit needs a word: the card would otherwise look like it is
    already being applied */
 .benefit-note {
-    margin: 0;
-    padding: 8px 10px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    font-size: 11.5px;
-    color: #92400e;
+  margin: 0;
+  padding: 8px 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #92400e;
 }
 
 /* ===== BENEFIT HISTORY ===== */
 .benefit-history {
-    margin-top: 14px;
+  margin-top: 14px;
 }
 
 .benefit-history-title {
-    margin: 0 0 8px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .benefit-history-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 190px;
-    overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 190px;
+  overflow-y: auto;
 }
 
 .benefit-history-item {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 8px 10px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--action-border-strong);
-    border-radius: 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--action-border-strong);
+  border-radius: 9px;
 }
 
 /* The one the card above is showing */
 .benefit-history-item.is-current {
-    border-color: var(--color-brand);
-    background: var(--color-brand-tint);
+  border-color: var(--color-brand);
+  background: var(--color-brand-tint);
 }
 
 .benefit-history-text {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    flex: 1;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
 }
 
 .benefit-history-reason {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
 }
 
 .benefit-history-meta {
-    font-size: 10.5px;
-    color: var(--color-text-muted);
-    font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ===== DATE RANGE ===== */
 /* The two dates read as one field: they are a period, not two separate values */
 .field-dates {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Motivo + Tipo de valor en la misma fila: mismo criterio que .field-dates, ahora que el
+   popup tiene más ancho para acomodarlos sin apretarse. */
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 /* Marked while the range is wrong, next to the message that explains why */
 .field-input.is-invalid {
-    border-color: var(--color-danger-strong);
+  border-color: var(--color-danger-strong);
 }
 
 .field-input.is-invalid:focus {
-    border-color: var(--color-danger-strong);
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  border-color: var(--color-danger-strong);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
 }
 
 @media (max-width: 640px) {
-    .field-dates {
-        grid-template-columns: 1fr;
-    }
+  .field-dates,
+  .field-row {
+    grid-template-columns: 1fr;
+  }
 
-    .benefit-history-item {
-        flex-wrap: wrap;
-    }
+  .benefit-history-item {
+    flex-wrap: wrap;
+  }
 }

@@ -323,7 +323,10 @@
   <!-- ===== MAIN GRID ===== -->
   <section class="main-grid">
 
-    <!-- Fees waiting to be collected -->
+    <!-- Fees waiting to be collected. Sola en la grilla (full-width): "Últimos pagos" se
+         mudó por completo a Actividad y Movimientos, no queda nada más acá al lado.
+         Mismo estilo de tabla que "Deudas y Morosidad", sin la columna Estado (Inhabilitado /
+         Solo entrenamientos): eso es exclusivo de esa pantalla, acá solo interesa quién debe. -->
     <article class="panel panel-pending">
       <header class="panel-head">
         <span class="panel-dot dot-pending"></span>
@@ -331,78 +334,73 @@
         <span class="panel-count">{{ pendingRows.length }}</span>
       </header>
 
-      <ul class="row-list">
-        @for (row of pendingRows; track row.id) {
-          <li class="row row-clickable" (click)="irADeuda(row.id)">
-            <span class="row-avatar avatar-pending">{{ row.initials }}</span>
-            <div class="row-identity">
-              <span class="row-name">{{ row.name }}</span>
-              <span class="row-meta">{{ row.category }}</span>
-            </div>
-            <div class="row-figures">
-              <span class="row-amount amount-pending">{{ row.amount }}</span>
-              <span class="row-meta">{{ row.installments }}</span>
-            </div>
-          </li>
-        }
-      </ul>
-    </article>
-
-    <!-- Most recent payments -->
-    <article class="panel panel-payments">
-      <header class="panel-head">
-        <span class="panel-dot dot-paid"></span>
-        <h2 class="panel-title">Últimos pagos</h2>
-        <span class="panel-count">{{ paymentRows.length }}</span>
-
-        <div class="panel-search">
-          <input type="text" class="panel-search-input" placeholder="Buscar por nombre o DNI..."
-                 autocomplete="off"
-                 (input)="onPanelSearch($any($event.target).value)"
-                 (keydown.escape)="hidePanelSearchResults()" />
-          <span class="panel-search-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-
-          @if (showPanelSearchResults) {
-            <ul class="suggestions panel-suggestions">
-              @for (jugador of panelSearchResults; track jugador.idJugador) {
-                <li>
-                  <button type="button" class="suggestion" (click)="irAJugador(jugador.idJugador)">
-                    <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
-                    <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
-                  </button>
-                </li>
-              }
-            </ul>
-          }
+      <div class="filter-row">
+        <div class="search-control">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" placeholder="Buscar por nombre o DNI…" [(ngModel)]="busquedaPendientes">
         </div>
-      </header>
 
-      <ul class="row-list">
-        @for (row of paymentRows; track row.id) {
-          <li class="row row-clickable" (click)="irAJugador(row.idJugador)">
-            <span class="row-avatar avatar-paid" [class.avatar-inscripcion]="row.concepto === 'Inscripcion'">{{ row.initials }}</span>
-            <div class="row-identity">
-              <span class="row-name">{{ row.name }}</span>
-              <span class="row-meta">
-                @if (row.concepto === 'Inscripcion') {
-                  <span class="row-concepto-badge">Inscripción</span>
-                }
-                {{ row.method }}
-              </span>
-            </div>
-            <div class="row-figures">
-              <span class="row-amount amount-paid">{{ row.amount }}</span>
-              <span class="row-meta">{{ row.elapsed }}</span>
-            </div>
-          </li>
+        <div class="filter-control">
+          <app-custom-select [options]="categoriaOptions" placeholder="Todas las categorías"
+                              [(ngModel)]="categoriaFiltro"></app-custom-select>
+        </div>
+
+        <div class="filter-control">
+          <app-custom-select [options]="cuotasOptions" placeholder="Todas las cuotas"
+                              [(ngModel)]="cuotasFiltro"></app-custom-select>
+        </div>
+
+        @if (hayFiltrosPendientesActivos) {
+          <button type="button" class="clear-filter-btn" (click)="limpiarFiltrosPendientes()">
+            Limpiar filtros
+          </button>
         }
-      </ul>
+      </div>
+
+      @if (pendingLoaded) {
+        <p class="filter-count">
+          Mostrando {{ filteredPendingRows.length }} de {{ pendingRows.length }} pendientes
+        </p>
+      }
+
+      @if (pendingLoaded && pendingRows.length === 0) {
+        <p class="empty-state">No hay cobros pendientes en este momento.</p>
+      } @else if (pendingLoaded && filteredPendingRows.length === 0) {
+        <p class="empty-state">Ningún pendiente coincide con la búsqueda.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="debtors-table">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th>Jugador</th>
+                <th>DNI</th>
+                <th>Categoría</th>
+                <th class="align-right">Cuotas</th>
+                <th class="align-right">Deuda</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of filteredPendingRows; track row.id; let i = $index) {
+                <tr class="row-clickable" (click)="irADeuda(row.id)">
+                  <td class="col-rank">
+                    <span class="rank-badge">{{ i + 1 }}</span>
+                  </td>
+                  <td class="cell-player">{{ row.name }}</td>
+                  <td class="cell-muted">{{ row.dni }}</td>
+                  <td class="cell-muted">{{ row.category }}</td>
+                  <td class="align-right cell-muted">{{ row.installments }}</td>
+                  <td class="align-right cell-debt amount-pending">{{ row.amount }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     </article>
   </section>
 </div>

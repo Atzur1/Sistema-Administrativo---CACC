@@ -3,11 +3,10 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   JugadorResumen,
-  PagoReciente,
   PagosService,
   PendienteJugador,
   ResumenPagos,
@@ -18,6 +17,7 @@ import { findCurrentEnrollmentFee } from '../../models/EnrollmentFeeModel';
 import { EnrollmentService } from '../../services/enrollment';
 import { EnrollmentModel } from '../../models/EnrollmentModel';
 import { formatCompactCurrency } from '../../shared/format-currency';
+import { normalizeText } from '../../shared/normalize-text';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
 
@@ -32,21 +32,12 @@ interface PendingRow {
   id: number;
   initials: string;
   name: string;
+  dni: string;
   category: string;
   amount: string;
   installments: string;
-}
-
-// One row in the "Últimos pagos" panel
-interface PaymentRow {
-  id: number;
-  idJugador: number;
-  initials: string;
-  name: string;
-  method: string;
-  amount: string;
-  elapsed: string;
-  concepto: 'Cuota' | 'Inscripcion';
+  // Crudo, para el filtro por cuotas (installments ya viene formateado como "2 cuotas").
+  cuotasCount: number;
 }
 
 interface HeaderMetric {
@@ -63,7 +54,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-cuotas-pagos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CustomSelect],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CustomSelect],
   templateUrl: './cuotas-pagos.html',
   styleUrl: './cuotas-pagos.css',
 })
@@ -105,19 +96,32 @@ export class CuotasPagos implements OnInit, OnDestroy {
   matchingPlayers: JugadorResumen[] = [];
   showSuggestions = false;
 
-  // Buscador del panel "Últimos pagos": busca entre TODOS los jugadores (no solo los que
-  // aparecen en la lista de abajo) y navega directo a su perfil. No filtra ni reemplaza esa
-  // lista, que siempre sigue mostrando los últimos 10 pagos.
-  panelSearchResults: JugadorResumen[] = [];
-  showPanelSearchResults = false;
-
   enviando = false;
 
   cargandoJugadores = false;
   cargandoListas = false;
 
   pendingRows: PendingRow[] = [];
-  paymentRows: PaymentRow[] = [];
+  pendingLoaded = false;
+
+  // Filtros de "Pendientes de cobro": por nombre/DNI, categoría y cantidad de cuotas
+  // impagas — todo sobre la lista ya traída (no piden de nuevo al servidor).
+  busquedaPendientes = '';
+  categoriaFiltro: string | null = null;
+  cuotasFiltro: number | null = null;
+
+  // Catálogo completo (HU-020): incluye categorías sin pendientes hoy, igual que en
+  // Deudas y Morosidad.
+  categoriaOptions: string[] = [];
+
+  // Fijo, no armado desde los datos: "+3" agrupa a cualquiera con 3 cuotas o más (ver
+  // filteredPendingRows), así la opción está disponible aunque hoy nadie la tenga —
+  // puede pasar en cualquier momento.
+  cuotasOptions: { value: number; label: string }[] = [
+    { value: 1, label: '1 cuota' },
+    { value: 2, label: '2 cuotas' },
+    { value: 3, label: '+3 cuotas' },
+  ];
 
   // Lo que se ve en el input de Monto ("1.000"). El control del form (paymentForm.get('amount'))
   // guarda el número limpio sin puntos ("1000"), que es lo que se valida y se manda al backend.
@@ -171,14 +175,52 @@ export class CuotasPagos implements OnInit, OnDestroy {
     });
   }
 
-  irAJugador(idJugador: number) {
-    this.router.navigate(['/admin/portal/jugadores', idJugador]);
-  }
-
   // Desde "Pendientes de cobro" no se va al historial general, sino a la deuda puntual
   // (cuánto debe, cuánto ya abonó y cuánto le falta).
   irADeuda(idJugador: number) {
     this.router.navigate(['/admin/portal/jugadores', idJugador, 'deuda']);
+  }
+
+  get filteredPendingRows(): PendingRow[] {
+    const term = normalizeText(this.busquedaPendientes.trim());
+    const digits = term.replace(/\D/g, '');
+
+    return this.pendingRows.filter((row) => {
+      if (this.categoriaFiltro && row.category !== this.categoriaFiltro) {
+        return false;
+      }
+      if (this.cuotasFiltro) {
+        // El "3" del combo es un balde abierto ("+3 cuotas"), no un valor exacto: agrupa
+        // a cualquiera con 3 o más, sin importar si llega a 4, 7 o 10.
+        const coincide =
+          this.cuotasFiltro >= 3 ? row.cuotasCount >= 3 : row.cuotasCount === this.cuotasFiltro;
+        if (!coincide) {
+          return false;
+        }
+      }
+      if (
+        term &&
+        !normalizeText(row.name).includes(term) &&
+        !(digits.length > 0 && row.dni.replace(/\D/g, '').includes(digits))
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  get hayFiltrosPendientesActivos(): boolean {
+    return (
+      this.busquedaPendientes.trim().length > 0 ||
+      !!this.categoriaFiltro ||
+      !!this.cuotasFiltro
+    );
+  }
+
+  limpiarFiltrosPendientes() {
+    this.busquedaPendientes = '';
+    this.categoriaFiltro = null;
+    this.cuotasFiltro = null;
   }
 
   // Reformatea el Monto con puntos de miles a medida que se escribe, preservando la posición
@@ -216,38 +258,27 @@ export class CuotasPagos implements OnInit, OnDestroy {
     });
   }
 
-  onPanelSearch(term: string) {
-    const needle = normalizeTexto(term.trim().toLowerCase());
-    if (!needle) {
-      this.panelSearchResults = [];
-      this.showPanelSearchResults = false;
-      return;
-    }
-
-    const digits = needle.replace(/\D/g, '');
-    this.panelSearchResults = this.jugadores
-      .filter(
-        (jugador) =>
-          normalizeTexto(jugador.nombreCompleto.toLowerCase()).includes(needle) ||
-          (digits.length > 0 && jugador.dni.replace(/\D/g, '').includes(digits))
-      )
-      .slice(0, 20);
-    this.showPanelSearchResults = this.panelSearchResults.length > 0;
-  }
-
-  hidePanelSearchResults() {
-    this.showPanelSearchResults = false;
-  }
-
   ngOnDestroy() {
     this.cancelEnrollment$.next();
     this.cancelEnrollment$.complete();
   }
 
+
   ngOnInit() {
     this.cargarJugadores();
     this.cargarListas();
     this.cargarArancelesResumen();
+    this.cargarCategorias();
+  }
+
+  private cargarCategorias() {
+    this.pagosService.getCategorias().subscribe({
+      next: (categorias) => {
+        this.categoriaOptions = categorias.map((c) => c.nombre);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
   }
 
   switchPanelMode(mode: 'cuota' | 'inscripcion') {
@@ -467,17 +498,13 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.pagosService.getPendientes().subscribe({
       next: (pendientes) => {
         this.pendingRows = pendientes.map(mapPendiente);
+        this.pendingLoaded = true;
         this.cdr.detectChanges();
       },
-      error: () => {},
-    });
-
-    this.pagosService.getRecientes(10).subscribe({
-      next: (recientes) => {
-        this.paymentRows = recientes.map(mapReciente);
+      error: () => {
+        this.pendingLoaded = true;
         this.cdr.detectChanges();
       },
-      error: () => {},
     });
 
     this.pagosService.getResumen().subscribe({
@@ -621,41 +648,12 @@ function mapPendiente(p: PendienteJugador): PendingRow {
     id: p.idJugador,
     initials: initialsOf(p.nombreCompleto),
     name: p.nombreCompleto,
+    dni: p.dni,
     category: p.categoria,
     amount: CURRENCY_FULL.format(p.montoTotal),
     installments: `${p.cantidadCuotas} ${p.cantidadCuotas === 1 ? 'cuota' : 'cuotas'}`,
+    cuotasCount: p.cantidadCuotas,
   };
-}
-
-function mapReciente(p: PagoReciente): PaymentRow {
-  return {
-    id: p.idPago,
-    idJugador: p.idJugador,
-    initials: initialsOf(p.nombreCompleto),
-    name: p.nombreCompleto,
-    method: p.metodoPago,
-    amount: CURRENCY_FULL.format(p.monto),
-    elapsed: formatElapsed(p.fechaPago),
-    concepto: p.concepto ?? 'Cuota',
-  };
-}
-
-// PAGOS.fecha_pago es DATE (sin hora) en la base real: solo se puede mostrar granularidad de
-// días, no "hace 5 min" como en el mock original.
-function formatElapsed(fechaPagoIso: string): string {
-  const fecha = new Date(fechaPagoIso);
-  const hoy = new Date();
-  const unDia = 24 * 60 * 60 * 1000;
-  const diffDias = Math.round(
-    (new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime() -
-      new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()).getTime()) /
-      unDia
-  );
-
-  if (diffDias === 0) return 'Hoy';
-  if (diffDias === 1) return 'Ayer';
-  if (diffDias > 1 && diffDias < 30) return `Hace ${diffDias} días`;
-  return fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function mapResumen(r: ResumenPagos): HeaderMetric[] {

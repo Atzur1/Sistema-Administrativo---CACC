@@ -1,310 +1,468 @@
-﻿/* Mismo lenguaje visual que cuotas-pagos.css (mismo verde institucional). fadeSlideUp vive
+/* Mismo lenguaje visual que cuotas-pagos.css (mismo verde institucional). fadeSlideUp vive
    ahora en styles.css (global). */
 
 .dashboard {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    min-height: 100%;
-    box-sizing: border-box;
-    background: var(--color-bg-page);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--color-text);
-    overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Mismo ancho que Deuda Pendiente, para que las dos pantallas a las que se llega desde
+     Cuotas y Pagos se vean consistentes entre sí. */
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--color-bg-page);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text);
+  overflow-x: hidden;
 }
 
 .page-header {
-    display: flex;
-    align-items: center;
-    animation: fadeSlideUp 0.4s ease both;
+  display: flex;
+  align-items: center;
+  animation: fadeSlideUp 0.4s ease both;
 }
 
 .back-button {
-    padding: 8px 14px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-brand);
-    cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-brand);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.back-button svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .back-button:hover {
-    background: var(--color-brand-tint);
-    border-color: var(--color-brand);
+  background: var(--color-brand-tint);
+  border-color: var(--color-brand);
+  transform: translateX(-2px);
 }
 
 .loading-text,
 .error-text {
-    margin: 16px 0 0;
-    font-size: 13px;
-    color: var(--color-text-muted);
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
 .error-text {
-    color: var(--color-danger-strong);
+  color: var(--color-danger-strong);
+}
+
+/* ===== TARJETA DE PERFIL ===== */
+/* Antes el avatar + nombre flotaban directo sobre el fondo de la página, sin ningún borde
+   ni sombra propios — quedaba desconectado del resto (que sí usa tarjetas .panel). Ahora
+   es una tarjeta más, con una franja superior de acento del color del estado. */
+.profile-card {
+  position: relative;
+  padding: 18px 18px 16px;
+  margin-top: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.05),
+    0 12px 28px rgba(15, 23, 42, 0.06);
+  animation: fadeSlideUp 0.4s ease both;
+  animation-delay: 60ms;
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-brand-light));
 }
 
 .profile-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 16px;
-    animation: fadeSlideUp 0.4s ease both;
-    animation-delay: 60ms;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .profile-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--color-brand-tint);
-    color: var(--color-brand);
-    font-size: 18px;
-    font-weight: 700;
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, var(--color-brand-tint) 0%, #d3f2e2 100%);
+  color: var(--color-brand);
+  font-size: 19px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    0 3px 10px rgba(0, 127, 62, 0.2);
 }
 
 .profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .profile-name {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 700;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
 }
 
 .profile-meta {
-    font-size: 12px;
-    color: var(--color-text-muted);
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
-.header-divider {
-    height: 1px;
-    margin: 14px 0;
-    background: var(--color-border);
+/* ===== STATS (cantidad de pagos registrados) ===== */
+.profile-stats {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(0, 127, 62, 0.18);
+}
+
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.profile-stat-label {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .panel {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    box-shadow: var(--glass-shadow);
-    min-width: 0;
-    animation: fadeSlideUp 0.4s ease both;
-    animation-delay: 120ms;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  margin-top: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  /* Sombra más marcada que la variable global --glass-shadow (pensada para convivir con
+       otros elementos vistosos al lado): acá el panel es prácticamente todo el contenido de
+       la pantalla, así que necesita su propia elevación para no leerse plano. */
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.05),
+    0 14px 32px rgba(15, 23, 42, 0.07);
+  min-width: 0;
+  animation: fadeSlideUp 0.4s ease both;
+  animation-delay: 120ms;
 }
 
 .panel-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .panel-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .dot-paid {
-    background: var(--color-brand);
+  background: var(--color-brand);
 }
 
 .panel-title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .panel-count {
-    margin-left: auto;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-text-muted);
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
 }
 
 .historial-empty {
-    margin: 0;
-    padding: 24px 0;
-    text-align: center;
-    font-size: 12.5px;
-    color: var(--color-text-muted);
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+/* ===== ESTADO VACÍO ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 34px 20px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
+}
+
+.empty-state-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
 }
 
 /* ===== PERÍODOS PAGADOS ===== */
-/* Cada período es una tarjeta con el total arriba y, adentro, TODOS los abonos que lo
-   componen (puede ser uno solo, o varios si se pagó de a partes) */
+/* Mismo patrón que la lista de Deuda Pendiente (fila de ancho completo, barra de acento a
+   la izquierda, pill de estado + período a la izquierda, monto a la derecha) pero en verde:
+   es el color que el sistema ya usa para todo lo pagado/cobrado. */
 .periodo-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.periodo-card {
-    padding: 12px;
-    background: #f6fbf7;
-    border: 1px solid #cdeada;
-    border-radius: 10px;
+.periodo-row {
+  padding: 16px 20px;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid var(--color-brand);
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
 }
 
-.periodo-card-inscripcion {
-    background: #fffbeb;
-    border-color: #fde68a;
+.periodo-row:hover {
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.periodo-row-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.periodo-row-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 2 1 260px;
+  min-width: 0;
+}
+
+.periodo-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.periodo-row-meta {
+  flex: 1 1 140px;
+  text-align: right;
+}
+
+.periodo-row-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1 1 120px;
+  text-align: right;
+}
+
+.estado-pill {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.estado-pagado {
+  background: #e2efe6;
+  color: #1f6b3a;
 }
 
 .periodo-concepto-badge {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-    border-radius: 4px;
-    padding: 1px 5px;
-    margin-left: 6px;
-    vertical-align: middle;
-    font-style: normal;
-}
-
-.periodo-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 6px;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  vertical-align: middle;
+  font-style: normal;
 }
 
 .periodo-nombre {
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.periodo-total {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--color-brand);
-}
-
-/* ===== BENEFICIO (Becados y Descuentos) ===== */
-.periodo-beneficio {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 6px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #16181d;
 }
 
 .periodo-cuota-original {
-    font-size: 11px;
-    color: var(--color-text-muted);
+  font-size: 11.5px;
+  color: #6b7280;
 }
 
+.periodo-total-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.periodo-total {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+/* ===== BENEFICIO (Becados y Descuentos) ===== */
 .periodo-beneficio-badge {
-    padding: 3px 8px;
-    background: var(--color-brand-tint);
-    border-radius: 6px;
-    font-size: 10.5px;
-    font-weight: 700;
-    color: #00874a;
+  padding: 3px 8px;
+  background: var(--color-brand-tint);
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #00874a;
 }
 
-/* ===== ABONOS DENTRO DE CADA PERÍODO ===== */
+/* ===== ABONOS DENTRO DE CADA PERÍODO (fila completa, debajo de la principal) ===== */
 .abono-list {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0 0;
+  padding: 10px 0 0;
+  list-style: none;
+  border-top: 1px solid #eceef1;
 }
 
 .abono-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 5px 0;
-    border-top: 1px dashed #cdeada;
-}
-
-.abono-row:first-child {
-    border-top: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
 }
 
 .abono-meta {
-    font-size: 11px;
-    color: var(--color-text-muted);
+  font-size: 11px;
+  color: #6b7280;
 }
 
 .abono-monto {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-brand);
 }
 
 /* ===== PAGINATION ===== */
 .pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid var(--color-bg-page);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-bg-page);
 }
 
 .pagination-button {
-    padding: 7px 12px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--color-brand);
-    cursor: pointer;
-    transition: background 0.2s ease, opacity 0.2s ease;
+  padding: 7px 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-brand);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .pagination-button:hover:not(:disabled) {
-    background: var(--color-brand-tint);
+  background: var(--color-brand-tint);
+  box-shadow: 0 3px 8px rgba(0, 127, 62, 0.16);
 }
 
 .pagination-button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .pagination-status {
-    font-size: 11.5px;
-    color: var(--color-text-muted);
+  font-size: 11.5px;
+  color: var(--color-text-muted);
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 520px) {
-    .dashboard {
-        padding: 14px;
-    }
+  .dashboard {
+    padding: 14px;
+  }
 }

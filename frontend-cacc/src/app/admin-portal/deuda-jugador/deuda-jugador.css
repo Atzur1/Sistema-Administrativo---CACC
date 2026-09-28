@@ -1,440 +1,694 @@
-﻿/* Mismo lenguaje visual que jugador-perfil.css, pero tematizado en naranja/ámbar (pendiente)
+/* Mismo lenguaje visual que jugador-perfil.css, pero tematizado en naranja/ámbar (pendiente)
    en vez del verde institucional (pagado). fadeSlideUp vive ahora en styles.css (global). */
 
 .dashboard {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    min-height: 100%;
-    box-sizing: border-box;
-    background: var(--color-bg-page);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--color-text);
-    overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Centrado, pero bastante más ancho que antes: con esto + la grilla de .cuota-list de
+     más abajo entran 2-3 cuotas por fila en vez de una sola columna angosta perdida en
+     medio de una pantalla grande. */
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--color-bg-page);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text);
+  overflow-x: hidden;
+
+  /* Paleta "pendiente": ámbar/bronce en vez del naranja saturado de antes — mismo mensaje
+     (esto es una deuda, no un estado neutro) pero más elegante. El rojo de --saldo-monto
+     es aparte, siempre el mismo, y no depende de esta paleta. */
+  --pending: #b45309;
+  --pending-strong: #92400e;
+  --pending-soft: #d97706;
+  --pending-bg: #fdf6ea;
+  --pending-bg-alt: #f6e3bd;
+  --pending-border: #ecd9b3;
+  --pending-shadow: 180, 83, 9;
 }
 
 .page-header {
-    display: flex;
-    align-items: center;
-    animation: fadeSlideUp 0.4s ease both;
+  display: flex;
+  align-items: center;
+  animation: fadeSlideUp 0.4s ease both;
 }
 
 .back-button {
-    padding: 8px 14px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-warning-text);
-    cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pending-strong);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.back-button svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .back-button:hover {
-    background: var(--color-warning-bg);
-    border-color: #eba83a;
+  background: var(--pending-bg);
+  border-color: var(--pending);
+  transform: translateX(-2px);
 }
 
 .loading-text,
 .error-text {
-    margin: 16px 0 0;
-    font-size: 13px;
-    color: var(--color-text-muted);
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
 .error-text {
-    color: var(--color-danger-strong);
+  color: var(--color-danger-strong);
+}
+
+/* ===== TARJETA DE PERFIL ===== */
+/* Antes el avatar + nombre flotaban directo sobre el fondo de la página, sin ningún borde
+   ni sombra propios — quedaba desconectado del resto (que sí usa tarjetas .panel). Ahora
+   es una tarjeta más, con una franja superior de acento del color del estado. */
+.profile-card {
+  position: relative;
+  padding: 18px 18px 16px;
+  margin-top: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.05),
+    0 12px 28px rgba(15, 23, 42, 0.06);
+  animation: fadeSlideUp 0.4s ease both;
+  animation-delay: 60ms;
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--pending), var(--pending-soft));
 }
 
 .profile-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 16px;
-    animation: fadeSlideUp 0.4s ease both;
-    animation-delay: 60ms;
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .profile-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--color-warning-bg);
-    color: var(--color-warning-text);
-    font-size: 18px;
-    font-weight: 700;
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, var(--pending-bg) 0%, var(--pending-bg-alt) 100%);
+  color: var(--pending-strong);
+  font-size: 19px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    0 3px 10px rgba(var(--pending-shadow), 0.22);
 }
 
 .profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .profile-name {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 700;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
 }
 
 .profile-meta {
-    font-size: 12px;
-    color: var(--color-text-muted);
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
-.profile-total {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    margin-left: auto;
-    flex-shrink: 0;
+/* ===== STATS (Total adeudado / cantidad de cuotas) ===== */
+.profile-stats {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(var(--pending-shadow), 0.3);
 }
 
-.profile-total-value {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--color-danger-strong);
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.profile-total-label {
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
+.profile-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
-.header-divider {
-    height: 1px;
-    margin: 14px 0;
-    background: var(--color-border);
+.profile-stat-danger {
+  color: var(--color-danger-strong);
+}
+
+.profile-stat-label {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.profile-stat-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--color-border);
 }
 
 .panel {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    box-shadow: var(--glass-shadow);
-    min-width: 0;
-    animation: fadeSlideUp 0.4s ease both;
-    animation-delay: 120ms;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  margin-top: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  /* Sombra más marcada que la variable global --glass-shadow (pensada para convivir con
+       otros elementos vistosos al lado): acá el panel es prácticamente todo el contenido de
+       la pantalla, así que necesita su propia elevación para no leerse plano. */
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.05),
+    0 14px 32px rgba(15, 23, 42, 0.07);
+  min-width: 0;
+  animation: fadeSlideUp 0.4s ease both;
+  animation-delay: 120ms;
 }
 
 .panel-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .panel-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .dot-pending {
-    background: #eba83a;
+  background: var(--pending);
 }
 
 .panel-title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .panel-count {
-    margin-left: auto;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-text-muted);
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
 }
 
 .deuda-empty {
-    margin: 0;
-    padding: 24px 0;
-    text-align: center;
-    font-size: 12.5px;
-    color: var(--color-text-muted);
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+/* ===== ESTADO VACÍO ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 34px 20px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
+}
+
+.empty-state-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
 }
 
 /* ===== CUOTAS ===== */
+/* Lista vertical de filas de ancho completo (no una grilla de tarjetas): cada cuota es una
+   fila con toda su información en una sola línea — pill de estado, período, monto y acción
+   alineados horizontalmente —, más legible y "de planilla seria" que una grilla de tarjetas. */
 .cuota-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  /* Paleta sobria del estado de cada cuota: la seriedad de una pantalla de deuda se
+     transmite con tipografía/jerarquía y un pill discreto, no con la fila entera teñida de
+     color. Escalada acá (no en .dashboard) para no tocar el resto de la pantalla — el
+     pedido fue rediseñar solo la lista de deuda. */
+  --state-vencida-bg: #f5e3e2;
+  --state-vencida-text: #7a2a28;
+  --state-vencida-border: #d98a86;
+  --state-parcial-bg: #f2e6d6;
+  --state-parcial-text: #7a4d1f;
+  --state-proxima-bg: #e8eaed;
+  --state-proxima-text: #475467;
+  --state-cubierta-bg: #e2efe6;
+  --state-cubierta-text: #1f6b3a;
+  /* Único acento fuerte de la fila: el botón de acción. Terracota, no el ámbar/naranja
+     saturado de antes. */
+  --action: #b5541f;
+  --action-hover: #8c4017;
 }
 
-.cuota-card {
-    padding: 12px;
-    background: #fffaf1;
-    border: 1px solid #f6e2b8;
-    border-radius: 10px;
+.cuota-row {
+  padding: 16px 20px;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  /* Barra de acento a la izquierda, más marcada que el borde parejo del resto — el mismo
+     recurso que ya usa "Deuda por categoría" para la fila activa, ahora aplicado acá. */
+  border-left: 4px solid #d1d5db;
+  border-radius: 8px;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.cuota-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 6px;
+.cuota-row:hover {
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+/* Único toque de color fuerte de la fila (aparte del botón): la barra de la vencida, que es
+   la que más urge. El resto de los estados se distingue solo por el pill, sin teñir la fila. */
+.cuota-row-vencida {
+  border-left-color: var(--state-vencida-border);
+}
+
+.cuota-row-cubierta {
+  background: #fbfdfc;
+}
+
+/* ===== FILA PRINCIPAL: pill + período | vencida-hace-X | saldo | botón ===== */
+.cuota-row-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.cuota-row-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 2 1 260px;
+  min-width: 0;
+}
+
+.cuota-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cuota-row-meta {
+  flex: 1 1 140px;
+  text-align: right;
+}
+
+.estado-pill {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.estado-vencida {
+  background: var(--state-vencida-bg);
+  color: var(--state-vencida-text);
+}
+
+.estado-parcial {
+  background: var(--state-parcial-bg);
+  color: var(--state-parcial-text);
+}
+
+.estado-proxima {
+  background: var(--state-proxima-bg);
+  color: var(--state-proxima-text);
+}
+
+.estado-cubierta {
+  background: var(--state-cubierta-bg);
+  color: var(--state-cubierta-text);
+}
+
+.cuota-vencida-desde {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--state-vencida-text);
 }
 
 .cuota-periodo {
-    font-size: 13px;
-    font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #16181d;
 }
 
 .cuota-original {
-    font-size: 11.5px;
-    color: var(--color-text-muted);
+  font-size: 11.5px;
+  color: #6b7280;
 }
 
-/* ===== ABONOS YA REALIZADOS ===== */
+/* ===== ABONOS YA REALIZADOS (fila completa, debajo de la principal) ===== */
 .abono-list {
-    display: flex;
-    flex-direction: column;
-    margin: 6px 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px dashed #f6e2b8;
-    border-bottom: 1px dashed #f6e2b8;
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0 0;
+  padding: 10px 0 0;
+  list-style: none;
+  border-top: 1px solid #eceef1;
 }
 
 .abono-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 6px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
 }
 
 .abono-meta {
-    font-size: 11px;
-    color: var(--color-text-muted);
+  font-size: 11px;
+  color: #6b7280;
 }
 
 .abono-monto {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-brand);
 }
 
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
 .cuota-beneficio-badge {
-    display: inline-block;
-    margin-bottom: 6px;
-    padding: 3px 8px;
-    background: var(--color-brand-tint);
-    border-radius: 6px;
-    font-size: 10.5px;
-    font-weight: 700;
-    color: #00874a;
+  display: inline-block;
+  margin-top: 10px;
+  padding: 3px 8px;
+  background: var(--color-brand-tint);
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #00874a;
 }
 
 .cuota-cubierta {
-    margin: 10px 0 0;
-    padding: 8px 10px;
-    background: var(--color-brand-tint);
-    border-radius: 8px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #00874a;
-    text-align: center;
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #00874a;
+  text-align: right;
 }
 
-/* ===== SALDO ===== */
-.cuota-saldo {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 8px;
+/* ===== SALDO + BOTÓN DE PAGO: última sección de la fila principal ===== */
+.cuota-row-saldo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1 1 120px;
+  text-align: right;
 }
 
 .saldo-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--color-warning-text);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
 }
 
+/* Gris casi negro, no rojo: la seriedad la marca el pill de estado + la tipografía, no un
+   monto en rojo chillón — más elegante y menos "alarma" para una pantalla que ya de por sí
+   trata de dinero adeudado. */
 .saldo-monto {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--color-danger-strong);
+  font-size: 18px;
+  font-weight: 700;
+  color: #16181d;
 }
 
 /* ===== PAGAR SALDO (inline, sin salir de la pantalla) ===== */
+/* Botón compacto con ícono, alineado a la derecha junto al saldo. Terracota apagado en vez
+   del ámbar saturado de antes, esquinas menos redondeadas y sin el "lift" al hover — un
+   botón más serio, no un CTA de marketing. */
 .pagar-button {
-    margin-top: 10px;
-    padding: 8px 12px;
-    width: 100%;
-    background: #eba83a;
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-bg-card);
-    cursor: pointer;
-    transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  height: 34px;
+  background: var(--action);
+  border: none;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.pagar-button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .pagar-button:hover {
-    background: #d6941f;
+  background: var(--action-hover);
+  box-shadow: 0 2px 6px rgba(181, 84, 31, 0.28);
 }
 
+/* Fila ya de ancho completo: Monto + Método comparten una línea en vez de apilarse en una
+   sola columna angosta con mucho aire libre al lado. */
 .pagar-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #f6e2b8;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #eceef1;
 }
 
 .pagar-field {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 200px;
 }
 
 .pagar-label {
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--color-warning-text);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
 }
 
 .pagar-input {
-    width: 100%;
-    padding: 7px 9px;
-    box-sizing: border-box;
-    background: var(--color-bg-card);
-    border: 1px solid #f6e2b8;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 12px;
-    color: var(--color-text);
-    outline: none;
+  width: 100%;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  background: var(--color-bg-card);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s ease;
 }
 
 .pagar-input:focus {
-    border-color: #eba83a;
+  border-color: var(--action);
 }
 
 .pagar-amount-wrapper {
-    position: relative;
+  position: relative;
 }
 
 .pagar-amount-prefix {
-    position: absolute;
-    top: 50%;
-    left: 9px;
-    transform: translateY(-50%);
-    font-size: 12px;
-    color: var(--color-text-muted);
-    pointer-events: none;
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .pagar-amount-input {
-    padding-left: 20px;
+  padding-left: 22px;
 }
 
 .pagar-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 2px;
+  display: flex;
+  gap: 8px;
+  flex: 1 1 220px;
 }
 
 .pagar-cancelar {
-    flex: 1;
-    padding: 8px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    cursor: pointer;
+  flex: 1;
+  padding: 9px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .pagar-cancelar:hover {
-    background: var(--color-bg-hover);
+  background: var(--color-bg-hover);
 }
 
 .pagar-confirmar {
-    flex: 1.4;
-    padding: 8px;
-    background: var(--color-brand);
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--color-bg-card);
-    cursor: pointer;
-    transition: background 0.2s ease, opacity 0.2s ease;
+  flex: 1.4;
+  padding: 9px;
+  background: var(--color-brand);
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-bg-card);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .pagar-confirmar:hover:not(:disabled) {
-    background: var(--color-brand-hover);
+  background: var(--color-brand-hover);
+  box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+  transform: translateY(-1px);
 }
 
 .pagar-confirmar:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .pagar-error {
-    margin: 0;
-    font-size: 10.5px;
-    font-weight: 600;
-    color: var(--color-danger);
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-danger);
 }
 
 .pago-exito-global {
-    margin: 0 0 12px;
-    padding: 9px 11px;
-    background: var(--color-brand-tint);
-    border-radius: 9px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-brand);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: var(--color-brand-tint);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-brand);
+  animation: fadeSlideUp 0.3s ease both;
+}
+
+.pago-exito-global svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 520px) {
-    .dashboard {
-        padding: 14px;
-    }
+  .dashboard {
+    padding: 14px;
+  }
 
-    .profile-header {
-        flex-wrap: wrap;
-    }
+  .profile-header {
+    flex-wrap: wrap;
+  }
 
-    .profile-total {
-        align-items: flex-start;
-        margin-left: 70px;
-    }
+  .cuota-row-saldo {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .pagar-button {
+    width: 100%;
+    justify-content: center;
+  }
 }

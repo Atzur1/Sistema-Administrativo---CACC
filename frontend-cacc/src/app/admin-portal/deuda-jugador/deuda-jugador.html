@@ -1,33 +1,56 @@
 <!-- Deuda pendiente de un jugador: mismo layout que Perfil de Jugador, tematizado en naranja
      (pendiente) en vez de verde (pagado) -->
 <div class="dashboard">
-
   <!-- ===== HEADER ===== -->
   <header class="page-header">
-    <button type="button" class="back-button" (click)="volver()">← Volver a Cuotas y Pagos</button>
+    <button type="button" class="back-button" (click)="volver()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      Volver
+    </button>
   </header>
 
   @if (cargandoJugador) {
     <p class="loading-text">Cargando jugador...</p>
   } @else if (jugador) {
-    <div class="profile-header">
-      <span class="profile-avatar">{{ iniciales }}</span>
-      <div class="profile-info">
-        <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
-        <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+    <div class="profile-card">
+      <div class="profile-header">
+        <span class="profile-avatar">{{ iniciales }}</span>
+        <div class="profile-info">
+          <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
+          <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+        </div>
       </div>
+
       @if (cuotas.length > 0) {
-        <div class="profile-total">
-          <span class="profile-total-value">{{ formatMonto(montoTotalAdeudado) }}</span>
-          <span class="profile-total-label">Total adeudado</span>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-stat-value profile-stat-danger">{{
+              formatMonto(montoTotalAdeudado)
+            }}</span>
+            <span class="profile-stat-label">Total adeudado</span>
+          </div>
+          <div class="profile-stat-divider"></div>
+          <div class="profile-stat">
+            <span class="profile-stat-value">{{ cuotas.length }}</span>
+            <span class="profile-stat-label">{{
+              cuotas.length === 1 ? 'Cuota pendiente' : 'Cuotas pendientes'
+            }}</span>
+          </div>
         </div>
       }
     </div>
   } @else if (errorMessage) {
     <p class="error-text">{{ errorMessage }}</p>
   }
-
-  <div class="header-divider"></div>
 
   <!-- ===== DEUDA PENDIENTE ===== -->
   <section class="panel panel-deuda">
@@ -40,20 +63,104 @@
     </header>
 
     @if (mensajeExito) {
-      <p class="pago-exito-global">{{ mensajeExito }}</p>
+      <p class="pago-exito-global">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        {{ mensajeExito }}
+      </p>
     }
 
     @if (cargandoDeuda) {
       <p class="deuda-empty">Cargando deuda...</p>
     } @else if (cuotas.length === 0) {
-      <p class="deuda-empty">Este jugador no tiene cuotas pendientes.</p>
+      <div class="empty-state">
+        <span class="empty-state-icon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </span>
+        <p>Este jugador no tiene cuotas pendientes.</p>
+      </div>
     } @else {
       <ul class="cuota-list">
         @for (cuota of cuotas; track cuota.idPago) {
-          <li class="cuota-card">
-            <div class="cuota-head">
-              <span class="cuota-periodo">{{ cuota.periodo }}</span>
-              <span class="cuota-original">Cuota: {{ formatMonto(cuota.montoOriginal) }}</span>
+          <li
+            class="cuota-row"
+            [class.cuota-row-cubierta]="cuota.saldoPendiente <= 0"
+            [class.cuota-row-vencida]="cuota.saldoPendiente > 0 && estadoCuota(cuota) === 'vencida'"
+          >
+            <div class="cuota-row-main">
+              <div class="cuota-row-identity">
+                @if (cuota.saldoPendiente > 0) {
+                  <span class="estado-pill" [ngClass]="'estado-' + estadoCuota(cuota)">
+                    {{
+                      estadoCuota(cuota) === 'vencida'
+                        ? 'Vencida'
+                        : estadoCuota(cuota) === 'parcial'
+                          ? 'Parcial'
+                          : 'Próxima'
+                    }}
+                  </span>
+                } @else {
+                  <span class="estado-pill estado-cubierta">Cubierta</span>
+                }
+
+                <div class="cuota-row-text">
+                  <span class="cuota-periodo">{{ cuota.periodo }}</span>
+                  <span class="cuota-original">Cuota: {{ formatMonto(cuota.montoOriginal) }}</span>
+                </div>
+              </div>
+
+              <div class="cuota-row-meta">
+                @if (cuota.saldoPendiente > 0 && estadoCuota(cuota) === 'vencida') {
+                  <span class="cuota-vencida-desde"
+                    >Vencida hace {{ diasVencida(cuota) }}
+                    {{ diasVencida(cuota) === 1 ? 'día' : 'días' }}</span
+                  >
+                }
+              </div>
+
+              @if (cuota.saldoPendiente <= 0) {
+                <p class="cuota-cubierta">Cubierta por beneficio — nada que cobrar.</p>
+              } @else {
+                <div class="cuota-row-saldo">
+                  <span class="saldo-label">Saldo pendiente</span>
+                  <span class="saldo-monto">{{ formatMonto(cuota.saldoPendiente) }}</span>
+                </div>
+
+                @if (pagandoId !== cuota.idPago) {
+                  <button type="button" class="pagar-button" (click)="abrirPago(cuota)">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Pagar saldo
+                  </button>
+                }
+              }
             </div>
 
             @if (cuota.tieneBeneficio) {
@@ -64,42 +171,38 @@
               <ul class="abono-list">
                 @for (abono of cuota.abonos; track $index) {
                   <li class="abono-row">
-                    <span class="abono-meta">{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span>
+                    <span class="abono-meta"
+                      >{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span
+                    >
                     <span class="abono-monto">+{{ formatMonto(abono.monto) }}</span>
                   </li>
                 }
               </ul>
             }
 
-            <div class="cuota-saldo">
-              <span class="saldo-label">Saldo pendiente</span>
-              <span class="saldo-monto">{{ formatMonto(cuota.saldoPendiente) }}</span>
-            </div>
-
-            @if (cuota.saldoPendiente <= 0) {
-              <p class="cuota-cubierta">Cubierta por beneficio de Becados y Descuentos — nada que cobrar.</p>
-            } @else if (pagandoId !== cuota.idPago) {
-              <button type="button" class="pagar-button" (click)="abrirPago(cuota)">
-                Pagar saldo
-              </button>
-            } @else {
+            @if (pagandoId === cuota.idPago) {
               <div class="pagar-form">
                 <div class="pagar-field">
                   <label class="pagar-label">Monto</label>
                   <div class="pagar-amount-wrapper">
                     <span class="pagar-amount-prefix">$</span>
-                    <input type="text" inputmode="numeric" class="pagar-input pagar-amount-input"
-                           [value]="montoPagoDisplay" (input)="onMontoPagoInput($any($event.target))" />
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      class="pagar-input pagar-amount-input"
+                      [value]="montoPagoDisplay"
+                      (input)="onMontoPagoInput($any($event.target))"
+                    />
                   </div>
                 </div>
 
                 <div class="pagar-field">
                   <label class="pagar-label">Método</label>
-                  <select class="pagar-input" [(ngModel)]="metodoPago">
-                    <option value="" disabled>Seleccionar método</option>
-                    <option value="Transferencia">Transferencia</option>
-                    <option value="Efectivo">Efectivo</option>
-                  </select>
+                  <app-custom-select
+                    [options]="['Transferencia', 'Efectivo']"
+                    placeholder="Seleccionar método"
+                    [(ngModel)]="metodoPago"
+                  ></app-custom-select>
                 </div>
 
                 @if (errorPago) {
@@ -107,9 +210,20 @@
                 }
 
                 <div class="pagar-actions">
-                  <button type="button" class="pagar-cancelar" (click)="cancelarPago()" [disabled]="enviandoPago">Cancelar</button>
-                  <button type="button" class="pagar-confirmar" [disabled]="!metodoPago || !montoPagoDisplay || enviandoPago"
-                          (click)="confirmarPago(cuota)">
+                  <button
+                    type="button"
+                    class="pagar-cancelar"
+                    (click)="cancelarPago()"
+                    [disabled]="enviandoPago"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    class="pagar-confirmar"
+                    [disabled]="!metodoPago || !montoPagoDisplay || enviandoPago"
+                    (click)="confirmarPago(cuota)"
+                  >
                     {{ enviandoPago ? 'Registrando...' : 'Confirmar pago' }}
                   </button>
                 </div>

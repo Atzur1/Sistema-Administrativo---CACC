@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { from } from 'rxjs';
 
 import { DeudasMorosidad } from './deudas-morosidad';
@@ -57,6 +58,7 @@ async function create(
   await TestBed.configureTestingModule({
     imports: [DeudasMorosidad],
     providers: [
+      provideRouter([]),
       { provide: PagosService, useValue: pagosService },
       { provide: ReportesService, useValue: {} },
       { provide: NotificationService, useValue: { notify: vi.fn() } },

@@ -3,7 +3,11 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angul
 import { from } from 'rxjs';
 
 import { JugadorPerfil } from './jugador-perfil';
-import { HistorialPagosResultado, JugadoresService, PagoHistorialItem } from '../../services/jugadores';
+import {
+  HistorialPagosResultado,
+  JugadoresService,
+  PagoHistorialItem,
+} from '../../services/jugadores';
 import { JugadorResumen } from '../../services/pagos';
 
 // HU-017: historial de pagos dentro del perfil del jugador. El servicio HTTP se reemplaza por un
@@ -21,7 +25,11 @@ const JUGADOR: JugadorResumen = {
   nombreCompleto: 'PRUEBA, MATIAS',
 };
 
-function periodo(nombre: string, monto: number, extra: Partial<PagoHistorialItem> = {}): PagoHistorialItem {
+function periodo(
+  nombre: string,
+  monto: number,
+  extra: Partial<PagoHistorialItem> = {},
+): PagoHistorialItem {
   return {
     periodo: nombre,
     montoTotal: monto,
@@ -36,12 +44,27 @@ function periodo(nombre: string, monto: number, extra: Partial<PagoHistorialItem
   };
 }
 
-function historial(items: PagoHistorialItem[], total = items.length, page = 1): HistorialPagosResultado {
+function historial(
+  items: PagoHistorialItem[],
+  total = items.length,
+  page = 1,
+): HistorialPagosResultado {
   return { items, total, page, pageSize: 10 };
 }
 
 // Doce nombres de período distintos, para armar historiales de más de una página.
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre'];
+const MESES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+];
 const DIEZ_PERIODOS = MESES.map((mes) => periodo(`${mes} 2026`, 85000));
 
 interface Opciones {
@@ -52,13 +75,14 @@ interface Opciones {
 
 // Las respuestas llegan de forma asíncrona (como en la app real): el componente llama a
 // detectChanges() dentro de los callbacks y no admite que corran de forma síncrona en ngOnInit.
-const respuesta = <T>(valor: T | 'error') => from(valor === 'error' ? Promise.reject(new Error('fallo')) : Promise.resolve(valor));
+const respuesta = <T>(valor: T | 'error') =>
+  from(valor === 'error' ? Promise.reject(new Error('fallo')) : Promise.resolve(valor));
 
 async function crear(opciones: Opciones = {}) {
   const servicio = {
     getJugador: vi.fn(() => respuesta(opciones.jugador ?? JUGADOR)),
     getHistorialPagos: vi.fn((_id: number, page: number) =>
-      respuesta((opciones.historialPorPagina ?? (() => historial([])))(page))
+      respuesta((opciones.historialPorPagina ?? (() => historial([])))(page)),
     ),
   };
 
@@ -69,7 +93,11 @@ async function crear(opciones: Opciones = {}) {
       { provide: JugadoresService, useValue: servicio },
       {
         provide: ActivatedRoute,
-        useValue: { snapshot: { paramMap: convertToParamMap(opciones.id === null ? {} : { id: opciones.id ?? '3' }) } },
+        useValue: {
+          snapshot: {
+            paramMap: convertToParamMap(opciones.id === null ? {} : { id: opciones.id ?? '3' }),
+          },
+        },
       },
     ],
   }).compileComponents();
@@ -138,12 +166,12 @@ describe('JugadorPerfil - historial de pagos', () => {
       expect(component.cargandoHistorial).toBe(false);
     });
 
-    it('el botón Volver regresa a Cuotas y Pagos', async () => {
+    it('el botón Volver regresa a Actividad y Movimientos', async () => {
       const { el, navigate } = await crear();
 
       (el.querySelector('.back-button') as HTMLButtonElement).click();
 
-      expect(navigate).toHaveBeenCalledWith(['/admin/portal/cuotas-pagos']);
+      expect(navigate).toHaveBeenCalledWith(['/admin/portal/actividad-movimientos']);
     });
   });
 
@@ -151,8 +179,10 @@ describe('JugadorPerfil - historial de pagos', () => {
     it('muestra el mensaje claro cuando el jugador no tiene pagos', async () => {
       const { el } = await crear({ historialPorPagina: () => historial([]) });
 
-      expect(texto(el.querySelector('.historial-empty'))).toBe('No se registran pagos realizados para este jugador.');
-      expect(el.querySelectorAll('.periodo-card').length).toBe(0);
+      expect(texto(el.querySelector('.empty-state p'))).toBe(
+        'No se registran pagos realizados para este jugador.',
+      );
+      expect(el.querySelectorAll('.periodo-row').length).toBe(0);
     });
 
     it('no muestra la paginación', async () => {
@@ -168,13 +198,14 @@ describe('JugadorPerfil - historial de pagos', () => {
     });
   });
 
-  describe('grilla de períodos', () => {
+  describe('lista de períodos', () => {
     it('lista cada período con su monto total', async () => {
       const { el } = await crear({
-        historialPorPagina: () => historial([periodo('Septiembre 2026', 85000), periodo('Agosto 2026', 92000)]),
+        historialPorPagina: () =>
+          historial([periodo('Septiembre 2026', 85000), periodo('Agosto 2026', 92000)]),
       });
 
-      const tarjetas = Array.from(el.querySelectorAll('.periodo-card'));
+      const tarjetas = Array.from(el.querySelectorAll('.periodo-row'));
       expect(tarjetas.length).toBe(2);
       expect(texto(tarjetas[0].querySelector('.periodo-nombre'))).toBe('Septiembre 2026');
       expect(texto(tarjetas[0].querySelector('.periodo-total'))).toMatch(/\$\s?85\.000/);
@@ -184,7 +215,12 @@ describe('JugadorPerfil - historial de pagos', () => {
 
     it('mantiene el orden que devuelve la API (más reciente primero)', async () => {
       const { el } = await crear({
-        historialPorPagina: () => historial([periodo('Septiembre 2026', 1), periodo('Agosto 2026', 1), periodo('Julio 2026', 1)]),
+        historialPorPagina: () =>
+          historial([
+            periodo('Septiembre 2026', 1),
+            periodo('Agosto 2026', 1),
+            periodo('Julio 2026', 1),
+          ]),
       });
 
       const nombres = Array.from(el.querySelectorAll('.periodo-nombre')).map((n) => texto(n));
@@ -192,7 +228,9 @@ describe('JugadorPerfil - historial de pagos', () => {
     });
 
     it('muestra el método de pago y la fecha del cobro con formato dd/mm/aaaa', async () => {
-      const { el } = await crear({ historialPorPagina: () => historial([periodo('Septiembre 2026', 85000)]) });
+      const { el } = await crear({
+        historialPorPagina: () => historial([periodo('Septiembre 2026', 85000)]),
+      });
 
       expect(texto(el.querySelector('.abono-meta'))).toBe('Transferencia · 19/09/2026');
       expect(texto(el.querySelector('.abono-monto'))).toMatch(/\$\s?85\.000/);
@@ -229,12 +267,18 @@ describe('JugadorPerfil - historial de pagos', () => {
         tipoValorBeneficio: '%',
         porcentajeBeneficio: 50,
       });
-      const { el } = await crear({ historialPorPagina: () => historial([periodo('Septiembre 2026', 85000), conBeca]) });
+      const { el } = await crear({
+        historialPorPagina: () => historial([periodo('Septiembre 2026', 85000), conBeca]),
+      });
 
-      const tarjetas = Array.from(el.querySelectorAll('.periodo-card'));
-      expect(tarjetas[0].querySelector('.periodo-beneficio')).toBeNull();
-      expect(texto(tarjetas[1].querySelector('.periodo-beneficio-badge'))).toContain('Media Beca (50%)');
-      expect(texto(tarjetas[1].querySelector('.periodo-cuota-original'))).toMatch(/Cuota: \$\s?90\.000/);
+      const tarjetas = Array.from(el.querySelectorAll('.periodo-row'));
+      expect(tarjetas[0].querySelector('.periodo-beneficio-badge')).toBeNull();
+      expect(texto(tarjetas[1].querySelector('.periodo-beneficio-badge'))).toContain(
+        'Media Beca (50%)',
+      );
+      expect(texto(tarjetas[1].querySelector('.periodo-cuota-original'))).toMatch(
+        /Cuota: \$\s?90\.000/,
+      );
     });
   });
 
@@ -254,7 +298,9 @@ describe('JugadorPerfil - historial de pagos', () => {
     it('en la primera página deshabilita Anterior y habilita Siguiente', async () => {
       const { el } = await crear({ historialPorPagina: () => historial(DIEZ_PERIODOS, 25) });
 
-      const [anterior, siguiente] = Array.from(el.querySelectorAll<HTMLButtonElement>('.pagination-button'));
+      const [anterior, siguiente] = Array.from(
+        el.querySelectorAll<HTMLButtonElement>('.pagination-button'),
+      );
       expect(anterior.disabled).toBe(true);
       expect(siguiente.disabled).toBe(false);
     });
@@ -273,7 +319,9 @@ describe('JugadorPerfil - historial de pagos', () => {
     });
 
     it('en la última página deshabilita Siguiente y habilita Anterior', async () => {
-      const { el, fixture } = await crear({ historialPorPagina: (page) => historial(DIEZ_PERIODOS, 25, page) });
+      const { el, fixture } = await crear({
+        historialPorPagina: (page) => historial(DIEZ_PERIODOS, 25, page),
+      });
 
       for (let i = 0; i < 2; i++) {
         el.querySelectorAll<HTMLButtonElement>('.pagination-button')[1].click();
@@ -281,14 +329,18 @@ describe('JugadorPerfil - historial de pagos', () => {
         fixture.detectChanges();
       }
 
-      const [anterior, siguiente] = Array.from(el.querySelectorAll<HTMLButtonElement>('.pagination-button'));
+      const [anterior, siguiente] = Array.from(
+        el.querySelectorAll<HTMLButtonElement>('.pagination-button'),
+      );
       expect(texto(el.querySelector('.pagination-status'))).toBe('Página 3 de 3');
       expect(siguiente.disabled).toBe(true);
       expect(anterior.disabled).toBe(false);
     });
 
     it('Anterior vuelve a la página previa', async () => {
-      const { el, fixture, servicio } = await crear({ historialPorPagina: (page) => historial(DIEZ_PERIODOS, 25, page) });
+      const { el, fixture, servicio } = await crear({
+        historialPorPagina: (page) => historial(DIEZ_PERIODOS, 25, page),
+      });
 
       el.querySelectorAll<HTMLButtonElement>('.pagination-button')[1].click();
       await fixture.whenStable();
@@ -302,7 +354,9 @@ describe('JugadorPerfil - historial de pagos', () => {
     });
 
     it('irAPagina ignora páginas fuera de rango y la página actual', async () => {
-      const { component, servicio } = await crear({ historialPorPagina: (page) => historial(DIEZ_PERIODOS, 25, page) });
+      const { component, servicio } = await crear({
+        historialPorPagina: (page) => historial(DIEZ_PERIODOS, 25, page),
+      });
       const llamadasIniciales = servicio.getHistorialPagos.mock.calls.length;
 
       component.irAPagina(0);
@@ -322,7 +376,9 @@ describe('JugadorPerfil - historial de pagos', () => {
       [21, 3],
       [100, 10],
     ])('con %i períodos hay %i página(s)', async (total, paginas) => {
-      const { component } = await crear({ historialPorPagina: () => historial(DIEZ_PERIODOS, total) });
+      const { component } = await crear({
+        historialPorPagina: () => historial(DIEZ_PERIODOS, total),
+      });
 
       expect(component.totalPaginas).toBe(paginas);
     });
@@ -347,7 +403,12 @@ describe('JugadorPerfil - historial de pagos', () => {
       const { component } = await crear();
 
       const texto = component.beneficioTexto(
-        periodo('Agosto 2026', 1, { tieneBeneficio: true, motivoBeneficio: 'Descuento por Hermanos', tipoValorBeneficio: '%', porcentajeBeneficio: 20 })
+        periodo('Agosto 2026', 1, {
+          tieneBeneficio: true,
+          motivoBeneficio: 'Descuento por Hermanos',
+          tipoValorBeneficio: '%',
+          porcentajeBeneficio: 20,
+        }),
       );
 
       expect(texto).toBe('Descuento por Hermanos (20%)');
@@ -357,7 +418,12 @@ describe('JugadorPerfil - historial de pagos', () => {
       const { component } = await crear();
 
       const texto = component.beneficioTexto(
-        periodo('Agosto 2026', 1, { tieneBeneficio: true, motivoBeneficio: 'Media Beca', tipoValorBeneficio: '$', montoFijoBeneficio: 5000 })
+        periodo('Agosto 2026', 1, {
+          tieneBeneficio: true,
+          motivoBeneficio: 'Media Beca',
+          tipoValorBeneficio: '$',
+          montoFijoBeneficio: 5000,
+        }),
       );
 
       expect(texto).toMatch(/^Media Beca \(\$\s?5\.000\)$/);
@@ -372,7 +438,9 @@ describe('JugadorPerfil - historial de pagos', () => {
 
   describe('solo lectura', () => {
     it('no ofrece campos de edición sobre importes ni fechas', async () => {
-      const { el } = await crear({ historialPorPagina: () => historial([periodo('Septiembre 2026', 85000)]) });
+      const { el } = await crear({
+        historialPorPagina: () => historial([periodo('Septiembre 2026', 85000)]),
+      });
 
       expect(el.querySelectorAll('input, textarea, select, [contenteditable]').length).toBe(0);
     });
@@ -380,7 +448,9 @@ describe('JugadorPerfil - historial de pagos', () => {
     it('los únicos botones son Volver y la paginación', async () => {
       const { el } = await crear({ historialPorPagina: () => historial(DIEZ_PERIODOS, 25) });
 
-      const clases = Array.from(el.querySelectorAll('button')).map((b) => b.className.split(' ')[0]);
+      const clases = Array.from(el.querySelectorAll('button')).map(
+        (b) => b.className.split(' ')[0],
+      );
       expect(clases.every((c) => c === 'back-button' || c === 'pagination-button')).toBe(true);
     });
   });

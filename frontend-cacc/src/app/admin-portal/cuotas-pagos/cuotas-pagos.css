@@ -673,7 +673,9 @@
 /* ===== MAIN GRID ===== */
 .main-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* Un solo panel ("Pendientes de cobro"): "Últimos pagos" se mudó entero a
+       Actividad y Movimientos, no queda una segunda columna que balancear. */
+    grid-template-columns: 1fr;
     gap: 12px;
     /* Fills the remaining height so nothing is left empty below */
     flex: 1;
@@ -693,13 +695,8 @@
     animation: fadeSlideUp 0.4s ease both;
 }
 
-/* Stagger the panels as they come in */
 .panel-pending {
     animation-delay: 140ms;
-}
-
-.panel-payments {
-    animation-delay: 220ms;
 }
 
 .panel-head {
@@ -720,10 +717,6 @@
     background: var(--color-warning-text);
 }
 
-.dot-paid {
-    background: var(--color-brand);
-}
-
 .panel-title {
     margin: 0;
     font-size: 14px;
@@ -737,187 +730,212 @@
     color: var(--color-text-muted);
 }
 
-/* ===== PANEL SEARCH (buscador de "Últimos pagos") ===== */
-.panel-search {
+/* ===== FILTROS (mismo patrón que Deudas y Morosidad / Becados y Descuentos) ===== */
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.search-control {
     position: relative;
-    margin-left: 14px;
-    width: 220px;
+    width: 260px;
     flex-shrink: 0;
 }
 
-.panel-search-input {
-    width: 100%;
-    padding: 7px 30px 7px 11px;
-    box-sizing: border-box;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 11.5px;
-    color: var(--color-text);
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+.filter-control {
+    width: 170px;
+    flex-shrink: 0;
 }
 
-.panel-search-input::placeholder {
-    color: var(--color-text-muted);
-    opacity: 0.7;
-}
-
-.panel-search-input:focus {
-    border-color: var(--color-brand);
-    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15);
-}
-
-.panel-search-icon {
+.search-icon {
     position: absolute;
     top: 50%;
-    right: 9px;
+    left: 12px;
     transform: translateY(-50%);
-    display: flex;
+    width: 15px;
+    height: 15px;
     color: var(--color-text-muted);
     pointer-events: none;
 }
 
-.panel-search-icon svg {
-    width: 14px;
-    height: 14px;
-}
-
-.panel-suggestions {
-    right: 0;
-    left: auto;
-    width: 260px;
-}
-
-/* ===== ROW LISTS ===== */
-.row-list {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
+.search-control input {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px 0 34px;
+    box-sizing: border-box;
+    background: var(--action-field-bg);
+    border: 1px solid var(--action-border);
     border-radius: 9px;
-    border-bottom: 1px solid var(--color-bg-page);
-    transition: background 0.2s ease;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.row:hover {
-    background: var(--color-bg-hover);
+.search-control input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.8;
 }
 
+.search-control input:hover {
+    border-color: var(--color-brand);
+}
+
+.search-control input:focus {
+    background: var(--action-bg);
+    border-color: var(--action-accent);
+    box-shadow: var(--action-focus-ring);
+}
+
+.clear-filter-btn {
+    padding: 0 12px;
+    height: 38px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.clear-filter-btn:hover {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+}
+
+.filter-count {
+    margin: 0 2px 10px;
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.empty-state {
+    margin: 0;
+    padding: 24px 4px;
+    color: var(--color-text-muted);
+    font-size: 12.5px;
+    text-align: center;
+}
+
+/* ===== PENDING TABLE (mismo estilo que "Deudas y Morosidad", sin la columna Estado) ===== */
 .row-clickable {
     cursor: pointer;
 }
 
-.row:last-child {
-    border-bottom: none;
+.table-wrapper {
+    overflow-x: auto;
 }
 
-.row-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
+.debtors-table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.avatar-pending {
-    background: var(--color-warning-bg);
-    color: var(--color-warning-text);
-}
-
-.avatar-paid {
-    background: var(--color-brand-tint);
-    color: var(--color-brand);
-}
-
-.avatar-inscripcion {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.row-concepto-badge {
-    display: inline-block;
+.debtors-table th {
+    padding: 0 10px 8px;
+    border-bottom: 1px solid var(--color-border);
     font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.03em;
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-    border-radius: 4px;
-    padding: 1px 5px;
-    margin-right: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* Descendiente (no solo "th"): tiene que ganarle tanto a ".debtors-table th" (que fija
+   text-align: left en el encabezado) como aplicarse en los <td> de datos, que sin esto
+   se quedan en su alineación por defecto (start/izquierda) aunque tengan la clase. */
+.debtors-table .align-right {
+    text-align: right;
+}
+
+.debtors-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--color-bg-page);
+    font-size: 12px;
     vertical-align: middle;
 }
 
-.row-identity {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
+.debtors-table tbody tr {
+    transition: background 0.2s ease;
 }
 
-.row-name {
-    font-size: 12px;
+.debtors-table tbody tr:hover {
+    background: var(--color-bg-hover);
+}
+
+.debtors-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.col-rank {
+    width: 40px;
+}
+
+.rank-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-bg-page);
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.cell-player {
     font-weight: 600;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-.row-meta {
-    font-size: 11px;
+.cell-muted {
     color: var(--color-text-muted);
     white-space: nowrap;
 }
 
-.row-figures {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 1px;
-    margin-left: auto;
-    flex-shrink: 0;
-}
-
-.row-amount {
-    font-size: 12.5px;
+.cell-debt {
     font-weight: 700;
+    white-space: nowrap;
 }
 
 .amount-pending {
     color: var(--color-warning-text);
 }
 
-.amount-paid {
-    color: var(--color-brand);
+@media (max-width: 640px) {
+    .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-control,
+    .filter-control,
+    .clear-filter-btn {
+        width: 100%;
+    }
 }
 
 /* ===== RESPONSIVE ===== */
 
 /* Laptop chico / tablet grande: los dos paneles se apilan, el header manda
-   aranceles y métricas a un segundo renglón (aranceles a la izquierda,
-   métricas a la derecha) y cada fila del formulario baja a dos columnas. */
+   aranceles y métricas a un segundo renglón y cada fila del formulario baja a dos columnas. */
 @media (max-width: 1100px) {
     .page-header {
         flex-wrap: wrap;
         row-gap: 12px;
     }
 
-    /* El bloque ícono + título toma el ancho completo, así lo que sigue cae
-       al renglón de abajo en vez de desbordar hacia el costado. */
     .header-lead {
         flex: 1 1 100%;
     }
@@ -929,6 +947,7 @@
     .main-grid {
         grid-template-columns: 1fr;
     }
+
 
     .form-row-lookup,
     .form-row-action {
@@ -961,16 +980,6 @@
 
     .panel-head {
         flex-wrap: wrap;
-    }
-
-    .panel-search {
-        order: 3;
-        width: 100%;
-        margin-left: 0;
-    }
-
-    .panel-suggestions {
-        width: 100%;
     }
 }
 
