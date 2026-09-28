@@ -11,7 +11,7 @@ using EntityLibrary;
 // player joined.
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "1")]
 public class EnrollmentFeesController : ControllerBase
 {
     private readonly ILogger<EnrollmentFeesController> _logger;

@@ -136,7 +136,21 @@ namespace ServiceLibrary
                 ValidarPagosEncontrados(idsUnicos, pagos);
 
                 var fechaPago = DateTime.Now.Date;
-                var montoTotal = pagos.Sum(p => p.MontoFinal);
+                decimal montoTotal = 0;
+                foreach (var pago in pagos)
+                {
+                    var montoCobrar = pago.MontoFinal;
+                    if (string.Equals(pago.Concepto?.Trim(), "Cuota", StringComparison.OrdinalIgnoreCase) && pago.FechaVencimiento.HasValue)
+                    {
+                        var descuento = _pagosDao.ObtenerDescuentoAplicableEnPeriodo(conexion, transaccion, pago.IdJugador, pago.FechaVencimiento.Value);
+                        montoCobrar = CalcularSaldoAjustado(pago.MontoFinal, pago.MontoBase, descuento);
+                        if (montoCobrar <= 0)
+                            throw new CobroInvalidoException($"El pago #{pago.IdPago} está cubierto por un beneficio y no corresponde cobrarlo.");
+                        if (descuento != null)
+                            _pagosDao.ActualizarMontoCobroConDescuento(conexion, transaccion, pago.IdPago, descuento.IdJugadorDescuento, montoCobrar);
+                    }
+                    montoTotal += montoCobrar;
+                }
 
                 _pagosDao.MarcarPagosComoAbonados(conexion, transaccion, idsUnicos, fechaPago, request.MetodoPago);
 
@@ -233,7 +247,10 @@ namespace ServiceLibrary
                     $"Método de pago inválido: '{request.MetodoPago}'. Valores permitidos: {string.Join(", ", MetodosPago.Validos)}.");
             }
 
-            return request.IdsPago.Distinct().ToList();
+            var ids = request.IdsPago.Distinct().ToList();
+            if (ids.Count > 100 || ids.Any(id => id <= 0))
+                throw new CobroInvalidoException("El cobro admite hasta 100 pagos con identificadores válidos.");
+            return ids;
         }
 
         // Bloqueo de re-cobro: se valida DENTRO de la transacción, sobre filas ya lockeadas por

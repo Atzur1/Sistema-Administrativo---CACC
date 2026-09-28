@@ -124,7 +124,12 @@ export class Login implements OnInit {
           console.error('Error de autenticación:', err);
           this.isSubmitting = false;
           this.mostrarOverlay = false;
-          this.mensajeError = 'Usuario o contraseña incorrectos en la base de datos.';
+          this.mensajeError =
+            err.status === 401
+              ? 'El usuario o la contraseña no coinciden con una cuenta activa.'
+              : err.status === 0
+                ? 'No se pudo conectar con la API. Verificá que el backend esté iniciado con HTTPS.'
+                : 'No se pudo completar el inicio de sesión. Revisá la configuración de la API o la base de datos.';
           this.mensajeExito = '';
           this.cdr.detectChanges();
         });

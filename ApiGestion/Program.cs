@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
+using System.Security.Claims;
 using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +11,13 @@ var builder = WebApplication.CreateBuilder(args);
 QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddControllers();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 
 // 1. AGREGA ESTA POLÍTICA DE CORS (Permite conexiones desde Angular)
 builder.Services.AddCors(options =>
@@ -16,9 +25,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngular",
         policy =>
         {
-            policy.AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader()
+            var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                ?? (builder.Environment.IsDevelopment() ? new[] { "http://localhost:4200" } : Array.Empty<string>());
+            policy.WithOrigins(origins)
+                .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .WithHeaders("Authorization", "Content-Type")
                 // HU-021: sin esto el navegador recibe el Content-Disposition
                 // en la respuesta pero el JS del frontend no puede leerlo (CORS
                 // solo expone unos pocos headers "seguros" por default), y la
@@ -68,7 +79,12 @@ builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
     new DaoLibrary.DiscountDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 
 // 4. NUEVO: Configuración de autenticación JWT
-var jwtKey = builder.Configuration["Jwt:Key"]!;
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.StartsWith("REEMPLAZAR", StringComparison.OrdinalIgnoreCase) || Encoding.UTF8.GetByteCount(jwtKey) < 32 ||
+    string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
+    throw new InvalidOperationException("La configuración Jwt:Key (mínimo 32 bytes), Jwt:Issuer y Jwt:Audience es obligatoria.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -78,9 +94,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var idClaim = context.Principal?.FindFirst("idUsuario")?.Value;
+                var roleClaim = context.Principal?.FindFirst(ClaimTypes.Role)?.Value;
+                if (!int.TryParse(idClaim, out var id) || !int.TryParse(roleClaim, out var role))
+                {
+                    context.Fail("Token inválido.");
+                    return;
+                }
+                var authDao = context.HttpContext.RequestServices.GetRequiredService<DaoLibrary.AuthDao>();
+                if (!authDao.UsuarioActivoConRol(id, role)) context.Fail("Usuario inactivo o permisos revocados.");
+                await Task.CompletedTask;
+            }
         };
     });
 
@@ -93,21 +125,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
 
 // 2. ACTIVA EL CORS AQUÍ (Antes de UseAuthorization y MapControllers)
 app.UseCors("AllowAngular");
+app.UseRateLimiter();
 
 // 4. NUEVO: tiene que ir ANTES de UseAuthorization
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// 3. SEED: crea el usuario Admin si no existe (una sola vez al arrancar)
-string cadenaConexion = builder.Configuration.GetConnectionString("ConexionSQL") ?? "";
-// DaoLibrary.SeedAdmin.CrearAdminSiNoExiste(cadenaConexion);
 
 app.Run();
 

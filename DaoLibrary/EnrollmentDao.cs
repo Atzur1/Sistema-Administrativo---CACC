@@ -85,7 +85,7 @@ public class EnrollmentDAO
         {
             string pendingQuery = @"
                 SELECT PK_id_pago, monto_base, monto_final, fecha_vencimiento
-                FROM PAGOS WITH (UPDLOCK, ROWLOCK)
+                FROM PAGOS WITH (UPDLOCK, HOLDLOCK)
                 WHERE FK_id_jugador = @playerId AND concepto = @concept AND estado = 0;";
 
             bool found = false;
@@ -164,7 +164,7 @@ public class EnrollmentDAO
             // Guard: if a concurrent request already inserted the enrollment, bail out
             // so the caller can retry via the normal CreateEnrollmentPayment path.
             string existsQuery = @"
-                SELECT COUNT(1) FROM PAGOS WITH (UPDLOCK, ROWLOCK)
+                SELECT COUNT(1) FROM PAGOS WITH (UPDLOCK, HOLDLOCK)
                 WHERE FK_id_jugador = @playerId AND concepto = @concept;";
 
             using (SqlCommand existsCmd = new SqlCommand(existsQuery, connection, transaction))

@@ -4,6 +4,9 @@
     "Issuer": "SistemaCACC",
     "Audience": "SistemaCACC"
   },
+  "Cors": {
+    "AllowedOrigins": [ "http://localhost:4200" ]
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",

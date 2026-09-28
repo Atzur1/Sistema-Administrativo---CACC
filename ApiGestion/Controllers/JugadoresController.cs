@@ -6,17 +6,22 @@ namespace ApiGestion.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "1")]
     public class JugadoresController : ControllerBase
     {
         private readonly IJugadoresDao _jugadoresDao;
         private readonly IPagosDao _pagosDao;
+        private readonly ILogger<JugadoresController> _logger;
 
-        public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao)
+        public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao, ILogger<JugadoresController> logger)
         {
             _jugadoresDao = jugadoresDao;
             _pagosDao = pagosDao;
+            _logger = logger;
         }
+
+        public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao)
+            : this(jugadoresDao, pagosDao, Microsoft.Extensions.Logging.Abstractions.NullLogger<JugadoresController>.Instance) { }
 
         // GET api/jugadores -> lista completa (nombre, dni, categoría) para el buscador del form de pagos
         [HttpGet]
@@ -28,7 +33,8 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener los jugadores.", error = ex.Message });
+                _logger.LogError(ex, "Error interno al obtener los jugadores");
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener los jugadores." });
             }
         }
 
@@ -48,7 +54,8 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el jugador.", error = ex.Message });
+                _logger.LogError(ex, "Error interno al obtener el jugador {JugadorId}", id);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el jugador." });
             }
         }
 
@@ -70,7 +77,8 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el historial de pagos.", error = ex.Message });
+                _logger.LogError(ex, "Error interno al obtener el historial de pagos del jugador {JugadorId}", id);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el historial de pagos." });
             }
         }
     }

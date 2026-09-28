@@ -10,11 +10,13 @@ namespace ServiceLibrary
 
         private readonly IArancelesDao _arancelesDao;
         private readonly IPagosDao _pagosDao;
+        private readonly ISqlTransactionRunner _transactionRunner;
 
-        public ArancelesService(IArancelesDao arancelesDao, IPagosDao pagosDao)
+        public ArancelesService(IArancelesDao arancelesDao, IPagosDao pagosDao, ISqlTransactionRunner transactionRunner)
         {
             _arancelesDao = arancelesDao;
             _pagosDao = pagosDao;
+            _transactionRunner = transactionRunner;
         }
 
         public IReadOnlyList<ArancelHistorialItem> ObtenerHistorial() => _arancelesDao.ObtenerHistorial();
@@ -34,14 +36,17 @@ namespace ServiceLibrary
                 throw new ArancelInvalidoException("El monto debe ser mayor a cero.");
             }
 
-            _arancelesDao.ProgramarArancel(request.Genero, request.Monto, request.VigenteDesde);
-
             // Manual: se genera la cuota justo del mes de este arancel (nada de meses intermedios
             // ni nada atado a la fecha de hoy), y SOLO para los jugadores del género de este
             // arancel — cargar un Masculino nunca debe generar ni tocar cuotas Femenino. Si ya
             // existiera una fila para ese jugador+período, GenerarCuotasPendientesDelMes la deja
             // como está (no duplica ni pisa nada).
-            _pagosDao.GenerarCuotasPendientesDelMes(request.Genero, request.VigenteDesde.Month, request.VigenteDesde.Year);
+            _transactionRunner.EjecutarEnTransaccion((conexion, transaccion) =>
+            {
+                _arancelesDao.ProgramarArancel(conexion, transaccion, request.Genero, request.Monto, request.VigenteDesde);
+                _pagosDao.GenerarCuotasPendientesDelMes(conexion, transaccion, request.Genero, request.VigenteDesde.Month, request.VigenteDesde.Year);
+                return true;
+            });
         }
     }
 }

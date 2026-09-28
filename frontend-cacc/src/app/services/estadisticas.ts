@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PendienteJugador } from './pagos';
+import { API_BASE_URL } from './api-url';
 
 export interface PuntoRecaudacionMensual {
   mes: string;
@@ -33,7 +34,7 @@ export interface ResumenGeneralInfo {
 
 @Injectable({ providedIn: 'root' })
 export class EstadisticasService {
-  private apiUrl = 'http://localhost:5118/api/estadisticas';
+  private apiUrl = `${API_BASE_URL}/estadisticas`;
 
   constructor(private http: HttpClient) {}
 

@@ -13,6 +13,7 @@ namespace EntityLibrary
         public string? MetodoPago { get; set; }
         public DateTime? FechaVencimiento { get; set; }
         public bool Estado { get; set; }
+        public string? Concepto { get; set; }
     }
 
     public static class MetodosPago

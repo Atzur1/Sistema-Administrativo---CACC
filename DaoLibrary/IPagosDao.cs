@@ -32,6 +32,7 @@ namespace DaoLibrary
         IReadOnlyList<Pago> ObtenerPagosPorId(SqlConnection conexion, SqlTransaction transaccion, IEnumerable<int> idsPago);
 
         void MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago);
+        void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal);
 
         // ---- Lecturas simples, sin transacción (mismo estilo que AuthDao) ----
 
@@ -68,5 +69,6 @@ namespace DaoLibrary
         // jugadores del otro género. Se puede llamar repetidas veces sin duplicar: solo inserta
         // para quien no tenga ya una fila ese período.
         void GenerarCuotasPendientesDelMes(string genero, int mes, int anio);
+        void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string genero, int mes, int anio);
     }
 }

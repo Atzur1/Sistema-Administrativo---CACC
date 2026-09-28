@@ -90,18 +90,21 @@ namespace DaoLibrary
 
         public void ProgramarArancel(string genero, decimal monto, DateTime vigenteDesde)
         {
-            string query = @"
-                INSERT INTO ARANCELES (genero, monto, vigente_desde)
-                VALUES (@genero, @monto, @vigenteDesde)";
-
             using SqlConnection conexion = new SqlConnection(_cadenaConexion);
             conexion.Open();
-
-            using SqlCommand comando = new SqlCommand(query, conexion);
+            using SqlCommand comando = new SqlCommand("INSERT INTO ARANCELES (genero, monto, vigente_desde) VALUES (@genero, @monto, @vigenteDesde)", conexion);
             comando.Parameters.AddWithValue("@genero", genero);
             comando.Parameters.AddWithValue("@monto", monto);
             comando.Parameters.AddWithValue("@vigenteDesde", vigenteDesde.Date);
+            comando.ExecuteNonQuery();
+        }
 
+        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string genero, decimal monto, DateTime vigenteDesde)
+        {
+            using SqlCommand comando = new SqlCommand("INSERT INTO ARANCELES (genero, monto, vigente_desde) VALUES (@genero, @monto, @vigenteDesde)", conexion, transaccion);
+            comando.Parameters.AddWithValue("@genero", genero);
+            comando.Parameters.AddWithValue("@monto", monto);
+            comando.Parameters.AddWithValue("@vigenteDesde", vigenteDesde.Date);
             comando.ExecuteNonQuery();
         }
 

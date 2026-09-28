@@ -36,7 +36,12 @@ namespace ApiGestion.Reports
         private static string Escape(string? value)
         {
             value ??= "";
-            return value.Contains(',') || value.Contains('"') || value.Contains('\n')
+            var firstMeaningful = value.FirstOrDefault(c => !char.IsWhiteSpace(c) && !char.IsControl(c));
+            if (firstMeaningful is '=' or '+' or '-' or '@')
+            {
+                value = "'" + value;
+            }
+            return value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
                 ? $"\"{value.Replace("\"", "\"\"")}\""
                 : value;
         }

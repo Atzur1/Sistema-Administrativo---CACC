@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_BASE_URL } from './api-url';
 
 export interface ArancelHistorialItem {
   idArancel: number;
@@ -24,7 +25,7 @@ export interface ProgramarArancelResponse {
 
 @Injectable({ providedIn: 'root' })
 export class ArancelesService {
-  private apiUrl = 'http://localhost:5118/api/aranceles';
+  private apiUrl = `${API_BASE_URL}/aranceles`;
 
   constructor(private http: HttpClient) {}
 

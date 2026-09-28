@@ -21,7 +21,7 @@ describe('PagosService - player accounts', () => {
     it('asks for the whole roster with GET and onlyDebtors=false', () => {
         service.getPlayerAccounts(false).subscribe();
 
-        const req = http.expectOne('http://localhost:5118/api/pagos/player-accounts?onlyDebtors=false');
+        const req = http.expectOne('/api/pagos/player-accounts?onlyDebtors=false');
         expect(req.request.method).toBe('GET');
         req.flush([]);
     });
@@ -29,7 +29,7 @@ describe('PagosService - player accounts', () => {
     it('asks for debtors only with GET and onlyDebtors=true', () => {
         service.getPlayerAccounts(true).subscribe();
 
-        const req = http.expectOne('http://localhost:5118/api/pagos/player-accounts?onlyDebtors=true');
+        const req = http.expectOne('/api/pagos/player-accounts?onlyDebtors=true');
         expect(req.request.method).toBe('GET');
         req.flush([]);
     });

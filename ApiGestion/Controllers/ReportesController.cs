@@ -13,7 +13,7 @@ namespace ApiGestion.Controllers
     // navegador arranca la descarga solo, sin recargar la página.
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "1")]
     public class ReportesController : ControllerBase
     {
         private readonly IPagosService _pagosService;
@@ -55,7 +55,7 @@ namespace ApiGestion.Controllers
         [HttpGet("pagos-recientes/csv")]
         public IActionResult ExportarPagosRecientesCsv([FromQuery] int top = 500)
         {
-            var pagos = _pagosService.ObtenerUltimosPagos(top);
+            var pagos = _pagosService.ObtenerUltimosPagos(Math.Clamp(top, 1, 1000));
             byte[] csv = PagosRecientesReportBuilder.BuildCsv(pagos);
             return File(csv, "text/csv", $"reporte-pagos_{Timestamp()}.csv");
         }
@@ -63,7 +63,7 @@ namespace ApiGestion.Controllers
         [HttpGet("pagos-recientes/pdf")]
         public IActionResult ExportarPagosRecientesPdf([FromQuery] int top = 500)
         {
-            var pagos = _pagosService.ObtenerUltimosPagos(top);
+            var pagos = _pagosService.ObtenerUltimosPagos(Math.Clamp(top, 1, 1000));
             byte[] pdf = PagosRecientesReportBuilder.BuildPdf(pagos);
             return File(pdf, "application/pdf", $"reporte-pagos_{Timestamp()}.pdf");
         }

@@ -12,7 +12,7 @@ using EntityLibrary;
 // concepto de "jugador" que ya resuelve JugadoresController/JugadoresDao.
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "1")]
 public class PlayersController : ControllerBase
 {
     private readonly ILogger<PlayersController> _logger;

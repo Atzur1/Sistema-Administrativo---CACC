@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { EnrollmentFeeModel, EnrollmentFeeRequest } from '../models/EnrollmentFeeModel';
+import { API_BASE_URL } from './api-url';
 
 @Injectable({
     providedIn: 'root',
 })
 export class EnrollmentFeeService {
-    readonly API_URL = 'http://localhost:5118/api';
+    readonly API_URL = API_BASE_URL;
 
     constructor(private http: HttpClient) {}
 

@@ -8,14 +8,16 @@ namespace ApiGestion.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "1")]
     public class ArancelesController : ControllerBase
     {
         private readonly IArancelesService _arancelesService;
+        private readonly ILogger<ArancelesController> _logger;
 
-        public ArancelesController(IArancelesService arancelesService)
+        public ArancelesController(IArancelesService arancelesService, ILogger<ArancelesController> logger)
         {
             _arancelesService = arancelesService;
+            _logger = logger;
         }
 
         // GET api/aranceles/historial -> tabla "Historial y aranceles programados"
@@ -54,7 +56,8 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al programar el arancel.", error = ex.Message });
+                _logger.LogError(ex, "Error interno al programar el arancel");
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al programar el arancel." });
             }
         }
     }

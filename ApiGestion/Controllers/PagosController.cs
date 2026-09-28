@@ -9,7 +9,7 @@ namespace ApiGestion.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "1")]
     public class PagosController : ControllerBase
     {
         private readonly ILogger<PagosController> _logger;
@@ -55,7 +55,7 @@ namespace ApiGestion.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "The player accounts could not be read");
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener los jugadores.", error = ex.Message });
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener los jugadores." });
             }
         }
 
@@ -71,7 +71,7 @@ namespace ApiGestion.Controllers
         [HttpGet("recientes")]
         public IActionResult ObtenerUltimosPagos([FromQuery] int top = 10)
         {
-            return Ok(_pagosService.ObtenerUltimosPagos(top));
+            return Ok(_pagosService.ObtenerUltimosPagos(Math.Clamp(top, 1, 1000)));
         }
 
         // GET api/pagos/resumen-hoy -> banner de "Actividad y Movimientos" (pagos y recaudado de HOY)
@@ -82,11 +82,11 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/pagos/registrados -> tabla "Pagos registrados" de Actividad y Movimientos:
-        // todos los pagos (sin límite), filtrados/paginados del lado del cliente.
+        // límite defensivo de 1000 resultados.
         [HttpGet("registrados")]
         public IActionResult ObtenerTodosLosPagos()
         {
-            return Ok(_pagosService.ObtenerTodosLosPagos());
+            return Ok(_pagosService.ObtenerUltimosPagos(1000));
         }
 
         // GET api/pagos/deuda/5 -> detalle de deuda de un jugador (cuotas pendientes + abonos parciales)
@@ -132,7 +132,8 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al registrar el pago.", error = ex.Message });
+                _logger.LogError(ex, "Error interno al registrar el pago");
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al registrar el pago." });
             }
         }
 
@@ -166,7 +167,8 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al procesar el cobro.", error = ex.Message });
+                _logger.LogError(ex, "Error interno al procesar el cobro");
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al procesar el cobro." });
             }
         }
 

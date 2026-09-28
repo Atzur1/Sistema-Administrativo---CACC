@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ApiGestion.Controllers
 {
@@ -14,15 +15,18 @@ namespace ApiGestion.Controllers
     {
         private readonly AuthDao _authDao;
         private readonly IConfiguration _config;
+        private readonly ILogger<AuthController> _logger;
 
         // Inyectamos el AuthDao y la configuración (para leer la clave JWT)
-        public AuthController(AuthDao authDao, IConfiguration config)
+        public AuthController(AuthDao authDao, IConfiguration config, ILogger<AuthController> logger)
         {
             _authDao = authDao;
             _config = config;
+            _logger = logger;
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
             try
@@ -48,7 +52,8 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { mensaje = "Error interno en el servidor", error = ex.Message });
+                _logger.LogError(ex, "Error durante la autenticación");
+                return StatusCode(500, new { mensaje = "Error interno en el servidor." });
             }
         }
 
@@ -69,7 +74,7 @@ namespace ApiGestion.Controllers
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(8), // el token dura 8 horas
+                expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials
             );
 

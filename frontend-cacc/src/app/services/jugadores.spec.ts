@@ -20,7 +20,7 @@ describe('JugadoresService', () => {
   it('pide el historial de pagos con GET, la página y el tamaño indicados', () => {
     servicio.getHistorialPagos(3, 2, 10).subscribe();
 
-    const req = http.expectOne('http://localhost:5118/api/jugadores/3/historial-pagos?page=2&pageSize=10');
+    const req = http.expectOne('/api/jugadores/3/historial-pagos?page=2&pageSize=10');
     expect(req.request.method).toBe('GET');
     req.flush({ items: [], total: 0, page: 2, pageSize: 10 });
   });
@@ -55,7 +55,7 @@ describe('JugadoresService', () => {
   it('pide los datos básicos del jugador con GET', () => {
     servicio.getJugador(3).subscribe();
 
-    const req = http.expectOne('http://localhost:5118/api/jugadores/3');
+    const req = http.expectOne('/api/jugadores/3');
     expect(req.request.method).toBe('GET');
     req.flush({});
   });

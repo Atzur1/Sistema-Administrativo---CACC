@@ -30,14 +30,14 @@ namespace DaoLibrary
         {
             string query = @"
                 SELECT PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado
-                FROM PAGOS WITH (UPDLOCK, ROWLOCK)
+                FROM PAGOS WITH (UPDLOCK, HOLDLOCK)
                 WHERE FK_id_jugador = @idJugador AND estado = 1 AND concepto = 'Cuota'
-                  AND fecha_vencimiento IS NOT NULL AND MONTH(fecha_vencimiento) = @mes AND YEAR(fecha_vencimiento) = @anio";
+                  AND fecha_vencimiento >= @inicio AND fecha_vencimiento < @fin";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
             comando.Parameters.AddWithValue("@idJugador", idJugador);
-            comando.Parameters.AddWithValue("@mes", mes);
-            comando.Parameters.AddWithValue("@anio", anio);
+            comando.Parameters.AddWithValue("@inicio", new DateTime(anio, mes, 1));
+            comando.Parameters.AddWithValue("@fin", new DateTime(anio, mes, 1).AddMonths(1));
 
             using SqlDataReader reader = comando.ExecuteReader();
             return reader.Read() ? LeerPago(reader) : null;
@@ -47,14 +47,14 @@ namespace DaoLibrary
         {
             string query = @"
                 SELECT PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado
-                FROM PAGOS WITH (UPDLOCK, ROWLOCK)
+                FROM PAGOS WITH (UPDLOCK, HOLDLOCK)
                 WHERE FK_id_jugador = @idJugador AND estado = 0 AND concepto = 'Cuota'
-                  AND fecha_vencimiento IS NOT NULL AND MONTH(fecha_vencimiento) = @mes AND YEAR(fecha_vencimiento) = @anio";
+                  AND fecha_vencimiento >= @inicio AND fecha_vencimiento < @fin";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
             comando.Parameters.AddWithValue("@idJugador", idJugador);
-            comando.Parameters.AddWithValue("@mes", mes);
-            comando.Parameters.AddWithValue("@anio", anio);
+            comando.Parameters.AddWithValue("@inicio", new DateTime(anio, mes, 1));
+            comando.Parameters.AddWithValue("@fin", new DateTime(anio, mes, 1).AddMonths(1));
 
             using SqlDataReader reader = comando.ExecuteReader();
             return reader.Read() ? LeerPago(reader) : null;
@@ -195,6 +195,35 @@ namespace DaoLibrary
             }
         }
 
+        public void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string genero, int mes, int anio)
+        {
+            const string query = @"
+                DECLARE @maxId INT;
+                SELECT @maxId = ISNULL(MAX(PK_id_pago), 0) FROM PAGOS WITH (TABLOCKX, HOLDLOCK);
+                INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado)
+                SELECT @maxId + ROW_NUMBER() OVER (ORDER BY j.PK_id_jugador), j.PK_id_jugador,
+                    arancel.monto, NULL, arancel.monto, NULL, NULL, @primerDiaMes, 0
+                FROM JUGADORES j
+                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona AND LTRIM(RTRIM(p.genero)) = @genero
+                CROSS APPLY (
+                    SELECT TOP (1) monto FROM ARANCELES
+                    WHERE genero = @genero AND vigente_desde <= EOMONTH(@primerDiaMes)
+                    ORDER BY vigente_desde DESC
+                ) AS arancel
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM PAGOS p2 WITH (UPDLOCK, HOLDLOCK)
+                    WHERE p2.FK_id_jugador = j.PK_id_jugador AND p2.concepto = 'Cuota'
+                      AND p2.fecha_vencimiento IS NOT NULL
+                      AND MONTH(p2.fecha_vencimiento) = @mes AND YEAR(p2.fecha_vencimiento) = @anio
+                );";
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            comando.Parameters.AddWithValue("@genero", genero);
+            comando.Parameters.AddWithValue("@primerDiaMes", new DateTime(anio, mes, 1));
+            comando.Parameters.AddWithValue("@mes", mes);
+            comando.Parameters.AddWithValue("@anio", anio);
+            comando.ExecuteNonQuery();
+        }
+
         // PAGOS.PK_id_pago no tiene IDENTITY. TABLOCKX+HOLDLOCK sobre el cálculo del próximo id
         // serializa inserts concurrentes dentro de la transacción, evitando que dos cobros
         // simultáneos calculen el mismo id (el lock se libera recién al commit/rollback).
@@ -239,8 +268,8 @@ namespace DaoLibrary
 
             var (clausulaIn, parametros) = ConstruirClausulaIn("id", ids);
             string query = $@"
-                SELECT PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado
-                FROM PAGOS WITH (UPDLOCK, ROWLOCK)
+                SELECT PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, concepto
+                FROM PAGOS WITH (UPDLOCK, HOLDLOCK)
                 WHERE PK_id_pago IN ({clausulaIn})";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
@@ -249,7 +278,9 @@ namespace DaoLibrary
             using SqlDataReader reader = comando.ExecuteReader();
             while (reader.Read())
             {
-                resultado.Add(LeerPago(reader));
+                var pago = LeerPago(reader);
+                pago.Concepto = reader["concepto"] == DBNull.Value ? null : reader["concepto"].ToString();
+                resultado.Add(pago);
             }
 
             return resultado;
@@ -280,6 +311,16 @@ namespace DaoLibrary
                 throw new InvalidOperationException(
                     $"Se esperaba actualizar {ids.Count} pago(s) y se actualizaron {filasAfectadas}.");
             }
+        }
+
+        public void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal)
+        {
+            using var comando = new SqlCommand(@"UPDATE PAGOS SET FK_id_jugador_descuento = @descuento, monto_final = @monto
+                WHERE PK_id_pago = @id AND estado = 0 AND concepto = 'Cuota'", conexion, transaccion);
+            comando.Parameters.AddWithValue("@descuento", idDescuento);
+            comando.Parameters.AddWithValue("@monto", montoFinal);
+            comando.Parameters.AddWithValue("@id", idPago);
+            if (comando.ExecuteNonQuery() != 1) throw new InvalidOperationException("No se pudo actualizar el monto de la cuota.");
         }
 
         // HU-020: idCategoria es opcional — null trae el padrón completo (comportamiento previo),
@@ -447,11 +488,11 @@ namespace DaoLibrary
             return resultado;
         }
 
-        public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => ObtenerPagosAgrupados($"TOP ({top})");
+        public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => ObtenerPagosAgrupados($"TOP ({Math.Clamp(top, 1, 1000)})");
 
         // Sin límite: la tabla "Pagos registrados" de Actividad y Movimientos trae todo y
         // filtra/pagina del lado del cliente, mismo criterio que Becados y Descuentos.
-        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => ObtenerPagosAgrupados(null);
+        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => ObtenerPagosAgrupados("TOP (1000)");
 
         // Si una cuota se terminó de pagar (o se viene pagando) en VARIOS abonos (ej. $20.000 +
         // $50.000), acá tiene que verse como UN solo renglón de $70.000 — no dos líneas

@@ -60,7 +60,8 @@
               "buildTarget": "frontend-cacc:build:production"
             },
             "development": {
-              "buildTarget": "frontend-cacc:build:development"
+              "buildTarget": "frontend-cacc:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

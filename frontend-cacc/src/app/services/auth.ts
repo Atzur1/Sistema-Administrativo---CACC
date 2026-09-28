@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router, CanActivateFn } from '@angular/router';
 import { Observable, tap } from 'rxjs';
+import { API_BASE_URL } from './api-url';
 
 export interface UsuarioLogueado {
   email: string;
@@ -13,21 +14,21 @@ export interface UsuarioLogueado {
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5118/api/auth/login';
+  private apiUrl = `${API_BASE_URL}/auth/login`;
+  private usuario: UsuarioLogueado | null = null;
 
   constructor(private http: HttpClient) {}
 
   login(usuario: string, contrasena: string): Observable<UsuarioLogueado> {
     return this.http.post<UsuarioLogueado>(this.apiUrl, { usuario, contrasena }).pipe(
       tap((respuesta) => {
-        localStorage.setItem('usuario', JSON.stringify(respuesta));
+        this.usuario = respuesta;
       })
     );
   }
 
   getUsuario(): UsuarioLogueado | null {
-    const data = localStorage.getItem('usuario');
-    return data ? JSON.parse(data) : null;
+    return this.usuario;
   }
 
   getRol(): number | null {
@@ -47,7 +48,7 @@ export class AuthService {
   }
 
   logout() {
-    localStorage.removeItem('usuario');
+    this.usuario = null;
   }
 }
 

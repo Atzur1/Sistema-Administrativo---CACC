@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PlayerAccountModel } from '../models/PlayerAccountModel';
+import { API_BASE_URL } from './api-url';
 
 export interface JugadorResumen {
   idJugador: number;
@@ -101,7 +102,7 @@ export interface RegistrarPagoResponse {
 
 @Injectable({ providedIn: 'root' })
 export class PagosService {
-  private apiUrl = 'http://localhost:5118/api';
+  private apiUrl = API_BASE_URL;
 
   constructor(private http: HttpClient) {}
 

@@ -1,4 +1,5 @@
 using EntityLibrary;
+using Microsoft.Data.SqlClient;
 
 namespace DaoLibrary
 {
@@ -13,5 +14,6 @@ namespace DaoLibrary
         ArancelResumen ObtenerResumen();
 
         void ProgramarArancel(string genero, decimal monto, DateTime vigenteDesde);
+        void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string genero, decimal monto, DateTime vigenteDesde);
     }
 }

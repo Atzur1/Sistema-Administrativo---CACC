@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { JugadorResumen } from './pagos';
+import { API_BASE_URL } from './api-url';
 
 export interface PagoHistorialAbono {
   monto: number;
@@ -31,7 +32,7 @@ export interface HistorialPagosResultado {
 
 @Injectable({ providedIn: 'root' })
 export class JugadoresService {
-  private apiUrl = 'http://localhost:5118/api/jugadores';
+  private apiUrl = `${API_BASE_URL}/jugadores`;
 
   constructor(private http: HttpClient) {}
 

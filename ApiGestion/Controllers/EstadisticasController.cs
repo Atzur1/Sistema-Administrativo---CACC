@@ -6,14 +6,16 @@ namespace ApiGestion.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "1")]
     public class EstadisticasController : ControllerBase
     {
         private readonly IEstadisticasDao _estadisticasDao;
+        private readonly ILogger<EstadisticasController> _logger;
 
-        public EstadisticasController(IEstadisticasDao estadisticasDao)
+        public EstadisticasController(IEstadisticasDao estadisticasDao, ILogger<EstadisticasController> logger)
         {
             _estadisticasDao = estadisticasDao;
+            _logger = logger;
         }
 
         // GET api/estadisticas/resumen-general -> todo lo que necesita el dashboard "Resumen General"
@@ -26,7 +28,8 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el resumen general.", error = ex.Message });
+                _logger.LogError(ex, "Error interno al obtener el resumen general");
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el resumen general." });
             }
         }
     }

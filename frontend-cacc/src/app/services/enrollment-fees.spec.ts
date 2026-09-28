@@ -36,7 +36,7 @@ describe('EnrollmentFeeService', () => {
         let received: EnrollmentFeeModel[] | undefined;
 
         service.getAllEnrollmentFees().subscribe((fees) => (received = fees));
-        const req = http.expectOne('http://localhost:5118/api/enrollmentfees');
+        const req = http.expectOne('/api/enrollmentfees');
         expect(req.request.method).toBe('GET');
         req.flush(FEES);
 
@@ -46,7 +46,7 @@ describe('EnrollmentFeeService', () => {
     it('schedules a new fee with POST, sending amount and start date', () => {
         service.createEnrollmentFee({ amount: 55000, startDate: '2026-12-01' }).subscribe();
 
-        const req = http.expectOne('http://localhost:5118/api/enrollmentfees');
+        const req = http.expectOne('/api/enrollmentfees');
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual({ amount: 55000, startDate: '2026-12-01' });
         req.flush(FEES[0]);
