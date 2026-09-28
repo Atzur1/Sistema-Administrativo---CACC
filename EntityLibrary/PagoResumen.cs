@@ -35,6 +35,8 @@ namespace EntityLibrary
         public string MetodoPago { get; set; } = string.Empty;
         public decimal Monto { get; set; }
         public DateTime FechaPago { get; set; }
+        // "Cuota" o "Inscripcion" — para que el frontend pueda etiquetarlo
+        public string Concepto { get; set; } = "Cuota";
     }
 
     // Métricas del header de "Cuotas y Pagos".

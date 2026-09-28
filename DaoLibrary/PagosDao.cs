@@ -300,7 +300,7 @@ namespace DaoLibrary
                 JOIN JUGADORES j WITH (NOLOCK) ON pg.FK_id_jugador = j.PK_id_jugador
                 JOIN PERSONA p WITH (NOLOCK) ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c WITH (NOLOCK) ON j.FK_id_categoria = c.PK_id_categoria
-                WHERE pg.estado = 0
+                WHERE pg.estado = 0 AND pg.concepto = 'Cuota'
                   AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
                 GROUP BY j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria
                 HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
@@ -454,26 +454,32 @@ namespace DaoLibrary
             //
             // HU-033: el grupo es jugador + período + concepto. Una inscripción pendiente del mes
             // del alta no esconde la cuota de ese mes ya pagada, ni sus abonos se suman juntos.
+            // Cuotas: solo aparecen cuando están totalmente pagas (sin fila pendiente del mismo
+            // período). Inscripciones: aparecen siempre, incluso con saldo pendiente, porque un
+            // pago parcial ya es un hecho registrado que el admin necesita ver (HU-033).
             string query = @"
                 ;WITH Completos AS (
-                    SELECT pg.PK_id_pago, pg.FK_id_jugador, pg.metodo_pago,
+                    SELECT pg.PK_id_pago, pg.FK_id_jugador, pg.metodo_pago, pg.concepto,
                         SUM(pg.monto_final) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento, pg.concepto) AS monto_grupo,
                         MAX(pg.fecha_pago) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento, pg.concepto) AS fecha_grupo,
                         ROW_NUMBER() OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento, pg.concepto ORDER BY pg.fecha_pago DESC, pg.PK_id_pago DESC) AS rn
                     FROM PAGOS pg
                     WHERE pg.estado = 1 AND pg.fecha_pago IS NOT NULL
-                      AND NOT EXISTS (
-                          SELECT 1 FROM PAGOS pendiente
-                          WHERE pendiente.FK_id_jugador = pg.FK_id_jugador
-                            AND pendiente.concepto = pg.concepto
-                            AND pendiente.estado = 0
-                            AND pendiente.fecha_vencimiento IS NOT NULL AND pg.fecha_vencimiento IS NOT NULL
-                            AND MONTH(pendiente.fecha_vencimiento) = MONTH(pg.fecha_vencimiento)
-                            AND YEAR(pendiente.fecha_vencimiento) = YEAR(pg.fecha_vencimiento)
+                      AND (
+                        pg.concepto = 'Inscripcion'
+                        OR NOT EXISTS (
+                            SELECT 1 FROM PAGOS pendiente
+                            WHERE pendiente.FK_id_jugador = pg.FK_id_jugador
+                              AND pendiente.concepto = pg.concepto
+                              AND pendiente.estado = 0
+                              AND pendiente.fecha_vencimiento IS NOT NULL AND pg.fecha_vencimiento IS NOT NULL
+                              AND MONTH(pendiente.fecha_vencimiento) = MONTH(pg.fecha_vencimiento)
+                              AND YEAR(pendiente.fecha_vencimiento) = YEAR(pg.fecha_vencimiento)
+                        )
                       )
                 )
                 SELECT TOP (@top) c.PK_id_pago, c.FK_id_jugador, p.nombre, p.apellido, c.metodo_pago,
-                    c.monto_grupo AS monto_final, c.fecha_grupo AS fecha_pago
+                    c.monto_grupo AS monto_final, c.fecha_grupo AS fecha_pago, c.concepto
                 FROM Completos c
                 JOIN JUGADORES j ON c.FK_id_jugador = j.PK_id_jugador
                 JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
@@ -496,7 +502,8 @@ namespace DaoLibrary
                     NombreCompleto = $"{reader["apellido"].ToString()?.Trim()}, {reader["nombre"].ToString()?.Trim()}",
                     MetodoPago = reader["metodo_pago"].ToString()?.Trim() ?? "",
                     Monto = Convert.ToDecimal(reader["monto_final"]),
-                    FechaPago = Convert.ToDateTime(reader["fecha_pago"])
+                    FechaPago = Convert.ToDateTime(reader["fecha_pago"]),
+                    Concepto = reader["concepto"].ToString()?.Trim() ?? "Cuota"
                 });
             }
 

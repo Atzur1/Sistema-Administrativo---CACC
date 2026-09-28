@@ -15,11 +15,13 @@ public class PlayerEnrollmentController : ControllerBase
 {
     private readonly ILogger<PlayerEnrollmentController> _logger;
     private readonly EnrollmentDAO _enrollmentDAO;
+    private readonly EnrollmentFeeDAO _enrollmentFeeDAO;
 
-    public PlayerEnrollmentController(ILogger<PlayerEnrollmentController> logger, EnrollmentDAO enrollmentDAO)
+    public PlayerEnrollmentController(ILogger<PlayerEnrollmentController> logger, EnrollmentDAO enrollmentDAO, EnrollmentFeeDAO enrollmentFeeDAO)
     {
         _logger = logger;
         _enrollmentDAO = enrollmentDAO;
+        _enrollmentFeeDAO = enrollmentFeeDAO;
     }
 
     [HttpGet]
@@ -37,10 +39,39 @@ public class PlayerEnrollmentController : ControllerBase
     [HttpPost("payments")]
     public IActionResult CreateEnrollmentPayment(long playerId, EnrollmentPaymentRequestDTO request)
     {
+        decimal amount = request.Amount!.Value;
+        string paymentMethod = request.PaymentMethod.Trim();
+
         Enrollment? enrollment = _enrollmentDAO.GetEnrollmentByPlayerId(playerId);
+
+        // Player has no enrollment row yet: create it on the fly using the current
+        // enrollment fee value. This covers players registered before HU-033 and
+        // any case where the sign-up flow did not charge the fee.
         if (enrollment == null)
         {
-            return NotFound($"Player {playerId} has no enrollment fee.");
+            EnrollmentFee? currentFee = _enrollmentFeeDAO.GetCurrentEnrollmentFee();
+            if (currentFee == null)
+            {
+                return Conflict("There is no active enrollment fee. Set one in Actualización de aranceles before registering a payment.");
+            }
+
+            if (amount > currentFee.Amount)
+            {
+                return BadRequest($"The amount exceeds the enrollment fee (${currentFee.Amount:N0}).");
+            }
+
+            EnrollmentPayment? firstPayment = _enrollmentDAO.CreateEnrollmentAndFirstPayment(
+                playerId, currentFee.Amount, amount, paymentMethod, DateTime.Now.Date);
+
+            if (firstPayment == null)
+            {
+                _logger.LogWarning("Race condition on first enrollment payment for player {PlayerId}", playerId);
+                return Conflict("The enrollment was created by another request at the same time. Reload and try again.");
+            }
+
+            _logger.LogInformation("Enrollment created and first payment {PaymentId} of {Amount} registered for player {PlayerId}", firstPayment.Id, amount, playerId);
+
+            return Created($"/api/players/{playerId}/enrollment", MapPaymentToDto(firstPayment));
         }
 
         if (enrollment.PendingBalance == 0)
@@ -48,13 +79,12 @@ public class PlayerEnrollmentController : ControllerBase
             return BadRequest($"The enrollment fee of player {playerId} is already fully paid.");
         }
 
-        decimal amount = request.Amount!.Value;
         if (amount > enrollment.PendingBalance)
         {
             return BadRequest($"The amount exceeds the pending balance of the enrollment fee (${enrollment.PendingBalance:N0}).");
         }
 
-        EnrollmentPayment? payment = _enrollmentDAO.CreateEnrollmentPayment(playerId, amount, request.PaymentMethod.Trim(), DateTime.Now.Date);
+        EnrollmentPayment? payment = _enrollmentDAO.CreateEnrollmentPayment(playerId, amount, paymentMethod, DateTime.Now.Date);
         if (payment == null)
         {
             _logger.LogWarning("Concurrent enrollment payment rejected for player {PlayerId}", playerId);

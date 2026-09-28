@@ -146,6 +146,78 @@ public class EnrollmentDAO
         }
     }
 
+    // Creates the enrollment row (estado=0, balance = enrollmentAmount - paymentAmount)
+    // and the first payment (estado=1) in one transaction. Used for players who were
+    // registered before HU-033 and never had an enrollment row, or whose enrollment
+    // was omitted at sign-up. Returns null only if the table lock detects a race
+    // (extremely unlikely for a first-time insert, but the caller handles it).
+    public virtual EnrollmentPayment? CreateEnrollmentAndFirstPayment(
+        long playerId, decimal enrollmentAmount, decimal paymentAmount,
+        string paymentMethod, DateTime paymentDate)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+        using SqlTransaction transaction = connection.BeginTransaction();
+
+        try
+        {
+            // Guard: if a concurrent request already inserted the enrollment, bail out
+            // so the caller can retry via the normal CreateEnrollmentPayment path.
+            string existsQuery = @"
+                SELECT COUNT(1) FROM PAGOS WITH (UPDLOCK, ROWLOCK)
+                WHERE FK_id_jugador = @playerId AND concepto = @concept;";
+
+            using (SqlCommand existsCmd = new SqlCommand(existsQuery, connection, transaction))
+            {
+                existsCmd.Parameters.AddWithValue("@playerId", playerId);
+                existsCmd.Parameters.AddWithValue("@concept", EnrollmentConcept);
+                int count = Convert.ToInt32(existsCmd.ExecuteScalar());
+                if (count > 0)
+                {
+                    transaction.Rollback();
+                    return null;
+                }
+            }
+
+            decimal remaining = enrollmentAmount - paymentAmount;
+
+            // Insert the pending balance row only when the fee is not fully paid
+            if (remaining > 0)
+            {
+                string pendingQuery = @"
+                    DECLARE @id INT;
+                    SELECT @id = ISNULL(MAX(PK_id_pago), 0) + 1 FROM PAGOS WITH (TABLOCKX, HOLDLOCK);
+                    INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, concepto)
+                    VALUES (@id, @playerId, @enrollmentAmount, NULL, @remaining, @paymentDate, '', @paymentDate, 0, @concept);";
+
+                using SqlCommand pendingCmd = new SqlCommand(pendingQuery, connection, transaction);
+                pendingCmd.Parameters.AddWithValue("@playerId", playerId);
+                pendingCmd.Parameters.AddWithValue("@enrollmentAmount", enrollmentAmount);
+                pendingCmd.Parameters.AddWithValue("@remaining", remaining);
+                pendingCmd.Parameters.AddWithValue("@paymentDate", paymentDate.Date);
+                pendingCmd.Parameters.AddWithValue("@concept", EnrollmentConcept);
+                pendingCmd.ExecuteNonQuery();
+            }
+
+            long paymentId = InsertPayment(connection, transaction, playerId, enrollmentAmount, paymentAmount, paymentMethod, paymentDate, paymentDate);
+
+            transaction.Commit();
+
+            return new EnrollmentPayment
+            {
+                Id = paymentId,
+                Amount = paymentAmount,
+                PaymentMethod = paymentMethod,
+                PaymentDate = paymentDate
+            };
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
     // PK_id_pago has no IDENTITY: the table lock held until commit keeps two payments
     // from taking the same id, the same as PagosDao.InsertarPago.
     private static long InsertPayment(SqlConnection connection, SqlTransaction transaction, long playerId, decimal originalAmount, decimal amount, string paymentMethod, DateTime paymentDate, DateTime dueDate)
