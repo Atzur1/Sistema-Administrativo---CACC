@@ -14,6 +14,7 @@ namespace EntityLibrary
     {
         public int IdPago { get; set; }
         public string Periodo { get; set; } = string.Empty; // "Septiembre 2026", derivado de fecha_vencimiento
+        public string Concepto { get; set; } = "Cuota"; // PAGOS.concepto: "Cuota" | "Inscripcion" (HU-033)
         public decimal MontoOriginal { get; set; } // PAGOS.monto_base de la cuota: nunca se toca al abonar parcial
         public decimal SaldoPendiente { get; set; } // Ya con el beneficio de Becados y Descuentos aplicado (nunca negativo)
 

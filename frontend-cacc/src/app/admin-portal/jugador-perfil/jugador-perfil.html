@@ -77,13 +77,18 @@
       </div>
     } @else {
       <ul class="periodo-list">
-        @for (item of historial.items; track item.periodo) {
+        @for (item of historial.items; track item.periodo + item.concepto) {
           <li class="periodo-row">
             <div class="periodo-row-main">
               <div class="periodo-row-identity">
                 <span class="estado-pill estado-pagado">Pagado</span>
                 <div class="periodo-row-text">
-                  <span class="periodo-nombre">{{ item.periodo }}</span>
+                  <span class="periodo-nombre">
+                    {{ item.periodo }}
+                    @if (item.concepto === 'Inscripcion') {
+                      <span class="periodo-concepto-badge">Inscripción</span>
+                    }
+                  </span>
                   @if (item.tieneBeneficio) {
                     <span class="periodo-cuota-original"
                       >Cuota: {{ formatMonto(item.montoOriginal) }}</span

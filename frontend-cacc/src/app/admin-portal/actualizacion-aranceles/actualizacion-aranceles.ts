@@ -5,6 +5,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { ArancelesService, ArancelHistorialItem } from '../../services/aranceles';
+import { EnrollmentFeeService } from '../../services/enrollment-fees';
+import {
+    EnrollmentFeeModel,
+    enrollmentFeeStatusLabel,
+    enrollmentFeeStatusClass,
+} from '../../models/EnrollmentFeeModel';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
 
@@ -13,8 +19,8 @@ Chart.register(...registerables);
 // One row in the "Historial y aranceles programados" table
 interface FeeRow {
     id: number;
-    // 'male' renders the "Masculino" pill, 'female' the "Femenino" one
-    category: 'male' | 'female';
+    // 'male' renders the "Masculino" pill, 'female' the "Femenino" one, 'enrollment' the "Inscripción" one
+    category: 'male' | 'female' | 'enrollment';
     categoryLabel: string;
     amount: string;
     // Stored as ISO so the dates compare and sort directly
@@ -47,7 +53,7 @@ export class ActualizacionAranceles implements OnInit {
 
     feeForm: FormGroup;
 
-    categories = ['Masculino', 'Femenino'];
+    categories = ['Masculino', 'Femenino', 'Inscripción masculina'];
 
     enviando = false;
 
@@ -136,6 +142,7 @@ export class ActualizacionAranceles implements OnInit {
     constructor(
         private fb: FormBuilder,
         private arancelesService: ArancelesService,
+        private enrollmentFeeService: EnrollmentFeeService,
         private cdr: ChangeDetectorRef,
         private notifications: NotificationService
     ) {
@@ -200,9 +207,23 @@ export class ActualizacionAranceles implements OnInit {
 
         this.arancelesService.getHistorial().subscribe({
             next: (historial) => {
-                this.feeRows = historial.map(mapHistorialItem);
-                this.feeChartData = this.buildChartData();
-                this.cdr.detectChanges();
+                const cuotaRows = historial.map(mapHistorialItem);
+                this.enrollmentFeeService.getAllEnrollmentFees().subscribe({
+                    next: (fees) => {
+                        const inscripcionRows = fees.map(mapEnrollmentFeeItem);
+                        // Merge and sort newest validFrom first
+                        this.feeRows = [...cuotaRows, ...inscripcionRows].sort((a, b) =>
+                            b.validFrom.localeCompare(a.validFrom)
+                        );
+                        this.feeChartData = this.buildChartData();
+                        this.cdr.detectChanges();
+                    },
+                    error: () => {
+                        this.feeRows = cuotaRows;
+                        this.feeChartData = this.buildChartData();
+                        this.cdr.detectChanges();
+                    },
+                });
             },
             error: () => {},
         });
@@ -269,6 +290,14 @@ export class ActualizacionAranceles implements OnInit {
         return `$${value.toLocaleString('es-AR')}`;
     }
 
+    get formSubtitle(): string {
+        const cat = this.feeForm.get('category')?.value;
+        if (cat === 'Inscripción masculina') {
+            return 'Definí el próximo valor de inscripción. Solo se cobra una vez al dar de alta al jugador.';
+        }
+        return 'Definí el próximo valor de cuota. Los cambios no son retroactivos: solo aplican a los meses posteriores a su entrada en vigencia.';
+    }
+
     // El estado ya viene calculado desde el backend (Vigente/Programado/Anterior).
     status(row: FeeRow): 'current' | 'scheduled' | 'previous' {
         switch (row.estado) {
@@ -303,22 +332,41 @@ export class ActualizacionAranceles implements OnInit {
 
         this.enviando = true;
 
-        this.arancelesService.programar(category, Number(amount), validFrom).subscribe({
-            next: () => {
-                this.enviando = false;
-                this.feeForm.reset({ category: '', amount: '', validFrom: '' });
-                this.montoDisplay = '';
-                this.notifications.notify(`Nuevo arancel ${category} programado correctamente.`, 'success');
-                this.cargarDatos();
-                this.cdr.detectChanges();
-            },
-            error: (err: HttpErrorResponse) => {
-                this.enviando = false;
-                const mensaje = err.error?.mensaje ?? 'No se pudo programar el arancel. Intentá de nuevo.';
-                this.notifications.notify(mensaje, 'error');
-                this.cdr.detectChanges();
-            },
-        });
+        if (category === 'Inscripción masculina') {
+            this.enrollmentFeeService.createEnrollmentFee({ amount: Number(amount), startDate: validFrom }).subscribe({
+                next: () => {
+                    this.enviando = false;
+                    this.feeForm.reset({ category: '', amount: '', validFrom: '' });
+                    this.montoDisplay = '';
+                    this.notifications.notify('Nuevo valor de inscripción masculina programado correctamente.', 'success');
+                    this.cargarDatos();
+                    this.cdr.detectChanges();
+                },
+                error: (err: HttpErrorResponse) => {
+                    this.enviando = false;
+                    const mensaje = err.error?.mensaje ?? 'No se pudo programar el valor de inscripción. Intentá de nuevo.';
+                    this.notifications.notify(mensaje, 'error');
+                    this.cdr.detectChanges();
+                },
+            });
+        } else {
+            this.arancelesService.programar(category, Number(amount), validFrom).subscribe({
+                next: () => {
+                    this.enviando = false;
+                    this.feeForm.reset({ category: '', amount: '', validFrom: '' });
+                    this.montoDisplay = '';
+                    this.notifications.notify(`Nuevo arancel ${category} programado correctamente.`, 'success');
+                    this.cargarDatos();
+                    this.cdr.detectChanges();
+                },
+                error: (err: HttpErrorResponse) => {
+                    this.enviando = false;
+                    const mensaje = err.error?.mensaje ?? 'No se pudo programar el arancel. Intentá de nuevo.';
+                    this.notifications.notify(mensaje, 'error');
+                    this.cdr.detectChanges();
+                },
+            });
+        }
     }
 }
 
@@ -331,5 +379,22 @@ function mapHistorialItem(item: ArancelHistorialItem): FeeRow {
         validFrom: item.vigenteDesde.slice(0, 10),
         validTo: item.vigenteHasta ? item.vigenteHasta.slice(0, 10) : '',
         estado: item.estado,
+    };
+}
+
+function mapEnrollmentFeeItem(fee: EnrollmentFeeModel): FeeRow {
+    const estadoMap: Record<string, 'Vigente' | 'Programado' | 'Anterior'> = {
+        Current: 'Vigente',
+        Scheduled: 'Programado',
+        Previous: 'Anterior',
+    };
+    return {
+        id: fee.id,
+        category: 'enrollment',
+        categoryLabel: 'Inscripción masculina',
+        amount: `$${fee.amount.toLocaleString('es-AR')}`,
+        validFrom: fee.startDate.slice(0, 10),
+        validTo: fee.endDate ? fee.endDate.slice(0, 10) : '',
+        estado: estadoMap[fee.status] ?? 'Anterior',
     };
 }

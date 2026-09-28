@@ -24,6 +24,14 @@
     animation: fadeSlideUp 0.4s ease both;
 }
 
+/* Agrupa ícono + texto para tratarlos como un solo bloque al envolver */
+.header-lead {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
 .header-icon {
     display: flex;
     align-items: center;
@@ -65,6 +73,7 @@
     align-items: center;
     gap: 8px;
     margin-left: auto;
+    flex-wrap: wrap;
     flex-shrink: 0;
 }
 
@@ -83,6 +92,12 @@
 
 .arancel-badge-femenino {
     background: var(--color-text-muted);
+}
+
+.arancel-badge-inscripcion {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+    border: 1px solid var(--color-brand-deep);
 }
 
 .header-metrics {
@@ -225,13 +240,28 @@
     color: var(--color-text-muted);
 }
 
-/* Dos filas prolijas en vez de 5 campos apretados + una barra gigante:
-   fila 1 = búsqueda de jugador y período; fila 2 = monto, método y el
-   botón de acción, compacto, a la derecha. */
+/* Flujo progresivo: cada campo aparece con animación al habilitarse. */
+@keyframes fieldReveal {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.field-reveal {
+    animation: fieldReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Dos filas prolijas: fila 1 = jugador / período / año; fila 2 = monto / método / botón. */
 .form-grid {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    padding-top: 16px;
 }
 
 .form-row {
@@ -444,6 +474,200 @@
     background: var(--color-danger-bg);
     border-color: rgba(192, 57, 43, 0.3);
     color: var(--color-danger-strong);
+}
+
+/* ===== PANEL TOGGLE (tabs Pago de cuota / Inscripción) ===== */
+
+.form-icon-inscripcion {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.form-badge-inscripcion {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.panel-toggle-bar {
+    display: flex;
+    gap: 0;
+    margin: 14px 0 0;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.panel-tab {
+    padding: 8px 22px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    font-family: inherit;
+    border-top: 2px solid transparent;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    margin-top: 0;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.panel-tab:hover:not(.panel-tab-active-cuota):not(.panel-tab-active-inscripcion) {
+    color: var(--color-text);
+}
+
+.panel-tab-active-cuota {
+    color: var(--color-brand-deep);
+    border-bottom-color: var(--color-brand-deep);
+}
+
+.panel-tab-active-inscripcion {
+    color: var(--color-brand-deep);
+    border-bottom-color: var(--color-brand-deep);
+}
+
+/* ===== INSCRIPCIÓN TAB CONTENT ===== */
+.insc-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 16px;
+}
+
+
+.insc-loading {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    padding: 8px 0;
+}
+
+.insc-sin-registro {
+    font-size: 13px;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+/* Card informativa del jugador seleccionado */
+.insc-jugador-card {
+    background: var(--color-brand-tint);
+    border: 1px solid rgba(0, 127, 62, 0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.insc-jugador-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.insc-jugador-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.insc-jugador-name {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.insc-alta-chip {
+    margin-left: auto;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    font-size: 10px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+/* Grilla de montos: inscripción / abonado / saldo */
+.insc-montos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+@media (max-width: 580px) {
+    .insc-montos-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.insc-monto-box {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.insc-monto-box.insc-monto-saldo {
+    background: var(--color-warning-bg);
+    border-color: transparent;
+}
+
+.insc-monto-label {
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.insc-monto-label.insc-monto-label-warn {
+    color: var(--color-warning-text);
+}
+
+.insc-monto-value {
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.insc-monto-value.insc-monto-value-warn {
+    color: var(--color-warning-text);
+}
+
+.insc-monto-sub {
+    font-size: 10px;
+    color: var(--color-text-muted);
+}
+
+.insc-monto-sub.insc-monto-sub-warn {
+    color: var(--color-warning-text);
+}
+
+/* Botón de inscripción (violeta, mismo tamaño que el verde) */
+.submit-button-inscripcion {
+    background: var(--color-brand);
+}
+
+.submit-button-inscripcion:hover:not(:disabled) {
+    background: var(--color-brand-hover);
+    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+}
+
+.submit-button-inscripcion:focus-visible {
+    box-shadow: 0 0 0 2px var(--action-bg), 0 0 0 4px var(--color-brand);
 }
 
 /* ===== MAIN GRID ===== */
@@ -704,8 +928,27 @@
 
 /* ===== RESPONSIVE ===== */
 
-/* Tablet: each form row drops to two fields (.main-grid ya es de una sola columna siempre) */
+/* Laptop chico / tablet grande: los dos paneles se apilan, el header manda
+   aranceles y métricas a un segundo renglón y cada fila del formulario baja a dos columnas. */
 @media (max-width: 1100px) {
+    .page-header {
+        flex-wrap: wrap;
+        row-gap: 12px;
+    }
+
+    .header-lead {
+        flex: 1 1 100%;
+    }
+
+    .header-aranceles-vigentes {
+        margin-left: 0;
+    }
+
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+
     .form-row-lookup,
     .form-row-action {
         grid-template-columns: 1fr 1fr;
@@ -717,21 +960,14 @@
     }
 }
 
-/* Mobile: metrics drop to their own line under the title */
+/* Tablet / mobile grande: aranceles y métricas pasan a ocupar cada uno el
+   ancho completo, apilados, y el buscador de "Últimos pagos" baja a su propia
+   línea dentro de la cabecera del panel. */
 @media (max-width: 768px) {
-    .page-header {
-        flex-wrap: wrap;
-    }
-
+    .header-aranceles-vigentes,
     .header-metrics {
-        width: 100%;
+        flex-basis: 100%;
         margin-left: 0;
-    }
-
-    .header-aranceles-vigentes {
-        width: 100%;
-        margin-left: 0;
-        flex-wrap: wrap;
     }
 
     .header-metric {
@@ -742,9 +978,13 @@
         padding-left: 18px;
     }
 
+    .panel-head {
+        flex-wrap: wrap;
+    }
 }
 
-/* Small mobile: one field per row, tighter padding */
+/* Mobile: una sola columna en el formulario y, en las filas de pagos, el
+   importe pasa debajo del nombre en vez de quedar a la derecha. */
 @media (max-width: 520px) {
     .dashboard {
         padding: 14px;
@@ -760,7 +1000,6 @@
         width: 100%;
     }
 
-    /* Amount and elapsed time move under the name instead of to the right */
     .row {
         flex-wrap: wrap;
     }

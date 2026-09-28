@@ -3,18 +3,22 @@
 
   <!-- ===== HEADER ===== -->
   <header class="page-header">
-    <span class="header-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="5" width="20" height="14" rx="2"></rect>
-        <path d="M2 10h20"></path>
-        <path d="M6 15h4"></path>
-      </svg>
-    </span>
+    <!-- Ícono + título agrupados: en pantallas chicas ocupan el primer
+         renglón completo y empujan aranceles y métricas al de abajo. -->
+    <div class="header-lead">
+      <span class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <path d="M2 10h20"></path>
+          <path d="M6 15h4"></path>
+        </svg>
+      </span>
 
-    <div class="header-text">
-      <h1 class="header-title">Cuotas y Pagos</h1>
-      <span class="header-subtitle">Registro y control de la recaudación del club</span>
+      <div class="header-text">
+        <h1 class="header-title">Cuotas y Pagos</h1>
+        <span class="header-subtitle">Registro y control de la recaudación del club</span>
+      </div>
     </div>
 
     <div class="header-aranceles-vigentes">
@@ -23,6 +27,9 @@
       }
       @if (arancelFemeninoTexto) {
         <span class="arancel-badge arancel-badge-femenino">{{ arancelFemeninoTexto }}</span>
+      }
+      @if (inscripcionTexto) {
+        <span class="arancel-badge arancel-badge-inscripcion">{{ inscripcionTexto }}</span>
       }
     </div>
 
@@ -55,9 +62,9 @@
   <div class="header-divider"></div>
 
   <!-- ===== PAYMENT FORM ===== -->
-  <section class="form-panel">
+  <section class="form-panel" [class.form-panel-inscripcion]="panelMode === 'inscripcion'">
     <header class="form-head">
-      <span class="form-icon">
+      <span class="form-icon" [class.form-icon-inscripcion]="panelMode === 'inscripcion'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 5v14"></path>
@@ -65,17 +72,30 @@
         </svg>
       </span>
       <div class="form-head-text">
-        <span class="form-badge">Pagos</span>
-        <h2 class="form-title">Registrar cobro</h2>
-        <span class="form-subtitle">Cargá un nuevo pago en segundos</span>
+        <span class="form-badge" [class.form-badge-inscripcion]="panelMode === 'inscripcion'">
+          {{ panelMode === 'cuota' ? 'Pagos' : 'Inscripción' }}
+        </span>
+        <h2 class="form-title">{{ panelMode === 'cuota' ? 'Registrar cobro' : 'Cobrar inscripción' }}</h2>
+        <span class="form-subtitle">{{ panelMode === 'cuota' ? 'Cargá un nuevo pago en segundos' : 'Pago único al momento del alta' }}</span>
       </div>
     </header>
 
+    <!-- Tabs -->
+    <div class="panel-toggle-bar">
+      <button type="button" class="panel-tab"
+              [class.panel-tab-active-cuota]="panelMode === 'cuota'"
+              (click)="switchPanelMode('cuota')">Pago de cuota</button>
+      <button type="button" class="panel-tab"
+              [class.panel-tab-active-inscripcion]="panelMode === 'inscripcion'"
+              (click)="switchPanelMode('inscripcion')">Inscripción</button>
+    </div>
+
+    @if (panelMode === 'cuota') {
     <form class="form-grid" [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
 
       <!-- Fila 1: jugador, período, año -->
       <div class="form-row form-row-lookup">
-        <!-- Single unified lookup: matches both name and document number -->
+        <!-- Jugador: siempre visible -->
         <div class="field field-player">
           <label class="field-label" for="player">Jugador</label>
           <div class="input-icon-wrap">
@@ -106,49 +126,198 @@
           }
         </div>
 
+        <!-- Período: aparece al confirmar jugador -->
         <div class="field field-period">
-          <label class="field-label" for="period">Período</label>
-          <app-custom-select id="period" [options]="periods" placeholder="Seleccionar mes"
-                              formControlName="period"></app-custom-select>
+          @if (showPeriodYear) {
+            <div class="field-reveal">
+              <label class="field-label" for="period">Período</label>
+              <app-custom-select id="period" [options]="periods" placeholder="Seleccionar mes"
+                                  formControlName="period"></app-custom-select>
+            </div>
+          }
         </div>
 
+        <!-- Año: aparece junto con período -->
         <div class="field field-year">
-          <label class="field-label" for="year">Año</label>
-          <app-custom-select id="year" [options]="years" formControlName="year"></app-custom-select>
+          @if (showPeriodYear) {
+            <div class="field-reveal" style="animation-delay: 60ms">
+              <label class="field-label" for="year">Año</label>
+              <app-custom-select id="year" [options]="years" formControlName="year"></app-custom-select>
+            </div>
+          }
         </div>
       </div>
 
-      <!-- Fila 2: monto, método y el botón de acción a la derecha -->
+      <!-- Fila 2: monto, método y botón -->
       <div class="form-row form-row-action">
+        <!-- Monto: aparece al seleccionar período -->
         <div class="field field-amount">
-          <label class="field-label" for="amount">Monto</label>
-          <div class="amount-wrapper">
-            <span class="amount-prefix">$</span>
-            <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
-                   [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
-                   placeholder="0" />
-          </div>
-        </div>
-
-        <div class="field field-method">
-          <label class="field-label" for="method">Método</label>
-          <app-custom-select id="method" [options]="methods" placeholder="Seleccionar método"
-                              formControlName="method"></app-custom-select>
-        </div>
-
-        <button type="submit" class="submit-button" [disabled]="paymentForm.invalid || enviando">
-          @if (!enviando) {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 5v14"></path>
-              <path d="M5 12h14"></path>
-            </svg>
+          @if (showAmount) {
+            <div class="field-reveal">
+              <label class="field-label" for="amount">Monto</label>
+              <div class="amount-wrapper">
+                <span class="amount-prefix">$</span>
+                <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
+                       [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
+                       placeholder="0" />
+              </div>
+            </div>
           }
-          {{ enviando ? 'Registrando...' : 'Registrar pago' }}
-        </button>
+        </div>
+
+        <!-- Método: aparece al ingresar monto -->
+        <div class="field field-method">
+          @if (showMethod) {
+            <div class="field-reveal">
+              <label class="field-label" for="method">Método</label>
+              <app-custom-select id="method" [options]="methods" placeholder="Seleccionar método"
+                                  formControlName="method"></app-custom-select>
+            </div>
+          }
+        </div>
+
+        <!-- Botón: aparece con el método -->
+        @if (showMethod) {
+          <button type="submit" class="submit-button field-reveal" style="animation-delay: 60ms"
+                  [disabled]="paymentForm.invalid || enviando">
+            @if (!enviando) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+            }
+            {{ enviando ? 'Registrando...' : 'Registrar pago' }}
+          </button>
+        }
       </div>
 
     </form>
+    } @else {
+    <!-- ===== INSCRIPCIÓN TAB ===== -->
+    <div class="insc-grid">
+
+      <!-- Buscador de jugador -->
+      <div class="field">
+        <label class="field-label" for="insc-player">Jugador</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input id="insc-player" type="text" class="field-input field-input-icon"
+                 [value]="inscripcionPlayerText"
+                 placeholder="Buscar por nombre o DNI..."
+                 autocomplete="off"
+                 (input)="onInscripcionPlayerSearch($any($event.target).value)"
+                 (keydown.escape)="hideInscripcionSuggestions()" />
+        </div>
+        @if (inscripcionShowSuggestions) {
+          <ul class="suggestions">
+            @for (jugador of inscripcionMatchingPlayers; track jugador.idJugador) {
+              <li>
+                <button type="button" class="suggestion" (click)="selectInscripcionPlayer(jugador)">
+                  <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
+                  <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <!-- Bloque informativo (aparece al seleccionar jugador) -->
+      <!-- Loading -->
+      @if (cargandoEnrollment()) {
+        <div class="insc-loading field-reveal">Cargando datos de inscripción…</div>
+      }
+
+      <!-- Card del jugador: aparece al recibir los datos -->
+      @if (enrollmentData) {
+        <div class="insc-jugador-card field-reveal">
+          <div class="insc-jugador-header">
+            <span class="insc-jugador-avatar">{{ initialsOfPublic(selectedInscripcionPlayerName) }}</span>
+            <div>
+              <div class="insc-jugador-name">{{ selectedInscripcionPlayerName }}</div>
+            </div>
+            <div class="insc-alta-chip">Alta: {{ formatDateLocal(enrollmentData.dueDate) }}</div>
+          </div>
+
+          <div class="insc-montos-grid">
+            <div class="insc-monto-box">
+              <span class="insc-monto-label">Inscripción</span>
+              <span class="insc-monto-value">{{ formatCurrencyLocal(enrollmentData.amount) }}</span>
+              <span class="insc-monto-sub">Valor vigente al alta</span>
+            </div>
+            <div class="insc-monto-box">
+              <span class="insc-monto-label">Abonado · {{ enrollmentData.payments.length }} {{ enrollmentData.payments.length === 1 ? 'pago' : 'pagos' }}</span>
+              <span class="insc-monto-value">{{ formatCurrencyLocal(enrollmentData.paidAmount) }}</span>
+              @if (enrollmentData.payments.length > 0) {
+                <span class="insc-monto-sub">Último: {{ formatDateLocal(enrollmentData.payments[enrollmentData.payments.length - 1].paymentDate) }}</span>
+              }
+            </div>
+            <div class="insc-monto-box insc-monto-saldo">
+              <span class="insc-monto-label insc-monto-label-warn">Saldo pendiente</span>
+              <span class="insc-monto-value insc-monto-value-warn">{{ formatCurrencyLocal(enrollmentData.pendingBalance) }}</span>
+              <span class="insc-monto-sub insc-monto-sub-warn">Para completar el total</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Formulario progresivo: monto siempre primero, método+botón al ingresar monto -->
+      @if (enrollmentData || enrollmentSinRegistro()) {
+        <form class="form-grid" [formGroup]="inscripcionForm" (ngSubmit)="onSubmitInscripcion()">
+          <div class="form-row form-row-action">
+            <!-- Monto: aparece con la card -->
+            <div class="field field-amount">
+              <div class="field-reveal">
+                <label class="field-label" for="insc-amount">Monto a pagar ahora</label>
+                <div class="amount-wrapper">
+                  <span class="amount-prefix">$</span>
+                  <input id="insc-amount" type="text" inputmode="numeric" class="field-input amount-input"
+                         [value]="inscripcionMontoDisplay"
+                         (input)="onInscripcionMontoInput($any($event.target))"
+                         placeholder="0" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Método: aparece al ingresar monto -->
+            <div class="field field-method">
+              @if (showInscripcionMethod) {
+                <div class="field-reveal">
+                  <label class="field-label" for="insc-method">Método</label>
+                  <app-custom-select id="insc-method" [options]="methods" placeholder="Seleccionar método"
+                                      formControlName="method"></app-custom-select>
+                </div>
+              }
+            </div>
+
+            <!-- Botón: aparece con el método -->
+            @if (showInscripcionMethod) {
+              <button type="submit" class="submit-button submit-button-inscripcion field-reveal"
+                      style="animation-delay: 60ms"
+                      [disabled]="!inscripcionFormValid || enviandoInscripcion">
+                @if (!enviandoInscripcion) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14"></path>
+                    <path d="M5 12h14"></path>
+                  </svg>
+                }
+                {{ enviandoInscripcion ? 'Registrando...' : 'Registrar pago de inscripción' }}
+              </button>
+            }
+          </div>
+        </form>
+      }
+
+    </div>
+    }
   </section>
 
   <!-- ===== MAIN GRID ===== -->

@@ -425,6 +425,11 @@
     color: var(--color-accent);
 }
 
+.category-enrollment {
+    background: #fef3c7;
+    color: #92400e;
+}
+
 /* The fee charged today, one waiting to start, and one already replaced */
 .status-current {
     background: var(--color-brand-tint);

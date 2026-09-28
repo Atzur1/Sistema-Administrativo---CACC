@@ -10,6 +10,9 @@ namespace DaoLibrary
         // tipo_valor/porcentaje/monto_fijo del beneficio activo cuya vigencia cubre el mes de
         // esa cuota (fecha_vencimiento), o todo NULL si no tiene ninguno.
         //
+        // HU-033: el beneficio solo descuenta la cuota mensual. Sobre una inscripción el APPLY
+        // no encuentra nada y su saldo queda igual a monto_final.
+        //
         // A propósito NO filtra por "jd.estado_activo = 1" a secas: eso haría que cancelar un
         // beneficio le borre el descuento a TODAS las cuotas que cubrió alguna vez, incluidas
         // las de meses ya pasados que estuvieron correctamente cubiertas mientras estuvo activo.
@@ -22,6 +25,7 @@ namespace DaoLibrary
                 SELECT TOP (1) jd.FK_id_descuento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo
                 FROM JUGADORES_DESCUENTOS jd
                 WHERE jd.FK_id_jugador = pg.FK_id_jugador
+                  AND pg.concepto = 'Cuota'
                   AND jd.fecha_inicio <= EOMONTH(pg.fecha_vencimiento) AND jd.fecha_fin >= pg.fecha_vencimiento
                   AND (jd.fecha_cancelacion IS NULL OR pg.fecha_vencimiento <= jd.fecha_cancelacion)
                 ORDER BY jd.fecha_inicio DESC

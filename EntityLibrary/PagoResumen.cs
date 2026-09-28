@@ -40,6 +40,8 @@ namespace EntityLibrary
         public decimal Monto { get; set; }
         public string Estado { get; set; } = string.Empty; // "Pagado" | "Parcial"
         public DateTime FechaPago { get; set; }
+        // "Cuota" o "Inscripcion" — para que el frontend pueda etiquetarlo
+        public string Concepto { get; set; } = "Cuota";
         // Momento exacto en que se grabó (columna agregada después): null para pagos
         // registrados antes de esa migración, que solo tienen el día en FechaPago.
         public DateTime? FechaHoraRegistro { get; set; }

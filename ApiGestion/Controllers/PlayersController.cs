@@ -18,12 +18,98 @@ public class PlayersController : ControllerBase
     private readonly ILogger<PlayersController> _logger;
     private readonly IJugadoresDao _jugadoresDao;
     private readonly DiscountDao _discountDao;
+    private readonly PlayerDAO _playerDAO;
+    private readonly EnrollmentFeeDAO _enrollmentFeeDAO;
+    private readonly IArancelesDao _arancelesDao;
+    private readonly ICategoriasDao _categoriasDao;
 
-    public PlayersController(ILogger<PlayersController> logger, IJugadoresDao jugadoresDao, DiscountDao discountDao)
+    public PlayersController(
+        ILogger<PlayersController> logger,
+        IJugadoresDao jugadoresDao,
+        DiscountDao discountDao,
+        PlayerDAO playerDAO,
+        EnrollmentFeeDAO enrollmentFeeDAO,
+        IArancelesDao arancelesDao,
+        ICategoriasDao categoriasDao)
     {
         _logger = logger;
         _jugadoresDao = jugadoresDao;
         _discountDao = discountDao;
+        _playerDAO = playerDAO;
+        _enrollmentFeeDAO = enrollmentFeeDAO;
+        _arancelesDao = arancelesDao;
+        _categoriasDao = categoriasDao;
+    }
+
+    // Registers a new player (HU-033). The registration charges the monthly fee of
+    // the current month and, for the men's squad only, the one-time enrollment fee
+    // in force today. Both stay as separate pending charges.
+    //
+    // No monthly fee in force for the gender means no fee is charged yet, the same
+    // as PagosDao.GenerarCuotasPendientesDelMes: it appears when that fee is set.
+    // The enrollment fee instead is mandatory for the men's squad, so without one
+    // in force the registration is refused.
+    [HttpPost]
+    public IActionResult CreatePlayer(PlayerRequestDTO request)
+    {
+        string dni = request.Dni.Trim();
+        long categoryId = request.CategoryId!.Value;
+
+        if (_playerDAO.ExistsPersonByDni(dni))
+        {
+            return BadRequest($"A person with DNI {dni} is already registered.");
+        }
+
+        if (!_categoriasDao.ObtenerTodas().Any(c => c.IdCategoria == categoryId))
+        {
+            return BadRequest($"No category exists with id {categoryId}.");
+        }
+
+        decimal? enrollmentFeeAmount = null;
+        if (request.Gender == PlayerRequestDTO.MaleGender)
+        {
+            EnrollmentFee? enrollmentFee = _enrollmentFeeDAO.GetCurrentEnrollmentFee();
+            if (enrollmentFee == null)
+            {
+                return BadRequest("There is no enrollment fee in force. Set one in Actualización de aranceles before registering a player of the men's squad.");
+            }
+
+            enrollmentFeeAmount = enrollmentFee.Amount;
+        }
+
+        // A monthly fee set on the 5th covers the whole month, so it is looked up
+        // against the last day of the month, as PagosDao does.
+        DateTime joinDate = DateTime.Now.Date;
+        DateTime lastDayOfMonth = new DateTime(joinDate.Year, joinDate.Month, DateTime.DaysInMonth(joinDate.Year, joinDate.Month));
+        decimal? monthlyFeeAmount = _arancelesDao.ObtenerMontoVigente(request.Gender, lastDayOfMonth);
+
+        Player created = _playerDAO.CreatePlayer(new Player
+        {
+            FirstName = request.FirstName.Trim(),
+            LastName = request.LastName.Trim(),
+            Dni = dni,
+            BirthDate = request.BirthDate!.Value.Date,
+            Gender = request.Gender,
+            CategoryId = categoryId,
+            JoinDate = joinDate
+        }, monthlyFeeAmount, enrollmentFeeAmount);
+
+        _logger.LogInformation("Player {PlayerId} registered (monthly fee: {MonthlyFee}, enrollment fee: {EnrollmentFee})",
+            created.Id, monthlyFeeAmount, enrollmentFeeAmount);
+
+        return Created($"/api/players/{created.Id}", new PlayerResponseDTO
+        {
+            Id = created.Id,
+            FirstName = created.FirstName,
+            LastName = created.LastName,
+            Dni = created.Dni,
+            BirthDate = created.BirthDate.ToString("yyyy-MM-dd"),
+            Gender = created.Gender,
+            CategoryId = created.CategoryId,
+            JoinDate = created.JoinDate.ToString("yyyy-MM-dd"),
+            MonthlyFeeAmount = monthlyFeeAmount,
+            EnrollmentFeeAmount = enrollmentFeeAmount
+        });
     }
 
     // Feeds the badge on the treasury grid: a single call returns every active

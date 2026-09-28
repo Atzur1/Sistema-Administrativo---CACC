@@ -47,6 +47,7 @@ export interface PagoReciente {
   monto: number;
   estado: 'Pagado' | 'Parcial';
   fechaPago: string;
+  concepto: 'Cuota' | 'Inscripcion';
   // Momento exacto en que se grabó el pago; null para los registrados antes de que
   // existiera esta columna, que solo tienen el día (fechaPago).
   fechaHoraRegistro: string | null;
