@@ -44,6 +44,7 @@ export interface PagoReciente {
   metodoPago: string;
   monto: number;
   fechaPago: string;
+  concepto: 'Cuota' | 'Inscripcion';
 }
 
 export interface ResumenPagos {

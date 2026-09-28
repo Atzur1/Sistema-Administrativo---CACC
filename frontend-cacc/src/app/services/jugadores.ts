@@ -11,6 +11,7 @@ export interface PagoHistorialAbono {
 
 export interface PagoHistorialItem {
   periodo: string;
+  concepto: 'Cuota' | 'Inscripcion';
   montoTotal: number; // Lo efectivamente cobrado
   montoOriginal: number; // El valor completo de la cuota, antes del beneficio (si tuvo uno)
   tieneBeneficio: boolean;
