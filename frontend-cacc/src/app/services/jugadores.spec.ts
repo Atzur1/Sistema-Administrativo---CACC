@@ -30,6 +30,7 @@ describe('JugadoresService', () => {
       items: [
         {
           periodo: 'Septiembre 2026',
+          concepto: 'Cuota',
           montoTotal: 85000,
           montoOriginal: 85000,
           tieneBeneficio: false,

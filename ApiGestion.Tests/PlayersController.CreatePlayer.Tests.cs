@@ -9,6 +9,7 @@ using ApiGestion.Controllers;
 using ApiGestion.Models;
 using DaoLibrary;
 using EntityLibrary;
+using Microsoft.Data.SqlClient;
 
 // HU-033: registration of a new player and the charges it generates. The SQL of
 // PlayerDAO (single transaction, rollback, frozen amounts) was checked separately
@@ -273,6 +274,9 @@ public class PlayersControllerCreatePlayerTests
         public void ProgramarArancel(string genero, decimal monto, DateTime vigenteDesde)
         {
         }
+
+        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string genero, decimal monto, DateTime vigenteDesde)
+            => throw new NotSupportedException();
     }
 
     private class FakeCategoriasDao : ICategoriasDao
