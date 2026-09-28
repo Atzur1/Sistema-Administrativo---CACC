@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -143,9 +143,9 @@ export class CuotasPagos implements OnInit, OnDestroy {
   inscripcionShowSuggestions = false;
   private selectedInscripcionPlayer: JugadorResumen | null = null;
   enrollmentData: EnrollmentModel | null = null;
-  enrollmentSinRegistro = false;
-  cargandoEnrollment = false;
   enviandoInscripcion = false;
+  readonly cargandoEnrollment = signal(false);
+  readonly enrollmentSinRegistro = signal(false);
   private cancelEnrollment$ = new Subject<void>();
 
   constructor(
@@ -258,8 +258,8 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.cancelEnrollment$.next(); // cancela cualquier carga en vuelo al cambiar búsqueda
     this.selectedInscripcionPlayer = null;
     this.enrollmentData = null;
-    this.enrollmentSinRegistro = false;
-    this.cargandoEnrollment = false;
+    this.enrollmentSinRegistro.set(false);
+    this.cargandoEnrollment.set(false);
 
     const needle = normalizeTexto(term.trim().toLowerCase());
     if (!needle) {
@@ -319,9 +319,9 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   private cargarEnrollment(playerId: number) {
     this.cancelEnrollment$.next(); // cancela cualquier llamada anterior en vuelo
-    this.cargandoEnrollment = true;
+    this.cargandoEnrollment.set(true);
     this.enrollmentData = null;
-    this.enrollmentSinRegistro = false;
+    this.enrollmentSinRegistro.set(false);
     this.enrollmentService.getEnrollmentByPlayer(playerId).pipe(takeUntil(this.cancelEnrollment$)).subscribe({
       next: (data) => {
         this.enrollmentData = data;
@@ -330,22 +330,23 @@ export class CuotasPagos implements OnInit, OnDestroy {
           this.inscripcionForm.patchValue({ amount: String(Math.round(data.pendingBalance)) });
           this.inscripcionMontoDisplay = saldoFormateado;
         }
-        this.cargandoEnrollment = false;
+        this.cargandoEnrollment.set(false);
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.cargandoEnrollment = false;
+        this.cargandoEnrollment.set(false);
         if (err.status === 404) {
-          this.enrollmentSinRegistro = true;
-          // Pre-fill the amount with the full current fee so the admin only
-          // needs to change it for a partial payment
+          this.enrollmentSinRegistro.set(true);
           if (this.currentEnrollmentFeeAmount != null) {
             const monto = Math.round(this.currentEnrollmentFeeAmount);
             this.inscripcionForm.patchValue({ amount: String(monto) });
             this.inscripcionMontoDisplay = monto.toLocaleString('es-AR');
           }
+          this.notifications.notify(
+            `${this.selectedInscripcionPlayer?.nombreCompleto ?? 'El jugador'} no tiene inscripción registrada. Se generará al registrar el primer pago.`,
+            'cancelled'
+          );
         }
-        this.cdr.detectChanges();
       },
     });
   }
@@ -371,7 +372,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
         this.inscripcionMontoDisplay = '';
         this.selectedInscripcionPlayer = null;
         this.enrollmentData = null;
-        this.enrollmentSinRegistro = false;
+        this.enrollmentSinRegistro.set(false);
         this.notifications.notify(`Pago de inscripción de ${jugador.nombreCompleto} registrado correctamente.`, 'success');
         this.cargarListas();
         this.cdr.detectChanges();
@@ -402,7 +403,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   get inscripcionFormValid(): boolean {
     const tieneJugador = this.selectedInscripcionPlayer !== null;
-    const tienesDatos = this.enrollmentData !== null || this.enrollmentSinRegistro;
+    const tienesDatos = this.enrollmentData !== null || this.enrollmentSinRegistro();
     return this.inscripcionForm.valid && tieneJugador && tienesDatos;
   }
 
@@ -504,7 +505,28 @@ export class CuotasPagos implements OnInit, OnDestroy {
     return this.selectedPlayer && this.selectedPlayer.nombreCompleto === value ? null : { unknownPlayer: true };
   };
 
+  get showInscripcionMethod(): boolean {
+    return (this.enrollmentData !== null || this.enrollmentSinRegistro()) &&
+           Number(this.inscripcionForm.get('amount')?.value) > 0;
+  }
+
+  get showPeriodYear(): boolean {
+    return this.selectedPlayer !== null;
+  }
+
+  get showAmount(): boolean {
+    return this.showPeriodYear && !!this.paymentForm.get('period')?.value;
+  }
+
+  get showMethod(): boolean {
+    return this.showAmount && Number(this.paymentForm.get('amount')?.value) > 0;
+  }
+
   onPlayerSearch(term: string) {
+    if (this.selectedPlayer !== null) {
+      this.paymentForm.patchValue({ period: '', amount: '', method: '' });
+      this.montoDisplay = '';
+    }
     this.selectedPlayer = null;
 
     const needle = normalizeTexto(term.trim().toLowerCase());

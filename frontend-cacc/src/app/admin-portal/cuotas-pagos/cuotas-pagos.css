@@ -231,9 +231,23 @@
     color: var(--color-text-muted);
 }
 
-/* Dos filas prolijas en vez de 5 campos apretados + una barra gigante:
-   fila 1 = búsqueda de jugador y período; fila 2 = monto, método y el
-   botón de acción, compacto, a la derecha. */
+/* Flujo progresivo: cada campo aparece con animación al habilitarse. */
+@keyframes fieldReveal {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.field-reveal {
+    animation: fieldReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Dos filas prolijas: fila 1 = jugador / período / año; fila 2 = monto / método / botón. */
 .form-grid {
     display: flex;
     flex-direction: column;
