@@ -24,6 +24,14 @@
     animation: fadeSlideUp 0.4s ease both;
 }
 
+/* Agrupa ícono + texto para tratarlos como un solo bloque al envolver */
+.header-lead {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
 .header-icon {
     display: flex;
     align-items: center;
@@ -65,6 +73,7 @@
     align-items: center;
     gap: 8px;
     margin-left: auto;
+    flex-wrap: wrap;
     flex-shrink: 0;
 }
 
@@ -898,8 +907,25 @@
 
 /* ===== RESPONSIVE ===== */
 
-/* Tablet: the two panels stack and each form row drops to two fields */
+/* Laptop chico / tablet grande: los dos paneles se apilan, el header manda
+   aranceles y métricas a un segundo renglón (aranceles a la izquierda,
+   métricas a la derecha) y cada fila del formulario baja a dos columnas. */
 @media (max-width: 1100px) {
+    .page-header {
+        flex-wrap: wrap;
+        row-gap: 12px;
+    }
+
+    /* El bloque ícono + título toma el ancho completo, así lo que sigue cae
+       al renglón de abajo en vez de desbordar hacia el costado. */
+    .header-lead {
+        flex: 1 1 100%;
+    }
+
+    .header-aranceles-vigentes {
+        margin-left: 0;
+    }
+
     .main-grid {
         grid-template-columns: 1fr;
     }
@@ -915,21 +941,14 @@
     }
 }
 
-/* Mobile: metrics drop to their own line under the title */
+/* Tablet / mobile grande: aranceles y métricas pasan a ocupar cada uno el
+   ancho completo, apilados, y el buscador de "Últimos pagos" baja a su propia
+   línea dentro de la cabecera del panel. */
 @media (max-width: 768px) {
-    .page-header {
-        flex-wrap: wrap;
-    }
-
+    .header-aranceles-vigentes,
     .header-metrics {
-        width: 100%;
+        flex-basis: 100%;
         margin-left: 0;
-    }
-
-    .header-aranceles-vigentes {
-        width: 100%;
-        margin-left: 0;
-        flex-wrap: wrap;
     }
 
     .header-metric {
@@ -939,9 +958,24 @@
     .header-metric + .header-metric {
         padding-left: 18px;
     }
+
+    .panel-head {
+        flex-wrap: wrap;
+    }
+
+    .panel-search {
+        order: 3;
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .panel-suggestions {
+        width: 100%;
+    }
 }
 
-/* Small mobile: one field per row, tighter padding */
+/* Mobile: una sola columna en el formulario y, en las filas de pagos, el
+   importe pasa debajo del nombre en vez de quedar a la derecha. */
 @media (max-width: 520px) {
     .dashboard {
         padding: 14px;
@@ -957,7 +991,6 @@
         width: 100%;
     }
 
-    /* Amount and elapsed time move under the name instead of to the right */
     .row {
         flex-wrap: wrap;
     }
