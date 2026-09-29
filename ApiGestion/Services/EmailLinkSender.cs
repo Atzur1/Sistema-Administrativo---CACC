@@ -8,7 +8,20 @@ public sealed class EmailLinkSender(
     ILogger<EmailLinkSender> logger,
     IHostEnvironment environment)
 {
-    public async Task SendPasswordResetLink(string email, string token, CancellationToken cancellationToken)
+    public Task SendPasswordResetLink(string email, string token, CancellationToken cancellationToken) => SendLink(
+        email, token, cancellationToken,
+        subject: "Restablecé tu contraseña del Portal Administrativo CACC",
+        body: "Usá este enlace para crear o restablecer la contraseña del superadministrador. Tiene una validez de 30 minutos y solo puede utilizarse una vez.");
+
+    // Enlace de activación para una cuenta recién habilitada por un SuperAdmin
+    // (Usuarios y Permisos). Mismo mecanismo de token que la recuperación de
+    // contraseña, distinto texto para que quede claro que es un alta, no un reset.
+    public Task SendActivationLink(string email, string token, CancellationToken cancellationToken) => SendLink(
+        email, token, cancellationToken,
+        subject: "Activá tu acceso al Portal Administrativo CACC",
+        body: "Un SuperAdmin te habilitó el acceso al Portal Administrativo. Usá este enlace para crear tu contraseña. Tiene una validez de 30 minutos y solo puede utilizarse una vez.");
+
+    private async Task SendLink(string email, string token, CancellationToken cancellationToken, string subject, string body)
     {
         var host = configuration["Email:SmtpHost"];
         var from = configuration["Email:From"];
@@ -27,9 +40,9 @@ public sealed class EmailLinkSender(
 
         using var message = new MailMessage(from, email)
         {
-            Subject = "Restablecé tu contraseña del Portal Administrativo CACC",
+            Subject = subject,
             IsBodyHtml = true,
-            Body = CreateBody(baseUrl, token)
+            Body = CreateBody(baseUrl, token, body)
         };
         using var client = new SmtpClient(host, configuration.GetValue("Email:SmtpPort", 587))
         {
@@ -46,11 +59,11 @@ public sealed class EmailLinkSender(
         }
     }
 
-    private static string CreateBody(string baseUrl, string token)
+    private static string CreateBody(string baseUrl, string token, string intro)
     {
         var path = "/restablecer-contrasena";
         var link = $"{baseUrl.TrimEnd('/')}{path}?token={Uri.EscapeDataString(token)}";
-        return $"<p>Usá este enlace para crear o restablecer la contraseña del superadministrador. Tiene una validez de 30 minutos y solo puede utilizarse una vez.</p><p><a href=\"{WebUtility.HtmlEncode(link)}\">Continuar</a></p><p>Si no solicitaste esta acción, ignorá este correo.</p>";
+        return $"<p>{WebUtility.HtmlEncode(intro)}</p><p><a href=\"{WebUtility.HtmlEncode(link)}\">Continuar</a></p><p>Si no esperabas este correo, ignoralo.</p>";
     }
 
     private static void ValidateBaseUrl(string? baseUrl)
