@@ -27,8 +27,8 @@ public sealed class AuditoriaController(AuditDao auditDao) : ControllerBase
             return BadRequest(new { mensaje = "El intervalo UTC debe tener inicio anterior al fin." });
         if (entidad?.Length > 128 || emailUsuario?.Length > 254)
             return BadRequest(new { mensaje = "El nombre de entidad supera el largo permitido." });
-        if (accion is not null && !new[] { "INSERT", "UPDATE", "DELETE" }.Contains(accion.Trim().ToUpperInvariant()))
-            return BadRequest(new { mensaje = "La acción debe ser INSERT, UPDATE o DELETE." });
+        if (accion is not null && !new[] { "INSERT", "UPDATE", "DELETE", "CUOTA_SALDADA" }.Contains(accion.Trim().ToUpperInvariant()))
+            return BadRequest(new { mensaje = "La acción debe ser INSERT, UPDATE, DELETE o CUOTA_SALDADA." });
 
         try
         {
