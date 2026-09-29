@@ -4,7 +4,7 @@ import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   JugadorResumen,
   PagosService,
@@ -54,7 +54,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-cuotas-pagos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, CustomSelect],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, CustomSelect],
   templateUrl: './cuotas-pagos.html',
   styleUrl: './cuotas-pagos.css',
 })

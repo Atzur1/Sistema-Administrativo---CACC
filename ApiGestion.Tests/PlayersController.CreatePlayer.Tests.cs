@@ -276,9 +276,7 @@ public class PlayersControllerCreatePlayerTests
         }
 
         public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string genero, decimal monto, DateTime vigenteDesde)
-        {
-            throw new NotSupportedException();
-        }
+            => throw new NotSupportedException();
     }
 
     private class FakeCategoriasDao : ICategoriasDao

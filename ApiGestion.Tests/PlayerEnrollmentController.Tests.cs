@@ -17,10 +17,11 @@ public class PlayerEnrollmentControllerTests
 {
     private const long PlayerId = 6;
 
-    private static (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) CreateController()
+    private static (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) CreateController(EnrollmentFee? currentFee = null)
     {
         FakeEnrollmentDAO dao = new FakeEnrollmentDAO();
-        return (new PlayerEnrollmentController(NullLogger<PlayerEnrollmentController>.Instance, dao, new FakeEnrollmentFeeDAO()), dao);
+        FakeEnrollmentFeeDAO feeDao = new FakeEnrollmentFeeDAO { Current = currentFee };
+        return (new PlayerEnrollmentController(NullLogger<PlayerEnrollmentController>.Instance, dao, feeDao), dao);
     }
 
     private static Enrollment PendingEnrollment(decimal balance)
@@ -111,7 +112,7 @@ public class PlayerEnrollmentControllerTests
     }
 
     [Fact]
-    public void CreateEnrollmentPayment_WithoutEnrollmentFee_ReturnsConflict()
+    public void CreateEnrollmentPayment_WithoutEnrollmentFeeAndNoExistingEnrollment_ReturnsConflict()
     {
         (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController();
 
@@ -199,7 +200,10 @@ public class PlayerEnrollmentControllerTests
 
     private class FakeEnrollmentFeeDAO : EnrollmentFeeDAO
     {
+        public EnrollmentFee? Current { get; set; }
+
         public FakeEnrollmentFeeDAO() : base("") { }
-        public override EnrollmentFee? GetCurrentEnrollmentFee() => null;
+
+        public override EnrollmentFee? GetCurrentEnrollmentFee() => Current;
     }
 }

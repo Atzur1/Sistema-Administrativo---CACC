@@ -117,7 +117,7 @@ public class DiscountDao
     // The financial card's history list reads this, and so does the table's "Gestionar" on a
     // specific row: sin esto último, abrir una fila cancelada/anulada desde la tabla no
     // encontraba nada (el filtro anterior, estado_activo = 1, las dejaba afuera).
-    public List<Discount> GetDiscountsByPlayer(long playerId)
+    public virtual List<Discount> GetDiscountsByPlayer(long playerId)
     {
         string query = $@"
             SELECT {SelectColumns}, {StatusExpression} AS estado
@@ -388,7 +388,7 @@ public class DiscountDao
     // que ese beneficio sigue contando para una cuota (DescuentosSql.ApplyDescuentoActivo,
     // PagosDao.ObtenerDescuentoAplicableEnPeriodo): cancelar no debe reescribir meses ya
     // cubiertos en el pasado, solo dejar de aplicar de acá para adelante.
-    public bool DeactivateDiscount(long playerId, long discountId)
+    public virtual bool DeactivateDiscount(long playerId, long discountId)
     {
         string query = @"
             UPDATE JUGADORES_DESCUENTOS
@@ -427,7 +427,7 @@ public class DiscountDao
     // este beneficio pudo haber vencido, la condición nunca se cumple para ninguna. EOMONTH(
     // fecha_inicio, -1) da justo eso: el último día del mes anterior, sin importar en qué día
     // del mes haya arrancado fecha_inicio.
-    public bool VoidDiscount(long playerId, long discountId)
+    public virtual bool VoidDiscount(long playerId, long discountId)
     {
         // Guarda de más: un beneficio Expired (estado_activo = 1 y ya pasó fecha_fin sin haber
         // sido cancelado antes) queda afuera aunque el controller ya lo valida antes de llamar
