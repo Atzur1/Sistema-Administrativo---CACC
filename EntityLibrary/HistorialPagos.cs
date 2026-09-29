@@ -6,6 +6,9 @@ namespace EntityLibrary
         public decimal Monto { get; set; }
         public string MetodoPago { get; set; } = string.Empty;
         public DateTime FechaPago { get; set; }
+        public DateTime? FechaHoraRegistro { get; set; }
+        public string? ResponsableNombre { get; set; }
+        public string? ResponsableApellido { get; set; }
     }
 
     // Un período pagado del historial de un jugador. Si esa cuota se pagó en más de un abono

@@ -4,12 +4,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging.Abstractions;
 using ApiGestion.Controllers;
 using ApiGestion.Models;
 using DaoLibrary;
 using EntityLibrary;
-using Microsoft.Data.SqlClient;
 
 // HU-033: registration of a new player and the charges it generates. The SQL of
 // PlayerDAO (single transaction, rollback, frozen amounts) was checked separately

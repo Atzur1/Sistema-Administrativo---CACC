@@ -114,7 +114,7 @@
                 @for (abono of item.abonos; track $index) {
                   <li class="abono-row">
                     <span class="abono-meta"
-                      >{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }}</span
+                      >{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }} · Responsable: {{ responsableAbono(abono.responsableNombre, abono.responsableApellido) }} · {{ abono.fechaHoraRegistro ? (abono.fechaHoraRegistro | date: 'dd/MM/yyyy HH:mm:ss' : 'America/Argentina/Buenos_Aires') : 'Hora de registro no disponible' }}</span
                     >
                     <span class="abono-monto">{{ formatMonto(abono.monto) }}</span>
                   </li>

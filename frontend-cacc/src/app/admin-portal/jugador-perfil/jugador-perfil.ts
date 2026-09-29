@@ -124,6 +124,10 @@ export class JugadorPerfil implements OnInit {
     return CURRENCY_FULL.format(valor);
   }
 
+  responsableAbono(nombre?: string | null, apellido?: string | null): string {
+    return [nombre, apellido].filter(Boolean).join(' ') || 'Sin registro histórico';
+  }
+
   formatMontoCompacto(valor: number): string {
     return formatCompactCurrency(valor);
   }

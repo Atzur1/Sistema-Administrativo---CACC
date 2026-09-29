@@ -28,6 +28,7 @@ interface FeeRow {
     // Empty while the fee has no replacement scheduled after it
     validTo: string;
     estado: 'Vigente' | 'Programado' | 'Anterior';
+    responsable: string;
 }
 
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
@@ -379,6 +380,7 @@ function mapHistorialItem(item: ArancelHistorialItem): FeeRow {
         validFrom: item.vigenteDesde.slice(0, 10),
         validTo: item.vigenteHasta ? item.vigenteHasta.slice(0, 10) : '',
         estado: item.estado,
+        responsable: responsableNombre(item.responsableNombre, item.responsableApellido),
     };
 }
 
@@ -396,5 +398,10 @@ function mapEnrollmentFeeItem(fee: EnrollmentFeeModel): FeeRow {
         validFrom: fee.startDate.slice(0, 10),
         validTo: fee.endDate ? fee.endDate.slice(0, 10) : '',
         estado: estadoMap[fee.status] ?? 'Anterior',
+        responsable: responsableNombre(fee.responsibleName, fee.responsibleSurname),
     };
+}
+
+function responsableNombre(nombre?: string | null, apellido?: string | null): string {
+    return [nombre, apellido].filter(Boolean).join(' ') || 'Sin registro histórico';
 }

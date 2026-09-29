@@ -121,4 +121,7 @@ public class Discount
     {
         get { return isActive; }
     }
+
+    public string? ResponsableNombre { get; set; }
+    public string? ResponsableApellido { get; set; }
 }

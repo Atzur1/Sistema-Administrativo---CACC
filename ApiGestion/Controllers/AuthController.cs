@@ -4,8 +4,10 @@ using DaoLibrary;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
+using ApiGestion.Services;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ApiGestion.Controllers
 {
@@ -16,13 +18,56 @@ namespace ApiGestion.Controllers
         private readonly AuthDao _authDao;
         private readonly IConfiguration _config;
         private readonly ILogger<AuthController> _logger;
+        private readonly AccountAccessDao _accountAccessDao;
+        private readonly EmailLinkSender _emailSender;
 
         // Inyectamos el AuthDao y la configuración (para leer la clave JWT)
-        public AuthController(AuthDao authDao, IConfiguration config, ILogger<AuthController> logger)
+        public AuthController(AuthDao authDao, IConfiguration config, ILogger<AuthController> logger,
+            AccountAccessDao accountAccessDao, EmailLinkSender emailSender)
         {
             _authDao = authDao;
             _config = config;
             _logger = logger;
+            _accountAccessDao = accountAccessDao;
+            _emailSender = emailSender;
+        }
+
+        [HttpPost("password-reset/request")]
+        [EnableRateLimiting("account-email")]
+        public async Task<IActionResult> SolicitarRestablecimiento([FromBody] EmailRequest request, CancellationToken cancellationToken)
+        {
+            const string response = "Si el correo corresponde a una cuenta activa, recibirá instrucciones para continuar.";
+            var email = request.Email.Trim().ToLowerInvariant();
+            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+            try
+            {
+                var superAdminEmail = _config["Security:SuperAdminEmail"]?.Trim().ToLowerInvariant();
+                if (!string.IsNullOrWhiteSpace(superAdminEmail) &&
+                    string.Equals(email, superAdminEmail, StringComparison.OrdinalIgnoreCase))
+                {
+                    var account = _accountAccessDao.CreateResetToken(superAdminEmail, tokenHash, DateTime.UtcNow.AddMinutes(30));
+                    if (account is not null) await _emailSender.SendPasswordResetLink(account, token, cancellationToken);
+                }
+            }
+            catch (Exception exception) { _logger.LogError(exception, "Falló el procesamiento de recuperación de contraseña."); }
+            return Ok(new { mensaje = response });
+        }
+
+        [HttpPost("password-reset/complete")]
+        [EnableRateLimiting("account-email")]
+        public IActionResult CompletarRestablecimiento([FromBody] CompleteAccountAccessRequest request)
+        {
+            var superAdminEmail = _config["Security:SuperAdminEmail"]?.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(superAdminEmail) || !Completar(request, superAdminEmail))
+                return BadRequest(new { mensaje = "El enlace no es válido o venció." });
+            return Ok(new { mensaje = "La contraseña se actualizó. Ya puede iniciar sesión." });
+        }
+
+        private bool Completar(CompleteAccountAccessRequest request, string superAdminEmail)
+        {
+            var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(request.Token)));
+            return _accountAccessDao.CompleteReset(tokenHash, PasswordHasher.Hash(request.Password), superAdminEmail);
         }
 
         [HttpPost("login")]
@@ -37,11 +82,14 @@ namespace ApiGestion.Controllers
                 if (usuarioEncontrado != null)
                 {
                     // Generamos el token JWT con el rol adentro
-                    string token = GenerarToken(usuarioEncontrado.IdUsuario, usuarioEncontrado.Email, usuarioEncontrado.IdRol);
+                    string token = GenerarToken(usuarioEncontrado.IdUsuario, usuarioEncontrado.Email, usuarioEncontrado.IdRol, usuarioEncontrado.TokenVersion);
 
                     return Ok(new {
                         mensaje = "¡Bienvenido al Portal Administrativo del CACC!",
                         email = usuarioEncontrado.Email,
+                        nombre = usuarioEncontrado.Nombre,
+                        apellido = usuarioEncontrado.Apellido,
+                        dni = usuarioEncontrado.Dni,
                         rol = usuarioEncontrado.IdRol,
                         token = token
                     });
@@ -57,14 +105,15 @@ namespace ApiGestion.Controllers
             }
         }
 
-        private string GenerarToken(int idUsuario, string email, int idRol)
+        private string GenerarToken(int idUsuario, string email, int idRol, int tokenVersion)
         {
             var claims = new[]
             {
                 new Claim(ClaimTypes.Email, email),
                 new Claim(ClaimTypes.Role, idRol.ToString()),
                 // Identificador de negocio usado por endpoints protegidos (ej. quién registró un cobro)
-                new Claim("idUsuario", idUsuario.ToString())
+                new Claim("idUsuario", idUsuario.ToString()),
+                new Claim("tokenVersion", tokenVersion.ToString())
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));

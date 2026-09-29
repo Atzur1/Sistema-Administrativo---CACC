@@ -17,8 +17,7 @@ namespace DaoLibrary
         // para que el llamador (controller) decida el código HTTP de respuesta.
         public T EjecutarEnTransaccion<T>(Func<SqlConnection, SqlTransaction, T> operacion)
         {
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlTransaction transaccion = conexion.BeginTransaction();
             try

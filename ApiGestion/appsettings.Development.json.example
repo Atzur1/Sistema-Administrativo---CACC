@@ -7,6 +7,19 @@
   "Cors": {
     "AllowedOrigins": [ "http://localhost:4200" ]
   },
+  "Security": {
+    "SuperAdminEmail": ""
+  },
+  "Email": {
+    "SmtpHost": "",
+    "SmtpPort": 587,
+    "EnableSsl": true,
+    "Username": "",
+    "Password": "",
+    "From": "",
+    "PublicBaseUrl": "http://localhost:4200",
+    "LogResetLink": false
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",

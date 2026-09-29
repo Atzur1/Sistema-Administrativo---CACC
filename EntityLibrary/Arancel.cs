@@ -10,6 +10,8 @@ namespace EntityLibrary
         public string Genero { get; set; } = string.Empty; // "Masculino" | "Femenino"
         public decimal Monto { get; set; }
         public DateTime VigenteDesde { get; set; }
+        public string? ResponsableNombre { get; set; }
+        public string? ResponsableApellido { get; set; }
     }
 
     // Fila de "Historial y aranceles programados", con vigencia y estado ya calculados.
@@ -21,6 +23,8 @@ namespace EntityLibrary
         public DateTime VigenteDesde { get; set; }
         public DateTime? VigenteHasta { get; set; } // null = todavía sigue vigente (no hay uno más nuevo después)
         public string Estado { get; set; } = string.Empty; // "Vigente" | "Programado" | "Anterior"
+        public string? ResponsableNombre { get; set; }
+        public string? ResponsableApellido { get; set; }
     }
 
     // Header de "Actualización de Aranceles": monto vigente de cada género + próximo cambio.

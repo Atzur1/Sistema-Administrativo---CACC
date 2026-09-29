@@ -844,6 +844,10 @@ export class BecadosDescuentos implements OnInit {
     return formatIsoDate(isoDate) || '—';
   }
 
+  responsableNombre(discount: DiscountModel): string {
+    return [discount.responsableNombre, discount.responsableApellido].filter(Boolean).join(' ') || 'Sin registro histórico';
+  }
+
   // Only called after the API confirmed the write
   private notify(message: string) {
     this.notifications.notify(message, 'success');

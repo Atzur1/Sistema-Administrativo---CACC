@@ -1,0 +1,211 @@
+<section class="audit-page">
+  <header class="audit-hero">
+    <div class="hero-mark" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.7"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M4 4h6l2 2h8v14H4z"></path>
+        <path d="M8 11h8M8 15h5"></path>
+        <circle cx="18" cy="18" r="4"></circle>
+        <path d="m21 21 1.5 1.5"></path>
+      </svg>
+    </div>
+    <div class="hero-copy">
+      <span class="eyebrow">CONTROL Y TRANSPARENCIA</span>
+      <h1>Auditoría</h1>
+      <p>Consultá quién realizó cada cambio y cuándo ocurrió en el Portal Administrativo.</p>
+    </div>
+    <div class="hero-total" aria-live="polite">
+      <span class="total-label">REGISTROS</span>
+      <strong>{{ total | number }}</strong>
+      <span>operaciones encontradas</span>
+    </div>
+  </header>
+
+  <form class="filter-card" (ngSubmit)="search(1)">
+    <div class="filter-heading">
+      <div>
+        <h2>Buscar en la auditoría</h2>
+        <p>Combiná filtros para encontrar una operación.</p>
+      </div>
+      <button
+        class="clear-button"
+        type="reset"
+        (click)="from = ''; to = ''; email = ''; entity = ''; action = ''; search(1)"
+      >
+        Limpiar filtros
+      </button>
+    </div>
+    <div class="filter-grid">
+      <label class="filter-field"
+        ><span>Desde</span><input type="date" name="from" [(ngModel)]="from"
+      /></label>
+      <label class="filter-field"
+        ><span>Hasta</span><input type="date" name="to" [(ngModel)]="to"
+      /></label>
+      <label class="filter-field filter-wide"
+        ><span>Persona</span
+        ><input
+          type="search"
+          name="email"
+          [(ngModel)]="email"
+          placeholder="Buscar por nombre, apellido o correo"
+      /></label>
+      <label class="filter-field"
+        ><span>Sección</span
+        ><input
+          type="search"
+          name="entity"
+          [(ngModel)]="entity"
+          placeholder="Ej.: pagos, aranceles"
+      /></label>
+      <label class="filter-field"
+        ><span>Tipo de cambio</span>
+        <app-custom-select
+          [options]="actions"
+          placeholder="Todas las acciones"
+          [(ngModel)]="action"
+          name="action"
+        ></app-custom-select>
+      </label>
+    </div>
+    <div class="filter-actions">
+      <span class="filter-hint"
+        >Los datos personales se muestran solo a perfiles administradores.</span
+      ><button type="submit" class="apply-button" [disabled]="loading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m20 20-4-4"></path></svg
+        >Aplicar filtros
+      </button>
+    </div>
+  </form>
+
+  <div *ngIf="error" class="notice error-notice" role="alert">
+    <span class="notice-symbol">!</span><span>{{ error }}</span
+    ><button type="button" (click)="search(page)">Reintentar</button>
+  </div>
+
+  <section class="results-card" aria-label="Resultados de auditoría">
+    <div class="results-heading">
+      <div>
+        <h2>Registro de actividad</h2>
+        <p *ngIf="!loading">{{ firstVisible }}–{{ lastVisible }} de {{ total }} operaciones</p>
+        <p *ngIf="loading">Buscando operaciones…</p>
+      </div>
+      <span class="secure-label"
+        ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <path d="m9 12 2 2 4-4"></path></svg
+        >Registro protegido</span
+      >
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+      <span class="spinner"></span><span>Cargando actividad administrativa…</span>
+    </div>
+    <div class="empty-state" *ngIf="!loading && !error && items.length === 0">
+      <div class="empty-mark">✓</div>
+      <h3>No hay operaciones para mostrar</h3>
+      <p>Probá ampliar el período o quitar alguno de los filtros.</p>
+    </div>
+
+    <div class="table-scroll" *ngIf="!loading && items.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>FECHA Y HORA</th>
+            <th>PERSONA</th>
+            <th>CAMBIO</th>
+            <th>SECCIÓN</th>
+            <th>DETALLE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td class="date-cell">
+              <strong>{{
+                item.timestampUtc | date: 'dd MMM yyyy' : 'America/Argentina/Buenos_Aires'
+              }}</strong
+              ><span
+                >{{
+                  item.timestampUtc | date: 'HH:mm:ss' : 'America/Argentina/Buenos_Aires'
+                }}
+                hs</span
+              >
+            </td>
+            <td>
+              <div class="person-cell">
+                <span class="person-avatar">{{ iniciales(item) }}</span>
+                <div class="person-info">
+                  <strong>{{ nombreCompleto(item) }}</strong
+                  ><span *ngIf="item.userDni">DNI {{ item.userDni }}</span
+                  ><span>{{ item.userEmail || 'Usuario no identificado' }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="action-chip" [class]="'action-chip ' + claseAccion(item)">{{
+                accionLegible(item)
+              }}</span>
+            </td>
+            <td class="entity-cell">
+              <strong>{{ entidadLegible(item.entity) }}</strong
+              ><span>Registro #{{ item.entityId }}</span>
+            </td>
+            <td>
+              <details class="change-details">
+                <summary>
+                  <span>Ver cambios</span
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </summary>
+                <div class="change-content">
+                  <section *ngIf="item.beforeJson" class="change-state before-state">
+                    <h3>Antes</h3>
+                    <dl>
+                      <div *ngFor="let field of campos(item.beforeJson)">
+                        <dt>{{ field.label }}</dt>
+                        <dd>{{ field.value }}</dd>
+                      </div>
+                    </dl>
+                  </section>
+                  <section *ngIf="item.afterJson" class="change-state after-state">
+                    <h3>Después</h3>
+                    <dl>
+                      <div *ngFor="let field of campos(item.afterJson)">
+                        <dt>{{ field.label }}</dt>
+                        <dd>{{ field.value }}</dd>
+                      </div>
+                    </dl>
+                  </section>
+                  <p *ngIf="!item.beforeJson && !item.afterJson" class="no-detail">
+                    Se registró la operación sin copiar datos personales sensibles.
+                  </p>
+                </div>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="pagination" *ngIf="!loading && total > 0">
+      <span>Mostrando {{ firstVisible }}–{{ lastVisible }} de {{ total }}</span>
+      <div>
+        <button type="button" (click)="search(page - 1)" [disabled]="page <= 1">Anterior</button
+        ><span
+          >Página <strong>{{ page }}</strong> de {{ pages }}</span
+        ><button type="button" (click)="search(page + 1)" [disabled]="page >= pages">
+          Siguiente
+        </button>
+      </div>
+    </footer>
+  </section>
+</section>

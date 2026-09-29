@@ -8,6 +8,9 @@ export interface PagoHistorialAbono {
   monto: number;
   metodoPago: string;
   fechaPago: string;
+  fechaHoraRegistro?: string | null;
+  responsableNombre?: string | null;
+  responsableApellido?: string | null;
 }
 
 export interface PagoHistorialItem {

@@ -25,8 +25,19 @@ public class EnrollmentFeeDAO
                 WHEN LEAD(vigente_desde) OVER (ORDER BY vigente_desde) IS NULL
                   OR LEAD(vigente_desde) OVER (ORDER BY vigente_desde) > CAST(GETDATE() AS DATE) THEN 1
                 ELSE 2
-            END AS estado
-        FROM ARANCELES_INSCRIPCION";
+            END AS estado,
+            actor.nombre_usuario AS responsable_nombre,
+            actor.apellido_usuario AS responsable_apellido,
+            actor.fecha_utc AS registrado_utc
+        FROM ARANCELES_INSCRIPCION ai
+        OUTER APPLY (
+            SELECT TOP (1) ac.nombre_usuario, ac.apellido_usuario, ac.fecha_utc
+            FROM dbo.AUDITORIA_CAMBIOS ac
+            WHERE ac.entidad = N'ARANCELES_INSCRIPCION'
+              AND ac.id_entidad = CONVERT(NVARCHAR(128), ai.PK_id_arancel_inscripcion)
+              AND ac.accion = 'INSERT'
+            ORDER BY ac.fecha_utc, ac.PK_id_evento
+        ) actor";
 
     public EnrollmentFeeDAO(string connectionString)
     {
@@ -41,8 +52,7 @@ public class EnrollmentFeeDAO
             SELECT * FROM ({SelectWithStatus}) f
             ORDER BY f.vigente_desde DESC;";
 
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
 
         using SqlCommand command = new SqlCommand(query, connection);
         using SqlDataReader reader = command.ExecuteReader();
@@ -60,8 +70,7 @@ public class EnrollmentFeeDAO
             SELECT * FROM ({SelectWithStatus}) f
             WHERE f.estado = 1;";
 
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
 
         using SqlCommand command = new SqlCommand(query, connection);
         using SqlDataReader reader = command.ExecuteReader();
@@ -79,8 +88,7 @@ public class EnrollmentFeeDAO
             SELECT * FROM ({SelectWithStatus}) f
             WHERE f.vigente_desde = @startDate;";
 
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
 
         using SqlCommand command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@startDate", startDate.Date);
@@ -102,9 +110,8 @@ public class EnrollmentFeeDAO
             INSERT INTO ARANCELES_INSCRIPCION (monto, vigente_desde)
             VALUES (@amount, @startDate);";
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
-            connection.Open();
 
             using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@amount", fee.Amount);
@@ -123,7 +130,10 @@ public class EnrollmentFeeDAO
             Amount = Convert.ToDecimal(reader["monto"]),
             StartDate = Convert.ToDateTime(reader["vigente_desde"]),
             EndDate = reader["vigente_hasta"] != DBNull.Value ? Convert.ToDateTime(reader["vigente_hasta"]) : null,
-            Status = (EnrollmentFeeStatus)Convert.ToInt32(reader["estado"])
+            Status = (EnrollmentFeeStatus)Convert.ToInt32(reader["estado"]),
+            ResponsibleName = reader["responsable_nombre"] == DBNull.Value ? null : reader["responsable_nombre"].ToString()?.Trim(),
+            ResponsibleSurname = reader["responsable_apellido"] == DBNull.Value ? null : reader["responsable_apellido"].ToString()?.Trim(),
+            RegisteredAtUtc = reader["registrado_utc"] == DBNull.Value ? null : Convert.ToDateTime(reader["registrado_utc"])
         };
     }
 }

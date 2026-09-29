@@ -9,4 +9,7 @@ public class EnrollmentFeeResponseDTO
     public string StartDate { get; set; } = "";
     public string? EndDate { get; set; }
     public string Status { get; set; } = "";
+    public string? ResponsibleName { get; set; }
+    public string? ResponsibleSurname { get; set; }
+    public DateTime? RegisteredAtUtc { get; set; }
 }

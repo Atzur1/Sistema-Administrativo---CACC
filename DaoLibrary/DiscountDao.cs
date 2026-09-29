@@ -23,14 +23,24 @@ public class DiscountDao
             jd.monto_fijo,
             jd.fecha_inicio,
             jd.fecha_fin,
-            jd.fecha_cancelacion";
+            jd.fecha_cancelacion,
+            responsable.nombre_usuario AS responsable_nombre,
+            responsable.apellido_usuario AS responsable_apellido";
 
     private const string FromJoins = @"
         FROM JUGADORES_DESCUENTOS jd
             INNER JOIN JUGADORES j ON j.PK_id_jugador = jd.FK_id_jugador
             INNER JOIN PERSONA p ON p.PK_id_persona = j.FK_id_persona
             INNER JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
-            LEFT JOIN CATEGORIAS c ON c.PK_id_categoria = j.FK_id_categoria";
+            LEFT JOIN CATEGORIAS c ON c.PK_id_categoria = j.FK_id_categoria
+            OUTER APPLY (
+                SELECT TOP (1) ac.nombre_usuario, ac.apellido_usuario
+                FROM dbo.AUDITORIA_CAMBIOS ac
+                WHERE ac.entidad = N'JUGADORES_DESCUENTOS'
+                  AND ac.id_entidad = CONVERT(NVARCHAR(128), jd.PK_id_jugador_descuento)
+                  AND ac.accion = 'INSERT'
+                ORDER BY ac.fecha_utc, ac.PK_id_evento
+            ) responsable";
 
     // The state of a benefit, resolved here and nowhere else (HU-012).
     //
@@ -138,9 +148,8 @@ public class DiscountDao
         List<DiscountType> types = new List<DiscountType>();
         string query = "SELECT PK_id_descuento, tipo_descuento FROM TIPO_DESCUENTO ORDER BY PK_id_descuento;";
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
-            connection.Open();
 
             using (SqlCommand command = new SqlCommand(query, connection))
             {
@@ -168,9 +177,8 @@ public class DiscountDao
         DiscountType? foundType = null;
         string query = "SELECT PK_id_descuento, tipo_descuento FROM TIPO_DESCUENTO WHERE tipo_descuento = @name;";
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
-            connection.Open();
 
             using (SqlCommand command = new SqlCommand(query, connection))
             {
@@ -253,9 +261,8 @@ public class DiscountDao
 
             SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS nuevo_id;";
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
-            connection.Open();
 
             using (SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.Serializable))
             {
@@ -331,9 +338,8 @@ public class DiscountDao
 
         int affectedRows;
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
-            connection.Open();
 
             using (SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.Serializable))
             {
@@ -394,9 +400,8 @@ public class DiscountDao
 
         int affectedRows;
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
-            connection.Open();
 
             using (SqlCommand command = new SqlCommand(query, connection))
             {
@@ -437,9 +442,8 @@ public class DiscountDao
 
         int affectedRows;
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
-            connection.Open();
 
             using (SqlCommand command = new SqlCommand(query, connection))
             {
@@ -457,9 +461,8 @@ public class DiscountDao
     {
         List<Discount> discounts = new List<Discount>();
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
-            connection.Open();
 
             using (SqlCommand command = new SqlCommand(query, connection))
             {
@@ -508,7 +511,9 @@ public class DiscountDao
                 ? null
                 : Convert.ToDateTime(reader["fecha_cancelacion"]),
             // Setting Status also settles IsActive, so the two cannot disagree
-            Status = (DiscountStatus)Convert.ToInt32(reader["estado"])
+            Status = (DiscountStatus)Convert.ToInt32(reader["estado"]),
+            ResponsableNombre = reader["responsable_nombre"] == DBNull.Value ? null : reader["responsable_nombre"].ToString()?.Trim(),
+            ResponsableApellido = reader["responsable_apellido"] == DBNull.Value ? null : reader["responsable_apellido"].ToString()?.Trim()
         };
     }
 }

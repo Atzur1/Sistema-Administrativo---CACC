@@ -10,6 +10,8 @@ export interface ArancelHistorialItem {
   vigenteDesde: string;
   vigenteHasta: string | null; // null = sigue vigente, todavía no hay uno más nuevo después
   estado: 'Vigente' | 'Programado' | 'Anterior';
+  responsableNombre?: string | null;
+  responsableApellido?: string | null;
 }
 
 export interface ArancelResumen {

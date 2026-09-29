@@ -6,9 +6,14 @@ import { API_BASE_URL } from './api-url';
 
 export interface UsuarioLogueado {
   email: string;
+  nombre?: string;
+  apellido?: string;
+  dni?: string;
   rol: number;
   token: string;
 }
+
+const SESSION_KEY = 'cacc-session';
 
 @Injectable({
   providedIn: 'root',
@@ -17,14 +22,27 @@ export class AuthService {
   private apiUrl = `${API_BASE_URL}/auth/login`;
   private usuario: UsuarioLogueado | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.usuario = this.restoreSession();
+  }
 
   login(usuario: string, contrasena: string): Observable<UsuarioLogueado> {
     return this.http.post<UsuarioLogueado>(this.apiUrl, { usuario, contrasena }).pipe(
       tap((respuesta) => {
         this.usuario = respuesta;
-      })
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(respuesta));
+      }),
     );
+  }
+
+  requestPasswordReset(email: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/password-reset/request`, {
+      email,
+    });
+  }
+
+  completeAccountAccess(token: string, password: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/password-reset/complete`, { token, password });
   }
 
   getUsuario(): UsuarioLogueado | null {
@@ -49,6 +67,26 @@ export class AuthService {
 
   logout() {
     this.usuario = null;
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+
+  private restoreSession(): UsuarioLogueado | null {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    try {
+      const session = JSON.parse(raw) as UsuarioLogueado;
+      const payload = session.token.split('.')[1];
+      if (!payload || !session.email || !session.token || !Number.isInteger(session.rol))
+        throw new Error('Invalid session');
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const claims = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')));
+      if (!Number.isFinite(claims.exp) || claims.exp * 1000 <= Date.now())
+        throw new Error('Expired session');
+      return session;
+    } catch {
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
   }
 }
 
@@ -86,4 +124,3 @@ export const adminGuard: CanActivateFn = () => {
 
   return true;
 };
-

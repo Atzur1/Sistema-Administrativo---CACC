@@ -52,6 +52,8 @@ export interface PagoReciente {
   // Momento exacto en que se grabó el pago; null para los registrados antes de que
   // existiera esta columna, que solo tienen el día (fechaPago).
   fechaHoraRegistro: string | null;
+  responsableNombre?: string | null;
+  responsableApellido?: string | null;
 }
 
 export interface ResumenPagosHoy {
@@ -74,6 +76,9 @@ export interface AbonoDetalle {
   monto: number;
   metodoPago: string;
   fechaPago: string;
+  fechaHoraRegistro?: string | null;
+  responsableNombre?: string | null;
+  responsableApellido?: string | null;
 }
 
 export interface CuotaPendienteDetalle {

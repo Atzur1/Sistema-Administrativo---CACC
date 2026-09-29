@@ -33,8 +33,7 @@ public class EnrollmentDAO
             WHERE FK_id_jugador = @playerId AND concepto = @concept
             ORDER BY fecha_pago, PK_id_pago;";
 
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
 
         using SqlCommand command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@playerId", playerId);
@@ -77,8 +76,7 @@ public class EnrollmentDAO
     // arriving at the same time.
     public virtual EnrollmentPayment? CreateEnrollmentPayment(long playerId, decimal amount, string paymentMethod, DateTime paymentDate)
     {
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
         using SqlTransaction transaction = connection.BeginTransaction();
 
         try
@@ -155,8 +153,7 @@ public class EnrollmentDAO
         long playerId, decimal enrollmentAmount, decimal paymentAmount,
         string paymentMethod, DateTime paymentDate)
     {
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
         using SqlTransaction transaction = connection.BeginTransaction();
 
         try

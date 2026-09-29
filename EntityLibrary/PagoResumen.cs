@@ -45,6 +45,8 @@ namespace EntityLibrary
         // Momento exacto en que se grabó (columna agregada después): null para pagos
         // registrados antes de esa migración, que solo tienen el día en FechaPago.
         public DateTime? FechaHoraRegistro { get; set; }
+        public string? ResponsableNombre { get; set; }
+        public string? ResponsableApellido { get; set; }
     }
 
     // Métricas del banner de "Actividad y Movimientos": a diferencia de ResumenPagos (año/mes),

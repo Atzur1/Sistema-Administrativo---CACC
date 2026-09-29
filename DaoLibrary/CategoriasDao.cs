@@ -27,8 +27,7 @@ namespace DaoLibrary
             var resultado = new List<Categoria>();
             const string query = "SELECT PK_id_categoria, nombre_categoria FROM CATEGORIAS WITH (NOLOCK) ORDER BY nombre_categoria";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             using SqlDataReader reader = comando.ExecuteReader();
