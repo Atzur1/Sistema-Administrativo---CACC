@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace DaoLibrary;
 
-public sealed class AuditDao(string connectionString)
+public class AuditDao(string connectionString) : IAuditDao
 {
     private const string CuotaSaldadaCondition =
         "(a.entidad = N'PAGOS' AND a.accion = 'DELETE' AND LOWER(JSON_VALUE(a.datos_antes, '$.estado')) = 'false')";

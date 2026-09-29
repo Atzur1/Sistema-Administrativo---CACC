@@ -46,7 +46,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<DaoLibrary.AuthDao>(provider =>
     new DaoLibrary.AuthDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
-builder.Services.AddScoped<DaoLibrary.AuditDao>(provider =>
+builder.Services.AddScoped<DaoLibrary.IAuditDao>(provider =>
     new DaoLibrary.AuditDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 builder.Services.AddScoped<DaoLibrary.AccountAccessDao>(provider =>
     new DaoLibrary.AccountAccessDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
