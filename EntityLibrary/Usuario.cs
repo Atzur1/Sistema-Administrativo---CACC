@@ -9,5 +9,7 @@ namespace EntityLibrary
         public string Dni { get; set; } = string.Empty;
         public int IdRol { get; set; }
         public int TokenVersion { get; set; }
+        public bool AccesoPortal { get; set; }
+        public int? RolPortal { get; set; }
     }
 }

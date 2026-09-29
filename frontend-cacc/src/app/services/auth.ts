@@ -61,7 +61,14 @@ export class AuthService {
     return this.getUsuario() !== null;
   }
 
+  // Cualquiera de los dos roles del portal administrativo: SuperAdmin (1) o
+  // Administrador (2, acceso acotado a Cuotas y Pagos / Deudas y Morosidad /
+  // Becados y Descuentos). Para lo que es exclusivo de SuperAdmin, usar isSuperAdmin().
   isAdmin(): boolean {
+    return this.getRol() === 1 || this.getRol() === 2;
+  }
+
+  isSuperAdmin(): boolean {
     return this.getRol() === 1;
   }
 
@@ -123,4 +130,32 @@ export const adminGuard: CanActivateFn = () => {
   }
 
   return true;
+};
+
+// Para las secciones que el Administrador (rol 2) no puede ver (todo lo que no
+// sea Cuotas y Pagos / Deudas y Morosidad / Becados y Descuentos). adminGuard ya
+// corrió en el padre /admin/portal, así que acá solo hace falta exigir SuperAdmin.
+export const superAdminGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isSuperAdmin()) {
+    alert('No tienes permisos para acceder a esta sección.');
+    router.navigate(['/admin/portal']);
+    return false;
+  }
+
+  return true;
+};
+
+// Landing del portal administrativo al entrar en /admin/portal sin sub-ruta:
+// SuperAdmin va a Resumen General, Administrador va directo a Cuotas y Pagos
+// (no tiene Resumen General en su alcance).
+export const adminHomeRedirect: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  const destino = authService.isSuperAdmin() ? 'resumen-general' : 'cuotas-pagos';
+  router.navigate(['/admin/portal', destino]);
+  return false;
 };

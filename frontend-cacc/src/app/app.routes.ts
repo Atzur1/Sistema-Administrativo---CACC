@@ -3,7 +3,7 @@ import { Login } from './login/login';
 import { Portales } from './portales/portales';
 import { AdminPortal } from './admin-portal/admin-portal';
 import { ResumenGeneral } from './admin-portal/resumen-general/resumen-general';
-import { adminGuard, authGuard } from './services/auth';
+import { adminGuard, authGuard, superAdminGuard, adminHomeRedirect } from './services/auth';
 import { ActividadMovimientos } from './admin-portal/actividad-movimientos/actividad-movimientos';
 import { DeudasMorosidad } from './admin-portal/deudas-morosidad/deudas-morosidad';
 import { Usuarios } from './admin-portal/usuarios-y-permisos/usuarios-y-permisos';
@@ -29,17 +29,19 @@ export const routes: Routes = [
     component: AdminPortal,
     canActivate: [adminGuard],
     children: [
-      { path: '', redirectTo: 'resumen-general', pathMatch: 'full' },
-      { path: 'resumen-general', component: ResumenGeneral },
-      { path: 'actividad-movimientos', component: ActividadMovimientos },
-      { path: 'auditoria', component: Auditoria },
+      { path: '', component: ResumenGeneral, canActivate: [adminHomeRedirect] },
+      { path: 'resumen-general', component: ResumenGeneral, canActivate: [superAdminGuard] },
+      { path: 'actividad-movimientos', component: ActividadMovimientos, canActivate: [superAdminGuard] },
+      { path: 'auditoria', component: Auditoria, canActivate: [superAdminGuard] },
       { path: 'deudas-morosidad', component: DeudasMorosidad },
-      { path: 'usuarios', component: Usuarios },
+      { path: 'usuarios', component: Usuarios, canActivate: [superAdminGuard] },
       { path: 'cuotas-pagos', component: CuotasPagos },
-      { path: 'jugadores/:id', component: JugadorPerfil },
+      { path: 'jugadores/:id', component: JugadorPerfil, canActivate: [superAdminGuard] },
+      // Sin superAdminGuard: es el drill-down al que navega Deudas y Morosidad
+      // (rol 1 y 2) al tocar un deudor.
       { path: 'jugadores/:id/deuda', component: DeudaJugador },
-      { path: 'reportes', component: Reportes },
-      { path: 'actualizacion-aranceles', component: ActualizacionAranceles },
+      { path: 'reportes', component: Reportes, canActivate: [superAdminGuard] },
+      { path: 'actualizacion-aranceles', component: ActualizacionAranceles, canActivate: [superAdminGuard] },
       { path: 'becados-descuentos', component: BecadosDescuentos },
     ],
   },

@@ -9,7 +9,7 @@ namespace ApiGestion.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "1")]
+    [Authorize(Roles = "1,2")]
     public class PagosController : ControllerBase
     {
         private readonly ILogger<PagosController> _logger;

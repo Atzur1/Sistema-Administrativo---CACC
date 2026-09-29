@@ -10,7 +10,7 @@ using EntityLibrary;
 // fees: it has its own balance and accepts partial payments the same way.
 [ApiController]
 [Route("api/players/{playerId}/enrollment")]
-[Authorize(Roles = "1")]
+[Authorize(Roles = "1,2")]
 public class PlayerEnrollmentController : ControllerBase
 {
     private readonly ILogger<PlayerEnrollmentController> _logger;

@@ -9,7 +9,7 @@ namespace ApiGestion.Controllers
     // las 13 categorías del club siempre, tengan o no jugadores morosos.
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "1")]
+    [Authorize(Roles = "1,2")]
     public class CategoriasController : ControllerBase
     {
         private readonly ICategoriasDao _categoriasDao;

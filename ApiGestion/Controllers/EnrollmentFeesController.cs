@@ -9,9 +9,11 @@ using EntityLibrary;
 // Enrollment fee of the men's squad (HU-033). Scheduling a new fee never touches
 // fees already charged: each enrollment keeps the amount in force the day the
 // player joined.
+// Sin [Authorize] a nivel de clase: se combinaría con AND contra el de cada
+// acción y dejaría afuera al rol que no está en ambos (ver ReportesController).
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "1")]
+[Authorize]
 public class EnrollmentFeesController : ControllerBase
 {
     private readonly ILogger<EnrollmentFeesController> _logger;
@@ -23,13 +25,16 @@ public class EnrollmentFeesController : ControllerBase
         _enrollmentFeeDAO = enrollmentFeeDAO;
     }
 
-    // Feeds the history table: past, current and scheduled fees
+    // Feeds the history table: past, current and scheduled fees. También la usa
+    // "Cuotas y Pagos" (rol 2) para calcular el monto vigente de matrícula.
+    [Authorize(Roles = "1,2")]
     [HttpGet]
     public List<EnrollmentFeeResponseDTO> GetAllEnrollmentFees()
     {
         return _enrollmentFeeDAO.GetAllEnrollmentFees().Select(MapToDto).ToList();
     }
 
+    [Authorize(Roles = "1")]
     [HttpGet("current")]
     public IActionResult GetCurrentEnrollmentFee()
     {
@@ -42,6 +47,7 @@ public class EnrollmentFeesController : ControllerBase
         return Ok(MapToDto(fee));
     }
 
+    [Authorize(Roles = "1")]
     [HttpPost]
     public IActionResult CreateEnrollmentFee(EnrollmentFeeRequestDTO request)
     {

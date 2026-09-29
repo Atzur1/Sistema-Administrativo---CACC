@@ -11,9 +11,13 @@ namespace ApiGestion.Controllers
     // pantalla "Reportes" (una caja por pantalla de Gestión). Todos devuelven el
     // archivo como stream de bytes con Content-Disposition: attachment, así el
     // navegador arranca la descarga solo, sin recargar la página.
+    // Sin [Authorize] a nivel de clase: en ASP.NET Core, un [Authorize(Roles=...)]
+    // de clase y otro de método se combinan con AND, no con OR. Poner Roles acá y
+    // otro distinto en cada acción dejaría afuera al rol que no está en ambos.
+    // Por eso cada acción declara explícitamente qué roles puede.
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "1")]
+    [Authorize]
     public class ReportesController : ControllerBase
     {
         private readonly IPagosService _pagosService;
@@ -34,6 +38,7 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/reportes/deudores/pdf?idCategoria=5 -> HU-021: planilla imprimible
+        [Authorize(Roles = "1,2")]
         [HttpGet("deudores/pdf")]
         public IActionResult ExportarDeudoresPdf([FromQuery] int? idCategoria = null)
         {
@@ -43,6 +48,7 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/reportes/deudores/csv?idCategoria=5 -> HU-021: misma planilla en CSV
+        [Authorize(Roles = "1,2")]
         [HttpGet("deudores/csv")]
         public IActionResult ExportarDeudoresCsv([FromQuery] int? idCategoria = null)
         {
@@ -52,6 +58,7 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/reportes/pagos-recientes/csv -> caja "Cuotas y Pagos" en Reportes
+        [Authorize(Roles = "1,2")]
         [HttpGet("pagos-recientes/csv")]
         public IActionResult ExportarPagosRecientesCsv([FromQuery] int top = 500)
         {
@@ -60,6 +67,7 @@ namespace ApiGestion.Controllers
             return File(csv, "text/csv", $"reporte-pagos_{Timestamp()}.csv");
         }
 
+        [Authorize(Roles = "1,2")]
         [HttpGet("pagos-recientes/pdf")]
         public IActionResult ExportarPagosRecientesPdf([FromQuery] int top = 500)
         {
@@ -69,6 +77,7 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/reportes/becados/csv -> caja "Becados y Descuentos" en Reportes
+        [Authorize(Roles = "1,2")]
         [HttpGet("becados/csv")]
         public IActionResult ExportarBecadosCsv()
         {
@@ -77,6 +86,7 @@ namespace ApiGestion.Controllers
             return File(csv, "text/csv", $"reporte-becados_{Timestamp()}.csv");
         }
 
+        [Authorize(Roles = "1,2")]
         [HttpGet("becados/pdf")]
         public IActionResult ExportarBecadosPdf()
         {
@@ -86,6 +96,7 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/reportes/aranceles/csv -> caja "Actualización de Aranceles" en Reportes
+        [Authorize(Roles = "1")]
         [HttpGet("aranceles/csv")]
         public IActionResult ExportarArancelesCsv()
         {
@@ -94,6 +105,7 @@ namespace ApiGestion.Controllers
             return File(csv, "text/csv", $"reporte-aranceles_{Timestamp()}.csv");
         }
 
+        [Authorize(Roles = "1")]
         [HttpGet("aranceles/pdf")]
         public IActionResult ExportarArancelesPdf()
         {
