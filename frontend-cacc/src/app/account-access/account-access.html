@@ -1,0 +1,115 @@
+<main class="main">
+  <div class="access-card">
+    <div class="access-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      </svg>
+    </div>
+
+    <div class="access-header">
+      <h1>Restablecer contraseña</h1>
+      <p>Este enlace está reservado al superadministrador del Portal Administrativo CACC. Tiene una validez de 30 minutos y solo puede usarse una vez.</p>
+    </div>
+
+    @if (!mensajeExito) {
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="form-group">
+          <label for="password">Nueva contraseña</label>
+          <div class="input-container">
+            <span class="input-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </span>
+
+            <input
+              [type]="mostrarPassword ? 'text' : 'password'"
+              class="form-control"
+              id="password"
+              formControlName="password"
+              autocomplete="new-password"
+              [disabled]="tokenInvalido"
+            />
+
+            <span
+              class="eye-icon"
+              role="button"
+              tabindex="0"
+              (click)="togglePasswordVisibility()"
+              (keydown.enter)="togglePasswordVisibility()"
+              (keydown.space)="togglePasswordVisibility(); $event.preventDefault()"
+              [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [title]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              <svg
+                *ngIf="!mostrarPassword"
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="#666"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg
+                *ngIf="mostrarPassword"
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="#007F3E"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </span>
+          </div>
+
+          <!-- Feedback en vivo del requisito de longitud — reemplaza el botón
+               deshabilitado sin ninguna explicación que había antes. -->
+          <div class="password-hint" [class.is-met]="longitudCumplida">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Mínimo {{ passwordMinLength }} caracteres ({{ longitudActual }}/{{ passwordMinLength }})</span>
+          </div>
+        </div>
+
+        <div *ngIf="mensajeError" class="alert-banner alert-banner-error" role="alert">
+          <span class="alert-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </span>
+          <span class="alert-text">{{ mensajeError }}</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" [disabled]="form.invalid || submitting || tokenInvalido">
+          {{ submitting ? 'Guardando…' : 'Guardar contraseña' }}
+        </button>
+      </form>
+    } @else {
+      <div class="alert-banner alert-banner-success" role="status">
+        <span class="alert-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="alert-text">{{ mensajeExito }} Te llevamos al inicio de sesión…</span>
+      </div>
+    }
+
+    <div class="divider"><span></span></div>
+
+    <a routerLink="/" class="access-footer-link">Volver al inicio de sesión</a>
+  </div>
+</main>

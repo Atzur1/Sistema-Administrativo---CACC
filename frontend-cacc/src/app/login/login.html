@@ -229,4 +229,104 @@
     </div>
     <span class="sr-only">Iniciando sesión, por favor esperá…</span>
   </div>
+
+  <!-- Modal "¿Olvidaste tu contraseña?" -->
+  <div
+    class="forgot-backdrop"
+    [class.is-visible]="mostrarModalOlvido"
+    (click)="cerrarModalOlvido()"
+    role="presentation"
+  >
+    <div
+      class="forgot-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="forgotTitulo"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        class="forgot-close"
+        (click)="cerrarModalOlvido()"
+        aria-label="Cerrar"
+        [disabled]="forgotEnviando"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      <div class="forgot-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </div>
+
+      <h2 id="forgotTitulo">Recuperar acceso</h2>
+      <p class="forgot-subtitulo">
+        Ingresá el correo del superadministrador del CACC. Si corresponde a una cuenta activa, vas a recibir un enlace para elegir una contraseña nueva.
+      </p>
+
+      @if (!forgotMensaje) {
+        <form [formGroup]="forgotForm" (ngSubmit)="enviarRecuperacion()">
+          <div class="form-group">
+            <label for="forgotEmail">Correo electrónico</label>
+            <div class="input-container">
+              <span class="input-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16v16H4z" opacity="0"></path>
+                  <path d="M22 6 12 13 2 6"></path>
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                </svg>
+              </span>
+              <input
+                id="forgotEmail"
+                type="email"
+                class="form-control"
+                formControlName="email"
+                placeholder="superadmin@cacc.com"
+                autocomplete="email"
+              />
+            </div>
+            <small
+              *ngIf="forgotForm.get('email')?.invalid && forgotForm.get('email')?.touched"
+              class="field-error"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              Ingresá un correo electrónico válido.
+            </small>
+          </div>
+
+          <div *ngIf="forgotError" class="alert-banner alert-banner-error" role="alert">
+            <span class="alert-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </span>
+            <span class="alert-text">{{ forgotError }}</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary" [disabled]="forgotEnviando">
+            {{ forgotEnviando ? 'Enviando…' : 'Enviar enlace de recuperación' }}
+          </button>
+        </form>
+      } @else {
+        <div class="alert-banner alert-banner-success" role="status">
+          <span class="alert-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
+          <span class="alert-text">{{ forgotMensaje }}</span>
+        </div>
+        <button type="button" class="btn btn-primary" (click)="cerrarModalOlvido()">Entendido</button>
+      }
+    </div>
+  </div>
 </main>

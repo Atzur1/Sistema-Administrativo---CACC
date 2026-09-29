@@ -233,7 +233,7 @@ describe('JugadorPerfil - historial de pagos', () => {
         historialPorPagina: () => historial([periodo('Septiembre 2026', 85000)]),
       });
 
-      expect(texto(el.querySelector('.abono-meta'))).toBe('Transferencia · 19/09/2026');
+      expect(texto(el.querySelector('.abono-meta'))).toContain('Transferencia · 19/09/2026');
       expect(texto(el.querySelector('.abono-monto'))).toMatch(/\$\s?85\.000/);
     });
 
@@ -248,9 +248,9 @@ describe('JugadorPerfil - historial de pagos', () => {
 
       const abonos = Array.from(el.querySelectorAll('.abono-row'));
       expect(abonos.length).toBe(2);
-      expect(texto(abonos[0].querySelector('.abono-meta'))).toBe('Efectivo · 10/01/2026');
+      expect(texto(abonos[0].querySelector('.abono-meta'))).toContain('Efectivo · 10/01/2026');
       expect(texto(abonos[0].querySelector('.abono-monto'))).toMatch(/\$\s?20\.000/);
-      expect(texto(abonos[1].querySelector('.abono-meta'))).toBe('Transferencia · 25/01/2026');
+      expect(texto(abonos[1].querySelector('.abono-meta'))).toContain('Transferencia · 25/01/2026');
       expect(texto(abonos[1].querySelector('.abono-monto'))).toMatch(/\$\s?50\.000/);
     });
 

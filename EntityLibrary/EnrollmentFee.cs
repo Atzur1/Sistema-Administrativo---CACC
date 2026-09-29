@@ -40,4 +40,8 @@ public class EnrollmentFee
         get { return status; }
         set { status = value; }
     }
+
+    public string? ResponsibleName { get; set; }
+    public string? ResponsibleSurname { get; set; }
+    public DateTime? RegisteredAtUtc { get; set; }
 }

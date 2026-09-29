@@ -19,9 +19,12 @@ export class AdminPortal implements OnInit {
 
   // Topbar properties
 currentPageTitle: string = '';
-userName: string = '';
-userEmail: string = '';
-userInitials: string = '';
+get userName(): string {
+    const user = this.authService.getUsuario();
+    return user ? [user.nombre, user.apellido].filter(Boolean).join(' ') || user.email.split('@')[0] : '';
+}
+get userEmail(): string { return this.authService.getUsuario()?.email ?? ''; }
+get userInitials(): string { return this.userName.slice(0, 2).toUpperCase(); }
 
 // Off-canvas sidebar state, only meaningful under the 768px breakpoint
 sidebarOpen: boolean = false;
@@ -30,6 +33,7 @@ sidebarOpen: boolean = false;
 private pageTitles: Record<string, string> = {
     'resumen-general':        'Resumen General',
     'actividad-movimientos':  'Actividad y Movimientos',
+    'auditoria': 'Auditoría',
     'deudas-morosidad':       'Deudas y Morosidad',
     'usuarios':               'Usuarios y Permisos',
     'cuotas-pagos':           'Cuotas y Pagos',
@@ -46,15 +50,6 @@ constructor(
 ) {}
 
 ngOnInit() {
-    // Load user data from session
-    const usuario = this.authService.getUsuario();
-    if (usuario) {
-    this.userEmail = usuario.email;
-    // Use email prefix as display name (e.g. "admin" from "admin@cacc.com")
-    this.userName = usuario.email.split('@')[0];
-    this.userInitials = this.userName.slice(0, 2).toUpperCase();
-    }
-
     // Update page title on every navigation event.
     // takeUntilDestroyed unsubscribes when the shell is destroyed, so leaving
     // and re-entering the portal does not stack one live subscription per visit.

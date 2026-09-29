@@ -37,6 +37,14 @@ export class Login implements OnInit {
   // blur encima, y se prende de nuevo un instante antes de navegar a portales.
   mostrarOverlay: boolean = false;
 
+  // Modal "¿Olvidaste tu contraseña?" — reemplaza el window.prompt()/alert()
+  // nativos por una tarjeta con la misma identidad visual que el resto del login.
+  mostrarModalOlvido: boolean = false;
+  forgotForm: FormGroup;
+  forgotEnviando: boolean = false;
+  forgotMensaje: string = '';
+  forgotError: string = '';
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -49,9 +57,17 @@ export class Login implements OnInit {
       contrasena: ['', [Validators.required]],
       recordarme: [false],
     });
+
+    this.forgotForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+    });
   }
 
   ngOnInit() {
+    if (new URLSearchParams(window.location.search).get('sesion') === 'vencida') {
+      this.mensajeError = 'Tu sesión venció o fue revocada. Iniciá sesión nuevamente.';
+    }
+
     // Pre-fill the username and tick the checkbox if a previous login left one saved
     const rememberedUser = localStorage.getItem(REMEMBERED_USER_KEY);
     if (rememberedUser) {
@@ -137,10 +153,49 @@ export class Login implements OnInit {
     });
   }
 
-  // No password-reset flow exists yet; this tells the user how to proceed
-  // instead of the link silently doing nothing
+  // El backend solo emite enlaces para el superadministrador designado.
   onForgotPassword(event: Event) {
     event.preventDefault();
-    alert('Para restablecer tu contraseña, contactá al administrador del sistema.');
+    this.forgotForm.reset();
+    this.forgotMensaje = '';
+    this.forgotError = '';
+    this.forgotEnviando = false;
+    this.mostrarModalOlvido = true;
+  }
+
+  cerrarModalOlvido() {
+    if (this.forgotEnviando) return;
+    this.mostrarModalOlvido = false;
+  }
+
+  enviarRecuperacion() {
+    if (this.forgotEnviando) return;
+
+    if (this.forgotForm.invalid) {
+      this.forgotForm.markAllAsTouched();
+      return;
+    }
+
+    const { email } = this.forgotForm.value;
+    this.forgotEnviando = true;
+    this.forgotError = '';
+    this.forgotMensaje = '';
+
+    this.authService.requestPasswordReset(email).subscribe({
+      next: (response) => {
+        this.ngZone.run(() => {
+          this.forgotEnviando = false;
+          this.forgotMensaje = response.mensaje;
+          this.cdr.detectChanges();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.forgotEnviando = false;
+          this.forgotError = 'No se pudo procesar la solicitud. Intentá nuevamente más tarde.';
+          this.cdr.detectChanges();
+        });
+      },
+    });
   }
 }

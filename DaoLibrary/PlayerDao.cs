@@ -23,8 +23,7 @@ public class PlayerDAO
     {
         string query = "SELECT COUNT(*) FROM PERSONA WHERE LTRIM(RTRIM(Dni)) = @dni;";
 
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
 
         using SqlCommand command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@dni", dni.Trim());
@@ -41,8 +40,7 @@ public class PlayerDAO
     // every other monthly fee.
     public virtual Player CreatePlayer(Player player, decimal? monthlyFeeAmount, decimal? enrollmentFeeAmount)
     {
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
         using SqlTransaction transaction = connection.BeginTransaction();
 
         try

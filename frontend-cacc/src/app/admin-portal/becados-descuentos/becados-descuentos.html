@@ -164,6 +164,7 @@
               <th>Beneficio</th>
               <th>Vigente desde</th>
               <th>Vigente hasta</th>
+              <th>Asignado por</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
@@ -191,6 +192,7 @@
                 <td class="cell-benefit">{{ benefitValueOf(row) }}</td>
                 <td class="cell-muted">{{ formatDate(row.startDate) }}</td>
                 <td class="cell-muted">{{ formatDate(row.endDate) }}</td>
+                <td class="cell-muted">{{ responsableNombre(row) }}</td>
                 <td>
                   <!-- The state comes resolved from the server: nothing is worked
                        out here from the browser clock -->

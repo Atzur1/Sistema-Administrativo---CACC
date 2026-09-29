@@ -131,8 +131,7 @@ namespace DaoLibrary
         {
             // Autocontenido (abre su propia transacción): se llama desde ArancelesService justo
             // después de programar un arancel, no desde un flujo que ya tenga una transacción abierta.
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using SqlTransaction transaccion = conexion.BeginTransaction();
 
             try
@@ -358,8 +357,7 @@ namespace DaoLibrary
                 -- grilla de Deudas y Morosidad (cantidad de cuotas primero, monto como desempate).
                 ORDER BY cantidad_cuotas DESC, monto_total DESC";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             comando.Parameters.AddWithValue("@idCategoria", (object?)idCategoria ?? DBNull.Value);
@@ -422,8 +420,7 @@ namespace DaoLibrary
                 {filter}
                 {order}";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             using SqlDataReader reader = comando.ExecuteReader();
@@ -466,8 +463,7 @@ namespace DaoLibrary
                 HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
                 ORDER BY monto_total DESC";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             comando.Parameters.AddWithValue("@anio", anio);
@@ -550,16 +546,29 @@ namespace DaoLibrary
                 )
                 SELECT {(topClause != null ? topClause + " " : "")}g.PK_id_pago, g.FK_id_jugador, p.nombre, p.apellido, c.nombre_categoria,
                     g.metodo_pago, g.monto_grupo AS monto_final, g.fecha_grupo AS fecha_pago,
-                    g.fecha_hora_grupo AS fecha_hora_registro, g.es_parcial, g.fecha_vencimiento, g.concepto
+                    g.fecha_hora_grupo AS fecha_hora_registro, g.es_parcial, g.fecha_vencimiento, g.concepto,
+                    responsable.nombre AS responsable_nombre, responsable.apellido AS responsable_apellido,
+                    responsable.fecha_utc AS responsable_fecha_utc
                 FROM Grupos g
+                OUTER APPLY (
+                    SELECT TOP (1) ac.nombre_usuario AS nombre, ac.apellido_usuario AS apellido, ac.fecha_utc
+                    FROM dbo.AUDITORIA_CAMBIOS ac
+                    WHERE ac.entidad = N'PAGOS' AND ac.id_entidad = CONVERT(NVARCHAR(128), g.PK_id_pago)
+                      AND (
+                          (ac.accion = 'INSERT' AND LOWER(JSON_VALUE(ac.datos_despues, '$.estado')) IN ('1', 'true'))
+                          OR (ac.accion = 'UPDATE'
+                              AND LOWER(JSON_VALUE(ac.datos_antes, '$.estado')) IN ('0', 'false')
+                              AND LOWER(JSON_VALUE(ac.datos_despues, '$.estado')) IN ('1', 'true'))
+                      )
+                    ORDER BY CASE WHEN ac.accion = 'UPDATE' THEN 0 ELSE 1 END, ac.fecha_utc, ac.PK_id_evento
+                ) responsable
                 JOIN JUGADORES j WITH (NOLOCK) ON g.FK_id_jugador = j.PK_id_jugador
                 JOIN PERSONA p WITH (NOLOCK) ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c WITH (NOLOCK) ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE g.rn = 1
                 ORDER BY g.fecha_hora_grupo DESC, g.fecha_grupo DESC, g.PK_id_pago DESC";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
 
@@ -580,10 +589,12 @@ namespace DaoLibrary
                     Monto = Convert.ToDecimal(reader["monto_final"]),
                     Estado = esParcial ? "Parcial" : "Pagado",
                     FechaPago = Convert.ToDateTime(reader["fecha_pago"]),
-                    FechaHoraRegistro = reader["fecha_hora_registro"] == DBNull.Value
-                        ? null
-                        : Convert.ToDateTime(reader["fecha_hora_registro"]),
-                    Concepto = reader["concepto"].ToString()?.Trim() ?? "Cuota"
+                    Concepto = reader["concepto"].ToString()?.Trim() ?? "Cuota",
+                    ResponsableNombre = reader["responsable_nombre"] == DBNull.Value ? null : reader["responsable_nombre"].ToString()?.Trim(),
+                    ResponsableApellido = reader["responsable_apellido"] == DBNull.Value ? null : reader["responsable_apellido"].ToString()?.Trim(),
+                    FechaHoraRegistro = reader["responsable_fecha_utc"] != DBNull.Value
+                        ? Convert.ToDateTime(reader["responsable_fecha_utc"])
+                        : reader["fecha_hora_registro"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_hora_registro"])
                 });
             }
 
@@ -600,8 +611,7 @@ namespace DaoLibrary
                     (SELECT COUNT(*) FROM PAGOS WITH (NOLOCK) WHERE estado = 1 AND CAST(fecha_pago AS DATE) = CAST(GETDATE() AS DATE)) AS pagos_hoy,
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WITH (NOLOCK) WHERE estado = 1 AND CAST(fecha_pago AS DATE) = CAST(GETDATE() AS DATE)) AS recaudado_hoy";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             using SqlDataReader reader = comando.ExecuteReader();
@@ -633,8 +643,7 @@ namespace DaoLibrary
                 WHERE pg.FK_id_jugador = @idJugador AND pg.estado = 0
                 ORDER BY pg.fecha_vencimiento, pg.concepto";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using (SqlCommand comando = new SqlCommand(queryPendientes, conexion))
             {
@@ -741,8 +750,7 @@ namespace DaoLibrary
                         WHERE pg.estado = 0
                     ) t WHERE t.saldo_ajustado > 0) AS jugadores_morosos";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             using SqlDataReader reader = comando.ExecuteReader();
@@ -801,8 +809,7 @@ namespace DaoLibrary
             // completar cada uno con sus abonos sin perder el orden de fecha_grupo DESC.
             var itemsPorClave = new List<(DateTime clave, string concepto, PagoHistorialItem item)>();
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using (SqlCommand comando = new SqlCommand(queryPeriodos, conexion))
             {
@@ -844,11 +851,25 @@ namespace DaoLibrary
             foreach (var (clave, concepto, item) in itemsPorClave)
             {
                 string queryAbonos = @"
-                    SELECT monto_final, metodo_pago, fecha_pago
-                    FROM PAGOS
-                    WHERE FK_id_jugador = @idJugador AND estado = 1 AND concepto = @concepto
-                      AND COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)) = @clavePeriodo
-                    ORDER BY fecha_pago, PK_id_pago";
+                SELECT pg.PK_id_pago, pg.monto_final, pg.metodo_pago, pg.fecha_pago, pg.fecha_hora_registro,
+                       responsable.nombre AS responsable_nombre, responsable.apellido AS responsable_apellido,
+                       responsable.fecha_utc AS auditoria_fecha_utc
+                    FROM PAGOS pg
+                    OUTER APPLY (
+                        SELECT TOP (1) ac.nombre_usuario AS nombre, ac.apellido_usuario AS apellido, ac.fecha_utc
+                        FROM dbo.AUDITORIA_CAMBIOS ac
+                        WHERE ac.entidad = N'PAGOS' AND ac.id_entidad = CONVERT(NVARCHAR(128), pg.PK_id_pago)
+                          AND (
+                              (ac.accion = 'INSERT' AND LOWER(JSON_VALUE(ac.datos_despues, '$.estado')) IN ('1', 'true'))
+                              OR (ac.accion = 'UPDATE'
+                                  AND LOWER(JSON_VALUE(ac.datos_antes, '$.estado')) IN ('0', 'false')
+                                  AND LOWER(JSON_VALUE(ac.datos_despues, '$.estado')) IN ('1', 'true'))
+                          )
+                        ORDER BY CASE WHEN ac.accion = 'UPDATE' THEN 0 ELSE 1 END, ac.fecha_utc, ac.PK_id_evento
+                    ) responsable
+                    WHERE pg.FK_id_jugador = @idJugador AND pg.estado = 1 AND pg.concepto = @concepto
+                      AND COALESCE(pg.fecha_vencimiento, CAST(pg.fecha_pago AS DATE)) = @clavePeriodo
+                    ORDER BY pg.fecha_pago, pg.PK_id_pago";
 
                 using SqlCommand comando = new SqlCommand(queryAbonos, conexion);
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
@@ -863,6 +884,11 @@ namespace DaoLibrary
                         Monto = Convert.ToDecimal(reader["monto_final"]),
                         MetodoPago = reader["metodo_pago"].ToString()?.Trim() ?? "",
                         FechaPago = Convert.ToDateTime(reader["fecha_pago"])
+                        , FechaHoraRegistro = reader["fecha_hora_registro"] != DBNull.Value
+                            ? Convert.ToDateTime(reader["fecha_hora_registro"])
+                            : reader["auditoria_fecha_utc"] != DBNull.Value ? Convert.ToDateTime(reader["auditoria_fecha_utc"]) : null
+                        , ResponsableNombre = reader["responsable_nombre"] == DBNull.Value ? null : reader["responsable_nombre"].ToString()?.Trim()
+                        , ResponsableApellido = reader["responsable_apellido"] == DBNull.Value ? null : reader["responsable_apellido"].ToString()?.Trim()
                     });
                 }
             }

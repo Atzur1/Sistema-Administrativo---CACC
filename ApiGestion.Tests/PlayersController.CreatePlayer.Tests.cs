@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging.Abstractions;
 using ApiGestion.Controllers;
 using ApiGestion.Models;
@@ -272,6 +273,11 @@ public class PlayersControllerCreatePlayerTests
 
         public void ProgramarArancel(string genero, decimal monto, DateTime vigenteDesde)
         {
+        }
+
+        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string genero, decimal monto, DateTime vigenteDesde)
+        {
+            throw new NotSupportedException();
         }
     }
 

@@ -17,6 +17,9 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("account-email", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 4, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 }));
 });
 
 // 1. AGREGA ESTA POLÍTICA DE CORS (Permite conexiones desde Angular)
@@ -43,6 +46,11 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<DaoLibrary.AuthDao>(provider =>
     new DaoLibrary.AuthDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<DaoLibrary.AuditDao>(provider =>
+    new DaoLibrary.AuditDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<DaoLibrary.AccountAccessDao>(provider =>
+    new DaoLibrary.AccountAccessDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddSingleton<ApiGestion.Services.EmailLinkSender>();
 
 // Cuotas y pagos: DAO + runner transaccional + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IPagosDao>(provider =>
@@ -104,13 +112,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var idClaim = context.Principal?.FindFirst("idUsuario")?.Value;
                 var roleClaim = context.Principal?.FindFirst(ClaimTypes.Role)?.Value;
-                if (!int.TryParse(idClaim, out var id) || !int.TryParse(roleClaim, out var role))
+                var versionClaim = context.Principal?.FindFirst("tokenVersion")?.Value;
+                if (!int.TryParse(idClaim, out var id) || !int.TryParse(roleClaim, out var role) || !int.TryParse(versionClaim, out var tokenVersion))
                 {
                     context.Fail("Token inválido.");
                     return;
                 }
                 var authDao = context.HttpContext.RequestServices.GetRequiredService<DaoLibrary.AuthDao>();
-                if (!authDao.UsuarioActivoConRol(id, role)) context.Fail("Usuario inactivo o permisos revocados.");
+                if (!authDao.UsuarioActivoConRol(id, role, tokenVersion)) context.Fail("Usuario inactivo o permisos revocados.");
                 await Task.CompletedTask;
             }
         };
@@ -137,6 +146,7 @@ app.UseRateLimiter();
 
 // 4. NUEVO: tiene que ir ANTES de UseAuthorization
 app.UseAuthentication();
+app.UseMiddleware<ApiGestion.AuditActorMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

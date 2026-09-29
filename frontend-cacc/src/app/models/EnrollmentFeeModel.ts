@@ -12,6 +12,9 @@ export interface EnrollmentFeeModel {
     endDate: string | null;
 
     status: EnrollmentFeeStatus;
+    responsibleName?: string | null;
+    responsibleSurname?: string | null;
+    registeredAtUtc?: string | null;
 }
 
 export type EnrollmentFeeStatus = 'Scheduled' | 'Current' | 'Previous';

@@ -19,8 +19,7 @@ namespace DaoLibrary
 
         public ResumenGeneralInfo ObtenerResumenGeneral()
         {
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             var info = new ResumenGeneralInfo();
 

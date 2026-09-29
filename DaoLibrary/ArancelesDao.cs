@@ -19,8 +19,7 @@ namespace DaoLibrary
                 WHERE genero = @genero AND vigente_desde <= @fecha
                 ORDER BY vigente_desde DESC";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             comando.Parameters.AddWithValue("@genero", genero);
@@ -69,7 +68,9 @@ namespace DaoLibrary
                         Monto = actual.Monto,
                         VigenteDesde = actual.VigenteDesde,
                         VigenteHasta = vigenteHasta,
-                        Estado = estado
+                        Estado = estado,
+                        ResponsableNombre = actual.ResponsableNombre,
+                        ResponsableApellido = actual.ResponsableApellido
                     });
                 }
             }
@@ -90,8 +91,7 @@ namespace DaoLibrary
 
         public void ProgramarArancel(string genero, decimal monto, DateTime vigenteDesde)
         {
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using SqlCommand comando = new SqlCommand("INSERT INTO ARANCELES (genero, monto, vigente_desde) VALUES (@genero, @monto, @vigenteDesde)", conexion);
             comando.Parameters.AddWithValue("@genero", genero);
             comando.Parameters.AddWithValue("@monto", monto);
@@ -111,10 +111,19 @@ namespace DaoLibrary
         private List<Arancel> ObtenerTodos()
         {
             var resultado = new List<Arancel>();
-            string query = "SELECT PK_id_arancel, genero, monto, vigente_desde FROM ARANCELES";
+            string query = @"
+                SELECT a.PK_id_arancel, a.genero, a.monto, a.vigente_desde,
+                       actor.nombre_usuario AS responsable_nombre, actor.apellido_usuario AS responsable_apellido
+                FROM dbo.ARANCELES a
+                OUTER APPLY (
+                    SELECT TOP (1) ac.nombre_usuario, ac.apellido_usuario
+                    FROM dbo.AUDITORIA_CAMBIOS ac
+                    WHERE ac.entidad = N'ARANCELES' AND ac.id_entidad = CONVERT(NVARCHAR(128), a.PK_id_arancel)
+                      AND ac.accion = 'INSERT'
+                    ORDER BY ac.fecha_utc, ac.PK_id_evento
+                ) actor";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             using SqlDataReader reader = comando.ExecuteReader();
@@ -125,7 +134,9 @@ namespace DaoLibrary
                     IdArancel = Convert.ToInt32(reader["PK_id_arancel"]),
                     Genero = reader["genero"].ToString()?.Trim() ?? "",
                     Monto = Convert.ToDecimal(reader["monto"]),
-                    VigenteDesde = Convert.ToDateTime(reader["vigente_desde"])
+                    VigenteDesde = Convert.ToDateTime(reader["vigente_desde"]),
+                    ResponsableNombre = reader["responsable_nombre"] == DBNull.Value ? null : reader["responsable_nombre"].ToString()?.Trim(),
+                    ResponsableApellido = reader["responsable_apellido"] == DBNull.Value ? null : reader["responsable_apellido"].ToString()?.Trim()
                 });
             }
 
@@ -136,8 +147,7 @@ namespace DaoLibrary
         {
             string query = "SELECT MIN(vigente_desde) FROM ARANCELES WHERE vigente_desde > @hoy";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             comando.Parameters.AddWithValue("@hoy", hoy);

@@ -1,6 +1,7 @@
 using DaoLibrary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ApiGestion.Controllers
 {
@@ -13,6 +14,7 @@ namespace ApiGestion.Controllers
         private readonly IPagosDao _pagosDao;
         private readonly ILogger<JugadoresController> _logger;
 
+        [ActivatorUtilitiesConstructor]
         public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao, ILogger<JugadoresController> logger)
         {
             _jugadoresDao = jugadoresDao;

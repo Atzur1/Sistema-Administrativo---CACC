@@ -27,6 +27,8 @@ interface PaymentRow {
     amount: string;
     method: string;
     status: 'Pagado' | 'Parcial';
+    responsable: string;
+    registrado: string;
 }
 
 // One entry in the recent activity feed. Only payment/partial: those are the only
@@ -288,6 +290,8 @@ function toPaymentRow(p: PagoReciente): PaymentRow {
         amount: CURRENCY_FULL.format(p.monto),
         method: p.metodoPago,
         status: p.estado,
+        responsable: [p.responsableNombre, p.responsableApellido].filter(Boolean).join(' ') || 'Sin registro histórico',
+        registrado: p.fechaHoraRegistro || '',
     };
 }
 

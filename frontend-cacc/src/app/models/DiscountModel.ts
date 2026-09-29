@@ -31,6 +31,8 @@ export interface DiscountModel {
     // Derived from status by the API. Kept for what HU-014 left behind; new code
     // should read status.
     isActive: boolean;
+    responsableNombre?: string | null;
+    responsableApellido?: string | null;
 }
 
 export type BenefitValueType = '%' | '$';

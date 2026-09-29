@@ -1,0 +1,762 @@
+:host {
+  display: block;
+  min-height: 100%;
+  color: var(--color-text-dark);
+}
+
+.audit-page {
+  width: min(100%, 1500px);
+  margin: 0 auto;
+  padding: 30px clamp(18px, 3vw, 42px) 42px;
+  box-sizing: border-box;
+}
+
+.audit-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-height: 170px;
+  padding: 30px 34px;
+  color: #fff;
+  /* Mismo sentido que el resto de los banners institucionales: claro arriba
+     a la izquierda, oscureciendo hacia abajo a la derecha (antes iba al revés). */
+  background: linear-gradient(135deg, var(--color-brand-deep) 0%, #0d4223 45%, #051a0e 100%);
+  border-radius: 18px;
+  box-shadow: 0 14px 34px rgb(0 77 37 / 16%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  animation: fadeSlideUp 0.4s ease both;
+}
+
+/* Destello que recorre el banner cada tanto, de punta a punta (mismo
+   tratamiento que Actividad y Movimientos / Deudas y Morosidad). */
+.audit-hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: bannerShimmerCycle 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.hero-mark {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 17px;
+  background: rgb(255 255 255 / 12%);
+}
+
+.hero-mark svg {
+  width: 34px;
+  height: 34px;
+}
+.hero-copy {
+  flex: 1;
+}
+.eyebrow,
+.total-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+  opacity: 0.78;
+}
+.hero-copy h1 {
+  margin: 5px 0 7px;
+  color: white;
+  font-size: clamp(27px, 3vw, 36px);
+  font-weight: 750;
+  letter-spacing: -0.7px;
+}
+.hero-copy p {
+  margin: 0;
+  color: rgb(255 255 255 / 82%);
+  font-size: 14px;
+}
+.hero-total {
+  min-width: 170px;
+  padding-left: 26px;
+  border-left: 1px solid rgb(255 255 255 / 28%);
+  text-align: right;
+}
+.hero-total strong {
+  display: block;
+  margin: 3px 0;
+  font-size: 29px;
+  font-variant-numeric: tabular-nums;
+}
+.hero-total > span:last-child {
+  color: rgb(255 255 255 / 78%);
+  font-size: 11px;
+}
+
+.identity-card {
+  margin-top: 16px;
+  padding: 17px 20px;
+  border: 1px solid #dce9de;
+  border-radius: 13px;
+  background: linear-gradient(105deg, #f4fbf5, #fff);
+}
+.identity-copy {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.identity-icon {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  flex: 0 0 29px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--color-brand-deep);
+  font-family: Georgia, serif;
+  font-weight: 700;
+}
+.identity-copy h2 {
+  margin: 0;
+  color: #25402e;
+  font-size: 13px;
+}
+.identity-copy p {
+  margin: 3px 0 0;
+  color: #6a796f;
+  font-size: 11px;
+}
+.identity-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  align-items: end;
+  gap: 10px;
+  margin-top: 13px;
+}
+.identity-fields label {
+  display: grid;
+  gap: 5px;
+  color: #48574d;
+  font-size: 10px;
+  font-weight: 700;
+}
+.identity-fields input {
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid #d8e2da;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+}
+.identity-fields button {
+  height: 36px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--color-brand-deep);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.identity-fields button:disabled {
+  opacity: 0.6;
+}
+.identity-message {
+  margin: 10px 0 0;
+  color: #137243;
+  font-size: 11px;
+}
+
+.filter-card,
+.results-card {
+  margin-top: 20px;
+  border: 1px solid var(--action-border, var(--color-border));
+  border-top: 4px solid var(--action-accent, var(--color-brand-deep));
+  border-radius: 15px;
+  background: var(--color-bg-card);
+  box-shadow: var(--action-shadow, 0 5px 18px rgb(12 38 24 / 4%));
+}
+
+/* fadeSlideUp queda solo en .results-card: como anima opacity/transform,
+   crea un contexto de apilamiento propio en el elemento — puesto en
+   .filter-card, atrapaba el menú de app-custom-select por debajo de
+   .results-card (que viene después en el HTML y pinta encima con su
+   propio contexto), aunque el menú tuviera z-index más alto. */
+.results-card {
+  animation: fadeSlideUp 0.4s ease both;
+}
+
+/* Solo la tarjeta de resultados necesita recortar (el encabezado gris de la
+   tabla y el thead tienen que respetar las esquinas redondeadas). La de
+   filtros NO puede tenerlo: le cortaba el menú desplegable de
+   app-custom-select, que se abre hacia afuera de la tarjeta. */
+.results-card {
+  overflow: hidden;
+}
+
+.filter-card {
+  padding: 23px 25px 18px;
+}
+.filter-heading,
+.results-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.filter-heading h2,
+.results-heading h2 {
+  margin: 0;
+  color: var(--color-text-dark);
+  font-size: 16px;
+  font-weight: 730;
+}
+.filter-heading p,
+.results-heading p {
+  margin: 5px 0 0;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+.clear-button {
+  border: 0;
+  padding: 8px 10px;
+  color: var(--color-brand-deep);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.clear-button:hover {
+  text-decoration: underline;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(145px, 0.75fr) minmax(145px, 0.75fr) minmax(220px, 1.4fr) minmax(
+      190px,
+      1fr
+    ) minmax(170px, 0.9fr);
+  gap: 13px;
+  margin-top: 18px;
+}
+.filter-field {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  color: #414a45;
+  font-size: 11px;
+  font-weight: 700;
+}
+.filter-field input,
+.filter-field select {
+  width: 100%;
+  height: 42px;
+  box-sizing: border-box;
+  border: 1px solid #dce3de;
+  border-radius: 8px;
+  padding: 0 11px;
+  outline: 0;
+  color: #25312a;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 450;
+  transition:
+    border-color 0.16s,
+    box-shadow 0.16s;
+}
+.filter-field input:focus,
+.filter-field select:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgb(0 166 81 / 12%);
+}
+/* app-custom-select no es un <input>/<select> nativo, así que el reset de
+   arriba no lo alcanza y hereda el peso/tamaño de letra de .filter-field
+   (700/11px, pensado para la etiqueta "Desde"/"Persona"/etc., no para el
+   valor elegido) — de ahí la tipografía rara y pesada del desplegable. */
+.filter-field app-custom-select {
+  font-size: 13px;
+  font-weight: 400;
+}
+.filter-field input::placeholder {
+  color: #969f99;
+}
+.filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+.filter-hint {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+}
+.apply-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--color-brand-deep);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgb(0 127 62 / 20%);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.apply-button:hover:not(:disabled) {
+  background: var(--color-brand-darkest);
+  transform: translateY(-1px);
+}
+.apply-button:disabled {
+  opacity: 0.58;
+  cursor: wait;
+}
+.apply-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.results-heading {
+  padding: 20px 24px;
+  border-bottom: 1px solid #edf0ed;
+}
+.secure-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: var(--color-brand-tint);
+  color: var(--color-brand-deep);
+  font-size: 11px;
+  font-weight: 700;
+}
+.secure-label svg {
+  width: 15px;
+  height: 15px;
+}
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+thead {
+  color: #6c7770;
+  background: #f7f9f7;
+}
+th {
+  height: 42px;
+  padding: 0 17px;
+  border-bottom: 1px solid #e8ede9;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+}
+td {
+  padding: 15px 17px;
+  border-bottom: 1px solid #eef1ee;
+  vertical-align: middle;
+  font-size: 12px;
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+tbody tr:hover {
+  background: #fbfdfb;
+}
+.date-cell {
+  min-width: 125px;
+}
+.date-cell strong,
+.date-cell span,
+.entity-cell strong,
+.entity-cell span {
+  display: block;
+}
+.date-cell strong,
+.entity-cell strong {
+  color: #29352e;
+  font-size: 12px;
+  font-weight: 650;
+}
+.date-cell span,
+.entity-cell span {
+  margin-top: 4px;
+  color: #7a857e;
+  font-size: 10px;
+}
+.person-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+.person-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-brand-light), var(--color-brand-deep));
+  box-shadow: 0 3px 8px rgba(0, 127, 62, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  font-size: 10px;
+  font-weight: 800;
+}
+.person-info {
+  display: grid;
+  gap: 3px;
+}
+.person-info strong {
+  color: #26342b;
+  font-size: 11px;
+  font-weight: 700;
+}
+.person-info span {
+  color: #77817a;
+  font-size: 10px;
+}
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 0 10px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.action-insert {
+  color: #167045;
+  background: #e6f5eb;
+  border-color: rgba(0, 127, 62, 0.18);
+}
+.action-update {
+  color: #8b5c0b;
+  background: #fff4d9;
+  border-color: rgba(138, 90, 11, 0.2);
+}
+.action-delete {
+  color: #a63f35;
+  background: #fdecea;
+  border-color: rgba(192, 57, 43, 0.2);
+}
+/* Una cuota saldada no es una eliminación real (ver Auditoria.esCuotaSaldada):
+   tono informativo, no el rojo de alarma que sí corresponde a un DELETE genuino. */
+.action-settled {
+  color: #1d5fa3;
+  background: var(--color-info-bg);
+  border-color: rgba(59, 130, 246, 0.22);
+}
+.change-details {
+  min-width: 105px;
+}
+.change-details summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #007f3e;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+.change-details summary::-webkit-details-marker {
+  display: none;
+}
+.change-details summary svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.15s;
+}
+.change-details[open] summary svg {
+  transform: rotate(180deg);
+}
+.change-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: min(600px, 70vw);
+  padding-top: 12px;
+}
+.change-state {
+  flex: 1 1 230px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e7ece8;
+  border-radius: 9px;
+  background: #fbfcfb;
+}
+.change-state h3 {
+  margin: 0 0 8px;
+  color: #425048;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.after-state h3 {
+  color: #08753b;
+}
+.change-state dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+.change-state dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+}
+.change-state dt {
+  color: #77817a;
+}
+.change-state dd {
+  margin: 0;
+  color: #28332c;
+  font-weight: 650;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.no-detail {
+  margin: 0;
+  color: #6c7770;
+  font-size: 11px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 22px;
+  border-top: 1px solid #edf0ed;
+  color: #77817a;
+  font-size: 11px;
+}
+.pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pagination strong {
+  color: #29352e;
+}
+.pagination button,
+.notice button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #dce3de;
+  border-radius: 7px;
+  color: #344039;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.pagination button:hover:not(:disabled),
+.notice button:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand-deep);
+}
+.pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.empty-state,
+.loading-state {
+  display: grid;
+  justify-items: center;
+  padding: 54px 20px;
+  color: #6f7b73;
+  text-align: center;
+}
+.empty-mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  color: #08753b;
+  background: #e7f4ea;
+  font-size: 22px;
+}
+.empty-state h3 {
+  margin: 15px 0 5px;
+  color: #2b3830;
+  font-size: 15px;
+}
+.empty-state p {
+  margin: 0;
+  font-size: 12px;
+}
+.loading-state {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dbece0;
+  border-top-color: var(--color-brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 15px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+.notice button {
+  margin-left: auto;
+}
+.error-notice {
+  color: #90372e;
+  background: #fff3f1;
+  border: 1px solid #f3d7d3;
+}
+.notice-symbol {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #c85043;
+  font-weight: 800;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1050px) {
+  .filter-grid {
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+  }
+  .filter-wide {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 680px) {
+  .audit-page {
+    padding: 16px 12px 28px;
+  }
+  .audit-hero {
+    min-height: unset;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 22px 18px;
+    border-radius: 14px;
+  }
+  .hero-mark {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    border-radius: 12px;
+  }
+  .hero-mark svg {
+    width: 25px;
+    height: 25px;
+  }
+  .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .hero-copy h1 {
+    margin-top: 6px;
+    font-size: 25px;
+  }
+  .hero-copy p {
+    max-width: 270px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .hero-total {
+    display: none;
+  }
+  .filter-card {
+    padding: 18px 15px 14px;
+  }
+  .identity-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .identity-fields button {
+    grid-column: span 2;
+  }
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+  }
+  .filter-wide {
+    grid-column: span 2;
+  }
+  .filter-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .apply-button {
+    width: 100%;
+  }
+  .results-heading {
+    align-items: flex-start;
+    padding: 17px 15px;
+  }
+  .secure-label {
+    font-size: 0;
+  }
+  .secure-label svg {
+    width: 19px;
+    height: 19px;
+  }
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 14px;
+  }
+  .pagination > div {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .change-content {
+    width: min(420px, 75vw);
+  }
+}

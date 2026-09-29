@@ -13,9 +13,12 @@ import { JugadorPerfil } from './admin-portal/jugador-perfil/jugador-perfil';
 import { ActualizacionAranceles } from './admin-portal/actualizacion-aranceles/actualizacion-aranceles';
 import { DeudaJugador } from './admin-portal/deuda-jugador/deuda-jugador';
 import { BecadosDescuentos } from './admin-portal/becados-descuentos/becados-descuentos';
+import { AccountAccess } from './account-access/account-access';
+import { Auditoria } from './admin-portal/auditoria/auditoria';
 
 export const routes: Routes = [
   { path: '', component: Login },
+  { path: 'restablecer-contrasena', component: AccountAccess },
   // authGuard, no adminGuard: esta pantalla es la elección de entorno para
   // cualquier usuario logueado, no exclusiva de Admin.
   { path: 'portales', component: Portales, canActivate: [authGuard] },
@@ -29,6 +32,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'resumen-general', pathMatch: 'full' },
       { path: 'resumen-general', component: ResumenGeneral },
       { path: 'actividad-movimientos', component: ActividadMovimientos },
+      { path: 'auditoria', component: Auditoria },
       { path: 'deudas-morosidad', component: DeudasMorosidad },
       { path: 'usuarios', component: Usuarios },
       { path: 'cuotas-pagos', component: CuotasPagos },

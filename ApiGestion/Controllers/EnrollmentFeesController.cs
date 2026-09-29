@@ -71,7 +71,10 @@ public class EnrollmentFeesController : ControllerBase
             Amount = fee.Amount,
             StartDate = fee.StartDate.ToString("yyyy-MM-dd"),
             EndDate = fee.EndDate?.ToString("yyyy-MM-dd"),
-            Status = fee.Status.ToString()
+            Status = fee.Status.ToString(),
+            ResponsibleName = fee.ResponsibleName,
+            ResponsibleSurname = fee.ResponsibleSurname,
+            RegisteredAtUtc = fee.RegisteredAtUtc
         };
     }
 }

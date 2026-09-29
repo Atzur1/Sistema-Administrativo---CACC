@@ -23,8 +23,7 @@ namespace DaoLibrary
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 ORDER BY p.apellido, p.nombre";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             using SqlDataReader reader = comando.ExecuteReader();
@@ -53,8 +52,7 @@ namespace DaoLibrary
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE j.PK_id_jugador = @idJugador";
 
-            using SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlCommand comando = new SqlCommand(query, conexion);
             comando.Parameters.AddWithValue("@idJugador", idJugador);
