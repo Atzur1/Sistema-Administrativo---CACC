@@ -31,6 +31,9 @@
       @if (inscripcionTexto) {
         <span class="arancel-badge arancel-badge-inscripcion">{{ inscripcionTexto }}</span>
       }
+      @if (deudaGlobalTotalTexto) {
+        <span class="arancel-badge arancel-badge-deuda">Deuda Global: {{ deudaGlobalTotalTexto }} ({{ jugadoresMorososTexto }})</span>
+      }
     </div>
 
     <div class="header-metrics">
@@ -43,41 +46,12 @@
     </div>
   </header>
 
-  <!-- HU-019: indicador destacado y único de deuda global -->
-  <div class="deuda-global-highlight" role="status">
-    <span class="deuda-global-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
-    </span>
-    <span class="deuda-global-text">
-      <strong>Deuda Global Total:</strong> {{ deudaGlobalTotalTexto }}
-      <span class="deuda-global-morosos">({{ jugadoresMorososTexto }})</span>
-    </span>
-  </div>
-
   <div class="header-divider"></div>
 
   <!-- ===== PAYMENT FORM ===== -->
   <section class="form-panel" [class.form-panel-inscripcion]="panelMode === 'inscripcion'">
     <header class="form-head">
-      <span class="form-icon" [class.form-icon-inscripcion]="panelMode === 'inscripcion'">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 5v14"></path>
-          <path d="M5 12h14"></path>
-        </svg>
-      </span>
-      <div class="form-head-text">
-        <span class="form-badge" [class.form-badge-inscripcion]="panelMode === 'inscripcion'">
-          {{ panelMode === 'cuota' ? 'Pagos' : 'Inscripción' }}
-        </span>
-        <h2 class="form-title">{{ panelMode === 'cuota' ? 'Registrar cobro' : 'Cobrar inscripción' }}</h2>
-        <span class="form-subtitle">{{ panelMode === 'cuota' ? 'Cargá un nuevo pago en segundos' : 'Pago único al momento del alta' }}</span>
-      </div>
+      <h2 class="form-title">{{ panelMode === 'cuota' ? 'Registrar cobro' : 'Cobrar inscripción' }}</h2>
     </header>
 
     <!-- Tabs -->
@@ -195,128 +169,108 @@
     </form>
     } @else {
     <!-- ===== INSCRIPCIÓN TAB ===== -->
-    <div class="insc-grid">
+    <form class="insc-grid" [formGroup]="inscripcionForm" (ngSubmit)="onSubmitInscripcion()">
 
-      <!-- Buscador de jugador -->
-      <div class="field">
-        <label class="field-label" for="insc-player">Jugador</label>
-        <div class="input-icon-wrap">
-          <span class="input-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-          <input id="insc-player" type="text" class="field-input field-input-icon"
-                 [value]="inscripcionPlayerText"
-                 placeholder="Buscar por nombre o DNI..."
-                 autocomplete="off"
-                 (input)="onInscripcionPlayerSearch($any($event.target).value)"
-                 (keydown.escape)="hideInscripcionSuggestions()" />
+      <!-- Fila 1: jugador | monto a pagar ahora | método -->
+      <div class="form-row form-row-insc-top">
+
+        <!-- Buscador de jugador -->
+        <div class="field field-player">
+          <label class="field-label" for="insc-player">Jugador</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input id="insc-player" type="text" class="field-input field-input-icon"
+                   [value]="inscripcionPlayerText"
+                   placeholder="Buscar por nombre o DNI..."
+                   autocomplete="off"
+                   (input)="onInscripcionPlayerSearch($any($event.target).value)"
+                   (keydown.escape)="hideInscripcionSuggestions()" />
+          </div>
+          @if (inscripcionShowSuggestions) {
+            <ul class="suggestions">
+              @for (jugador of inscripcionMatchingPlayers; track jugador.idJugador) {
+                <li>
+                  <button type="button" class="suggestion" (click)="selectInscripcionPlayer(jugador)">
+                    <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
+                    <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
         </div>
-        @if (inscripcionShowSuggestions) {
-          <ul class="suggestions">
-            @for (jugador of inscripcionMatchingPlayers; track jugador.idJugador) {
-              <li>
-                <button type="button" class="suggestion" (click)="selectInscripcionPlayer(jugador)">
-                  <span class="suggestion-name">{{ jugador.nombreCompleto }}</span>
-                  <span class="suggestion-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
-                </button>
-              </li>
-            }
-          </ul>
-        }
+
+        <!-- Monto a pagar ahora: aparece al seleccionar jugador -->
+        <div class="field field-amount">
+          @if (enrollmentData || enrollmentSinRegistro()) {
+            <div class="field-reveal">
+              <label class="field-label" for="insc-amount">Monto a pagar ahora</label>
+              <div class="amount-wrapper">
+                <span class="amount-prefix">$</span>
+                <input id="insc-amount" type="text" inputmode="numeric" class="field-input amount-input"
+                       [value]="inscripcionMontoDisplay"
+                       (input)="onInscripcionMontoInput($any($event.target))"
+                       placeholder="0" />
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Método: aparece al ingresar monto -->
+        <div class="field field-method">
+          @if (showInscripcionMethod) {
+            <div class="field-reveal">
+              <label class="field-label" for="insc-method">Método</label>
+              <app-custom-select id="insc-method" [options]="methods" placeholder="Seleccionar método"
+                                  formControlName="method"></app-custom-select>
+            </div>
+          }
+        </div>
+
       </div>
 
-      <!-- Bloque informativo (aparece al seleccionar jugador) -->
-      <!-- Loading -->
+      <!-- Fila 2: info + botón en una sola fila unificada -->
       @if (cargandoEnrollment()) {
         <div class="insc-loading field-reveal">Cargando datos de inscripción…</div>
       }
-
-      <!-- Card del jugador: aparece al recibir los datos -->
       @if (enrollmentData) {
-        <div class="insc-jugador-card field-reveal">
-          <div class="insc-jugador-header">
-            <span class="insc-jugador-avatar">{{ initialsOfPublic(selectedInscripcionPlayerName) }}</span>
-            <div>
-              <div class="insc-jugador-name">{{ selectedInscripcionPlayerName }}</div>
-            </div>
-            <div class="insc-alta-chip">Alta: {{ formatDateLocal(enrollmentData.dueDate) }}</div>
+        <div class="insc-info-row field-reveal">
+          <div class="insc-monto-box">
+            <span class="insc-monto-label">Abonado · {{ enrollmentData.payments.length }} {{ enrollmentData.payments.length === 1 ? 'pago' : 'pagos' }}</span>
+            <span class="insc-monto-value">{{ formatCurrencyLocal(enrollmentData.paidAmount) }}</span>
+            @if (enrollmentData.payments.length > 0) {
+              <span class="insc-monto-sub">Último: {{ formatDateLocal(enrollmentData.payments[enrollmentData.payments.length - 1].paymentDate) }}</span>
+            }
           </div>
-
-          <div class="insc-montos-grid">
-            <div class="insc-monto-box">
-              <span class="insc-monto-label">Inscripción</span>
-              <span class="insc-monto-value">{{ formatCurrencyLocal(enrollmentData.amount) }}</span>
-              <span class="insc-monto-sub">Valor vigente al alta</span>
-            </div>
-            <div class="insc-monto-box">
-              <span class="insc-monto-label">Abonado · {{ enrollmentData.payments.length }} {{ enrollmentData.payments.length === 1 ? 'pago' : 'pagos' }}</span>
-              <span class="insc-monto-value">{{ formatCurrencyLocal(enrollmentData.paidAmount) }}</span>
-              @if (enrollmentData.payments.length > 0) {
-                <span class="insc-monto-sub">Último: {{ formatDateLocal(enrollmentData.payments[enrollmentData.payments.length - 1].paymentDate) }}</span>
+          <div class="insc-monto-box insc-monto-saldo">
+            <span class="insc-monto-label insc-monto-label-warn">Saldo pendiente</span>
+            <span class="insc-monto-value insc-monto-value-warn">{{ formatCurrencyLocal(enrollmentData.pendingBalance) }}</span>
+            <span class="insc-monto-sub insc-monto-sub-warn">Para completar el total</span>
+          </div>
+          @if (showInscripcionMethod) {
+            <button type="submit" class="submit-button submit-button-inscripcion field-reveal"
+                    style="animation-delay: 60ms"
+                    [disabled]="!inscripcionFormValid || enviandoInscripcion">
+              @if (!enviandoInscripcion) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
               }
-            </div>
-            <div class="insc-monto-box insc-monto-saldo">
-              <span class="insc-monto-label insc-monto-label-warn">Saldo pendiente</span>
-              <span class="insc-monto-value insc-monto-value-warn">{{ formatCurrencyLocal(enrollmentData.pendingBalance) }}</span>
-              <span class="insc-monto-sub insc-monto-sub-warn">Para completar el total</span>
-            </div>
-          </div>
+              {{ enviandoInscripcion ? 'Registrando...' : 'Registrar pago de inscripción' }}
+            </button>
+          }
         </div>
       }
 
-      <!-- Formulario progresivo: monto siempre primero, método+botón al ingresar monto -->
-      @if (enrollmentData || enrollmentSinRegistro()) {
-        <form class="form-grid" [formGroup]="inscripcionForm" (ngSubmit)="onSubmitInscripcion()">
-          <div class="form-row form-row-action">
-            <!-- Monto: aparece con la card -->
-            <div class="field field-amount">
-              <div class="field-reveal">
-                <label class="field-label" for="insc-amount">Monto a pagar ahora</label>
-                <div class="amount-wrapper">
-                  <span class="amount-prefix">$</span>
-                  <input id="insc-amount" type="text" inputmode="numeric" class="field-input amount-input"
-                         [value]="inscripcionMontoDisplay"
-                         (input)="onInscripcionMontoInput($any($event.target))"
-                         placeholder="0" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Método: aparece al ingresar monto -->
-            <div class="field field-method">
-              @if (showInscripcionMethod) {
-                <div class="field-reveal">
-                  <label class="field-label" for="insc-method">Método</label>
-                  <app-custom-select id="insc-method" [options]="methods" placeholder="Seleccionar método"
-                                      formControlName="method"></app-custom-select>
-                </div>
-              }
-            </div>
-
-            <!-- Botón: aparece con el método -->
-            @if (showInscripcionMethod) {
-              <button type="submit" class="submit-button submit-button-inscripcion field-reveal"
-                      style="animation-delay: 60ms"
-                      [disabled]="!inscripcionFormValid || enviandoInscripcion">
-                @if (!enviandoInscripcion) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 5v14"></path>
-                    <path d="M5 12h14"></path>
-                  </svg>
-                }
-                {{ enviandoInscripcion ? 'Registrando...' : 'Registrar pago de inscripción' }}
-              </button>
-            }
-          </div>
-        </form>
-      }
-
-    </div>
+    </form>
     }
   </section>
 
@@ -331,42 +285,35 @@
       <header class="panel-head">
         <span class="panel-dot dot-pending"></span>
         <h2 class="panel-title">Pendientes de cobro</h2>
-        <span class="panel-count">{{ pendingRows.length }}</span>
-        <a class="panel-link" routerLink="/admin/portal/actividad-movimientos">Ver historial de pagos →</a>
+
+        <div class="panel-head-filters">
+          <div class="search-control">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" placeholder="Buscar por nombre o DNI…" [(ngModel)]="busquedaPendientes">
+          </div>
+
+          <div class="filter-control">
+            <app-custom-select [options]="categoriaOptions" placeholder="Todas las categorías"
+                                [(ngModel)]="categoriaFiltro"></app-custom-select>
+          </div>
+
+          <div class="filter-control">
+            <app-custom-select [options]="cuotasOptions" placeholder="Todas las cuotas"
+                                [(ngModel)]="cuotasFiltro"></app-custom-select>
+          </div>
+
+          @if (hayFiltrosPendientesActivos) {
+            <button type="button" class="clear-filter-btn" (click)="limpiarFiltrosPendientes()">
+              Limpiar filtros
+            </button>
+          }
+        </div>
       </header>
 
-      <div class="filter-row">
-        <div class="search-control">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input type="text" placeholder="Buscar por nombre o DNI…" [(ngModel)]="busquedaPendientes">
-        </div>
-
-        <div class="filter-control">
-          <app-custom-select [options]="categoriaOptions" placeholder="Todas las categorías"
-                              [(ngModel)]="categoriaFiltro"></app-custom-select>
-        </div>
-
-        <div class="filter-control">
-          <app-custom-select [options]="cuotasOptions" placeholder="Todas las cuotas"
-                              [(ngModel)]="cuotasFiltro"></app-custom-select>
-        </div>
-
-        @if (hayFiltrosPendientesActivos) {
-          <button type="button" class="clear-filter-btn" (click)="limpiarFiltrosPendientes()">
-            Limpiar filtros
-          </button>
-        }
-      </div>
-
-      @if (pendingLoaded) {
-        <p class="filter-count">
-          Mostrando {{ filteredPendingRows.length }} de {{ pendingRows.length }} pendientes
-        </p>
-      }
 
       @if (pendingLoaded && pendingRows.length === 0) {
         <p class="empty-state">No hay cobros pendientes en este momento.</p>

@@ -100,6 +100,12 @@
     border: 1px solid var(--color-brand-deep);
 }
 
+.arancel-badge-deuda {
+    background: transparent;
+    color: #b91c1c;
+    border: 1px solid #b91c1c;
+}
+
 .header-metrics {
     display: flex;
     align-items: center;
@@ -140,43 +146,6 @@
     background: var(--color-border);
 }
 
-/* HU-019: indicador destacado y único, no repartido en tarjetas separadas —
-   fondo tintado en el mismo lenguaje visual que las alertas del resto de la
-   app (--color-danger-bg), ya que es plata que el club todavía no cobró. */
-.deuda-global-highlight {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 12px;
-    padding: 10px 16px;
-    border-radius: 10px;
-    background: var(--color-danger-bg);
-    border: 1px solid rgba(192, 57, 43, 0.18);
-    color: var(--color-danger);
-    font-size: 13.5px;
-    animation: fadeSlideUp 0.4s ease both;
-}
-
-.deuda-global-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.deuda-global-icon svg {
-    width: 18px;
-    height: 18px;
-}
-
-.deuda-global-text strong {
-    font-weight: 700;
-}
-
-.deuda-global-morosos {
-    color: var(--color-text-muted);
-    font-weight: 500;
-}
 
 /* ===== PAYMENT FORM ===== */
 /* Panel de acción "deportivo institucional": blanco limpio, acento verde
@@ -550,70 +519,50 @@
     padding: 12px 14px;
 }
 
-/* Card informativa del jugador seleccionado */
-.insc-jugador-card {
-    background: var(--color-brand-tint);
-    border: 1px solid rgba(0, 127, 62, 0.25);
+/* Fila 1: jugador | monto | método */
+.form-row-insc-top {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    position: relative;
+    z-index: 2;
+}
+
+/* Fila 2: abonado + saldo pendiente + botón en una sola tira unificada */
+.insc-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--color-border, #e5e7eb);
     border-radius: 10px;
     padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
 }
 
-.insc-jugador-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+.insc-info-row .insc-monto-box {
+    flex: 1;
+    min-width: 0;
 }
 
-.insc-jugador-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--color-brand-tint);
-    color: var(--color-brand-deep);
-    font-size: 13px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.insc-info-row .submit-button {
     flex-shrink: 0;
-}
-
-.insc-jugador-name {
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.insc-alta-chip {
-    margin-left: auto;
-    padding: 3px 9px;
-    border-radius: 6px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    font-size: 10px;
-    color: var(--color-text-muted);
     white-space: nowrap;
 }
 
-/* Grilla de montos: inscripción / abonado / saldo */
-.insc-montos-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-}
-
-@media (max-width: 580px) {
-    .insc-montos-grid {
-        grid-template-columns: 1fr 1fr;
+@media (max-width: 640px) {
+    .insc-info-row {
+        flex-wrap: wrap;
+    }
+    .insc-info-row .submit-button {
+        width: 100%;
     }
 }
 
 .insc-monto-box {
     padding: 10px 12px;
     border-radius: 8px;
+    min-width: 0;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
     display: flex;
@@ -622,8 +571,7 @@
 }
 
 .insc-monto-box.insc-monto-saldo {
-    background: var(--color-warning-bg);
-    border-color: transparent;
+    background: transparent;
 }
 
 .insc-monto-label {
@@ -634,7 +582,7 @@
 }
 
 .insc-monto-label.insc-monto-label-warn {
-    color: var(--color-warning-text);
+    color: inherit;
 }
 
 .insc-monto-value {
@@ -644,7 +592,7 @@
 }
 
 .insc-monto-value.insc-monto-value-warn {
-    color: var(--color-warning-text);
+    color: inherit;
 }
 
 .insc-monto-sub {
@@ -653,7 +601,7 @@
 }
 
 .insc-monto-sub.insc-monto-sub-warn {
-    color: var(--color-warning-text);
+    color: inherit;
 }
 
 /* Botón de inscripción (violeta, mismo tamaño que el verde) */
@@ -704,6 +652,7 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 14px;
+    flex-wrap: wrap;
 }
 
 .panel-dot {
@@ -728,6 +677,14 @@
     font-size: 13px;
     font-weight: 700;
     color: var(--color-text-muted);
+}
+
+.panel-head-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-left: auto;
 }
 
 /* ===== FILTROS (mismo patrón que Deudas y Morosidad / Becados y Descuentos) ===== */
@@ -914,6 +871,13 @@
 }
 
 @media (max-width: 640px) {
+    .panel-head-filters {
+        margin-left: 0;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
     .filter-row {
         flex-direction: column;
         align-items: stretch;
@@ -958,6 +922,20 @@
         grid-column: span 2;
         width: 100%;
     }
+
+    /* Inscripción: fila superior pasa a 2 columnas (jugador + monto), método abajo */
+    .form-row-insc-top {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    /* Info row: apilar boxes y botón */
+    .insc-info-row {
+        flex-wrap: wrap;
+    }
+
+    .insc-info-row .submit-button {
+        width: 100%;
+    }
 }
 
 /* Tablet / mobile grande: aranceles y métricas pasan a ocupar cada uno el
@@ -991,7 +969,8 @@
     }
 
     .form-row-lookup,
-    .form-row-action {
+    .form-row-action,
+    .form-row-insc-top {
         grid-template-columns: 1fr;
     }
 
