@@ -42,7 +42,7 @@ export class AuthService {
   }
 
   completeAccountAccess(token: string, password: string): Observable<{ mensaje: string }> {
-    return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/password-reset/complete`, { token, password });
+    return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/account-access/complete`, { token, password });
   }
 
   getUsuario(): UsuarioLogueado | null {

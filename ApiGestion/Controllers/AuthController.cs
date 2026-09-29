@@ -54,20 +54,17 @@ namespace ApiGestion.Controllers
             return Ok(new { mensaje = response });
         }
 
-        [HttpPost("password-reset/complete")]
+        // Completa tanto un token de RECUPERACION (reset de contraseña del SuperAdmin)
+        // como uno de ACTIVACION (alta hecha desde Usuarios y Permisos): el tipo lo
+        // resuelve el propio token, no hace falta que el cliente lo indique.
+        [HttpPost("account-access/complete")]
         [EnableRateLimiting("account-email")]
-        public IActionResult CompletarRestablecimiento([FromBody] CompleteAccountAccessRequest request)
-        {
-            var superAdminEmail = _config["Security:SuperAdminEmail"]?.Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(superAdminEmail) || !Completar(request, superAdminEmail))
-                return BadRequest(new { mensaje = "El enlace no es válido o venció." });
-            return Ok(new { mensaje = "La contraseña se actualizó. Ya puede iniciar sesión." });
-        }
-
-        private bool Completar(CompleteAccountAccessRequest request, string superAdminEmail)
+        public IActionResult CompletarAcceso([FromBody] CompleteAccountAccessRequest request)
         {
             var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(request.Token)));
-            return _accountAccessDao.CompleteReset(tokenHash, PasswordHasher.Hash(request.Password), superAdminEmail);
+            if (!_accountAccessDao.CompleteAccountAccess(tokenHash, PasswordHasher.Hash(request.Password)))
+                return BadRequest(new { mensaje = "El enlace no es válido o venció." });
+            return Ok(new { mensaje = "La contraseña se actualizó. Ya puede iniciar sesión." });
         }
 
         [HttpPost("login")]

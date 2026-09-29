@@ -50,6 +50,8 @@ builder.Services.AddScoped<DaoLibrary.IAuditDao>(provider =>
     new DaoLibrary.AuditDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 builder.Services.AddScoped<DaoLibrary.AccountAccessDao>(provider =>
     new DaoLibrary.AccountAccessDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<DaoLibrary.IUsuariosPortalDao>(provider =>
+    new DaoLibrary.UsuariosPortalDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 builder.Services.AddSingleton<ApiGestion.Services.EmailLinkSender>();
 
 // Cuotas y pagos: DAO + runner transaccional + servicio de negocio

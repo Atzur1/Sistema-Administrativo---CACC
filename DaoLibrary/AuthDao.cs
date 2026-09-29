@@ -14,8 +14,11 @@ public class AuthDao
         using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
         // acceso_portal es el gate real de ingreso: FK_id_rol es del otro equipo y no
         // autoriza nada acá. rol_portal (propio, 1 = SuperAdmin, 2 = Administrador) es
-        // el único valor que se usa para el claim de rol del JWT.
-        const string query = "SELECT PK_id_usuario, email, nombre, apellido, dni, contrasenia, password_hash, token_version, acceso_portal, rol_portal FROM USUARIO WHERE email = @email AND activo = 1 AND acceso_portal = 1";
+        // el único valor que se usa para el claim de rol del JWT. activacion_pendiente = 1
+        // significa que UsuariosPortalDao.Habilitar ya dio el acceso pero la persona
+        // todavía no completó el enlace de activación: sin esto, una contraseña vieja
+        // que el otro equipo haya dejado cargada serviría para entrar antes de tiempo.
+        const string query = "SELECT PK_id_usuario, email, nombre, apellido, dni, contrasenia, password_hash, token_version, acceso_portal, rol_portal FROM USUARIO WHERE email = @email AND activo = 1 AND acceso_portal = 1 AND activacion_pendiente = 0";
         using var comando = new SqlCommand(query, conexion);
         comando.Parameters.Add("@email", System.Data.SqlDbType.NVarChar, 254).Value = email;
         using var reader = comando.ExecuteReader();

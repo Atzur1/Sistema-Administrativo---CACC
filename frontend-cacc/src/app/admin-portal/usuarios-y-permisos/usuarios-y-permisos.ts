@@ -1,194 +1,248 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
+import { UsuariosPortalService } from '../../services/usuarios-portal';
+import { NotificationService } from '../../shared/notifications/notification.service';
+import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
+import {
+  ROL_PORTAL_LABELS,
+  RolPortal,
+  UsuarioCandidato,
+  UsuarioPortal,
+} from '../../models/UsuarioPortalModel';
 
-// Roles drive the avatar, pill and icon colors across the dashboard
-type UserRole = 'admin' | 'user' | 'teacher' | 'staff';
-
-// One row in the users table
-interface UserRow {
-    initials: string;
-    name: string;
-    email: string;
-    role: UserRole;
-    roleLabel: string;
-    active: boolean;
-    statusLabel: string;
-    lastActivity: string;
-}
-
-// One entry in the role distribution panel
-interface RoleSummary {
-    role: UserRole;
-    label: string;
-    description: string;
-    count: number;
-}
+const ROL_OPTIONS: CustomSelectOption[] = [
+  { value: 1, label: 'SuperAdmin' },
+  { value: 2, label: 'Administrador' },
+];
 
 @Component({
-    selector: 'app-usuarios',
-    standalone: true,
-    imports: [CommonModule],
-    templateUrl: './usuarios-y-permisos.html',
-    styleUrl: './usuarios-y-permisos.css',
+  selector: 'app-usuarios',
+  standalone: true,
+  imports: [CommonModule, FormsModule, CustomSelect],
+  templateUrl: './usuarios-y-permisos.html',
+  styleUrl: './usuarios-y-permisos.css',
 })
-export class Usuarios {
+export class Usuarios implements OnInit {
+  readonly rolOptions = ROL_OPTIONS;
+  readonly rolLabels = ROL_PORTAL_LABELS;
 
-    // Header
-    headerMetrics = [
-        { value: '12', label: 'Usuarios' },
-        { value: '11', label: 'Activos' },
-        { value: '1', label: 'Admin' },
-    ];
+  loading = signal(true);
+  loadError = signal<string | null>(null);
+  habilitados = signal<UsuarioPortal[]>([]);
+  candidatos = signal<UsuarioCandidato[]>([]);
 
-    // Registered accounts — fictional demo data
-    users: UserRow[] = [
-        {
-            initials: 'MZ',
-            name: 'Mariano Zárate',
-            email: 'admin@cacc.com',
-            role: 'admin',
-            roleLabel: 'Administrador',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hace 5 minutos',
-        },
-        {
-            initials: 'CP',
-            name: 'Camila Paz',
-            email: 'cpaz@cacc.com',
-            role: 'user',
-            roleLabel: 'Usuario',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hace 2 horas',
-        },
-        {
-            initials: 'RA',
-            name: 'Rocío Aguirre',
-            email: 'raguirre@cacc.com',
-            role: 'user',
-            roleLabel: 'Usuario',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hace 45 minutos',
-        },
-        {
-            initials: 'TV',
-            name: 'Tomás Villalba',
-            email: 'tvillalba@cacc.com',
-            role: 'user',
-            roleLabel: 'Usuario',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hoy, 08:15',
-        },
-        {
-            initials: 'IB',
-            name: 'Ignacio Britos',
-            email: 'ibritos@cacc.com',
-            role: 'teacher',
-            roleLabel: 'Profesor',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hoy, 09:40',
-        },
-        {
-            initials: 'LV',
-            name: 'Lautaro Vargas',
-            email: 'lvargas@cacc.com',
-            role: 'teacher',
-            roleLabel: 'Profesor',
-            active: false,
-            statusLabel: 'Inactivo',
-            lastActivity: 'Hace 5 días',
-        },
-        {
-            initials: 'SM',
-            name: 'Sofía Miranda',
-            email: 'smiranda@cacc.com',
-            role: 'teacher',
-            roleLabel: 'Profesor',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hace 1 hora',
-        },
-        {
-            initials: 'EB',
-            name: 'Emilio Bustos',
-            email: 'ebustos@cacc.com',
-            role: 'teacher',
-            roleLabel: 'Profesor',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Ayer, 20:05',
-        },
-        {
-            initials: 'VL',
-            name: 'Valeria Ledesma',
-            email: 'vledesma@cacc.com',
-            role: 'teacher',
-            roleLabel: 'Profesor',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hoy, 10:30',
-        },
-        {
-            initials: 'FR',
-            name: 'Franco Reinoso',
-            email: 'freinoso@cacc.com',
-            role: 'staff',
-            roleLabel: 'Staff',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Ayer, 18:20',
-        },
-        {
-            initials: 'KM',
-            name: 'Karina Molina',
-            email: 'kmolina@cacc.com',
-            role: 'staff',
-            roleLabel: 'Staff',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hace 3 horas',
-        },
-        {
-            initials: 'NF',
-            name: 'Nicolás Ferreyra',
-            email: 'nferreyra@cacc.com',
-            role: 'staff',
-            roleLabel: 'Staff',
-            active: true,
-            statusLabel: 'Activo',
-            lastActivity: 'Hace 6 horas',
-        },
-    ];
+  // Fila de "Candidatos" cuyo desplegable de rol el SuperAdmin ya tocó, para
+  // no perder la elección si el habilitar tarda un toque en confirmarse.
+  rolElegido = new Map<number, RolPortal>();
 
-    // How many users hold each role
-    roleDistribution: RoleSummary[] = [
-        {
-            role: 'admin',
-            label: 'Administrador',
-            description: 'Control total del sistema',
-            count: 1,
+  // "Editar candidato": corrige nombre/apellido/mail antes de habilitar, por
+  // si el otro equipo cargó algo mal.
+  dialogEditar = signal<UsuarioCandidato | null>(null);
+  editarNombre = '';
+  editarApellido = '';
+  editarEmail = '';
+  editarSubmitting = signal(false);
+  editarError = signal<string | null>(null);
+
+  // "Habilitar": popup de confirmación (muestra el mail antes de disparar el
+  // correo de activación, así un error de carga del otro equipo no termina
+  // mandándole acceso de administrador a un desconocido).
+  dialogCandidato = signal<UsuarioCandidato | null>(null);
+  dialogSubmitting = signal(false);
+  dialogError = signal<string | null>(null);
+
+  // "Deshabilitar": confirmación aparte, es la acción más destructiva de la
+  // pantalla (corta la sesión de la persona en la siguiente request).
+  confirmarBaja = signal<UsuarioPortal | null>(null);
+  bajaSubmitting = signal(false);
+
+  constructor(
+    private readonly usuariosService: UsuariosPortalService,
+    private readonly notifications: NotificationService,
+  ) {}
+
+  ngOnInit(): void {
+    this.cargar();
+  }
+
+  cargar(): void {
+    this.loading.set(true);
+    this.loadError.set(null);
+
+    this.usuariosService.getHabilitados().subscribe({
+      next: (rows) => this.habilitados.set(rows),
+      error: () => this.loadError.set('No se pudo cargar la lista de usuarios habilitados.'),
+    });
+
+    this.usuariosService
+      .getCandidatos()
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (rows) => this.candidatos.set(rows),
+        error: () => this.loadError.set('No se pudo cargar la lista de candidatos.'),
+      });
+  }
+
+  get totalHabilitados(): number {
+    return this.habilitados().length;
+  }
+
+  get totalSuperAdmins(): number {
+    return this.habilitados().filter((u) => u.rolPortal === 1).length;
+  }
+
+  get totalAdministradores(): number {
+    return this.habilitados().filter((u) => u.rolPortal === 2).length;
+  }
+
+  rolParaCandidato(candidato: UsuarioCandidato): RolPortal {
+    return this.rolElegido.get(candidato.idUsuario) ?? candidato.fkIdRolSugerido;
+  }
+
+  onRolCandidatoChange(candidato: UsuarioCandidato, valor: string | number | null): void {
+    if (valor === 1 || valor === 2) {
+      this.rolElegido.set(candidato.idUsuario, valor);
+    }
+  }
+
+  // ===== Editar candidato (nombre / apellido / mail) =====
+
+  abrirEditar(candidato: UsuarioCandidato): void {
+    this.editarNombre = candidato.nombre;
+    this.editarApellido = candidato.apellido;
+    this.editarEmail = candidato.email;
+    this.editarError.set(null);
+    this.dialogEditar.set(candidato);
+  }
+
+  cerrarEditar(): void {
+    if (this.editarSubmitting()) return;
+    this.dialogEditar.set(null);
+  }
+
+  guardarEdicion(): void {
+    const candidato = this.dialogEditar();
+    if (!candidato || this.editarSubmitting()) return;
+
+    const nombre = this.editarNombre.trim();
+    const apellido = this.editarApellido.trim();
+    const email = this.editarEmail.trim();
+    if (!nombre || !apellido || !email) {
+      this.editarError.set('Completá nombre, apellido y mail.');
+      return;
+    }
+
+    this.editarSubmitting.set(true);
+    this.editarError.set(null);
+
+    this.usuariosService
+      .editarCandidato(candidato.idUsuario, { nombre, apellido, email })
+      .pipe(finalize(() => this.editarSubmitting.set(false)))
+      .subscribe({
+        next: () => {
+          candidato.nombre = nombre;
+          candidato.apellido = apellido;
+          candidato.email = email;
+          this.dialogEditar.set(null);
+          this.notifications.notify('Datos corregidos.', 'success');
         },
-        {
-            role: 'user',
-            label: 'Usuario',
-            description: 'Acceso general',
-            count: 3,
+        error: (error) => {
+          this.editarError.set(error?.error?.mensaje ?? 'No se pudieron corregir los datos.');
         },
-        {
-            role: 'teacher',
-            label: 'Profesor',
-            description: 'Cuerpo docente del club',
-            count: 5,
+      });
+  }
+
+  // ===== Habilitar =====
+
+  abrirHabilitar(candidato: UsuarioCandidato): void {
+    this.dialogError.set(null);
+    this.dialogCandidato.set(candidato);
+  }
+
+  cerrarHabilitar(): void {
+    if (this.dialogSubmitting()) return;
+    this.dialogCandidato.set(null);
+  }
+
+  confirmarHabilitar(): void {
+    const candidato = this.dialogCandidato();
+    if (!candidato || this.dialogSubmitting()) return;
+
+    const rolPortal = this.rolParaCandidato(candidato);
+    this.dialogSubmitting.set(true);
+    this.dialogError.set(null);
+
+    this.usuariosService
+      .habilitar(candidato.idUsuario, { email: candidato.email, rolPortal })
+      .pipe(finalize(() => this.dialogSubmitting.set(false)))
+      .subscribe({
+        next: (respuesta) => {
+          this.notifications.notify(respuesta.mensaje, 'success');
+          this.dialogCandidato.set(null);
+          this.rolElegido.delete(candidato.idUsuario);
+          this.cargar();
         },
-        {
-            role: 'staff',
-            label: 'Staff',
-            description: 'Cuerpo técnico',
-            count: 3,
+        error: (error) => {
+          this.dialogError.set(error?.error?.mensaje ?? 'No se pudo habilitar el acceso.');
         },
-    ];
+      });
+  }
+
+  // ===== Cambiar rol de alguien ya habilitado =====
+
+  onRolHabilitadoChange(usuario: UsuarioPortal, valor: string | number | null): void {
+    if (valor !== 1 && valor !== 2) return;
+    if (valor === usuario.rolPortal) return;
+
+    const anterior = usuario.rolPortal;
+    usuario.rolPortal = valor;
+
+    this.usuariosService.cambiarRol(usuario.idUsuario, { rolPortal: valor }).subscribe({
+      next: (respuesta) => this.notifications.notify(respuesta.mensaje, 'success'),
+      error: (error) => {
+        usuario.rolPortal = anterior;
+        this.notifications.notify(
+          error?.error?.mensaje ?? 'No se pudo cambiar el rol. Verificá que quede al menos un SuperAdmin.',
+          'error',
+        );
+      },
+    });
+  }
+
+  // ===== Deshabilitar =====
+
+  pedirBaja(usuario: UsuarioPortal): void {
+    this.confirmarBaja.set(usuario);
+  }
+
+  cancelarBaja(): void {
+    if (this.bajaSubmitting()) return;
+    this.confirmarBaja.set(null);
+  }
+
+  confirmarBajaAccion(): void {
+    const usuario = this.confirmarBaja();
+    if (!usuario || this.bajaSubmitting()) return;
+
+    this.bajaSubmitting.set(true);
+    this.usuariosService
+      .deshabilitar(usuario.idUsuario)
+      .pipe(finalize(() => this.bajaSubmitting.set(false)))
+      .subscribe({
+        next: (respuesta) => {
+          this.notifications.notify(respuesta.mensaje, 'success');
+          this.confirmarBaja.set(null);
+          this.cargar();
+        },
+        error: (error) => {
+          this.notifications.notify(
+            error?.error?.mensaje ?? 'No se pudo deshabilitar el acceso.',
+            'error',
+          );
+          this.confirmarBaja.set(null);
+        },
+      });
+  }
 }

@@ -35,19 +35,50 @@ public sealed class AccountAccessDao(string connectionString)
         return email;
     }
 
-    public bool CompleteReset(string tokenHash, string passwordHash, string superAdminEmail)
+    // Token de activación para una cuenta recién habilitada (acceso_portal=1,
+    // activacion_pendiente=1) por UsuariosPortalDao.Habilitar. A diferencia de
+    // CreateResetToken, no está limitado al SuperAdmin: sirve para cualquier rol.
+    public void CreateActivationToken(int userId, string tokenHash, DateTime expiresUtc)
+    {
+        using var connection = SqlConnectionFactory.Open(connectionString);
+        using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
+
+        using (var revoke = new SqlCommand("UPDATE dbo.TOKEN_ACCESO_CUENTA SET consumido_utc = SYSUTCDATETIME() WHERE id_usuario = @id AND tipo = 'ACTIVACION' AND consumido_utc IS NULL", connection, transaction))
+        {
+            revoke.Parameters.Add("@id", SqlDbType.Int).Value = userId;
+            revoke.ExecuteNonQuery();
+        }
+        using (var token = new SqlCommand(@"INSERT dbo.TOKEN_ACCESO_CUENTA(id_usuario, tipo, hash_token, vence_utc)
+            VALUES (@id, 'ACTIVACION', @hash, @expires);", connection, transaction))
+        {
+            token.Parameters.Add("@id", SqlDbType.Int).Value = userId;
+            token.Parameters.Add("@hash", SqlDbType.Char, 64).Value = tokenHash;
+            token.Parameters.Add("@expires", SqlDbType.DateTime2).Value = expiresUtc;
+            token.ExecuteNonQuery();
+        }
+        transaction.Commit();
+    }
+
+    // Completa cualquiera de los dos flujos de token (RECUPERACION o ACTIVACION):
+    // el token en sí, de un solo uso y con vencimiento, es la única prueba de
+    // identidad de este endpoint público — no hay más dato del usuario para
+    // cruzar acá (la pantalla solo pide la contraseña nueva). RECUPERACION se
+    // mantiene acotado al SuperAdmin, que es el único caso implementado hoy;
+    // ACTIVACION vale para cualquier rol recién habilitado y además limpia
+    // activacion_pendiente.
+    public bool CompleteAccountAccess(string tokenHash, string passwordHash)
     {
         using var connection = SqlConnectionFactory.Open(connectionString);
         using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
         int? userId = null;
         using (var lookup = new SqlCommand(@"SELECT t.id_usuario FROM dbo.TOKEN_ACCESO_CUENTA t WITH (UPDLOCK, HOLDLOCK)
             INNER JOIN dbo.USUARIO u ON u.PK_id_usuario = t.id_usuario
-            WHERE t.hash_token = @hash AND t.tipo = 'RECUPERACION' AND t.consumido_utc IS NULL
-              AND t.vence_utc > SYSUTCDATETIME() AND u.email = @email AND u.acceso_portal = 1 AND u.rol_portal = 1
-              AND u.activo = 1 AND u.activacion_pendiente = 0", connection, transaction))
+            WHERE t.hash_token = @hash AND t.consumido_utc IS NULL AND t.vence_utc > SYSUTCDATETIME()
+              AND u.activo = 1 AND u.acceso_portal = 1
+              AND (t.tipo = 'ACTIVACION' OR (t.tipo = 'RECUPERACION' AND u.rol_portal = 1 AND u.activacion_pendiente = 0))",
+            connection, transaction))
         {
             lookup.Parameters.Add("@hash", SqlDbType.Char, 64).Value = tokenHash;
-            lookup.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = superAdminEmail;
             var result = lookup.ExecuteScalar();
             if (result is not null) userId = Convert.ToInt32(result);
         }
@@ -61,12 +92,10 @@ public sealed class AccountAccessDao(string connectionString)
                 setActor.ExecuteNonQuery();
             }
             using var update = new SqlCommand(@"UPDATE dbo.USUARIO SET password_hash = @password, contrasenia = NULL,
-                token_version = token_version + 1
-                WHERE PK_id_usuario = @id AND email = @email AND acceso_portal = 1 AND rol_portal = 1
-                  AND activo = 1 AND activacion_pendiente = 0;", connection, transaction);
+                token_version = token_version + 1, activacion_pendiente = 0
+                WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 1;", connection, transaction);
             update.Parameters.Add("@password", SqlDbType.NVarChar, 512).Value = passwordHash;
             update.Parameters.Add("@id", SqlDbType.Int).Value = userId.Value;
-            update.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = superAdminEmail;
             if (update.ExecuteNonQuery() != 1) { transaction.Rollback(); return false; }
         }
 
