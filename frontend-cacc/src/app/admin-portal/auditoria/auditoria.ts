@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { API_BASE_URL } from '../../services/api-url';
 import { AuthService } from '../../services/auth';
@@ -38,6 +38,8 @@ interface AuditResponse {
 export class Auditoria {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly ngZone = inject(NgZone);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly pageSize = 50;
   // Sin la entrada "Todas las acciones": el placeholder de app-custom-select
@@ -90,15 +92,26 @@ export class Auditoria {
         headers: { Authorization: `Bearer ${this.auth.getToken() ?? ''}` },
       })
       .subscribe({
+        // ngZone.run() + cdr.detectChanges(): la respuesta de HttpClient no dispara
+        // detección de cambios sola en este proyecto (mismo problema documentado en
+        // login.ts) — sin esto, loading/items quedan actualizados por dentro pero la
+        // pantalla se ve colgada en "Buscando operaciones..." hasta el próximo evento
+        // que sí corra dentro de la zona (por eso "se destranca" al clickear afuera).
         next: (response) => {
-          this.items = response.items;
-          this.total = response.total;
-          this.page = response.page;
-          this.loading = false;
+          this.ngZone.run(() => {
+            this.items = response.items;
+            this.total = response.total;
+            this.page = response.page;
+            this.loading = false;
+            this.cdr.detectChanges();
+          });
         },
         error: () => {
-          this.error = 'No pudimos cargar la auditoría. Revisá tu conexión e intentá nuevamente.';
-          this.loading = false;
+          this.ngZone.run(() => {
+            this.error = 'No pudimos cargar la auditoría. Revisá tu conexión e intentá nuevamente.';
+            this.loading = false;
+            this.cdr.detectChanges();
+          });
         },
       });
   }
