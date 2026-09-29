@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace DaoLibrary;
 
-public sealed class AuditDao(string connectionString)
+public class AuditDao(string connectionString) : IAuditDao
 {
     public (IReadOnlyList<AuditEvent> Items, long Total) Search(
         DateTime? fromUtc,
