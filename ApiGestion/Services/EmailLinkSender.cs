@@ -56,15 +56,17 @@ public sealed class EmailLinkSender(
         using var message = new MailMessage(from, email)
         {
             Subject = subject,
-            IsBodyHtml = true,
-            Body = CreateBody(baseUrl, token, heading, body, action),
-            BodyEncoding = System.Text.Encoding.UTF8,
-            SubjectEncoding = System.Text.Encoding.UTF8
+            SubjectEncoding = System.Text.Encoding.UTF8,
+            BodyEncoding = System.Text.Encoding.UTF8
         };
         message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(
             CreatePlainTextBody(baseUrl, token, heading, body, action),
             System.Text.Encoding.UTF8,
             "text/plain"));
+        message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(
+            CreateBody(baseUrl, token, heading, body, action),
+            System.Text.Encoding.UTF8,
+            "text/html"));
         using var client = new SmtpClient(host, configuration.GetValue("Email:SmtpPort", 587))
         {
             EnableSsl = configuration.GetValue("Email:EnableSsl", true)
@@ -93,30 +95,43 @@ public sealed class EmailLinkSender(
               <meta name="viewport" content="width=device-width, initial-scale=1">
               <title>{{WebUtility.HtmlEncode(heading)}}</title>
             </head>
-            <body style="margin:0;padding:0;background-color:#f3f5f3;font-family:Arial,Helvetica,sans-serif;color:#202820;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f3f5f3;padding:36px 12px;">
+            <body style="margin:0;padding:0;background-color:#082414;font-family:Arial,Helvetica,sans-serif;color:#202820;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#082414" style="background-color:#082414;background-image:linear-gradient(135deg,#007f3e 0%,#0d4223 35%,#082414 60%,#030d07 85%,#000000 100%);">
+                <tr><td align="center" style="padding:40px 12px;background-color:#082414;background-image:linear-gradient(135deg,#007f3e 0%,#0d4223 35%,#082414 60%,#030d07 85%,#000000 100%);">
+                  <!--[if mso]><table role="presentation" width="640" align="center"><tr><td><![endif]-->
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:640px;">
                 <tr><td align="center">
-                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background-color:#ffffff;border:1px solid #e3e9e4;border-radius:12px;overflow:hidden;">
-                    <tr><td style="height:8px;background-color:#08783e;font-size:0;line-height:0;">&nbsp;</td></tr>
-                    <tr><td style="padding:30px 36px 8px;text-align:center;">
-                      <div style="display:inline-block;padding:9px 16px;border:2px solid #08783e;border-radius:8px;color:#08783e;font-size:20px;font-weight:700;letter-spacing:2px;">CACC</div>
-                      <div style="padding-top:10px;color:#68736b;font-size:11px;font-weight:700;letter-spacing:1.2px;">CLUB ATLÉTICO SOCIAL Y DEPORTIVO CAMIONEROS</div>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;background-color:#ffffff;border:1px solid #dce5dd;border-radius:10px;overflow:hidden;">
+                    <tr><td bgcolor="#007f3e" style="height:5px;background-color:#00b355;font-size:0;line-height:0;">&nbsp;</td></tr>
+                    <tr><td bgcolor="#0d4223" style="padding:25px 40px;background-color:#0d4223;background-image:linear-gradient(110deg,#007f3e 0%,#0d4223 48%,#082414 100%);text-align:left;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+                        <td valign="middle" style="padding:0 14px 0 0;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border:2px solid #ffffff;border-radius:7px;"><tr><td style="padding:7px 10px;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:2px;">CACC</td></tr></table>
+                        </td>
+                        <td valign="middle" style="color:#ffffff;font-size:12px;font-weight:700;line-height:1.5;letter-spacing:.5px;">CLUB ATLÉTICO SOCIAL Y<br>DEPORTIVO CAMIONEROS</td>
+                      </tr></table>
                     </td></tr>
-                    <tr><td style="padding:24px 36px 4px;">
-                      <h1 style="margin:0;color:#183b28;font-size:25px;line-height:1.3;font-weight:700;">{{WebUtility.HtmlEncode(heading)}}</h1>
+                    <tr><td style="padding:35px 40px 7px;">
+                      <div style="padding-bottom:9px;color:#a87921;font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;">PORTAL ADMINISTRATIVO</div>
+                      <h1 style="margin:0;color:#173d29;font-size:27px;line-height:1.3;font-weight:700;">{{WebUtility.HtmlEncode(heading)}}</h1>
                     </td></tr>
-                    <tr><td style="padding:12px 36px 0;color:#4d5850;font-size:15px;line-height:1.7;">{{WebUtility.HtmlEncode(intro)}}</td></tr>
-                    <tr><td align="center" style="padding:28px 36px;">
-                      <a href="{{safeLink}}" style="display:inline-block;background-color:#08783e;border:1px solid #08783e;border-radius:7px;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;">{{WebUtility.HtmlEncode(action)}}</a>
+                    <tr><td style="padding:9px 40px 0;color:#4d5850;font-size:15px;line-height:1.7;">{{WebUtility.HtmlEncode(intro)}}</td></tr>
+                    <tr><td align="left" style="padding:25px 40px 22px;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" bgcolor="#007f3e" style="background-color:#007f3e;background-image:linear-gradient(110deg,#00a651 0%,#007f3e 55%,#005a2b 100%);border-radius:6px;">
+                        <a href="{{safeLink}}" style="display:inline-block;padding:15px 25px;border:1px solid #007f3e;border-radius:6px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;">{{WebUtility.HtmlEncode(action)}}</a>
+                      </td></tr></table>
                     </td></tr>
-                    <tr><td style="padding:0 36px 22px;color:#68736b;font-size:13px;line-height:1.65;">
+                    <tr><td style="padding:0 40px 28px;color:#68736b;font-size:13px;line-height:1.65;">
                       Este enlace es válido durante <strong style="color:#34443a;">30 minutos</strong> y puede utilizarse una sola vez. Si vence, solicitá uno nuevo desde el portal.
                     </td></tr>
-                    <tr><td style="padding:18px 36px;border-top:1px solid #edf0ed;color:#68736b;font-size:12px;line-height:1.6;">
+                    <tr><td bgcolor="#f8faf8" style="padding:17px 40px;background-color:#f8faf8;border-top:1px solid #e8eee9;color:#68736b;font-size:12px;line-height:1.6;">
                       Si no solicitaste este correo, podés ignorarlo. Tu cuenta permanecerá segura.
                     </td></tr>
                   </table>
-                  <div style="padding:18px 12px 0;color:#8a938c;font-size:11px;line-height:1.5;">Portal Administrativo · CACC</div>
+                  <div style="padding:15px 12px 0;color:#738077;font-size:11px;line-height:1.5;">Un servicio digital del Club Atlético Social y Deportivo Camioneros</div>
+                </td></tr>
+                  </table>
+                  <!--[if mso]></td></tr></table><![endif]-->
                 </td></tr>
               </table>
             </body>
