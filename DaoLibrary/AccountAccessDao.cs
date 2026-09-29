@@ -10,7 +10,7 @@ public sealed class AccountAccessDao(string connectionString)
         using var connection = SqlConnectionFactory.Open(connectionString);
         using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
         int? userId;
-        using (var find = new SqlCommand("SELECT PK_id_usuario FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE email = @email AND activo = 1 AND activacion_pendiente = 0 AND FK_id_rol = 1", connection, transaction))
+        using (var find = new SqlCommand("SELECT PK_id_usuario FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE email = @email AND activo = 1 AND activacion_pendiente = 0 AND acceso_portal = 1 AND rol_portal = 1", connection, transaction))
         {
             find.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = email;
             var result = find.ExecuteScalar();
@@ -43,7 +43,7 @@ public sealed class AccountAccessDao(string connectionString)
         using (var lookup = new SqlCommand(@"SELECT t.id_usuario FROM dbo.TOKEN_ACCESO_CUENTA t WITH (UPDLOCK, HOLDLOCK)
             INNER JOIN dbo.USUARIO u ON u.PK_id_usuario = t.id_usuario
             WHERE t.hash_token = @hash AND t.tipo = 'RECUPERACION' AND t.consumido_utc IS NULL
-              AND t.vence_utc > SYSUTCDATETIME() AND u.email = @email AND u.FK_id_rol = 1
+              AND t.vence_utc > SYSUTCDATETIME() AND u.email = @email AND u.acceso_portal = 1 AND u.rol_portal = 1
               AND u.activo = 1 AND u.activacion_pendiente = 0", connection, transaction))
         {
             lookup.Parameters.Add("@hash", SqlDbType.Char, 64).Value = tokenHash;
@@ -62,7 +62,7 @@ public sealed class AccountAccessDao(string connectionString)
             }
             using var update = new SqlCommand(@"UPDATE dbo.USUARIO SET password_hash = @password, contrasenia = NULL,
                 token_version = token_version + 1
-                WHERE PK_id_usuario = @id AND email = @email AND FK_id_rol = 1
+                WHERE PK_id_usuario = @id AND email = @email AND acceso_portal = 1 AND rol_portal = 1
                   AND activo = 1 AND activacion_pendiente = 0;", connection, transaction);
             update.Parameters.Add("@password", SqlDbType.NVarChar, 512).Value = passwordHash;
             update.Parameters.Add("@id", SqlDbType.Int).Value = userId.Value;

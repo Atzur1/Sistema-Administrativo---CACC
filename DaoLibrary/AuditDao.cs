@@ -7,6 +7,9 @@ namespace DaoLibrary;
 
 public class AuditDao(string connectionString) : IAuditDao
 {
+    private const string CuotaSaldadaCondition =
+        "(a.entidad = N'PAGOS' AND a.accion = 'DELETE' AND LOWER(JSON_VALUE(a.datos_antes, '$.estado')) = 'false')";
+
     public (IReadOnlyList<AuditEvent> Items, long Total) Search(
         DateTime? fromUtc,
         DateTime? toUtc,
@@ -57,8 +60,26 @@ public class AuditDao(string connectionString) : IAuditDao
         }
         if (!string.IsNullOrWhiteSpace(action))
         {
-            where.Append(" AND a.accion = @accion");
-            parameters.Add(new SqlParameter("@accion", SqlDbType.VarChar, 10) { Value = action.Trim().ToUpperInvariant() });
+            var normalizedAction = action.Trim().ToUpperInvariant();
+
+            // "Cuota saldada" no es una acción real de SQL Server (INSERT/UPDATE/DELETE): es un
+            // DELETE puntual sobre PAGOS cuando un abono cubre el saldo total de una cuota pendiente
+            // (PagosService.EliminarPago tiene un único llamador en todo el backend, y es ese). Se
+            // trata como su propia categoría, mutuamente excluyente de "Eliminado", para que filtrar
+            // por Eliminado no traiga mezclada una cuota saldada con una eliminación real.
+            if (normalizedAction == "CUOTA_SALDADA")
+            {
+                where.Append(" AND ").Append(CuotaSaldadaCondition);
+            }
+            else if (normalizedAction == "DELETE")
+            {
+                where.Append(" AND a.accion = 'DELETE' AND NOT ").Append(CuotaSaldadaCondition);
+            }
+            else
+            {
+                where.Append(" AND a.accion = @accion");
+                parameters.Add(new SqlParameter("@accion", SqlDbType.VarChar, 10) { Value = normalizedAction });
+            }
         }
 
         using var connection = SqlConnectionFactory.Open(connectionString);

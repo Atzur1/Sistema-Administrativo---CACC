@@ -5,9 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ApiGestion.Controllers
 {
+    // Sin [Authorize] a nivel de clase: se combinaría con AND contra el de cada
+    // acción y dejaría afuera al rol que no está en ambos (ver ReportesController).
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "1")]
+    [Authorize]
     public class JugadoresController : ControllerBase
     {
         private readonly IJugadoresDao _jugadoresDao;
@@ -25,7 +27,9 @@ namespace ApiGestion.Controllers
         public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao)
             : this(jugadoresDao, pagosDao, Microsoft.Extensions.Logging.Abstractions.NullLogger<JugadoresController>.Instance) { }
 
-        // GET api/jugadores -> lista completa (nombre, dni, categoría) para el buscador del form de pagos
+        // GET api/jugadores -> lista completa (nombre, dni, categoría). La usan el
+        // buscador de Cuotas y Pagos y el de Becados y Descuentos (rol 1 y 2).
+        [Authorize(Roles = "1,2")]
         [HttpGet]
         public IActionResult ListarJugadores()
         {
@@ -40,7 +44,9 @@ namespace ApiGestion.Controllers
             }
         }
 
-        // GET api/jugadores/{id} -> datos básicos para el header del perfil de jugador
+        // GET api/jugadores/{id} -> datos básicos para el header del perfil de jugador.
+        // También lo usa Deuda de Jugador (rol 1 y 2), a la que se llega desde Deudas y Morosidad.
+        [Authorize(Roles = "1,2")]
         [HttpGet("{id}")]
         public IActionResult ObtenerJugador(int id)
         {
@@ -62,6 +68,7 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/jugadores/{id}/historial-pagos?page=1&pageSize=10 -> historial paginado, más reciente primero
+        [Authorize(Roles = "1")]
         [HttpGet("{id}/historial-pagos")]
         public IActionResult ObtenerHistorialPagos(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {

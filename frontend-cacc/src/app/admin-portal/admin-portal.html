@@ -17,7 +17,7 @@
     <img src="/logo-cacc.ico" alt="Club Atlético Camioneros de Córdoba" class="sidebar-logo" />
     <div class="sidebar-brand">
         <span class="brand-name">Club Atlético Camioneros de Córdoba</span>
-        <span class="brand-role">Superadmin</span>
+        <span class="brand-role">{{ roleLabel }}</span>
     </div>
     </div>
 
@@ -29,7 +29,10 @@
         <span class="nav-group-title">Monitoreo</span>
 
         <!-- routerLink drives navigation; routerLinkActive highlights the current item.
-             title: tooltip nativo cuando el sidebar está colapsado y el texto no se ve. -->
+             title: tooltip nativo cuando el sidebar está colapsado y el texto no se ve.
+             Resumen General, Actividad y Movimientos y Auditoría son exclusivas de
+             SuperAdmin: el Administrador (rol 2) no tiene esas secciones en su alcance. -->
+        @if (isSuperAdmin) {
         <a class="nav-item" routerLink="/admin/portal/resumen-general" routerLinkActive="active" title="Resumen General">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"></rect>
@@ -55,6 +58,7 @@
         </svg>
         <span>Auditoría</span>
         </a>
+        }
 
         <a class="nav-item" routerLink="/admin/portal/deudas-morosidad" routerLinkActive="active" title="Deudas y Morosidad">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -70,6 +74,7 @@
     <div class="nav-group">
         <span class="nav-group-title">Gestión</span>
 
+        @if (isSuperAdmin) {
         <a class="nav-item" routerLink="/admin/portal/usuarios" routerLinkActive="active" title="Usuarios y permisos">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -79,6 +84,7 @@
         </svg>
         <span>Usuarios y permisos</span>
         </a>
+        }
 
         <a class="nav-item" routerLink="/admin/portal/cuotas-pagos" routerLinkActive="active" title="Cuotas y pagos">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -88,6 +94,7 @@
         <span>Cuotas y pagos</span>
         </a>
 
+        @if (isSuperAdmin) {
         <a class="nav-item" routerLink="/admin/portal/reportes" routerLinkActive="active" title="Reportes">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="20" x2="18" y2="10"></line>
@@ -96,6 +103,7 @@
         </svg>
         <span>Reportes</span>
         </a>
+        }
 
         <a class="nav-item" routerLink="/admin/portal/becados-descuentos" routerLinkActive="active" title="Becados y descuentos">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -105,6 +113,7 @@
         <span>Becados y descuentos</span>
         </a>
 
+        @if (isSuperAdmin) {
         <a class="nav-item" routerLink="/admin/portal/actualizacion-aranceles" routerLinkActive="active" title="Actualización de aranceles">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -112,6 +121,7 @@
         </svg>
         <span>Actualización de aranceles</span>
         </a>
+        }
     </div>
     </nav>
 

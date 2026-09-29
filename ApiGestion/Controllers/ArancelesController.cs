@@ -6,9 +6,11 @@ using ServiceLibrary;
 
 namespace ApiGestion.Controllers
 {
+    // Sin [Authorize] a nivel de clase: se combinaría con AND contra el de cada
+    // acción y dejaría afuera al rol que no está en ambos (ver ReportesController).
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "1")]
+    [Authorize]
     public class ArancelesController : ControllerBase
     {
         private readonly IArancelesService _arancelesService;
@@ -21,13 +23,16 @@ namespace ApiGestion.Controllers
         }
 
         // GET api/aranceles/historial -> tabla "Historial y aranceles programados"
+        [Authorize(Roles = "1")]
         [HttpGet("historial")]
         public IActionResult ObtenerHistorial()
         {
             return Ok(_arancelesService.ObtenerHistorial());
         }
 
-        // GET api/aranceles/resumen -> header (arancel masculino/femenino vigente, próximo cambio)
+        // GET api/aranceles/resumen -> header (arancel masculino/femenino vigente, próximo cambio).
+        // También la usa "Cuotas y Pagos" (rol 2) para mostrar el monto de cuota vigente.
+        [Authorize(Roles = "1,2")]
         [HttpGet("resumen")]
         public IActionResult ObtenerResumen()
         {
@@ -36,6 +41,7 @@ namespace ApiGestion.Controllers
 
         // POST api/aranceles/programar -> form "Programar nuevo arancel"
         // Body: { "genero": "Masculino", "monto": 92000, "vigenteDesde": "2026-09-24" }
+        [Authorize(Roles = "1")]
         [HttpPost("programar")]
         public IActionResult ProgramarArancel([FromBody] ProgramarArancelRequestDto request)
         {

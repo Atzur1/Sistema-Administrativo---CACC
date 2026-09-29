@@ -10,9 +10,13 @@ using EntityLibrary;
 // para reusar el IJugadoresDao que ya existe en este proyecto en vez de crear
 // un PlayerDao/PlayersController.GetPlayers paralelo — evita duplicar el
 // concepto de "jugador" que ya resuelve JugadoresController/JugadoresDao.
+// Sin [Authorize] a nivel de clase: se combinaría con AND contra el de cada
+// acción y dejaría afuera al rol que no está en ambos (ver ReportesController).
+// CreatePlayer es alta de jugador (fuera del alcance de Becados y Descuentos);
+// el resto de las acciones son el CRUD de beneficios que sí ve el rol 2.
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "1")]
+[Authorize]
 public class PlayersController : ControllerBase
 {
     private readonly ILogger<PlayersController> _logger;
@@ -49,6 +53,7 @@ public class PlayersController : ControllerBase
     // as PagosDao.GenerarCuotasPendientesDelMes: it appears when that fee is set.
     // The enrollment fee instead is mandatory for the men's squad, so without one
     // in force the registration is refused.
+    [Authorize(Roles = "1")]
     [HttpPost]
     public IActionResult CreatePlayer(PlayerRequestDTO request)
     {
@@ -114,6 +119,7 @@ public class PlayersController : ControllerBase
 
     // Feeds the badge on the treasury grid: a single call returns every active
     // discount and the front end matches them by PlayerId.
+    [Authorize(Roles = "1,2")]
     [HttpGet("discounts")]
     public IActionResult GetDiscounts()
     {
@@ -125,6 +131,7 @@ public class PlayersController : ControllerBase
 
     // Feeds the administration table on Becados y Descuentos, which lists current
     // and expired assignments alike
+    [Authorize(Roles = "1,2")]
     [HttpGet("discounts/all")]
     public IActionResult GetAllDiscounts()
     {
@@ -137,6 +144,7 @@ public class PlayersController : ControllerBase
     // Feeds the reason dropdown on the assignment form. The list comes from the
     // catalogue table so the front end and the API can never disagree on what a
     // valid reason is.
+    [Authorize(Roles = "1,2")]
     [HttpGet("discounts/types")]
     public IActionResult GetDiscountTypes()
     {
@@ -156,6 +164,7 @@ public class PlayersController : ControllerBase
     // when it is outside its window, which is what the popup opens with: the one
     // that applies today, or failing that the next scheduled one, or the last
     // one that expired.
+    [Authorize(Roles = "1,2")]
     [HttpGet("{playerId}/discount")]
     public IActionResult GetDiscountByPlayer(long playerId, bool includeExpired = false)
     {
@@ -178,6 +187,7 @@ public class PlayersController : ControllerBase
     // Since a player can hold several over time, the financial card lists them
     // all: what already expired, what runs today and what is scheduled. Each one
     // carries its own state, resolved by the server.
+    [Authorize(Roles = "1,2")]
     [HttpGet("{playerId}/discounts")]
     public IActionResult GetDiscountsByPlayer(long playerId)
     {
@@ -199,6 +209,7 @@ public class PlayersController : ControllerBase
     // the same player: on any given date, only one benefit can apply. The check
     // lives in the DAO, inside the transaction that inserts, so a direct call to
     // the API and a race between two requests hit the same rule.
+    [Authorize(Roles = "1,2")]
     [HttpPost("{playerId}/discount")]
     public IActionResult AssignDiscount(long playerId, DiscountRequestDTO request)
     {
@@ -238,6 +249,7 @@ public class PlayersController : ControllerBase
 
     // Edits a benefit the player already holds. Only a benefit that was not
     // cancelled can be touched: a cancelled one stays as it was granted.
+    [Authorize(Roles = "1,2")]
     [HttpPut("{playerId}/discount")]
     public IActionResult UpdateDiscount(long playerId, DiscountRequestDTO request, long discountId = 0)
     {
@@ -294,6 +306,7 @@ public class PlayersController : ControllerBase
     // Cancelling is for taking a benefit down before its time. A benefit that
     // simply ran its course does not need this: it expires on its own the day
     // after its end date, and frees the period for a new one.
+    [Authorize(Roles = "1,2")]
     [HttpDelete("{playerId}/discount")]
     public IActionResult CancelDiscount(long playerId, long discountId = 0)
     {
@@ -328,6 +341,7 @@ public class PlayersController : ControllerBase
     // los meses que ya pasaron: los saca a todos, como si el beneficio nunca se hubiera
     // otorgado. Pensado para corregir una asignación equivocada, no para dar de baja una que
     // corrió bien un tiempo y se quiere terminar antes — para eso está Cancelar.
+    [Authorize(Roles = "1,2")]
     [HttpDelete("{playerId}/discount/void")]
     public IActionResult VoidDiscount(long playerId, long discountId)
     {

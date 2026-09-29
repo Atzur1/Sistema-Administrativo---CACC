@@ -49,6 +49,9 @@ export class Auditoria {
     { value: 'INSERT', label: 'Agregado' },
     { value: 'UPDATE', label: 'Actualizado' },
     { value: 'DELETE', label: 'Eliminado' },
+    // Categoría propia, no un DELETE genérico: filtrar por "Eliminado" ya NO trae
+    // mezcladas las cuotas saldadas (ver AuditDao.CuotaSaldadaCondition en el backend).
+    { value: 'CUOTA_SALDADA', label: 'Cuota saldada' },
   ];
   items: AuditEvent[] = [];
   total = 0;

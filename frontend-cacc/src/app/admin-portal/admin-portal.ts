@@ -25,6 +25,8 @@ get userName(): string {
 }
 get userEmail(): string { return this.authService.getUsuario()?.email ?? ''; }
 get userInitials(): string { return this.userName.slice(0, 2).toUpperCase(); }
+get isSuperAdmin(): boolean { return this.authService.isSuperAdmin(); }
+get roleLabel(): string { return this.isSuperAdmin ? 'Superadmin' : 'Administrador'; }
 
 // Off-canvas sidebar state, only meaningful under the 768px breakpoint
 sidebarOpen: boolean = false;

@@ -28,8 +28,8 @@ public sealed class AuditoriaController(IAuditDao auditDao) : ControllerBase
         if (entidad?.Length > 128 || emailUsuario?.Length > 254)
             return BadRequest(new { mensaje = "El nombre de entidad supera el largo permitido." });
         string? accionNormalizada = accion?.Trim().ToUpperInvariant();
-        if (accionNormalizada is not null && !new[] { "INSERT", "UPDATE", "DELETE" }.Contains(accionNormalizada))
-            return BadRequest(new { mensaje = "La acción debe ser INSERT, UPDATE o DELETE." });
+        if (accionNormalizada is not null && !new[] { "INSERT", "UPDATE", "DELETE", "CUOTA_SALDADA" }.Contains(accionNormalizada))
+            return BadRequest(new { mensaje = "La acción debe ser INSERT, UPDATE, DELETE o CUOTA_SALDADA." });
 
         try
         {
