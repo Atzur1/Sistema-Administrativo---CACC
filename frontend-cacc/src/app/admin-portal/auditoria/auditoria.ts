@@ -45,13 +45,18 @@ export class Auditoria {
   // Sin la entrada "Todas las acciones": el placeholder de app-custom-select
   // ya cubre ese estado, igual que en el resto de los filtros de la app
   // (deudas-morosidad, actividad-movimientos, becados-descuentos).
+  //
+  // Solo estas tres: es lo único que le interesa ver al club de un vistazo.
+  // Son valores propios (no INSERT/UPDATE/DELETE crudos) porque cada uno ya
+  // implica su sección — "Pagos realizados" es un alta en PAGOS, "Arancel
+  // actualizado" es cualquier cambio en ARANCELES — el backend resuelve esa
+  // combinación (ver AuditDao.Search). "Cuota saldada" quedó afuera del
+  // filtro a propósito: sigue existiendo como etiqueta de fila (ver
+  // accionLegible), pero no como algo que se pueda buscar aparte.
   readonly actions = [
-    { value: 'INSERT', label: 'Agregado' },
-    { value: 'UPDATE', label: 'Actualizado' },
+    { value: 'PAGO_REALIZADO', label: 'Pagos realizados' },
+    { value: 'ARANCEL_ACTUALIZADO', label: 'Arancel actualizado' },
     { value: 'DELETE', label: 'Eliminado' },
-    // Categoría propia, no un DELETE genérico: filtrar por "Eliminado" ya NO trae
-    // mezcladas las cuotas saldadas (ver AuditDao.CuotaSaldadaCondition en el backend).
-    { value: 'CUOTA_SALDADA', label: 'Cuota saldada' },
   ];
   items: AuditEvent[] = [];
   total = 0;
@@ -76,6 +81,18 @@ export class Auditoria {
   }
 
   constructor() {
+    this.search(1);
+  }
+
+  // Botón separado de un simple type="reset": app-custom-select no es un
+  // <select> nativo, así que el reset del navegador no lo sincroniza — acá
+  // se resetea cada propiedad explícitamente y se vuelve a buscar sin filtros.
+  limpiarFiltros(): void {
+    this.from = '';
+    this.to = '';
+    this.email = '';
+    this.entity = '';
+    this.action = '';
     this.search(1);
   }
 
@@ -137,9 +154,22 @@ export class Auditoria {
       : '—';
   }
 
+  // Independiente del dropdown de filtro (ese manda valores propios al backend,
+  // como PAGO_REALIZADO): esto etiqueta la fila a partir de la acción y la
+  // sección crudas que vienen del backend, y también cubre secciones que no
+  // están en el filtro (Usuarios, Jugadores, etc.) cuando se buscan a mano
+  // con "Sección", para que no queden con la acción de SQL server sin traducir.
+  private static readonly ACCIONES_GENERICAS: Record<string, string> = {
+    INSERT: 'Agregado',
+    UPDATE: 'Actualizado',
+    DELETE: 'Eliminado',
+  };
+
   accionLegible(item: AuditEvent): string {
     if (this.esCuotaSaldada(item)) return 'Cuota saldada';
-    return this.actions.find((action) => action.value === item.action)?.label ?? item.action;
+    if (item.entity === 'PAGOS' && item.action === 'INSERT') return 'Pago realizado';
+    if (item.entity === 'ARANCELES') return 'Arancel actualizado';
+    return Auditoria.ACCIONES_GENERICAS[item.action] ?? item.action;
   }
 
   claseAccion(item: AuditEvent): string {

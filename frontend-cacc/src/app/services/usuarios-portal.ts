@@ -26,6 +26,14 @@ export class UsuariosPortalService {
     return this.http.get<UsuarioPortal[]>(`${this.API_URL}/habilitados`);
   }
 
+  getDeshabilitados(): Observable<UsuarioPortal[]> {
+    return this.http.get<UsuarioPortal[]>(`${this.API_URL}/deshabilitados`);
+  }
+
+  reactivar(idUsuario: number): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/reactivar`, {});
+  }
+
   editarCandidato(idUsuario: number, request: EditarCandidatoRequest): Observable<{ mensaje: string }> {
     return this.http.put<{ mensaje: string }>(`${this.API_URL}/${idUsuario}`, request);
   }

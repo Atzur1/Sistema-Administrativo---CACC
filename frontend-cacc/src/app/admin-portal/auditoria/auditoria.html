@@ -33,13 +33,6 @@
         <h2>Buscar en la auditoría</h2>
         <p>Combiná filtros para encontrar una operación.</p>
       </div>
-      <button
-        class="clear-button"
-        type="reset"
-        (click)="from = ''; to = ''; email = ''; entity = ''; action = ''; search(1)"
-      >
-        Limpiar filtros
-      </button>
     </div>
     <div class="filter-grid">
       <label class="filter-field"
@@ -77,12 +70,21 @@
     <div class="filter-actions">
       <span class="filter-hint"
         >Los datos personales se muestran solo a perfiles administradores.</span
-      ><button type="submit" class="apply-button" [disabled]="loading">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7"></circle>
-          <path d="m20 20-4-4"></path></svg
-        >Aplicar filtros
-      </button>
+      >
+      <div class="filter-buttons">
+        <button type="button" class="clear-button" (click)="limpiarFiltros()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line></svg
+          >Limpiar filtros
+        </button>
+        <button type="submit" class="apply-button" [disabled]="loading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-4-4"></path></svg
+          >Aplicar filtros
+        </button>
+      </div>
     </div>
   </form>
 
