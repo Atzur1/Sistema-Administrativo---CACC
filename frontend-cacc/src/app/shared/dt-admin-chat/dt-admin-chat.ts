@@ -10,20 +10,21 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth';
 import {
     BotIntent,
-    FALLBACK_TEXT,
-    GREETING_TEXT,
     QuickAction,
-    SUGGESTED_KEYWORDS,
     TopicChip,
+    fallbackText,
     fallbackTopics,
     findIntentById,
+    greetingText,
     isClearCommand,
     isClearIntent,
     isGreeting,
     matchIntent,
     relatedTopics,
+    suggestedKeywords,
 } from './bot-knowledge-base';
 
 interface ChatMessage {
@@ -43,6 +44,9 @@ interface ChatMessage {
 const STORAGE_KEY = 'cacc_dt_admin_state';
 
 interface PersistedState {
+    // Email de quien tuvo la conversación: si otro usuario (u otro rol) entra
+    // en la misma pestaña, no hereda un historial con accesos que no le tocan.
+    owner?: string;
     messages: ChatMessage[];
     isOpen: boolean;
 }
@@ -65,6 +69,17 @@ let nextMessageId = 1;
 export class DtAdminChat {
     private router = inject(Router);
     private ngZone = inject(NgZone);
+    private authService = inject(AuthService);
+
+    // Define qué trámites ofrece y responde el bot: el Administrador (rol 2)
+    // solo ve lo que puede hacer en su alcance.
+    private get isSuperAdmin(): boolean {
+        return this.authService.isSuperAdmin();
+    }
+
+    private get owner(): string {
+        return this.authService.getUsuario()?.email ?? '';
+    }
 
     isOpen = signal(false);
     draft = signal('');
@@ -82,7 +97,7 @@ export class DtAdminChat {
         // guarda solo — el usuario no "guarda" el chat, simplemente sigue
         // ahí cuando vuelve a abrirlo.
         effect(() => {
-            this.saveState({ messages: this.messages(), isOpen: this.isOpen() });
+            this.saveState({ owner: this.owner, messages: this.messages(), isOpen: this.isOpen() });
         });
 
         // El panel vive detrás de un @if: cada vez que isOpen pasa a true
@@ -150,7 +165,7 @@ export class DtAdminChat {
                 return;
             }
 
-            const intent = matchIntent(text);
+            const intent = matchIntent(text, this.isSuperAdmin);
             if (intent) {
                 this.appendMessage(this.buildBotMessage(intent));
             } else {
@@ -163,7 +178,7 @@ export class DtAdminChat {
     // menú: simula que el administrador preguntó por ese trámite, sin que
     // tenga que volver a escribirlo.
     askIntent(intentId: string, label: string): void {
-        const intent = findIntentById(intentId);
+        const intent = findIntentById(intentId, this.isSuperAdmin);
         if (!intent) return;
 
         this.ngZone.run(() => {
@@ -200,8 +215,8 @@ export class DtAdminChat {
         this.appendMessage({
             id: nextMessageId++,
             from: 'bot',
-            text: GREETING_TEXT,
-            chips: fallbackTopics(),
+            text: greetingText(this.isSuperAdmin),
+            chips: fallbackTopics(this.isSuperAdmin),
         });
     }
 
@@ -209,9 +224,9 @@ export class DtAdminChat {
         this.appendMessage({
             id: nextMessageId++,
             from: 'bot',
-            text: FALLBACK_TEXT,
-            chips: fallbackTopics(),
-            suggestedKeywords: SUGGESTED_KEYWORDS,
+            text: fallbackText(this.isSuperAdmin),
+            chips: fallbackTopics(this.isSuperAdmin),
+            suggestedKeywords: suggestedKeywords(this.isSuperAdmin),
         });
     }
 
@@ -222,7 +237,7 @@ export class DtAdminChat {
             title: intent.title,
             steps: intent.steps,
             action: intent.action,
-            chips: relatedTopics(intent),
+            chips: relatedTopics(intent, this.isSuperAdmin),
         };
     }
 
@@ -258,6 +273,9 @@ export class DtAdminChat {
         try {
             const parsed = JSON.parse(raw) as PersistedState;
             if (!Array.isArray(parsed.messages)) return;
+            // Conversación de otro usuario/rol (o guardada antes de que existiera
+            // el dueño): se descarta y arranca de cero.
+            if (parsed.owner !== this.owner) return;
 
             this.messages.set(parsed.messages);
             this.isOpen.set(!!parsed.isOpen);

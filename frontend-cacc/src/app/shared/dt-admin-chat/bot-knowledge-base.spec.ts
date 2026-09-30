@@ -1,6 +1,9 @@
 import {
   BOT_KNOWLEDGE_BASE,
   FALLBACK_INTENT_IDS,
+  FALLBACK_INTENT_IDS_ADMIN,
+  SUGGESTED_KEYWORDS_ADMIN,
+  intentsFor,
   FALLBACK_TEXT,
   SUGGESTED_KEYWORDS,
   fallbackTopics,
@@ -54,8 +57,9 @@ describe('findIntentById', () => {
 });
 
 describe('FALLBACK_INTENT_IDS', () => {
-  it('son 5 trámites frecuentes, todos con intención real asociada', () => {
-    expect(FALLBACK_INTENT_IDS).toHaveLength(5);
+  it('son 6 trámites frecuentes, todos con intención real asociada', () => {
+    expect(FALLBACK_INTENT_IDS).toHaveLength(6);
+    expect(FALLBACK_INTENT_IDS).toContain('auditoria');
     for (const id of FALLBACK_INTENT_IDS) {
       expect(findIntentById(id)).toBeDefined();
     }
@@ -116,15 +120,15 @@ describe('fallback: texto y palabras clave sugeridas', () => {
     expect(FALLBACK_TEXT).toContain('deudores');
   });
 
-  it('las palabras clave sugeridas son las 5 del requerimiento', () => {
-    expect(SUGGESTED_KEYWORDS).toEqual(['pagos', 'deudores', 'reportes', 'socios', 'aranceles']);
+  it('las palabras clave sugeridas de SuperAdmin incluyen auditoría', () => {
+    expect(SUGGESTED_KEYWORDS).toEqual(['pagos', 'deudores', 'reportes', 'socios', 'aranceles', 'auditoría']);
   });
 });
 
 describe('fallbackTopics / relatedTopics', () => {
   it('cada chip del menú principal lleva el emoji de su intención', () => {
     const chips = fallbackTopics();
-    expect(chips).toHaveLength(5);
+    expect(chips).toHaveLength(6);
     for (const chip of chips) {
       const intent = findIntentById(chip.intentId)!;
       expect(chip.label).toBe(`${intent.emoji} ${intent.title}`);
@@ -160,6 +164,57 @@ describe('coherencia de la base de conocimiento', () => {
   it('cada intención tiene un emoji definido', () => {
     for (const intent of BOT_KNOWLEDGE_BASE) {
       expect(intent.emoji.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+// El Administrador (rol 2) solo tiene Cuotas y Pagos, Deudas y Morosidad y
+// Becados y Descuentos: el bot no debe ofrecerle ni responderle nada más.
+describe('filtrado por rol', () => {
+  const RUTAS_ADMIN = [
+    '/admin/portal/cuotas-pagos',
+    '/admin/portal/deudas-morosidad',
+    '/admin/portal/becados-descuentos',
+  ];
+
+  it('todas las intenciones del Administrador apuntan a sus 3 pantallas', () => {
+    for (const intent of intentsFor(false)) {
+      expect(RUTAS_ADMIN, `intención "${intent.id}"`).toContain(intent.action.route);
+    }
+  });
+
+  it('SuperAdmin no recibe los atajos exclusivos del Administrador', () => {
+    expect(intentsFor(true).some((i) => i.adminOnly)).toBe(false);
+  });
+
+  it('los accesos rápidos del Administrador son 5 y todos accesibles para su rol', () => {
+    expect(FALLBACK_INTENT_IDS_ADMIN).toHaveLength(5);
+    for (const id of FALLBACK_INTENT_IDS_ADMIN) {
+      expect(findIntentById(id, false), id).toBeDefined();
+    }
+    expect(fallbackTopics(false)).toHaveLength(5);
+    expect(SUGGESTED_KEYWORDS_ADMIN).toHaveLength(5);
+  });
+
+  it('matchIntent no devuelve secciones restringidas al Administrador', () => {
+    expect(matchIntent('aranceles', false)).toBeNull();
+    expect(matchIntent('auditoría', false)).toBeNull();
+    expect(matchIntent('usuarios y permisos', false)).toBeNull();
+    expect(matchIntent('resumen general', false)).toBeNull();
+    expect(matchIntent('aranceles', true)?.id).toBe('aranceles');
+  });
+
+  it('los temas relacionados del Administrador no incluyen secciones restringidas', () => {
+    for (const intent of intentsFor(false)) {
+      for (const chip of relatedTopics(intent, false)) {
+        expect(findIntentById(chip.intentId, false)).toBeDefined();
+      }
+    }
+  });
+
+  it('cada SuperAdmin-only existente tiene su intención (auditoría, usuarios, movimientos, métricas)', () => {
+    for (const id of ['auditoria', 'usuarios', 'movimientos', 'metricas']) {
+      expect(findIntentById(id, true)?.superAdminOnly).toBe(true);
     }
   });
 });
