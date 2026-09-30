@@ -29,9 +29,18 @@ namespace DaoLibrary
         // PAGOS.PK_id_pago no tiene IDENTITY: el id se calcula a mano dentro de la propia transacción.
         int InsertarPago(SqlConnection conexion, SqlTransaction transaccion, Pago pago);
 
+        // Lee las filas con UPDLOCK/HOLDLOCK: una segunda sesión que quiera cobrar las mismas cuotas
+        // espera hasta el commit/rollback de esta y después las ve con su estado real.
         IReadOnlyList<Pago> ObtenerPagosPorId(SqlConnection conexion, SqlTransaction transaccion, IEnumerable<int> idsPago);
 
-        void MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago);
+        // HU-025: el cobro valida que el jugador exista dentro de la misma transacción.
+        bool ExisteJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador);
+
+        // HU-025: marca como abonadas las cuotas pendientes del jugador con método, fecha de pago,
+        // hora de registro (reloj de SQL Server) y operador. Si alguna ya no está pendiente o no le
+        // pertenece, lanza InvalidOperationException para que la transacción se revierta completa.
+        // Devuelve la fecha/hora de registro que quedó grabada.
+        DateTime MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, int idJugador, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago, int idUsuarioRegistro);
         void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal);
 
         // ---- Lecturas simples, sin transacción (mismo estilo que AuthDao) ----
@@ -62,6 +71,10 @@ namespace DaoLibrary
         // Detalle de deuda: cada cuota pendiente del jugador, con sus abonos parciales (si tiene)
         // y el saldo que le sigue faltando.
         IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador);
+
+        // HU-025: todas las filas de concepto 'Cuota' del jugador con período cargado (pendientes y
+        // abonadas), con el saldo ya ajustado por beneficio. PagosService las agrupa por período.
+        IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador);
 
         // Genera la cuota pendiente (PAGOS con Estado = false) de cada jugador de ESE género que
         // todavía no tiene ninguna fila para ese período, usando el arancel de ese género/mes y

@@ -1,8 +1,11 @@
 namespace ApiGestion.Models
 {
-    // Cobro en lote de pagos pendientes preexistentes (PAGOS.estado = 0), por id.
+    // HU-025: cobro de una o varias cuotas pendientes/vencidas de un jugador. El operador NO
+    // viaja en el body: el controller lo toma del claim idUsuario del JWT.
     public class RegistrarCobroRequestDto
     {
+        public int IdJugador { get; set; }
+
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.MinLength(1)]
         [System.ComponentModel.DataAnnotations.MaxLength(100)]

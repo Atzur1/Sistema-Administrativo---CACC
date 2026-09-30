@@ -111,7 +111,8 @@ namespace ApiGestion.Controllers
                     Periodo = request.Periodo,
                     Anio = request.Anio,
                     Monto = request.Monto,
-                    MetodoPago = request.MetodoPago
+                    MetodoPago = request.MetodoPago,
+                    IdUsuarioRegistro = IdUsuarioAutenticado()
                 });
 
                 return Ok(new
@@ -137,27 +138,54 @@ namespace ApiGestion.Controllers
             }
         }
 
-        // POST api/pagos/cobro -> cobro en lote de pagos pendientes preexistentes (PAGOS.estado = 0)
-        // Body:  { "idsPago": [45, 46], "metodoPago": "Efectivo" }
-        // 200:   { exito, pagosAbonados, montoTotal, fechaPago, mensaje }
-        // 400:   pago inexistente, ya abonado, o método inválido
+        // GET api/pagos/cuotas/5 -> HU-025: cuotas del jugador con estado Pendiente/Vencido/Pagado
+        // para la tabla de selección de la ficha financiera.
+        [HttpGet("cuotas/{idJugador}")]
+        public IActionResult ObtenerCuotasJugador(int idJugador)
+        {
+            return Ok(_pagosService.ObtenerCuotasJugador(idJugador));
+        }
+
+        // POST api/pagos/cobro -> HU-025: cobro atómico de una o varias cuotas pendientes/vencidas
+        // de un jugador (todas o ninguna). El operador sale del JWT, no del body.
+        // Body:  { "idJugador": 12, "idsPago": [45, 46], "metodoPago": "Efectivo" }
+        // 200:   { exito, idJugador, pagosAbonados, cuotas: [{ idPago, periodo, monto, estado }],
+        //          montoTotal, metodoPago, fechaPago, fechaHoraRegistro, estado, mensaje }
+        // 400:   jugador inexistente, cuota inexistente/ajena/ya abonada/repetida, o método inválido
+        // 401:   el token no identifica al operador
         [HttpPost("cobro")]
         public IActionResult CobrarPagosPendientes([FromBody] RegistrarCobroRequestDto request)
         {
+            int? idUsuario = IdUsuarioAutenticado();
+            if (idUsuario == null)
+            {
+                return Unauthorized(new { exito = false, mensaje = "No se pudo identificar al usuario de la sesión. Volvé a iniciar sesión." });
+            }
+
             try
             {
                 var resultado = _pagosService.CobrarPagosPendientes(new CobrarPagosPendientesRequest
                 {
+                    IdJugador = request.IdJugador,
                     IdsPago = request.IdsPago,
-                    MetodoPago = request.MetodoPago
+                    MetodoPago = request.MetodoPago,
+                    IdUsuarioRegistro = idUsuario.Value
                 });
+
+                _logger.LogInformation("Cobro registrado: jugador {IdJugador}, cuotas {Cuotas}, usuario {IdUsuario}",
+                    resultado.IdJugador, string.Join(",", resultado.PagosAbonados), idUsuario.Value);
 
                 return Ok(new
                 {
                     exito = true,
+                    idJugador = resultado.IdJugador,
                     pagosAbonados = resultado.PagosAbonados,
+                    cuotas = resultado.Cuotas,
                     montoTotal = resultado.MontoTotal,
+                    metodoPago = resultado.MetodoPago,
                     fechaPago = resultado.FechaPago,
+                    fechaHoraRegistro = resultado.FechaHoraRegistro,
+                    estado = EstadosCuota.Pagado,
                     mensaje = "Cobro registrado correctamente."
                 });
             }
@@ -171,6 +199,10 @@ namespace ApiGestion.Controllers
                 return StatusCode(500, new { exito = false, mensaje = "Error interno al procesar el cobro." });
             }
         }
+
+        // Mismo claim que usa AuditActorMiddleware para la auditoría en SQL Server.
+        private int? IdUsuarioAutenticado() =>
+            int.TryParse(User?.FindFirst("idUsuario")?.Value, out var id) && id > 0 ? id : null;
 
         private static PlayerAccountResponseDTO MapToDto(PlayerAccount account)
         {

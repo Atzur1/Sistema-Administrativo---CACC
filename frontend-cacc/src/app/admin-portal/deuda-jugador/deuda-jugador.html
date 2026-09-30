@@ -52,6 +52,101 @@
     <p class="error-text">{{ errorMessage }}</p>
   }
 
+  <!-- ===== CUOTAS (HU-025): selección de cuotas pendientes/vencidas y registro del pago ===== -->
+  <section class="panel panel-cuotas">
+    <header class="panel-head">
+      <span class="panel-dot dot-pending"></span>
+      <h2 class="panel-title">Cuotas</h2>
+      @if (cuotasJugador.length > 0) {
+        <span class="panel-count">{{ cuotasJugador.length }}</span>
+      }
+    </header>
+
+    @if (cargandoCuotas && cuotasJugador.length === 0) {
+      <p class="deuda-empty">Cargando cuotas...</p>
+    } @else if (errorCuotas) {
+      <p class="cobro-error">{{ errorCuotas }}</p>
+    } @else if (cuotasJugador.length === 0) {
+      <p class="deuda-empty">Este jugador no tiene cuotas emitidas.</p>
+    } @else {
+      <div class="cuotas-table-wrapper">
+        <table class="cuotas-table">
+          <thead>
+            <tr>
+              <th class="col-check"><span class="sr-only">Seleccionar</span></th>
+              <th>Período</th>
+              <th class="col-monto">Monto cuota</th>
+              <th class="col-monto">A cobrar</th>
+              <th>Vence</th>
+              <th>Estado</th>
+              <th>Método</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cuota of cuotasJugador; track cuota.idPago) {
+              <tr
+                [class.cuota-fila-pagada]="cuota.estado === 'Pagado'"
+                [class.cuota-fila-seleccionada]="estaSeleccionada(cuota)"
+              >
+                <td class="col-check">
+                  <input
+                    type="checkbox"
+                    class="cuota-check"
+                    [attr.data-id]="cuota.idPago"
+                    [attr.aria-label]="'Seleccionar ' + cuota.periodo"
+                    [checked]="estaSeleccionada(cuota)"
+                    [disabled]="!esSeleccionable(cuota) || enviandoCobro"
+                    (change)="alternarCuota(cuota)"
+                  />
+                </td>
+                <td class="cuota-periodo">{{ cuota.periodo }}</td>
+                <td class="col-monto">{{ formatMonto(cuota.montoCuota) }}</td>
+                <td class="col-monto">
+                  {{ cuota.estado === 'Pagado' ? '—' : formatMonto(cuota.saldoPendiente) }}
+                </td>
+                <td>{{ vencimientoCuota(cuota) }}</td>
+                <td>
+                  <span class="estado-pill" [ngClass]="estadoCuotaClase(cuota)">{{
+                    estadoCuotaTexto(cuota)
+                  }}</span>
+                </td>
+                <td>{{ cuota.metodoPago ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="cobro-bar">
+        <div class="cobro-total">
+          <span class="saldo-label">
+            {{ cuotasSeleccionadas.length }}
+            {{ cuotasSeleccionadas.length === 1 ? 'cuota seleccionada' : 'cuotas seleccionadas' }}
+          </span>
+          <span class="saldo-monto">{{ formatMonto(totalSeleccionado) }}</span>
+        </div>
+
+        <div class="cobro-metodo">
+          <label class="pagar-label">Método de pago</label>
+          <app-custom-select
+            [options]="metodosCobro"
+            placeholder="Seleccionar método"
+            [(ngModel)]="metodoCobro"
+          ></app-custom-select>
+        </div>
+
+        <button
+          type="button"
+          class="pagar-button registrar-pago-button"
+          [disabled]="!puedeRegistrarPago"
+          (click)="abrirConfirmacion()"
+        >
+          Registrar Pago
+        </button>
+      </div>
+    }
+  </section>
+
   <!-- ===== DEUDA PENDIENTE ===== -->
   <section class="panel panel-deuda">
     <header class="panel-head">
@@ -235,3 +330,70 @@
     }
   </section>
 </div>
+
+<!-- ===== CONFIRMACIÓN DE PAGO (HU-025) =====
+     Nada se cobra hasta "Confirmar pago". El backend vuelve a validar cada cuota. -->
+@if (confirmacionAbierta) {
+  <div class="dialog-backdrop" (click)="cerrarConfirmacion()">
+    <div
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cobroTitulo"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="dialog-head">
+        <div class="dialog-head-text">
+          <h2 class="dialog-title" id="cobroTitulo">Registrar pago</h2>
+          <span class="dialog-subtitle">{{ jugador?.nombreCompleto }}</span>
+        </div>
+      </header>
+
+      <p class="dialog-confirm">
+        {{ cuotasSeleccionadas.length }}
+        {{ cuotasSeleccionadas.length === 1 ? 'cuota seleccionada' : 'cuotas seleccionadas' }}:
+      </p>
+
+      <ul class="cobro-resumen">
+        @for (cuota of cuotasSeleccionadas; track cuota.idPago) {
+          <li class="cobro-resumen-fila">
+            <span>{{ cuota.periodo }}</span>
+            <span>{{ formatMonto(cuota.saldoPendiente) }}</span>
+          </li>
+        }
+      </ul>
+
+      <div class="cobro-resumen-fila cobro-resumen-metodo">
+        <span>Método</span>
+        <strong>{{ metodoCobro }}</strong>
+      </div>
+      <div class="cobro-resumen-fila cobro-resumen-total">
+        <span>Total</span>
+        <strong>{{ formatMonto(totalSeleccionado) }}</strong>
+      </div>
+
+      @if (errorCobro) {
+        <p class="cobro-error">{{ errorCobro }}</p>
+      }
+
+      <footer class="dialog-actions">
+        <button
+          type="button"
+          class="pagar-cancelar cobro-cancelar"
+          (click)="cerrarConfirmacion()"
+          [disabled]="enviandoCobro"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="pagar-confirmar cobro-confirmar"
+          (click)="confirmarCobro()"
+          [disabled]="enviandoCobro || cuotasSeleccionadas.length === 0"
+        >
+          {{ enviandoCobro ? 'Registrando...' : 'Confirmar pago' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}

@@ -238,8 +238,8 @@ namespace DaoLibrary
             // fecha_hora_registro = GETDATE() (no un parámetro): el momento real en que la fila
             // se graba, tomado del reloj del servidor de base de datos, no del app server.
             string queryInsert = @"
-                INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, fecha_hora_registro)
-                VALUES (@id, @idJugador, @montoBase, @idJugadorDescuento, @montoFinal, @fechaPago, @metodoPago, @fechaVencimiento, @estado, GETDATE())";
+                INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, fecha_hora_registro, FK_id_usuario_registro)
+                VALUES (@id, @idJugador, @montoBase, @idJugadorDescuento, @montoFinal, @fechaPago, @metodoPago, @fechaVencimiento, @estado, GETDATE(), @idUsuarioRegistro)";
 
             using SqlCommand comando = new SqlCommand(queryInsert, conexion, transaccion);
             comando.Parameters.AddWithValue("@id", nuevoId);
@@ -251,6 +251,7 @@ namespace DaoLibrary
             comando.Parameters.AddWithValue("@metodoPago", (object?)pago.MetodoPago ?? DBNull.Value);
             comando.Parameters.AddWithValue("@fechaVencimiento", (object?)pago.FechaVencimiento ?? DBNull.Value);
             comando.Parameters.AddWithValue("@estado", pago.Estado);
+            comando.Parameters.AddWithValue("@idUsuarioRegistro", (object?)pago.IdUsuarioRegistro ?? DBNull.Value);
 
             comando.ExecuteNonQuery();
             return nuevoId;
@@ -285,31 +286,59 @@ namespace DaoLibrary
             return resultado;
         }
 
-        public void MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago)
+        public bool ExisteJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador)
+        {
+            using SqlCommand comando = new SqlCommand(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM JUGADORES WHERE PK_id_jugador = @idJugador) THEN 1 ELSE 0 END",
+                conexion, transaccion);
+            comando.Parameters.AddWithValue("@idJugador", idJugador);
+            return Convert.ToInt32(comando.ExecuteScalar()) == 1;
+        }
+
+        // HU-025: el WHERE repite las condiciones de negocio (jugador, concepto, estado = 0) aunque
+        // PagosService ya las validó sobre filas bloqueadas: si por cualquier motivo una fila no
+        // las cumple, no se actualiza, la cantidad no coincide y la excepción revierte TODO el lote.
+        // La hora de registro se toma una sola vez del reloj de SQL Server, igual para todas las
+        // cuotas del mismo cobro. OUTPUT INTO (no OUTPUT a secas) porque PAGOS tiene trigger.
+        public DateTime MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, int idJugador, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago, int idUsuarioRegistro)
         {
             var ids = idsPago.ToList();
             if (ids.Count == 0)
             {
-                return;
+                throw new InvalidOperationException("No se indicaron cuotas para marcar como abonadas.");
             }
 
             var (clausulaIn, parametros) = ConstruirClausulaIn("id", ids);
             string query = $@"
+                DECLARE @registro DATETIME2 = GETDATE();
+                DECLARE @abonados TABLE (id INT NOT NULL);
+
                 UPDATE PAGOS
-                SET estado = 1, fecha_pago = @fechaPago, metodo_pago = @metodoPago, fecha_hora_registro = GETDATE()
-                WHERE PK_id_pago IN ({clausulaIn}) AND estado = 0";
+                SET estado = 1, fecha_pago = @fechaPago, metodo_pago = @metodoPago,
+                    fecha_hora_registro = @registro, FK_id_usuario_registro = @idUsuario
+                OUTPUT inserted.PK_id_pago INTO @abonados (id)
+                WHERE PK_id_pago IN ({clausulaIn})
+                  AND FK_id_jugador = @idJugador AND concepto = 'Cuota' AND estado = 0;
+
+                SELECT COUNT(*) AS filas, @registro AS registro FROM @abonados;";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
             comando.Parameters.AddWithValue("@fechaPago", fechaPago);
             comando.Parameters.AddWithValue("@metodoPago", metodoPago);
+            comando.Parameters.AddWithValue("@idUsuario", idUsuarioRegistro);
+            comando.Parameters.AddWithValue("@idJugador", idJugador);
             comando.Parameters.AddRange(parametros.ToArray());
 
-            int filasAfectadas = comando.ExecuteNonQuery();
+            using SqlDataReader reader = comando.ExecuteReader();
+            reader.Read();
+            int filasAfectadas = Convert.ToInt32(reader["filas"]);
             if (filasAfectadas != ids.Count)
             {
                 throw new InvalidOperationException(
                     $"Se esperaba actualizar {ids.Count} pago(s) y se actualizaron {filasAfectadas}.");
             }
+
+            return Convert.ToDateTime(reader["registro"]);
         }
 
         public void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal)
@@ -707,6 +736,48 @@ namespace DaoLibrary
             }
 
             return pendientes;
+        }
+
+        // HU-025: filas crudas de las cuotas del jugador. Las cuotas históricas sin fecha_vencimiento
+        // no se incluyen: sin período no se pueden asociar a una cuota mensual (siguen visibles en
+        // el Historial de Pagos). El saldo ajustado usa el mismo criterio que el detalle de deuda.
+        public IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador)
+        {
+            var movimientos = new List<CuotaMovimiento>();
+
+            string query = $@"
+                SELECT pg.PK_id_pago, pg.estado, pg.monto_base, pg.monto_final, pg.fecha_vencimiento,
+                       pg.fecha_pago, pg.metodo_pago, td.tipo_descuento AS motivo,
+                       ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
+                FROM PAGOS pg
+                {DescuentosSql.ApplyDescuentoActivo}
+                LEFT JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento
+                WHERE pg.FK_id_jugador = @idJugador AND pg.concepto = 'Cuota' AND pg.fecha_vencimiento IS NOT NULL
+                ORDER BY pg.fecha_vencimiento, pg.fecha_pago, pg.PK_id_pago";
+
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            using SqlCommand comando = new SqlCommand(query, conexion);
+            comando.Parameters.AddWithValue("@idJugador", idJugador);
+
+            using SqlDataReader reader = comando.ExecuteReader();
+            while (reader.Read())
+            {
+                decimal montoFinal = reader["monto_final"] == DBNull.Value ? 0 : Convert.ToDecimal(reader["monto_final"]);
+                movimientos.Add(new CuotaMovimiento
+                {
+                    IdPago = Convert.ToInt32(reader["PK_id_pago"]),
+                    Estado = reader["estado"] != DBNull.Value && Convert.ToBoolean(reader["estado"]),
+                    MontoBase = reader["monto_base"] == DBNull.Value ? montoFinal : Convert.ToDecimal(reader["monto_base"]),
+                    MontoFinal = montoFinal,
+                    SaldoAjustado = reader["saldo_ajustado"] == DBNull.Value ? montoFinal : Convert.ToDecimal(reader["saldo_ajustado"]),
+                    FechaVencimiento = Convert.ToDateTime(reader["fecha_vencimiento"]),
+                    FechaPago = reader["fecha_pago"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_pago"]),
+                    MetodoPago = reader["metodo_pago"] == DBNull.Value ? null : reader["metodo_pago"].ToString()?.Trim(),
+                    MotivoBeneficio = reader["motivo"] == DBNull.Value ? null : reader["motivo"].ToString()?.Trim()
+                });
+            }
+
+            return movimientos;
         }
 
         public ResumenPagos ObtenerResumen()

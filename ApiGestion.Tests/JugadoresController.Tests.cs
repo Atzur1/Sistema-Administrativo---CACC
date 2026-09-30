@@ -226,7 +226,9 @@ public class JugadoresControllerTests
         public void EliminarPago(SqlConnection conexion, SqlTransaction transaccion, int idPago) => throw new NotSupportedException();
         public int InsertarPago(SqlConnection conexion, SqlTransaction transaccion, Pago pago) => throw new NotSupportedException();
         public IReadOnlyList<Pago> ObtenerPagosPorId(SqlConnection conexion, SqlTransaction transaccion, IEnumerable<int> idsPago) => throw new NotSupportedException();
-        public void MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago) => throw new NotSupportedException();
+        public DateTime MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, int idJugador, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago, int idUsuarioRegistro) => throw new NotSupportedException();
+        public bool ExisteJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador) => throw new NotSupportedException();
+        public IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador) => throw new NotSupportedException();
         public void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal) => throw new NotSupportedException();
         public IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null) => throw new NotSupportedException();
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors) => throw new NotSupportedException();

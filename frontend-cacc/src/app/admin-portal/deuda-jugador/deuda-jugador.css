@@ -692,3 +692,271 @@
     justify-content: center;
   }
 }
+
+/* ===== CUOTAS (HU-025): tabla de selección + barra de cobro ===== */
+/* Mismas variables de estado que .cuota-list, redeclaradas acá (y en el dialog) porque esta
+   sección y el popup viven fuera de esa lista. Pagado usa el verde de "Cubierta". */
+.panel-cuotas,
+.dialog {
+  --state-vencida-bg: #f5e3e2;
+  --state-vencida-text: #7a2a28;
+  --state-proxima-bg: #e8eaed;
+  --state-proxima-text: #475467;
+  --state-cubierta-bg: #e2efe6;
+  --state-cubierta-text: #1f6b3a;
+  --state-pagado-bg: #dcf3e5;
+  --state-pagado-text: #13693a;
+  --action: #b5541f;
+  --action-hover: #8c4017;
+}
+
+.panel-cuotas {
+  margin-bottom: 20px;
+}
+
+.estado-pagado {
+  background: var(--state-pagado-bg);
+  color: var(--state-pagado-text);
+}
+
+.cuotas-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.cuotas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.cuotas-table th {
+  padding: 10px 12px;
+  background: #f5f6f7;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.cuotas-table td {
+  padding: 10px 12px;
+  border-top: 1px solid #eef0f2;
+  color: #16181d;
+  white-space: nowrap;
+}
+
+.cuotas-table .col-check {
+  width: 36px;
+  text-align: center;
+}
+
+.cuotas-table .col-monto {
+  text-align: right;
+}
+
+.cuota-check {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--action);
+  cursor: pointer;
+}
+
+.cuota-check:disabled {
+  cursor: not-allowed;
+}
+
+.cuota-fila-seleccionada td {
+  background: #fdf6ea;
+}
+
+.cuota-fila-pagada td {
+  color: #6b7280;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.cobro-bar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.cobro-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 160px;
+}
+
+.cobro-metodo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 200px;
+}
+
+.registrar-pago-button {
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.registrar-pago-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.registrar-pago-button:disabled:hover {
+  background: var(--action);
+}
+
+.cobro-error {
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  background: var(--color-danger-bg);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  border-radius: 9px;
+  font-size: 12px;
+  color: var(--color-danger-strong);
+}
+
+/* ===== CONFIRMACIÓN DE PAGO (mismo popup que Becados y Descuentos, en la paleta de deuda) ===== */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(17, 24, 20, 0.45);
+  backdrop-filter: blur(2px);
+  animation: dialogFade 0.18s ease both;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 24px 26px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #ffffff 0%, #fdf6ea 100%);
+  border: 1px solid #ecd9b3;
+  border-top: 4px solid var(--action);
+  border-radius: 18px;
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.08), 0 20px 44px rgba(180, 83, 9, 0.16);
+  animation: dialogRise 0.22s ease both;
+}
+
+@keyframes dialogFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialogRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dialog-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dialog-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.dialog-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.dialog-confirm {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.cobro-resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.cobro-resumen-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.cobro-resumen .cobro-resumen-fila {
+  border-bottom: 1px dashed #ecd9b3;
+}
+
+.cobro-resumen-total {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #ecd9b3;
+  font-size: 15px;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+@media (max-width: 520px) {
+  .cobro-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .registrar-pago-button {
+    width: 100%;
+  }
+}

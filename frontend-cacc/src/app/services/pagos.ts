@@ -94,6 +94,43 @@ export interface CuotaPendienteDetalle {
   abonos: AbonoDetalle[];
 }
 
+// HU-025: una cuota mensual del jugador con su estado real (calculado por la API).
+export type EstadoCuotaJugador = 'Pendiente' | 'Vencido' | 'Pagado';
+
+export interface CuotaJugador {
+  idPago: number; // Pendiente/Vencido: la cuota a cobrar. Pagado: el último cobro del período.
+  periodo: string; // "Marzo 2026"
+  fechaVencimiento: string; // Primer día del mes que cubre
+  montoCuota: number; // Importe histórico con que se emitió
+  saldoPendiente: number; // Lo que se cobra hoy (ya con beneficio y abonos parciales)
+  montoAbonado: number;
+  estado: EstadoCuotaJugador;
+  cubiertaPorBeneficio: boolean;
+  motivoBeneficio: string | null;
+  metodoPago: string | null;
+  fechaPago: string | null;
+}
+
+export interface CuotaCobrada {
+  idPago: number;
+  periodo: string;
+  monto: number;
+  estado: EstadoCuotaJugador;
+}
+
+export interface CobrarCuotasResponse {
+  exito: boolean;
+  idJugador: number;
+  pagosAbonados: number[];
+  cuotas: CuotaCobrada[];
+  montoTotal: number;
+  metodoPago: string;
+  fechaPago: string;
+  fechaHoraRegistro: string;
+  estado: EstadoCuotaJugador;
+  mensaje: string;
+}
+
 export interface RegistrarPagoResponse {
   exito: boolean;
   idPago: number;
@@ -162,6 +199,21 @@ export class PagosService {
 
   getDeuda(idJugador: number): Observable<CuotaPendienteDetalle[]> {
     return this.http.get<CuotaPendienteDetalle[]>(`${this.apiUrl}/pagos/deuda/${idJugador}`);
+  }
+
+  // HU-025: cuotas del jugador (pendientes, vencidas y pagadas) para la tabla de cobro.
+  getCuotas(idJugador: number): Observable<CuotaJugador[]> {
+    return this.http.get<CuotaJugador[]>(`${this.apiUrl}/pagos/cuotas/${idJugador}`);
+  }
+
+  // HU-025: cobro atómico de las cuotas seleccionadas. El operador no viaja en el body: la API
+  // lo toma del token de la sesión.
+  cobrarCuotas(idJugador: number, idsPago: number[], metodoPago: string): Observable<CobrarCuotasResponse> {
+    return this.http.post<CobrarCuotasResponse>(`${this.apiUrl}/pagos/cobro`, {
+      idJugador,
+      idsPago,
+      metodoPago,
+    });
   }
 
   registrarPago(
