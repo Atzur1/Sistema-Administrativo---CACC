@@ -2,7 +2,7 @@ import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { from } from 'rxjs';
+import { Observable, Subject, from, isObservable } from 'rxjs';
 
 import { DeudaJugador } from './deuda-jugador';
 import { JugadoresService } from '../../services/jugadores';
@@ -88,18 +88,29 @@ const respuesta = <T>(valor: T | Error | HttpErrorResponse) =>
   );
 
 interface Opciones {
-  cuotas?: CuotaJugador[][]; // una lista por cada llamada a getCuotas (la última se repite)
-  cobro?: CobrarCuotasResponse | HttpErrorResponse;
+  // Una respuesta por cada llamada a getCuotas / getDeuda (la última se repite). Un Error o
+  // HttpErrorResponse simula que esa lectura falla.
+  cuotas?: (CuotaJugador[] | Error | HttpErrorResponse)[];
+  deuda?: (CuotaPendienteDetalle[] | Error | HttpErrorResponse)[];
+  // Un Observable permite controlar cuándo "responde" el backend al cobro.
+  cobro?: CobrarCuotasResponse | HttpErrorResponse | Observable<CobrarCuotasResponse>;
 }
 
-async function crear(opciones: Opciones = {}) {
-  const lotes = opciones.cuotas ?? [[ENERO_PAGADA, MARZO, ABRIL, MAYO_CUBIERTA]];
+const secuencia = <T>(lotes: T[]) => {
   let llamada = 0;
+  return () => lotes[Math.min(llamada++, lotes.length - 1)];
+};
+
+async function crear(opciones: Opciones = {}) {
+  const siguienteCuotas = secuencia(opciones.cuotas ?? [[ENERO_PAGADA, MARZO, ABRIL, MAYO_CUBIERTA]]);
+  const siguienteDeuda = secuencia(opciones.deuda ?? [[]]);
 
   const pagos = {
-    getCuotas: vi.fn(() => respuesta(lotes[Math.min(llamada++, lotes.length - 1)])),
-    getDeuda: vi.fn(() => respuesta<CuotaPendienteDetalle[]>([])),
-    cobrarCuotas: vi.fn(() => respuesta(opciones.cobro ?? RESPUESTA_COBRO)),
+    getCuotas: vi.fn(() => respuesta(siguienteCuotas())),
+    getDeuda: vi.fn(() => respuesta(siguienteDeuda())),
+    cobrarCuotas: vi.fn(() =>
+      isObservable(opciones.cobro) ? opciones.cobro : respuesta(opciones.cobro ?? RESPUESTA_COBRO),
+    ),
     registrarPago: vi.fn(),
   };
   const jugadores = { getJugador: vi.fn(() => respuesta(JUGADOR)) };
@@ -327,5 +338,223 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
 
     expect(texto(el.querySelector('.cobro-error'))).toContain('Error interno al procesar el cobro.');
     expect(notificaciones.notify).not.toHaveBeenCalledWith(expect.anything(), 'success');
+  });
+});
+
+// ===== HU-026: confirmación visual y actualización del estado de cuenta =====
+// Arranca cuando el backend confirma el cobro de HU-025. El toast solo sale con esa respuesta, la
+// grilla y la deuda se vuelven a leer de la API, y un fallo de esa relectura nunca reintenta el cobro.
+
+function deudaDe(idPago: number, periodo: string, saldo = 85000): CuotaPendienteDetalle {
+  return {
+    idPago,
+    periodo,
+    montoOriginal: 85000,
+    saldoPendiente: saldo,
+    tieneBeneficio: false,
+    motivoBeneficio: null,
+    tipoValorBeneficio: null,
+    porcentajeBeneficio: null,
+    montoFijoBeneficio: null,
+    abonos: [],
+  };
+}
+
+const MAYO = cuota(13, 'Mayo 2026', { fechaVencimiento: '2026-05-01T00:00:00' });
+const pagada = (c: CuotaJugador, metodo = 'Transferencia'): CuotaJugador => ({
+  ...c,
+  estado: 'Pagado',
+  saldoPendiente: 0,
+  montoAbonado: c.montoCuota,
+  metodoPago: metodo,
+});
+const DEUDA_INICIAL = [deudaDe(10, 'Marzo 2026'), deudaDe(11, 'Abril 2026'), deudaDe(13, 'Mayo 2026')];
+const totalAdeudado = (el: HTMLElement) => texto(el.querySelector('.total-adeudado'));
+const filaDe = (el: HTMLElement, periodo: string) =>
+  texto(
+    Array.from(el.querySelectorAll('.cuotas-table tbody tr')).find((tr) => texto(tr).includes(periodo)) ??
+      null,
+  );
+
+type Contexto = Awaited<ReturnType<typeof crear>>;
+
+async function pagar(ctx: Contexto, ids: number[], metodo = 'Transferencia') {
+  await seleccionar(ctx.el, ctx.refrescar, ...ids);
+  await ctx.elegirMetodo(metodo);
+  botonRegistrar(ctx.el).click();
+  await ctx.refrescar();
+  ctx.el.querySelector<HTMLButtonElement>('.cobro-confirmar')!.click();
+  await ctx.refrescar();
+}
+
+describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () => {
+  it('no muestra éxito mientras el backend no confirmó el cobro', async () => {
+    const respuestaPendiente = new Subject<CobrarCuotasResponse>();
+    const ctx = await crear({ cobro: respuestaPendiente });
+
+    await pagar(ctx, [10, 11]);
+
+    expect(ctx.notificaciones.notify).not.toHaveBeenCalled();
+    expect(ctx.el.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(texto(ctx.el.querySelector('.cobro-confirmar'))).toBe('Registrando...');
+    expect(filaDe(ctx.el, 'Marzo 2026')).toContain('Vencido');
+
+    respuestaPendiente.next(RESPUESTA_COBRO);
+    respuestaPendiente.complete();
+    await ctx.refrescar();
+
+    expect(ctx.notificaciones.notify).toHaveBeenCalledTimes(1);
+    expect(ctx.notificaciones.notify).toHaveBeenCalledWith(expect.any(String), 'success');
+  });
+
+  it('el toast confirma el registro con cantidad de cuotas y total cobrado por el backend', async () => {
+    const ctx = await crear();
+
+    await pagar(ctx, [10, 11]);
+
+    const [mensaje, tipo] = ctx.notificaciones.notify.mock.calls[0];
+    expect(tipo).toBe('success');
+    expect(mensaje).toMatch(/^Pago registrado correctamente\. Se abonaron 2 cuotas por \$\s*170\.000\.$/);
+  });
+
+  it('con una sola cuota el mensaje habla en singular', async () => {
+    const ctx = await crear({
+      cobro: {
+        ...RESPUESTA_COBRO,
+        pagosAbonados: [10],
+        cuotas: [RESPUESTA_COBRO.cuotas[0]],
+        montoTotal: 85000,
+      },
+    });
+
+    await pagar(ctx, [10], 'Efectivo');
+
+    expect(ctx.notificaciones.notify.mock.calls[0][0]).toMatch(/Se abonó 1 cuota por \$\s*85\.000\.$/);
+  });
+
+  it('tras varias cuotas refleja el estado real: marzo y abril Pagado en verde, mayo sigue Pendiente', async () => {
+    const ctx = await crear({
+      cuotas: [
+        [MARZO, ABRIL, MAYO],
+        [pagada(MARZO), pagada(ABRIL), MAYO],
+      ],
+      deuda: [DEUDA_INICIAL, [deudaDe(13, 'Mayo 2026')]],
+    });
+
+    await pagar(ctx, [10, 11]);
+
+    expect(filaDe(ctx.el, 'Marzo 2026')).toContain('Pagado');
+    expect(filaDe(ctx.el, 'Abril 2026')).toContain('Pagado');
+    expect(filaDe(ctx.el, 'Mayo 2026')).toContain('Pendiente');
+    expect(ctx.el.querySelectorAll('.cuotas-table .estado-pagado')).toHaveLength(2);
+    expect(checkbox(ctx.el, 10).disabled).toBe(true);
+    expect(checkbox(ctx.el, 13).disabled).toBe(false);
+  });
+
+  it('la deuda mostrada pasa de $255.000 a $85.000 según la deuda que devuelve el backend', async () => {
+    const ctx = await crear({
+      cuotas: [
+        [MARZO, ABRIL, MAYO],
+        [pagada(MARZO), pagada(ABRIL), MAYO],
+      ],
+      deuda: [DEUDA_INICIAL, [deudaDe(13, 'Mayo 2026')]],
+    });
+    expect(totalAdeudado(ctx.el)).toMatch(/\$\s*255\.000/);
+
+    await pagar(ctx, [10, 11]);
+
+    expect(totalAdeudado(ctx.el)).toMatch(/\$\s*85\.000/);
+    expect(ctx.pagos.getDeuda).toHaveBeenCalledTimes(2);
+  });
+
+  it('si se pagó todo, muestra deuda $0 en vez de ocultar el total', async () => {
+    const ctx = await crear({
+      cuotas: [
+        [MARZO, ABRIL],
+        [pagada(MARZO), pagada(ABRIL)],
+      ],
+      deuda: [[deudaDe(10, 'Marzo 2026'), deudaDe(11, 'Abril 2026')], []],
+    });
+
+    await pagar(ctx, [10, 11]);
+
+    expect(totalAdeudado(ctx.el)).toMatch(/^\$\s*0$/);
+  });
+
+  it('se queda en la misma ficha: no navega ni genera comprobantes, impresiones o descargas', async () => {
+    const imprimir = vi.fn();
+    const printOriginal = window.print;
+    window.print = imprimir;
+    const crearUrl = vi.fn();
+    const createObjectUrlOriginal = URL.createObjectURL;
+    URL.createObjectURL = crearUrl;
+    try {
+      const ctx = await crear();
+      const componenteAntes = ctx.component;
+
+      await pagar(ctx, [10, 11]);
+
+      expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();
+      expect(ctx.fixture.componentInstance).toBe(componenteAntes);
+      expect(imprimir).not.toHaveBeenCalled();
+      expect(crearUrl).not.toHaveBeenCalled();
+      expect(ctx.el.querySelector('a[download]')).toBeNull();
+      expect(texto(ctx.el)).not.toMatch(/imprimir|comprobante|recibo|descargar|pdf/i);
+    } finally {
+      window.print = printOriginal;
+      URL.createObjectURL = createObjectUrlOriginal;
+    }
+  });
+
+  it('si el pago se registró pero falla la relectura, avisa sin negar el pago y sin volver a cobrar', async () => {
+    const ctx = await crear({
+      cuotas: [
+        [MARZO, ABRIL, MAYO],
+        new HttpErrorResponse({ status: 0 }),
+        [pagada(MARZO), pagada(ABRIL), MAYO],
+      ],
+      deuda: [DEUDA_INICIAL, new HttpErrorResponse({ status: 0 }), [deudaDe(13, 'Mayo 2026')]],
+    });
+
+    await pagar(ctx, [10, 11]);
+
+    expect(ctx.notificaciones.notify).toHaveBeenCalledTimes(1);
+    expect(ctx.notificaciones.notify).toHaveBeenCalledWith(
+      expect.stringContaining('Pago registrado correctamente'),
+      'success',
+    );
+    expect(ctx.el.querySelector('[role="dialog"]')).toBeNull();
+    const aviso = texto(ctx.el.querySelector('.aviso-actualizacion'));
+    expect(aviso).toContain('El pago se registró correctamente');
+    expect(aviso).toContain('no se pudo actualizar');
+    expect(ctx.pagos.cobrarCuotas).toHaveBeenCalledTimes(1);
+
+    ctx.el.querySelector<HTMLButtonElement>('.reintentar-actualizacion')!.click();
+    await ctx.refrescar();
+
+    expect(ctx.pagos.cobrarCuotas).toHaveBeenCalledTimes(1);
+    expect(ctx.el.querySelector('.aviso-actualizacion')).toBeNull();
+    expect(filaDe(ctx.el, 'Marzo 2026')).toContain('Pagado');
+    expect(totalAdeudado(ctx.el)).toMatch(/\$\s*85\.000/);
+  });
+
+  it('ante un error del cobro no muestra éxito, deja el modal abierto con el error y no toca la deuda', async () => {
+    const ctx = await crear({
+      cuotas: [[MARZO, ABRIL, MAYO]],
+      deuda: [DEUDA_INICIAL],
+      cobro: new HttpErrorResponse({
+        status: 500,
+        error: { exito: false, mensaje: 'Error interno al procesar el cobro.' },
+      }),
+    });
+
+    await pagar(ctx, [10, 11]);
+
+    expect(ctx.notificaciones.notify).not.toHaveBeenCalledWith(expect.anything(), 'success');
+    expect(ctx.el.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(texto(ctx.el.querySelector('.cobro-error'))).toContain('Error interno al procesar el cobro.');
+    expect(totalAdeudado(ctx.el)).toMatch(/\$\s*255\.000/);
+    expect(filaDe(ctx.el, 'Marzo 2026')).toContain('Vencido');
+    expect(ctx.el.querySelector('.aviso-actualizacion')).toBeNull();
   });
 });

@@ -30,12 +30,15 @@
         </div>
       </div>
 
-      @if (cuotas.length > 0) {
+      <!-- HU-026: con datos reales cargados se muestra siempre, también $0 al saldar todo -->
+      @if (deudaCargada) {
         <div class="profile-stats">
           <div class="profile-stat">
-            <span class="profile-stat-value profile-stat-danger">{{
-              formatMonto(montoTotalAdeudado)
-            }}</span>
+            <span
+              class="profile-stat-value total-adeudado"
+              [class.profile-stat-danger]="montoTotalAdeudado > 0"
+              >{{ formatMonto(montoTotalAdeudado) }}</span
+            >
             <span class="profile-stat-label">Total adeudado</span>
           </div>
           <div class="profile-stat-divider"></div>
@@ -60,7 +63,25 @@
       @if (cuotasJugador.length > 0) {
         <span class="panel-count">{{ cuotasJugador.length }}</span>
       }
+      @if (actualizandoEstadoCuenta) {
+        <span class="actualizando-estado" role="status">Actualizando estado de cuenta...</span>
+      }
     </header>
+
+    <!-- HU-026: el cobro ya quedó registrado; solo falló la relectura. Reintentar hace GET, no cobra. -->
+    @if (avisoActualizacion) {
+      <div class="aviso-actualizacion" role="alert">
+        <span>{{ avisoActualizacion }}</span>
+        <button
+          type="button"
+          class="pagar-cancelar reintentar-actualizacion"
+          (click)="reintentarActualizacion()"
+          [disabled]="actualizandoEstadoCuenta"
+        >
+          Reintentar actualización
+        </button>
+      </div>
+    }
 
     @if (cargandoCuotas && cuotasJugador.length === 0) {
       <p class="deuda-empty">Cargando cuotas...</p>

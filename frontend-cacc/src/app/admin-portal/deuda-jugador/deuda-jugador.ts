@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { JugadoresService } from '../../services/jugadores';
 import {
   CuotaJugador,
@@ -81,6 +82,12 @@ export class DeudaJugador implements OnInit, OnDestroy {
   errorCobro = '';
   private seleccion = new Set<number>();
 
+  // ===== HU-026: estado de cuenta después de un cobro =====
+  deudaCargada = false; // Muestra "Total adeudado" (incluido $0) solo con datos reales del backend
+  actualizandoEstadoCuenta = false;
+  avisoActualizacion = '';
+  private ultimaActualizacionTrasPago = false;
+
   private idJugador = 0;
 
   constructor(
@@ -136,6 +143,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
       next: (cuotas) => {
         this.cuotas = cuotas;
         this.cargandoDeuda = false;
+        this.deudaCargada = true;
         this.cdr.detectChanges();
       },
       error: () => {
@@ -150,16 +158,9 @@ export class DeudaJugador implements OnInit, OnDestroy {
     this.cargandoCuotas = true;
     this.pagosService.getCuotas(this.idJugador).subscribe({
       next: (cuotas) => {
-        this.cuotasJugador = cuotas;
+        this.aplicarCuotas(cuotas);
         this.cargandoCuotas = false;
         this.errorCuotas = '';
-        // Una cuota que dejó de ser cobrable (por ejemplo, la cobró otro administrador) sale
-        // de la selección: el total nunca incluye algo que el backend ya no aceptaría.
-        this.seleccion = new Set(
-          [...this.seleccion].filter((id) =>
-            cuotas.some((c) => c.idPago === id && this.esSeleccionable(c)),
-          ),
-        );
         this.cdr.detectChanges();
       },
       error: () => {
@@ -170,10 +171,54 @@ export class DeudaJugador implements OnInit, OnDestroy {
     });
   }
 
-  // Tras cualquier cobro se vuelve a leer todo del backend: cuotas, saldos y total adeudado.
-  private recargarDatosFinancieros() {
-    this.cargarDeuda();
-    this.cargarCuotas();
+  private aplicarCuotas(cuotas: CuotaJugador[]) {
+    this.cuotasJugador = cuotas;
+    // Una cuota que dejó de ser cobrable (por ejemplo, la cobró otro administrador) sale
+    // de la selección: el total nunca incluye algo que el backend ya no aceptaría.
+    this.seleccion = new Set(
+      [...this.seleccion].filter((id) =>
+        cuotas.some((c) => c.idPago === id && this.esSeleccionable(c)),
+      ),
+    );
+  }
+
+  // HU-026: tras un cobro se vuelven a leer del backend la grilla de cuotas y la deuda, juntas,
+  // sin recargar la página. Si esa lectura falla, el cobro NO se reintenta (ya quedó persistido):
+  // se avisa que la vista puede estar desactualizada y se ofrece repetir solo la lectura.
+  private actualizarEstadoDeCuenta(trasPagoConfirmado: boolean) {
+    this.ultimaActualizacionTrasPago = trasPagoConfirmado;
+    this.actualizandoEstadoCuenta = true;
+    this.cdr.detectChanges();
+
+    forkJoin({
+      deuda: this.pagosService.getDeuda(this.idJugador),
+      cuotas: this.pagosService.getCuotas(this.idJugador),
+    }).subscribe({
+      next: ({ deuda, cuotas }) => {
+        this.cuotas = deuda;
+        this.deudaCargada = true;
+        this.aplicarCuotas(cuotas);
+        this.errorCuotas = '';
+        this.avisoActualizacion = '';
+        this.actualizandoEstadoCuenta = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.actualizandoEstadoCuenta = false;
+        this.avisoActualizacion = trasPagoConfirmado
+          ? 'El pago se registró correctamente, pero no se pudo actualizar el estado de cuenta en pantalla. Los datos mostrados pueden estar desactualizados.'
+          : 'No se pudo actualizar el estado de cuenta. Los datos mostrados pueden estar desactualizados.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  // Solo vuelve a LEER cuotas y deuda; nunca repite el cobro.
+  reintentarActualizacion() {
+    if (this.actualizandoEstadoCuenta) {
+      return;
+    }
+    this.actualizarEstadoDeCuenta(this.ultimaActualizacionTrasPago);
   }
 
   esSeleccionable(cuota: CuotaJugador): boolean {
@@ -252,13 +297,15 @@ export class DeudaJugador implements OnInit, OnDestroy {
           this.confirmacionAbierta = false;
           this.seleccion.clear();
           this.metodoCobro = '';
+          // HU-026: el éxito se informa recién acá, con la respuesta 200 del backend, y con la
+          // cantidad y el total que devolvió la API (no los calculados en pantalla).
           const cantidad = respuesta.cuotas.length;
-          this.notifications.notify(
-            `Pago registrado: ${cantidad} ${cantidad === 1 ? 'cuota' : 'cuotas'} por ${this.formatMonto(respuesta.montoTotal)} (${respuesta.metodoPago}).`,
-            'success',
-          );
-          this.recargarDatosFinancieros();
-          this.cdr.detectChanges();
+          const detalle =
+            cantidad === 1
+              ? `Se abonó 1 cuota por ${this.formatMonto(respuesta.montoTotal)}.`
+              : `Se abonaron ${cantidad} cuotas por ${this.formatMonto(respuesta.montoTotal)}.`;
+          this.notifications.notify(`Pago registrado correctamente. ${detalle}`, 'success');
+          this.actualizarEstadoDeCuenta(true);
         },
         error: (err: HttpErrorResponse) => {
           this.enviandoCobro = false;
@@ -267,7 +314,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
           // Un rechazo de negocio suele significar datos viejos en pantalla (otra sesión cobró
           // una cuota): se relee el estado real, sin marcar nada como pagado localmente.
           if (err.status === 400) {
-            this.recargarDatosFinancieros();
+            this.actualizarEstadoDeCuenta(false);
           }
           this.cdr.detectChanges();
         },
@@ -385,7 +432,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
           this.montoPagoDisplay = '';
           this.metodoPago = '';
           this.mostrarExito(`Pago de ${this.formatMonto(monto)} registrado correctamente.`);
-          this.recargarDatosFinancieros(); // refresca saldos/abonos y la tabla de cuotas
+          this.actualizarEstadoDeCuenta(true); // refresca saldos/abonos y la tabla de cuotas
           this.cdr.detectChanges();
         },
         error: (err: HttpErrorResponse) => {

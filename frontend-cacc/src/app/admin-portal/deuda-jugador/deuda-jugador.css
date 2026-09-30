@@ -833,6 +833,38 @@
   color: var(--color-danger-strong);
 }
 
+/* ===== HU-026: estado de cuenta después del cobro ===== */
+.actualizando-estado {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* Aviso (no error): el pago ya quedó registrado, solo la vista puede estar desactualizada.
+   Usa la paleta ámbar de "pendiente" de esta pantalla, no el rojo de error. */
+.aviso-actualizacion {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: var(--pending-bg);
+  border: 1px solid var(--pending-border);
+  border-radius: 9px;
+  font-size: 12px;
+  color: var(--pending-strong);
+}
+
+.aviso-actualizacion span {
+  flex: 1 1 260px;
+}
+
+.reintentar-actualizacion {
+  flex: 0 0 auto;
+  padding: 7px 12px;
+}
+
 /* ===== CONFIRMACIÓN DE PAGO (mismo popup que Becados y Descuentos, en la paleta de deuda) ===== */
 .dialog-backdrop {
   position: fixed;
