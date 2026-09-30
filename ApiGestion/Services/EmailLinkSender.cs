@@ -1,5 +1,7 @@
 using System.Net;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 namespace ApiGestion.Services;
 
@@ -53,28 +55,30 @@ public sealed class EmailLinkSender(
             throw new InvalidOperationException("Falta configurar Email:SmtpHost, Email:From o Email:PublicBaseUrl.");
         ValidateBaseUrl(baseUrl);
 
-        using var message = new MailMessage(from, email)
+        var message = new MimeMessage();
+        message.From.Add(MailboxAddress.Parse(from));
+        message.To.Add(MailboxAddress.Parse(email));
+        message.Subject = subject;
+        message.Body = new BodyBuilder
         {
-            Subject = subject,
-            SubjectEncoding = System.Text.Encoding.UTF8,
-            BodyEncoding = System.Text.Encoding.UTF8
-        };
-        message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(
-            CreatePlainTextBody(baseUrl, token, heading, body, action),
-            System.Text.Encoding.UTF8,
-            "text/plain"));
-        message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(
-            CreateBody(baseUrl, token, heading, body, action),
-            System.Text.Encoding.UTF8,
-            "text/html"));
-        using var client = new SmtpClient(host, configuration.GetValue("Email:SmtpPort", 587))
-        {
-            EnableSsl = configuration.GetValue("Email:EnableSsl", true)
-        };
+            HtmlBody = CreateBody(baseUrl, token, heading, body, action),
+            TextBody = CreatePlainTextBody(baseUrl, token, heading, body, action)
+        }.ToMessageBody();
+
+        var port = configuration.GetValue("Email:SmtpPort", 587);
+        var secureOption = configuration.GetValue("Email:EnableSsl", true) ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
         var username = configuration["Email:Username"];
-        if (!string.IsNullOrWhiteSpace(username)) client.Credentials = new NetworkCredential(username, configuration["Email:Password"]);
+
         cancellationToken.ThrowIfCancellationRequested();
-        try { await client.SendMailAsync(message, cancellationToken); }
+        try
+        {
+            using var client = new SmtpClient();
+            await client.ConnectAsync(host, port, secureOption, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(username))
+                await client.AuthenticateAsync(username, configuration["Email:Password"] ?? string.Empty, cancellationToken);
+            await client.SendAsync(message, cancellationToken);
+            await client.DisconnectAsync(true, cancellationToken);
+        }
         catch (Exception exception)
         {
             logger.LogError(exception, "No se pudo enviar un correo de acceso al Portal Administrativo.");
