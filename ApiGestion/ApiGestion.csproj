@@ -20,6 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\database\migrations\*.sql">
+      <LogicalName>ApiGestion.Database.Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\frontend-cacc\public\cacc-email-header.jpg"
              Link="Assets\cacc-email-header.jpg"
              CopyToOutputDirectory="PreserveNewest"
@@ -27,3 +33,4 @@
   </ItemGroup>
 
 </Project>
+

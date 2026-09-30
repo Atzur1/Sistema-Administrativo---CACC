@@ -15,10 +15,10 @@ Cada lado arranca, compila y testea por separado.
 
 ```
 Proyecto - Sistema Administrativo - CACC/
-├── AGENTS.md                              ← guía de convenciones para agentes
 ├── README.md                              ← descripción general del sistema
 ├── project-sistema-administrativo-cacc.md ← doc de producto: portales y módulos
 ├── SistemaCamionerosBackend.slnx
+├── database/                              ← scripts SQL y migraciones automáticas (ver database/README.md)
 ├── openspec/
 │   └── sdd-init.json                      ← init SDD (sin trackear)
 ├── ApiGestion/
