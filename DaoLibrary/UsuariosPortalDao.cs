@@ -17,10 +17,13 @@ namespace DaoLibrary
         {
             var resultado = new List<UsuarioCandidato>();
 
+            // password_hash IS NULL: nunca completó una activación, así que nunca tuvo
+            // contraseña propia. A alguien que ya la tuvo (se deshabilitó después de estar
+            // activo) no le corresponde este flujo — ver ListarDeshabilitados/Reactivar.
             const string query = @"
                 SELECT PK_id_usuario, nombre, apellido, dni, email, FK_id_rol
                 FROM USUARIO
-                WHERE activo = 1 AND acceso_portal = 0 AND FK_id_rol IN (1, 2)
+                WHERE activo = 1 AND acceso_portal = 0 AND FK_id_rol IN (1, 2) AND password_hash IS NULL
                 ORDER BY apellido, nombre";
 
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
@@ -71,6 +74,52 @@ namespace DaoLibrary
             }
 
             return resultado;
+        }
+
+        public IReadOnlyList<UsuarioPortal> ListarDeshabilitados()
+        {
+            var resultado = new List<UsuarioPortal>();
+
+            // Ya tuvieron acceso alguna vez (tienen password_hash y un rol_portal de cuando
+            // estaban habilitados) — reactivarlos no necesita token ni mail nuevo, solo
+            // devolverles acceso_portal.
+            const string query = @"
+                SELECT PK_id_usuario, nombre, apellido, dni, email, rol_portal, activo, activacion_pendiente
+                FROM USUARIO
+                WHERE activo = 1 AND acceso_portal = 0 AND password_hash IS NOT NULL AND rol_portal IS NOT NULL
+                ORDER BY apellido, nombre";
+
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            using SqlCommand comando = new SqlCommand(query, conexion);
+            using SqlDataReader reader = comando.ExecuteReader();
+            while (reader.Read())
+            {
+                resultado.Add(new UsuarioPortal
+                {
+                    IdUsuario = Convert.ToInt32(reader["PK_id_usuario"]),
+                    Nombre = reader["nombre"] as string ?? string.Empty,
+                    Apellido = reader["apellido"] as string ?? string.Empty,
+                    Dni = reader["dni"] as string ?? string.Empty,
+                    Email = reader["email"] as string ?? string.Empty,
+                    RolPortal = Convert.ToInt32(reader["rol_portal"]),
+                    Activo = Convert.ToBoolean(reader["activo"]),
+                    ActivacionPendiente = Convert.ToBoolean(reader["activacion_pendiente"])
+                });
+            }
+
+            return resultado;
+        }
+
+        public bool Reactivar(int idUsuario)
+        {
+            using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            using var comando = new SqlCommand(
+                @"UPDATE dbo.USUARIO SET acceso_portal = 1
+                  WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0
+                    AND password_hash IS NOT NULL AND rol_portal IS NOT NULL",
+                conexion);
+            comando.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
+            return comando.ExecuteNonQuery() == 1;
         }
 
         public bool EditarDatosCandidato(int idUsuario, string nombre, string apellido, string email)

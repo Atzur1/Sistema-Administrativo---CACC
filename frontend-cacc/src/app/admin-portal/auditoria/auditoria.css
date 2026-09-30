@@ -225,17 +225,31 @@
   font-size: 12px;
 }
 .clear-button {
-  border: 0;
-  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid #dce3de;
+  border-radius: 8px;
   color: var(--color-brand-deep);
-  background: transparent;
+  background: #fff;
   font: inherit;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 700;
   cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 .clear-button:hover {
-  text-decoration: underline;
+  background: var(--color-brand-tint, #eef7f1);
+  border-color: var(--color-brand);
+}
+.clear-button svg {
+  width: 14px;
+  height: 14px;
 }
 
 .filter-grid {
@@ -299,6 +313,12 @@
 .filter-hint {
   color: var(--color-text-subtle);
   font-size: 11px;
+}
+.filter-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 .apply-button {
   display: inline-flex;
@@ -732,8 +752,12 @@ tbody tr:hover {
     align-items: flex-start;
     flex-direction: column;
   }
-  .apply-button {
+  .filter-buttons {
     width: 100%;
+  }
+  .apply-button,
+  .clear-button {
+    flex: 1;
   }
   .results-heading {
     align-items: flex-start;

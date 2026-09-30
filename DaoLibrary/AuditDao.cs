@@ -50,35 +50,39 @@ public class AuditDao(string connectionString) : IAuditDao
         }
         else
         {
-            // Sin un filtro de sección explícito, se excluyen los eventos de plumbing interno:
-            // TOKEN_ACCESO_CUENTA (cada intento de recuperar contraseña deja un INSERT + un UPDATE
-            // que no aportan nada a "qué pasó en el club") y PERSONA (el trigger no guarda ningún
-            // dato propio, solo la acción). Siguen existiendo y son buscables a propósito con
-            // "Sección" — esto solo los saca de la vista por defecto, no los borra ni los oculta
-            // de forma permanente.
-            where.Append(" AND a.entidad NOT IN ('TOKEN_ACCESO_CUENTA', 'PERSONA')");
+            // Sin un filtro de sección explícito, la vista por defecto se acota a lo que el
+            // club realmente quiere ver de un vistazo: pagos (incluye cuotas saldadas, que
+            // viven como una acción dentro de PAGOS, no como su propia sección) y aranceles.
+            // Todo el resto (Usuarios, Jugadores, Categorías, Becas, TOKEN_ACCESO_CUENTA,
+            // PERSONA) sigue existiendo y es buscable a propósito con "Sección" — esto solo
+            // lo saca de la vista por defecto, no lo borra ni lo oculta de forma permanente.
+            where.Append(" AND a.entidad IN ('PAGOS', 'ARANCELES')");
         }
         if (!string.IsNullOrWhiteSpace(action))
         {
             var normalizedAction = action.Trim().ToUpperInvariant();
 
-            // "Cuota saldada" no es una acción real de SQL Server (INSERT/UPDATE/DELETE): es un
-            // DELETE puntual sobre PAGOS cuando un abono cubre el saldo total de una cuota pendiente
-            // (PagosService.EliminarPago tiene un único llamador en todo el backend, y es ese). Se
-            // trata como su propia categoría, mutuamente excluyente de "Eliminado", para que filtrar
-            // por Eliminado no traiga mezclada una cuota saldada con una eliminación real.
-            if (normalizedAction == "CUOTA_SALDADA")
+            // Estos tres son los únicos que el filtro "Tipo de cambio" ofrece (ver
+            // AuditoriaController) — cada uno ya implica su sección, no son acciones
+            // crudas de SQL Server sueltas.
+            if (normalizedAction == "PAGO_REALIZADO")
             {
-                where.Append(" AND ").Append(CuotaSaldadaCondition);
+                // Un alta en PAGOS: se registró un pago.
+                where.Append(" AND a.entidad = 'PAGOS' AND a.accion = 'INSERT'");
+            }
+            else if (normalizedAction == "ARANCEL_ACTUALIZADO")
+            {
+                where.Append(" AND a.entidad = 'ARANCELES'");
             }
             else if (normalizedAction == "DELETE")
             {
+                // "Cuota saldada" no es una acción real de SQL Server: es un DELETE puntual
+                // sobre PAGOS cuando un abono cubre el saldo total de una cuota pendiente
+                // (PagosService.EliminarPago tiene un único llamador en todo el backend, y
+                // es ese). Se excluye acá para que "Eliminado" no traiga mezclada una cuota
+                // saldada con una eliminación real — sigue existiendo como etiqueta de fila
+                // en el frontend, pero no es algo que el filtro ofrezca buscar aparte.
                 where.Append(" AND a.accion = 'DELETE' AND NOT ").Append(CuotaSaldadaCondition);
-            }
-            else
-            {
-                where.Append(" AND a.accion = @accion");
-                parameters.Add(new SqlParameter("@accion", SqlDbType.VarChar, 10) { Value = normalizedAction });
             }
         }
 
