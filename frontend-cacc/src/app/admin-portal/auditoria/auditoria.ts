@@ -84,6 +84,18 @@ export class Auditoria {
     this.search(1);
   }
 
+  // Botón separado de un simple type="reset": app-custom-select no es un
+  // <select> nativo, así que el reset del navegador no lo sincroniza — acá
+  // se resetea cada propiedad explícitamente y se vuelve a buscar sin filtros.
+  limpiarFiltros(): void {
+    this.from = '';
+    this.to = '';
+    this.email = '';
+    this.entity = '';
+    this.action = '';
+    this.search(1);
+  }
+
   search(page: number): void {
     this.loading = true;
     this.error = '';
