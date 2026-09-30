@@ -159,6 +159,53 @@
       </div>
     </article>
 
+    <!-- Cuentas deshabilitadas: ya tuvieron acceso, se les revocó. Reactivar les
+         devuelve el acceso con su mismo rol y contraseña, sin mail nuevo. -->
+    <article class="panel panel-deshabilitados">
+      <header class="panel-head">
+        <h2 class="panel-title">Cuentas deshabilitadas</h2>
+        <span class="panel-subtitle">Ya tuvieron acceso — reactivar no manda un correo nuevo</span>
+      </header>
+
+      <div class="table-wrapper">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Persona</th>
+              <th>Rol</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading()) {
+              <tr><td colspan="3" class="cell-muted">Cargando…</td></tr>
+            } @else if (deshabilitados().length === 0) {
+              <tr><td colspan="3" class="cell-muted">No hay cuentas deshabilitadas.</td></tr>
+            } @else {
+              @for (usuario of deshabilitados(); track usuario.idUsuario) {
+                <tr>
+                  <td>
+                    <div class="user-identity">
+                      <span class="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</span>
+                      <span class="user-email">{{ usuario.email }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="role-pill" [ngClass]="usuario.rolPortal === 1 ? 'role-superadmin' : 'role-admin'">
+                      {{ rolLabels[usuario.rolPortal] }}
+                    </span>
+                  </td>
+                  <td class="cell-actions">
+                    <button type="button" class="button-primary" (click)="pedirReactivar(usuario)">Reactivar</button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
   </section>
 </div>
 
@@ -276,6 +323,35 @@
         </button>
         <button type="button" class="button-danger" (click)="confirmarBajaAccion()" [disabled]="bajaSubmitting()">
           {{ bajaSubmitting() ? 'Deshabilitando…' : 'Deshabilitar' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
+<!-- ===== REACTIVAR: confirmación ===== -->
+@if (confirmarReactivar(); as usuario) {
+  <div class="dialog-backdrop" (click)="cancelarReactivar()">
+    <div class="dialog dialog-narrow" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="dialog-head">
+        <div class="dialog-head-text">
+          <h2 class="dialog-title">Reactivar acceso</h2>
+          <span class="dialog-subtitle">{{ usuario.nombre }} {{ usuario.apellido }}</span>
+        </div>
+        <button type="button" class="dialog-close" (click)="cancelarReactivar()" aria-label="Cerrar">✕</button>
+      </header>
+
+      <p class="dialog-confirm">
+        Le devuelve el acceso como <strong>{{ rolLabels[usuario.rolPortal] }}</strong>, con la misma
+        contraseña que ya tenía. No se envía ningún correo.
+      </p>
+
+      <footer class="dialog-actions">
+        <button type="button" class="button-ghost" (click)="cancelarReactivar()" [disabled]="reactivarSubmitting()">
+          Cancelar
+        </button>
+        <button type="button" class="button-primary" (click)="confirmarReactivarAccion()" [disabled]="reactivarSubmitting()">
+          {{ reactivarSubmitting() ? 'Reactivando…' : 'Reactivar' }}
         </button>
       </footer>
     </div>

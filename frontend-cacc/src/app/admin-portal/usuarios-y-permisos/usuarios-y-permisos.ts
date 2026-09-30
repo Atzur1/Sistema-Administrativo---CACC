@@ -32,6 +32,7 @@ export class Usuarios implements OnInit {
   loadError = signal<string | null>(null);
   habilitados = signal<UsuarioPortal[]>([]);
   candidatos = signal<UsuarioCandidato[]>([]);
+  deshabilitados = signal<UsuarioPortal[]>([]);
 
   // Fila de "Candidatos" cuyo desplegable de rol el SuperAdmin ya tocó, para
   // no perder la elección si el habilitar tarda un toque en confirmarse.
@@ -58,6 +59,11 @@ export class Usuarios implements OnInit {
   confirmarBaja = signal<UsuarioPortal | null>(null);
   bajaSubmitting = signal(false);
 
+  // "Reactivar": le devuelve el acceso a alguien ya deshabilitado, con su
+  // mismo rol y contraseña — sin token ni mail nuevo.
+  confirmarReactivar = signal<UsuarioPortal | null>(null);
+  reactivarSubmitting = signal(false);
+
   constructor(
     private readonly usuariosService: UsuariosPortalService,
     private readonly notifications: NotificationService,
@@ -76,12 +82,17 @@ export class Usuarios implements OnInit {
       error: () => this.loadError.set('No se pudo cargar la lista de usuarios habilitados.'),
     });
 
+    this.usuariosService.getCandidatos().subscribe({
+      next: (rows) => this.candidatos.set(rows),
+      error: () => this.loadError.set('No se pudo cargar la lista de candidatos.'),
+    });
+
     this.usuariosService
-      .getCandidatos()
+      .getDeshabilitados()
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: (rows) => this.candidatos.set(rows),
-        error: () => this.loadError.set('No se pudo cargar la lista de candidatos.'),
+        next: (rows) => this.deshabilitados.set(rows),
+        error: () => this.loadError.set('No se pudo cargar la lista de cuentas deshabilitadas.'),
       });
   }
 
@@ -242,6 +253,41 @@ export class Usuarios implements OnInit {
             'error',
           );
           this.confirmarBaja.set(null);
+        },
+      });
+  }
+
+  // ===== Reactivar =====
+
+  pedirReactivar(usuario: UsuarioPortal): void {
+    this.confirmarReactivar.set(usuario);
+  }
+
+  cancelarReactivar(): void {
+    if (this.reactivarSubmitting()) return;
+    this.confirmarReactivar.set(null);
+  }
+
+  confirmarReactivarAccion(): void {
+    const usuario = this.confirmarReactivar();
+    if (!usuario || this.reactivarSubmitting()) return;
+
+    this.reactivarSubmitting.set(true);
+    this.usuariosService
+      .reactivar(usuario.idUsuario)
+      .pipe(finalize(() => this.reactivarSubmitting.set(false)))
+      .subscribe({
+        next: (respuesta) => {
+          this.notifications.notify(respuesta.mensaje, 'success');
+          this.confirmarReactivar.set(null);
+          this.cargar();
+        },
+        error: (error) => {
+          this.notifications.notify(
+            error?.error?.mensaje ?? 'No se pudo reactivar el acceso.',
+            'error',
+          );
+          this.confirmarReactivar.set(null);
         },
       });
   }

@@ -41,6 +41,10 @@ namespace ApiGestion.Controllers
         [HttpGet("habilitados")]
         public IActionResult ListarHabilitados() => Ok(_usuariosDao.ListarHabilitados());
 
+        // GET api/usuarios/deshabilitados -> gente que ya tuvo acceso y se le revocó.
+        [HttpGet("deshabilitados")]
+        public IActionResult ListarDeshabilitados() => Ok(_usuariosDao.ListarDeshabilitados());
+
         // PUT api/usuarios/5 -> corrige nombre/apellido/mail de un candidato antes
         // de habilitarlo, por si el otro equipo los cargó mal.
         [HttpPut("{id}")]
@@ -102,6 +106,16 @@ namespace ApiGestion.Controllers
             if (!_usuariosDao.Deshabilitar(id))
                 return Conflict(new { mensaje = "No se puede deshabilitar: debe quedar al menos un SuperAdmin habilitado." });
             return Ok(new { mensaje = "Acceso revocado." });
+        }
+
+        // POST api/usuarios/5/reactivar -> le devuelve el acceso a alguien ya
+        // deshabilitado, con el mismo rol y la misma contraseña. Sin mail.
+        [HttpPost("{id}/reactivar")]
+        public IActionResult Reactivar(int id)
+        {
+            if (!_usuariosDao.Reactivar(id))
+                return BadRequest(new { mensaje = "No se encontró a esa persona entre las cuentas deshabilitadas." });
+            return Ok(new { mensaje = "Acceso restablecido." });
         }
     }
 }
