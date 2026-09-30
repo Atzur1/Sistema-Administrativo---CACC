@@ -131,6 +131,17 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// En desarrollo se aplican los cambios antes de aceptar peticiones.
+// Fuera de Development se requiere habilitación explícita.
+if (app.Configuration.GetValue<bool?>("DatabaseMigrations:Enabled") ?? app.Environment.IsDevelopment())
+{
+    var conexion = app.Configuration.GetConnectionString("ConexionSQL");
+    if (string.IsNullOrWhiteSpace(conexion))
+        throw new InvalidOperationException("Falta ConnectionStrings:ConexionSQL para ejecutar las migraciones.");
+    await ApiGestion.Database.EjecutorMigraciones.EjecutarAsync(
+        conexion, app.Logger, app.Lifetime.ApplicationStopping);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
