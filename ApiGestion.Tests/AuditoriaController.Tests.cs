@@ -178,10 +178,10 @@ public class AuditoriaControllerTests
     {
         (AuditoriaController controller, FakeAuditDao dao) = CreateController();
 
-        IActionResult result = controller.BuscarCambios(accion: "update");
+        IActionResult result = controller.BuscarCambios(accion: "pago_realizado");
 
         Assert.IsType<OkObjectResult>(result);
-        Assert.Equal("UPDATE", dao.LastAction);
+        Assert.Equal("PAGO_REALIZADO", dao.LastAction);
     }
 
     [Fact]

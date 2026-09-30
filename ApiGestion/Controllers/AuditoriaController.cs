@@ -27,9 +27,13 @@ public sealed class AuditoriaController(IAuditDao auditDao) : ControllerBase
             return BadRequest(new { mensaje = "El intervalo UTC debe tener inicio anterior al fin." });
         if (entidad?.Length > 128 || emailUsuario?.Length > 254)
             return BadRequest(new { mensaje = "El nombre de entidad supera el largo permitido." });
+        // Valores propios del filtro, no acciones crudas de SQL Server: cada uno ya
+        // implica su sección (ver AuditDao.Search). Es a propósito que no incluya
+        // CUOTA_SALDADA: sigue existiendo como etiqueta de fila, pero no es algo
+        // que el club necesite buscar aparte.
         string? accionNormalizada = accion?.Trim().ToUpperInvariant();
-        if (accionNormalizada is not null && !new[] { "INSERT", "UPDATE", "DELETE", "CUOTA_SALDADA" }.Contains(accionNormalizada))
-            return BadRequest(new { mensaje = "La acción debe ser INSERT, UPDATE, DELETE o CUOTA_SALDADA." });
+        if (accionNormalizada is not null && !new[] { "PAGO_REALIZADO", "ARANCEL_ACTUALIZADO", "DELETE" }.Contains(accionNormalizada))
+            return BadRequest(new { mensaje = "La acción debe ser PAGO_REALIZADO, ARANCEL_ACTUALIZADO o DELETE." });
 
         try
         {
