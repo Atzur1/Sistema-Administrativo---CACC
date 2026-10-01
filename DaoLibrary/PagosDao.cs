@@ -121,70 +121,24 @@ namespace DaoLibrary
             comando.ExecuteNonQuery();
         }
 
-        // Genera la cuota de UN mes puntual (el que se le pida — típicamente el de vigente_desde
-        // del arancel recién cargado), pero SOLO para los jugadores del género de ese arancel —
-        // cargar un arancel Masculino nunca debe tocar a las jugadoras Femenino, ni viceversa,
-        // aunque ambos géneros compartan el mismo mes. Es 100% manual: no hay ninguna noción de
-        // "mes actual" acá adentro — quien llama a esto decide de qué mes es la cuota. Se puede
-        // llamar repetidas veces sin duplicar nada (por el NOT EXISTS).
-        public void GenerarCuotasPendientesDelMes(string genero, int mes, int anio)
+        // Genera la cuota de UN mes puntual para los jugadores que todavía no la tienen. Cada
+        // jugador paga el arancel que le corresponde por jerarquía: el de su categoría si tiene
+        // uno vigente (el género no importa) y, si no, el de su género.
+        //
+        // El alcance se acota con los filtros: un arancel de género solo toca a los jugadores de
+        // ese género, uno de categoría solo a los de esa categoría; sin filtros (generación
+        // mensual automática) alcanza a todos. Se puede llamar repetidas veces sin duplicar nada
+        // (por el NOT EXISTS), y un jugador sin ningún arancel aplicable simplemente no recibe cuota.
+        public void GenerarCuotasPendientesDelMes(string? genero, int? idCategoria, int mes, int anio)
         {
-            // Autocontenido (abre su propia transacción): se llama desde ArancelesService justo
-            // después de programar un arancel, no desde un flujo que ya tenga una transacción abierta.
+            // Autocontenido (abre su propia transacción): se llama desde el generador mensual,
+            // no desde un flujo que ya tenga una transacción abierta.
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using SqlTransaction transaccion = conexion.BeginTransaction();
 
             try
             {
-                // A propósito NO se aplica ningún beneficio de Becados y Descuentos acá: monto_base
-                // y monto_final quedan siempre con el arancel CRUDO. El beneficio (si tiene uno,
-                // vigente o asignado después) se resuelve dinámicamente cada vez que se lee/cobra
-                // la cuota (ver DescuentosSql + PagosDao.ObtenerDeudaDetalle/ObtenerDescuentoAplicableEnPeriodo).
-                // Aplicarlo acá también, en el momento de generar la cuota, terminaba
-                // duplicándolo: una cuota generada con un % ya vigente quedaba con monto_final
-                // pre-descontado, y el ajuste dinámico de lectura lo volvía a descontar encima.
-                string query = @"
-                    DECLARE @maxId INT;
-                    SELECT @maxId = ISNULL(MAX(PK_id_pago), 0) FROM PAGOS WITH (TABLOCKX, HOLDLOCK);
-
-                    INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado)
-                    SELECT
-                        @maxId + ROW_NUMBER() OVER (ORDER BY j.PK_id_jugador),
-                        j.PK_id_jugador,
-                        arancel.monto,
-                        NULL,
-                        arancel.monto,
-                        NULL,
-                        NULL,
-                        @primerDiaMes,
-                        0
-                    FROM JUGADORES j
-                    JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona AND LTRIM(RTRIM(p.genero)) = @genero
-                    CROSS APPLY (
-                        -- Un arancel cargado el 5 de enero cubre igual TODO enero, no solo desde
-                        -- el día 5: por eso se compara contra el último día del mes del período
-                        -- (EOMONTH), no contra el día 1 (@primerDiaMes).
-                        SELECT TOP (1) monto FROM ARANCELES
-                        WHERE genero = @genero
-                          AND vigente_desde <= EOMONTH(@primerDiaMes)
-                        ORDER BY vigente_desde DESC
-                    ) AS arancel
-                    -- Solo cuotas (HU-033): una inscripción en ese mes no reemplaza la cuota.
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM PAGOS p2
-                        WHERE p2.FK_id_jugador = j.PK_id_jugador
-                          AND p2.concepto = 'Cuota'
-                          AND p2.fecha_vencimiento IS NOT NULL
-                          AND MONTH(p2.fecha_vencimiento) = @mes AND YEAR(p2.fecha_vencimiento) = @anio
-                    );";
-
-                using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
-                comando.Parameters.AddWithValue("@genero", genero);
-                comando.Parameters.AddWithValue("@primerDiaMes", new DateTime(anio, mes, 1));
-                comando.Parameters.AddWithValue("@mes", mes);
-                comando.Parameters.AddWithValue("@anio", anio);
-                comando.ExecuteNonQuery();
-
+                GenerarCuotasPendientesDelMes(conexion, transaccion, genero, idCategoria, mes, anio);
                 transaccion.Commit();
             }
             catch
@@ -194,8 +148,15 @@ namespace DaoLibrary
             }
         }
 
-        public void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string genero, int mes, int anio)
+        public void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int mes, int anio)
         {
+            // A propósito NO se aplica ningún beneficio de Becados y Descuentos acá: monto_base
+            // y monto_final quedan siempre con el arancel CRUDO. El beneficio (si tiene uno,
+            // vigente o asignado después) se resuelve dinámicamente cada vez que se lee/cobra
+            // la cuota (ver DescuentosSql + PagosDao.ObtenerDeudaDetalle/ObtenerDescuentoAplicableEnPeriodo).
+            // Aplicarlo acá también terminaba duplicándolo: una cuota generada con un % ya vigente
+            // quedaba con monto_final pre-descontado, y el ajuste dinámico de lectura lo volvía
+            // a descontar encima.
             const string query = @"
                 DECLARE @maxId INT;
                 SELECT @maxId = ISNULL(MAX(PK_id_pago), 0) FROM PAGOS WITH (TABLOCKX, HOLDLOCK);
@@ -203,20 +164,29 @@ namespace DaoLibrary
                 SELECT @maxId + ROW_NUMBER() OVER (ORDER BY j.PK_id_jugador), j.PK_id_jugador,
                     arancel.monto, NULL, arancel.monto, NULL, NULL, @primerDiaMes, 0
                 FROM JUGADORES j
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona AND LTRIM(RTRIM(p.genero)) = @genero
+                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
                 CROSS APPLY (
-                    SELECT TOP (1) monto FROM ARANCELES
-                    WHERE genero = @genero AND vigente_desde <= EOMONTH(@primerDiaMes)
-                    ORDER BY vigente_desde DESC
+                    -- Un arancel cargado el 5 de enero cubre igual TODO enero, no solo desde el
+                    -- día 5: por eso se compara contra el último día del mes (EOMONTH), no el día 1.
+                    -- Primero el arancel de la categoría del jugador; si no tiene, el de su género.
+                    SELECT TOP (1) a.monto FROM ARANCELES a
+                    WHERE a.vigente_desde <= EOMONTH(@primerDiaMes)
+                      AND (a.FK_id_categoria = j.FK_id_categoria
+                           OR (a.FK_id_categoria IS NULL AND a.genero = LTRIM(RTRIM(p.genero))))
+                    ORDER BY CASE WHEN a.FK_id_categoria IS NULL THEN 1 ELSE 0 END, a.vigente_desde DESC
                 ) AS arancel
-                WHERE NOT EXISTS (
+                WHERE (@genero IS NULL OR LTRIM(RTRIM(p.genero)) = @genero)
+                  AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
+                  -- Solo cuotas (HU-033): una inscripción en ese mes no reemplaza la cuota.
+                  AND NOT EXISTS (
                     SELECT 1 FROM PAGOS p2 WITH (UPDLOCK, HOLDLOCK)
                     WHERE p2.FK_id_jugador = j.PK_id_jugador AND p2.concepto = 'Cuota'
                       AND p2.fecha_vencimiento IS NOT NULL
                       AND MONTH(p2.fecha_vencimiento) = @mes AND YEAR(p2.fecha_vencimiento) = @anio
                 );";
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
-            comando.Parameters.AddWithValue("@genero", genero);
+            comando.Parameters.Add("@genero", System.Data.SqlDbType.VarChar, 20).Value = (object?)genero ?? DBNull.Value;
+            comando.Parameters.Add("@idCategoria", System.Data.SqlDbType.Int).Value = (object?)idCategoria ?? DBNull.Value;
             comando.Parameters.AddWithValue("@primerDiaMes", new DateTime(anio, mes, 1));
             comando.Parameters.AddWithValue("@mes", mes);
             comando.Parameters.AddWithValue("@anio", anio);

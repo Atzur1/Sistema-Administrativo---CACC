@@ -425,6 +425,11 @@
     color: var(--color-accent);
 }
 
+.category-category {
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
+}
+
 .category-enrollment {
     background: #fef3c7;
     color: #92400e;

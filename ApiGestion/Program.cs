@@ -76,6 +76,11 @@ builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
     new DaoLibrary.ArancelesDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
 builder.Services.AddScoped<ServiceLibrary.IArancelesService, ServiceLibrary.ArancelesService>();
 
+// Cuotas mensuales automáticas: repite el arancel vigente de cada jugador mes a mes.
+// Se puede apagar con GeneracionCuotas:Habilitada=false.
+if (builder.Configuration.GetValue<bool?>("GeneracionCuotas:Habilitada") ?? true)
+    builder.Services.AddHostedService<ApiGestion.Services.GeneradorCuotasMensuales>();
+
 // Inscripción única de la rama masculina (HU-033)
 builder.Services.AddScoped<DaoLibrary.EnrollmentFeeDAO>(provider =>
     new DaoLibrary.EnrollmentFeeDAO(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));

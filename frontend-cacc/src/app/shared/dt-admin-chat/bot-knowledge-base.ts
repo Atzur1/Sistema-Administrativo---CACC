@@ -249,7 +249,7 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Programar un nuevo arancel',
         steps: [
-            'Entrá a "Actualización de aranceles" y, en "Programar nuevo arancel", elegí la categoría.',
+            'Entrá a "Actualización de aranceles" y, en "Programar nuevo arancel", elegí a qué aplica: un género o una categoría (la categoría tiene prioridad sobre el género).',
             'Ingresá el nuevo monto y la fecha desde la que entra en vigencia.',
             'Confirmá: queda en "Historial y aranceles programados" y se notifica automáticamente.',
         ],

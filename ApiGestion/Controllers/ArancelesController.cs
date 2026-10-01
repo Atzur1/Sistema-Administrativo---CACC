@@ -41,6 +41,7 @@ namespace ApiGestion.Controllers
 
         // POST api/aranceles/programar -> form "Programar nuevo arancel"
         // Body: { "genero": "Masculino", "monto": 92000, "vigenteDesde": "2026-09-24" }
+        //    o: { "idCategoria": 5, "monto": 50000, "vigenteDesde": "2026-09-24" } (género o categoría, uno solo)
         [Authorize(Roles = "1")]
         [HttpPost("programar")]
         public IActionResult ProgramarArancel([FromBody] ProgramarArancelRequestDto request)
@@ -50,6 +51,7 @@ namespace ApiGestion.Controllers
                 _arancelesService.ProgramarArancel(new ProgramarArancelRequest
                 {
                     Genero = request.Genero,
+                    IdCategoria = request.IdCategoria,
                     Monto = request.Monto,
                     VigenteDesde = request.VigenteDesde
                 });

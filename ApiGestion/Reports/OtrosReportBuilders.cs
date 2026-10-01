@@ -144,6 +144,10 @@ namespace ApiGestion.Reports
     {
         private static readonly CultureInfo Ars = CultureInfo.GetCultureInfo("es-AR");
 
+        // Un arancel es por género O por categoría: se muestra el que corresponda.
+        private static string Destino(ArancelHistorialItem a) =>
+            a.Genero ?? $"Categoría {a.NombreCategoria}";
+
         public static byte[] BuildCsv(IReadOnlyList<ArancelHistorialItem> historial)
         {
             var meta = new List<string[]>
@@ -153,11 +157,11 @@ namespace ApiGestion.Reports
                 new[] { "Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm") },
             };
 
-            var columns = new[] { "Género", "Monto", "Vigente desde", "Vigente hasta", "Estado" };
+            var columns = new[] { "Género o categoría", "Monto", "Vigente desde", "Vigente hasta", "Estado" };
 
             var rows = historial.Select(a => new[]
             {
-                a.Genero,
+                Destino(a),
                 a.Monto.ToString("C0", Ars),
                 a.VigenteDesde.ToString("dd/MM/yyyy"),
                 a.VigenteHasta?.ToString("dd/MM/yyyy") ?? "—",
@@ -174,11 +178,11 @@ namespace ApiGestion.Reports
                 new("Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm")),
             };
 
-            var columns = new[] { "Género", "Monto", "Vigente desde", "Vigente hasta", "Estado" };
+            var columns = new[] { "Género o categoría", "Monto", "Vigente desde", "Vigente hasta", "Estado" };
 
             var rows = historial.Select(a => new[]
             {
-                a.Genero,
+                Destino(a),
                 a.Monto.ToString("C0", Ars),
                 a.VigenteDesde.ToString("dd/MM/yyyy"),
                 a.VigenteHasta?.ToString("dd/MM/yyyy") ?? "—",
@@ -187,7 +191,7 @@ namespace ApiGestion.Reports
 
             return PdfReportBuilder.Build(
                 title: "Reporte de Actualización de Aranceles",
-                subtitle: "Historial de aranceles por género: vigentes, programados y anteriores",
+                subtitle: "Historial de aranceles por género o categoría: vigentes, programados y anteriores",
                 meta: meta,
                 columns: columns,
                 rows: rows,
