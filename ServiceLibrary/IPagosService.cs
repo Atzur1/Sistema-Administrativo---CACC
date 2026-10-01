@@ -9,6 +9,8 @@ namespace ServiceLibrary
         public int Anio { get; set; } // elegido en el form: año actual o alguno de los 2 anteriores
         public decimal Monto { get; set; }
         public string MetodoPago { get; set; } = string.Empty;
+        // Operador autenticado (claim idUsuario del JWT); lo completa el controller, nunca el body.
+        public int? IdUsuarioRegistro { get; set; }
     }
 
     public class RegistrarPagoResultado
@@ -21,17 +23,33 @@ namespace ServiceLibrary
         public DateTime FechaPago { get; set; }
     }
 
+    // HU-025: cobro de una o varias cuotas pendientes/vencidas de un mismo jugador.
     public class CobrarPagosPendientesRequest
     {
+        public int IdJugador { get; set; }
         public List<int> IdsPago { get; set; } = new();
         public string MetodoPago { get; set; } = string.Empty;
+        // Operador autenticado (claim idUsuario del JWT); lo completa el controller, nunca el body.
+        public int IdUsuarioRegistro { get; set; }
+    }
+
+    public class CuotaCobrada
+    {
+        public int IdPago { get; set; }
+        public string Periodo { get; set; } = string.Empty;
+        public decimal Monto { get; set; }
+        public string Estado { get; set; } = EstadosCuota.Pagado;
     }
 
     public class CobrarPagosPendientesResultado
     {
+        public int IdJugador { get; set; }
         public List<int> PagosAbonados { get; set; } = new();
+        public List<CuotaCobrada> Cuotas { get; set; } = new();
         public decimal MontoTotal { get; set; }
+        public string MetodoPago { get; set; } = string.Empty;
         public DateTime FechaPago { get; set; }
+        public DateTime FechaHoraRegistro { get; set; }
     }
 
     public interface IPagosService
@@ -40,8 +58,11 @@ namespace ServiceLibrary
         // Lanza CobroInvalidoException si ese jugador ya tiene un pago abonado para ese período (re-cobro).
         RegistrarPagoResultado RegistrarPago(RegistrarPagoRequest request);
 
-        // Cobro en lote de filas PAGOS preexistentes con estado pendiente (Estado = false).
+        // HU-025: cobro atómico de cuotas pendientes/vencidas de un jugador (todas o ninguna).
         CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request);
+
+        // HU-025: cuotas del jugador con su estado (Pendiente, Vencido o Pagado) para la ficha financiera.
+        IReadOnlyList<CuotaJugador> ObtenerCuotasJugador(int idJugador);
 
         IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null);
 

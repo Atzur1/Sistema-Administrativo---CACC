@@ -14,6 +14,8 @@ namespace EntityLibrary
         public DateTime? FechaVencimiento { get; set; }
         public bool Estado { get; set; }
         public string? Concepto { get; set; }
+        // HU-025: operador autenticado que registró el cobro (PAGOS.FK_id_usuario_registro).
+        public int? IdUsuarioRegistro { get; set; }
     }
 
     public static class MetodosPago

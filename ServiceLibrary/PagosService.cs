@@ -13,6 +13,15 @@ namespace ServiceLibrary
             ["Julio"] = 7, ["Agosto"] = 8, ["Septiembre"] = 9, ["Octubre"] = 10, ["Noviembre"] = 11, ["Diciembre"] = 12
         };
 
+        private static readonly string[] NombresMes =
+        {
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        };
+
+        // Tope defensivo de cuotas por cobro (igual que el DTO).
+        private const int MaximoCuotasPorCobro = 100;
+
         private readonly IPagosDao _pagosDao;
         private readonly ISqlTransactionRunner _transactionRunner;
 
@@ -110,7 +119,8 @@ namespace ServiceLibrary
                 MetodoPago = request.MetodoPago,
                 FechaPago = fechaPago,
                 FechaVencimiento = fechaVencimiento, // qué período cubre este abono
-                Estado = true
+                Estado = true,
+                IdUsuarioRegistro = request.IdUsuarioRegistro
             };
 
             int idPago = _pagosDao.InsertarPago(conexion, transaccion, pago);
@@ -126,42 +136,118 @@ namespace ServiceLibrary
             };
         }
 
+        // HU-025: todo el cobro corre en UNA transacción. Las cuotas se leen con UPDLOCK/HOLDLOCK y
+        // recién ahí se validan, así que si otro administrador las cobró segundos antes (pantalla
+        // desactualizada) o las está cobrando ahora (espera su commit), este intento las ve pagadas
+        // y se rechaza. Cualquier excepción, de negocio o de base, revierte el lote completo.
         public CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request)
         {
-            var idsUnicos = ValidarSolicitudDeCobro(request);
+            var (ids, metodoPago) = ValidarSolicitudDeCobro(request);
 
             return _transactionRunner.EjecutarEnTransaccion((conexion, transaccion) =>
             {
-                var pagos = _pagosDao.ObtenerPagosPorId(conexion, transaccion, idsUnicos);
-                ValidarPagosEncontrados(idsUnicos, pagos);
-
-                var fechaPago = DateTime.Now.Date;
-                decimal montoTotal = 0;
-                foreach (var pago in pagos)
+                if (!_pagosDao.ExisteJugador(conexion, transaccion, request.IdJugador))
                 {
+                    throw new CobroInvalidoException($"El jugador #{request.IdJugador} no existe.");
+                }
+
+                var pagos = _pagosDao.ObtenerPagosPorId(conexion, transaccion, ids);
+                ValidarPagosEncontrados(request.IdJugador, ids, pagos);
+
+                var cuotas = new List<CuotaCobrada>();
+                foreach (var pago in pagos.OrderBy(p => p.FechaVencimiento).ThenBy(p => p.IdPago))
+                {
+                    // Monto histórico: el que quedó guardado en la cuota al emitirse (menos abonos
+                    // parciales previos), nunca el arancel vigente hoy. Solo se descuenta el
+                    // beneficio de Becados y Descuentos que cubra ese período, igual que al leer.
                     var montoCobrar = pago.MontoFinal;
-                    if (string.Equals(pago.Concepto?.Trim(), "Cuota", StringComparison.OrdinalIgnoreCase) && pago.FechaVencimiento.HasValue)
+                    if (pago.FechaVencimiento.HasValue)
                     {
                         var descuento = _pagosDao.ObtenerDescuentoAplicableEnPeriodo(conexion, transaccion, pago.IdJugador, pago.FechaVencimiento.Value);
                         montoCobrar = CalcularSaldoAjustado(pago.MontoFinal, pago.MontoBase, descuento);
                         if (montoCobrar <= 0)
-                            throw new CobroInvalidoException($"El pago #{pago.IdPago} está cubierto por un beneficio y no corresponde cobrarlo.");
+                            throw new CobroInvalidoException($"La cuota de {Periodo(pago.FechaVencimiento)} está cubierta por un beneficio y no corresponde cobrarla.");
                         if (descuento != null)
                             _pagosDao.ActualizarMontoCobroConDescuento(conexion, transaccion, pago.IdPago, descuento.IdJugadorDescuento, montoCobrar);
                     }
-                    montoTotal += montoCobrar;
+
+                    cuotas.Add(new CuotaCobrada
+                    {
+                        IdPago = pago.IdPago,
+                        Periodo = Periodo(pago.FechaVencimiento),
+                        Monto = montoCobrar,
+                        Estado = EstadosCuota.Pagado
+                    });
                 }
 
-                _pagosDao.MarcarPagosComoAbonados(conexion, transaccion, idsUnicos, fechaPago, request.MetodoPago);
+                // fecha_pago: el cobro se asienta el día en que se registra (no hay carga
+                // retroactiva). La hora exacta de registro la fija SQL Server en el UPDATE.
+                var fechaPago = DateTime.Now.Date;
+                var fechaHoraRegistro = _pagosDao.MarcarPagosComoAbonados(
+                    conexion, transaccion, request.IdJugador, ids, fechaPago, metodoPago, request.IdUsuarioRegistro);
 
                 return new CobrarPagosPendientesResultado
                 {
-                    PagosAbonados = idsUnicos,
-                    MontoTotal = montoTotal,
-                    FechaPago = fechaPago
+                    IdJugador = request.IdJugador,
+                    PagosAbonados = ids,
+                    Cuotas = cuotas,
+                    MontoTotal = cuotas.Sum(c => c.Monto),
+                    MetodoPago = metodoPago,
+                    FechaPago = fechaPago,
+                    FechaHoraRegistro = fechaHoraRegistro
                 };
             });
         }
+
+        public IReadOnlyList<CuotaJugador> ObtenerCuotasJugador(int idJugador)
+            => ConstruirEstadoDeCuotas(_pagosDao.ObtenerMovimientosCuotas(idJugador), DateTime.Today);
+
+        // Agrupa las filas de PAGOS de cada período en una sola cuota. Mientras exista la fila
+        // pendiente (estado = 0), la cuota se puede cobrar por su saldo; si ya no existe (se cobró
+        // completa por /cobro o por abonos que la cubrieron), está pagada. Vencida = pasó el
+        // último día del mes que cubre, el mismo criterio que usa la ficha para "Vencida".
+        public static IReadOnlyList<CuotaJugador> ConstruirEstadoDeCuotas(IEnumerable<CuotaMovimiento> movimientos, DateTime hoy)
+        {
+            return movimientos
+                .GroupBy(m => new DateTime(m.FechaVencimiento.Year, m.FechaVencimiento.Month, 1))
+                .OrderBy(g => g.Key)
+                .Select(periodo =>
+                {
+                    var pendiente = periodo.FirstOrDefault(m => !m.Estado);
+                    var abonos = periodo.Where(m => m.Estado)
+                        .OrderBy(m => m.FechaPago ?? DateTime.MinValue).ThenBy(m => m.IdPago).ToList();
+                    var ultimoAbono = abonos.LastOrDefault();
+
+                    var cuota = new CuotaJugador
+                    {
+                        Periodo = Periodo(periodo.Key),
+                        FechaVencimiento = periodo.Key,
+                        MontoCuota = periodo.Max(m => m.MontoBase),
+                        MontoAbonado = abonos.Sum(m => m.MontoFinal),
+                        MetodoPago = ultimoAbono?.MetodoPago,
+                        FechaPago = ultimoAbono?.FechaPago,
+                        MotivoBeneficio = (pendiente ?? ultimoAbono)?.MotivoBeneficio
+                    };
+
+                    if (pendiente == null)
+                    {
+                        cuota.IdPago = ultimoAbono!.IdPago;
+                        cuota.Estado = EstadosCuota.Pagado;
+                        return cuota;
+                    }
+
+                    var ultimoDiaDelMes = periodo.Key.AddMonths(1).AddDays(-1);
+                    cuota.IdPago = pendiente.IdPago;
+                    cuota.SaldoPendiente = Math.Max(0, pendiente.SaldoAjustado);
+                    cuota.CubiertaPorBeneficio = cuota.SaldoPendiente <= 0;
+                    cuota.Estado = hoy.Date > ultimoDiaDelMes ? EstadosCuota.Vencido : EstadosCuota.Pendiente;
+                    return cuota;
+                })
+                .ToList();
+        }
+
+        private static string Periodo(DateTime? fechaVencimiento) =>
+            fechaVencimiento.HasValue ? $"{NombresMes[fechaVencimiento.Value.Month - 1]} {fechaVencimiento.Value.Year}" : "-";
 
         // Las cuotas las crea GeneradorCuotasMensuales cada mes (repitiendo el arancel vigente) y
         // ArancelesService.ProgramarArancel al cargar un arancel. Acá no se genera nada: solo se lee.
@@ -234,39 +320,76 @@ namespace ServiceLibrary
             return (mes, request.Anio);
         }
 
-        private static List<int> ValidarSolicitudDeCobro(CobrarPagosPendientesRequest request)
+        private static (List<int> ids, string metodoPago) ValidarSolicitudDeCobro(CobrarPagosPendientesRequest request)
         {
-            if (request.IdsPago == null || request.IdsPago.Count == 0)
+            if (request.IdJugador <= 0)
             {
-                throw new CobroInvalidoException("Debe indicar al menos un pago a cobrar.");
+                throw new CobroInvalidoException("Debe indicar un jugador válido.");
             }
 
-            if (!MetodosPago.EsValido(request.MetodoPago))
+            if (request.IdsPago == null || request.IdsPago.Count == 0)
+            {
+                throw new CobroInvalidoException("Debe seleccionar al menos una cuota a cobrar.");
+            }
+
+            if (request.IdsPago.Count > MaximoCuotasPorCobro || request.IdsPago.Any(id => id <= 0))
+            {
+                throw new CobroInvalidoException($"El cobro admite hasta {MaximoCuotasPorCobro} cuotas con identificadores válidos.");
+            }
+
+            // Un id repetido indica un cliente desincronizado: se rechaza en vez de deduplicarlo en
+            // silencio, así el total confirmado en pantalla nunca difiere de lo que se cobra.
+            var repetidos = request.IdsPago.GroupBy(id => id).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+            if (repetidos.Count > 0)
+            {
+                throw new CobroInvalidoException($"La solicitud tiene cuotas repetidas: {string.Join(", ", repetidos)}.");
+            }
+
+            var metodoPago = MetodosPago.Validos.FirstOrDefault(m =>
+                string.Equals(m, request.MetodoPago?.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (metodoPago == null)
             {
                 throw new CobroInvalidoException(
                     $"Método de pago inválido: '{request.MetodoPago}'. Valores permitidos: {string.Join(", ", MetodosPago.Validos)}.");
             }
 
-            var ids = request.IdsPago.Distinct().ToList();
-            if (ids.Count > 100 || ids.Any(id => id <= 0))
-                throw new CobroInvalidoException("El cobro admite hasta 100 pagos con identificadores válidos.");
-            return ids;
+            if (request.IdUsuarioRegistro <= 0)
+            {
+                throw new CobroInvalidoException("No se pudo identificar al usuario que registra el cobro.");
+            }
+
+            return (request.IdsPago.ToList(), metodoPago);
         }
 
         // Bloqueo de re-cobro: se valida DENTRO de la transacción, sobre filas ya lockeadas por
         // ObtenerPagosPorId (WITH UPDLOCK), no antes de abrirla.
-        private static void ValidarPagosEncontrados(List<int> idsSolicitados, IReadOnlyList<Pago> pagosEncontrados)
+        private static void ValidarPagosEncontrados(int idJugador, List<int> idsSolicitados, IReadOnlyList<Pago> pagosEncontrados)
         {
             var idsFaltantes = idsSolicitados.Except(pagosEncontrados.Select(p => p.IdPago)).ToList();
             if (idsFaltantes.Count > 0)
             {
-                throw new CobroInvalidoException($"No existen los siguientes pagos: {string.Join(", ", idsFaltantes)}.");
+                throw new CobroInvalidoException($"No existen las siguientes cuotas: {string.Join(", ", idsFaltantes)}.");
+            }
+
+            var idsDeOtroJugador = pagosEncontrados.Where(p => p.IdJugador != idJugador).Select(p => p.IdPago).ToList();
+            if (idsDeOtroJugador.Count > 0)
+            {
+                throw new CobroInvalidoException($"Las siguientes cuotas no pertenecen al jugador seleccionado: {string.Join(", ", idsDeOtroJugador)}.");
+            }
+
+            // La inscripción tiene su propio flujo de cobro (HU-033).
+            var idsNoCuota = pagosEncontrados
+                .Where(p => !string.Equals(p.Concepto?.Trim(), "Cuota", StringComparison.OrdinalIgnoreCase))
+                .Select(p => p.IdPago).ToList();
+            if (idsNoCuota.Count > 0)
+            {
+                throw new CobroInvalidoException($"Los siguientes cargos no son cuotas mensuales: {string.Join(", ", idsNoCuota)}.");
             }
 
             var idsYaAbonados = pagosEncontrados.Where(p => p.Estado).Select(p => p.IdPago).ToList();
             if (idsYaAbonados.Count > 0)
             {
-                throw new CobroInvalidoException($"Los siguientes pagos ya fueron abonados: {string.Join(", ", idsYaAbonados)}.");
+                throw new CobroInvalidoException($"Las siguientes cuotas ya fueron abonadas: {string.Join(", ", idsYaAbonados)}. Actualizá la ficha y volvé a intentar.");
             }
         }
     }

@@ -1,6 +1,9 @@
 namespace ApiGestion.Tests;
 
 using System.Reflection;
+using System.Security.Claims;
+using DaoLibrary.Exceptions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -240,6 +243,128 @@ public class PagosControllerTests
 
     // ---- Fakes ----
 
+    // ---- Cobro de cuotas (HU-025) ----
+    // Las reglas de negocio viven en PagosService (ver PagosService.Cobro.Tests.cs). Acá se fija
+    // lo que le toca al controller: tomar el operador del JWT (nunca del body), traducir los
+    // errores a códigos HTTP y devolver el detalle que el frontend necesita para refrescar.
+
+    private static void Autenticar(PagosController controller, string? idUsuario)
+    {
+        var claims = idUsuario == null ? Array.Empty<Claim>() : new[] { new Claim("idUsuario", idUsuario) };
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Bearer")) }
+        };
+    }
+
+    private static RegistrarCobroRequestDto CobroBody() => new()
+    {
+        IdJugador = 12,
+        IdsPago = new List<int> { 10, 11 },
+        MetodoPago = "Transferencia"
+    };
+
+    [Fact]
+    public void Cobro_TomaElOperadorDelTokenYPasaLaSolicitudAlServicio()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        Autenticar(controller, "7");
+
+        controller.CobrarPagosPendientes(CobroBody());
+
+        CobrarPagosPendientesRequest enviado = Assert.Single(pagosService.CobroCalls);
+        Assert.Equal(7, enviado.IdUsuarioRegistro);
+        Assert.Equal(12, enviado.IdJugador);
+        Assert.Equal(new[] { 10, 11 }, enviado.IdsPago);
+        Assert.Equal("Transferencia", enviado.MetodoPago);
+    }
+
+    [Fact]
+    public void Cobro_SinOperadorEnElToken_Devuelve401YNoCobra()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        Autenticar(controller, null);
+
+        IActionResult result = controller.CobrarPagosPendientes(CobroBody());
+
+        Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Empty(pagosService.CobroCalls);
+    }
+
+    [Fact]
+    public void Cobro_RechazoDeNegocio_Devuelve400ConElMensaje()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        Autenticar(controller, "7");
+        pagosService.CobroError = new CobroInvalidoException("Las siguientes cuotas ya fueron abonadas: 11.");
+
+        IActionResult result = controller.CobrarPagosPendientes(CobroBody());
+
+        BadRequestObjectResult bad = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Contains("ya fueron abonadas", bad.Value!.GetType().GetProperty("mensaje")!.GetValue(bad.Value)!.ToString());
+    }
+
+    [Fact]
+    public void Cobro_ErrorInesperado_Devuelve500SinDetallesInternos()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        Autenticar(controller, "7");
+        pagosService.CobroError = new InvalidOperationException("timeout de SQL");
+
+        IActionResult result = controller.CobrarPagosPendientes(CobroBody());
+
+        ObjectResult error = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, error.StatusCode);
+        Assert.DoesNotContain("timeout", error.Value!.GetType().GetProperty("mensaje")!.GetValue(error.Value)!.ToString());
+    }
+
+    [Fact]
+    public void Cobro_Exitoso_DevuelveCuotasTotalMetodoYHoraDeRegistro()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        Autenticar(controller, "7");
+        var registro = new DateTime(2026, 9, 30, 18, 45, 12);
+        pagosService.CobroResult = new CobrarPagosPendientesResultado
+        {
+            IdJugador = 12,
+            PagosAbonados = new List<int> { 10, 11 },
+            Cuotas = new List<CuotaCobrada>
+            {
+                new() { IdPago = 10, Periodo = "Marzo 2026", Monto = 85_000m, Estado = "Pagado" },
+                new() { IdPago = 11, Periodo = "Abril 2026", Monto = 85_000m, Estado = "Pagado" }
+            },
+            MontoTotal = 170_000m,
+            MetodoPago = "Transferencia",
+            FechaPago = registro.Date,
+            FechaHoraRegistro = registro
+        };
+
+        IActionResult result = controller.CobrarPagosPendientes(CobroBody());
+
+        OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
+        object body = ok.Value!;
+        object? Valor(string nombre) => body.GetType().GetProperty(nombre)!.GetValue(body);
+        Assert.Equal(true, Valor("exito"));
+        Assert.Equal(170_000m, Valor("montoTotal"));
+        Assert.Equal("Transferencia", Valor("metodoPago"));
+        Assert.Equal(registro, Valor("fechaHoraRegistro"));
+        Assert.Equal("Pagado", Valor("estado"));
+        Assert.Same(pagosService.CobroResult.Cuotas, Valor("cuotas"));
+    }
+
+    [Fact]
+    public void GetCuotas_DevuelveElEstadoDeCuotasDelJugador()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        pagosService.CuotasResult = new List<CuotaJugador> { new() { IdPago = 10, Periodo = "Marzo 2026", Estado = "Vencido" } };
+
+        IActionResult result = controller.ObtenerCuotasJugador(12);
+
+        OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
+        Assert.Same(pagosService.CuotasResult, ok.Value);
+        Assert.Equal(new[] { 12 }, pagosService.CuotasCalls);
+    }
+
     private class FakePagosService : IPagosService
     {
         public ResumenPagos ResumenResult { get; set; } = new();
@@ -252,6 +377,29 @@ public class PagosControllerTests
         public List<(int Anio, int? Mes)> DeudaPorCategoriaCalls { get; } = new();
 
         public ResumenPagos ObtenerResumen() => ResumenResult;
+
+        public CobrarPagosPendientesResultado CobroResult { get; set; } = new();
+        public Exception? CobroError { get; set; }
+        public List<CobrarPagosPendientesRequest> CobroCalls { get; } = new();
+        public IReadOnlyList<CuotaJugador> CuotasResult { get; set; } = new List<CuotaJugador>();
+        public List<int> CuotasCalls { get; } = new();
+
+        public CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request)
+        {
+            CobroCalls.Add(request);
+            if (CobroError != null)
+            {
+                throw CobroError;
+            }
+
+            return CobroResult;
+        }
+
+        public IReadOnlyList<CuotaJugador> ObtenerCuotasJugador(int idJugador)
+        {
+            CuotasCalls.Add(idJugador);
+            return CuotasResult;
+        }
 
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors)
         {
@@ -279,7 +427,6 @@ public class PagosControllerTests
 
         // El controller bajo prueba no llama a estos métodos; nada más debería invocarse.
         public RegistrarPagoResultado RegistrarPago(RegistrarPagoRequest request) => throw new NotSupportedException();
-        public CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request) => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => throw new NotSupportedException();
