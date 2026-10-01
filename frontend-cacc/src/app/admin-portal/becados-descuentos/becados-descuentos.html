@@ -535,26 +535,22 @@
           <div class="field-dates">
             <div class="field">
               <label class="field-label" for="startDate">Fecha desde</label>
-              <input
+              <app-custom-datepicker
                 id="startDate"
-                type="date"
-                class="field-input"
                 formControlName="startDate"
-                [class.is-invalid]="dateRangeErrorMessage"
+                [invalid]="!!dateRangeErrorMessage"
                 required
-              />
+              ></app-custom-datepicker>
             </div>
 
             <div class="field">
               <label class="field-label" for="endDate">Fecha hasta</label>
-              <input
+              <app-custom-datepicker
                 id="endDate"
-                type="date"
-                class="field-input"
                 formControlName="endDate"
-                [class.is-invalid]="dateRangeErrorMessage"
+                [invalid]="!!dateRangeErrorMessage"
                 required
-              />
+              ></app-custom-datepicker>
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import {
+    ChangeDetectorRef,
     Component,
     OnInit,
     NgZone,
@@ -80,6 +81,10 @@ export class ActividadMovimientos implements OnInit {
     private pagosService = inject(PagosService);
     private router = inject(Router);
     private fb = inject(FormBuilder);
+    private cdr = inject(ChangeDetectorRef);
+
+    // Evita repintar una vista que ya se destruyó (el usuario salió antes de que llegara la respuesta).
+    private destroyed = false;
 
     // Cancels the running count-up animation, so it can be cancelled on destroy.
     private cancelCountUp: () => void = () => {};
@@ -141,7 +146,10 @@ export class ActividadMovimientos implements OnInit {
 
     ngOnInit() {
         this.currentDate = this.formatToday();
-        this.destroyRef.onDestroy(() => this.cancelCountUp());
+        this.destroyRef.onDestroy(() => {
+            this.destroyed = true;
+            this.cancelCountUp();
+        });
 
         this.loadResumenHoy();
         this.loadActivity();
@@ -200,6 +208,15 @@ export class ActividadMovimientos implements OnInit {
 
     // ===== DATA LOADING =====
 
+    // Las respuestas HTTP pueden llegar fuera de la zona de Angular (pasa al venir de una
+    // pantalla con gráficos), y entonces la tabla quedaba vacía hasta el próximo clic o recarga.
+    // Igual que el resto de las pantallas del portal, se repinta a mano al llegar los datos.
+    private refrescarVista() {
+        if (!this.destroyed) {
+            this.cdr.detectChanges();
+        }
+    }
+
     private loadResumenHoy() {
         this.pagosService.getResumenHoy().pipe(timeout(ActividadMovimientos.LOAD_TIMEOUT_MS)).subscribe({
             next: (resumen) => {
@@ -239,11 +256,13 @@ export class ActividadMovimientos implements OnInit {
             next: (recientes) => {
                 this.activity = recientes.map(toActivityEvent);
                 this.activityLoaded = true;
+                this.refrescarVista();
             },
             error: () => {
                 this.activity = [];
                 this.activityLoaded = true;
                 this.activityLoadError = true;
+                this.refrescarVista();
             },
         });
     }
@@ -258,11 +277,13 @@ export class ActividadMovimientos implements OnInit {
             next: (pagos) => {
                 this.allPayments = pagos.map(toPaymentRow);
                 this.paymentsLoaded = true;
+                this.refrescarVista();
             },
             error: () => {
                 this.allPayments = [];
                 this.paymentsLoaded = true;
                 this.paymentsLoadError = true;
+                this.refrescarVista();
             },
         });
     }

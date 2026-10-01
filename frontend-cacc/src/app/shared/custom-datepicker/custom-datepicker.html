@@ -1,0 +1,98 @@
+<div class="dp-root" [class.dp-disabled]="disabled">
+  <div #field class="dp-field" [class.dp-open]="isOpen" [class.dp-invalid]="invalid">
+    <input
+      class="dp-input"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      maxlength="10"
+      [attr.id]="id"
+      [placeholder]="placeholder"
+      [value]="text"
+      [disabled]="disabled"
+      (input)="onTextInput($any($event.target))"
+      (blur)="onBlur()"
+      (keydown)="onInputKeydown($event)"
+    />
+    <button
+      type="button"
+      class="dp-toggle"
+      aria-label="Abrir calendario"
+      [attr.aria-expanded]="isOpen"
+      [disabled]="disabled"
+      (click)="toggle()"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4.5" width="18" height="16.5" rx="3"></rect>
+        <path d="M3 10h18"></path>
+        <path d="M8 2.5v4"></path>
+        <path d="M16 2.5v4"></path>
+      </svg>
+    </button>
+  </div>
+
+  @if (isOpen) {
+    <div #panel class="dp-panel" role="dialog" aria-label="Calendario">
+      <div class="dp-head">
+        <button type="button" class="dp-nav" aria-label="Anterior" (click)="previous()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button type="button" class="dp-title" (click)="toggleView()">
+          {{ title }}
+          <svg class="dp-title-chevron" [class.dp-flipped]="view === 'months'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <button type="button" class="dp-nav" aria-label="Siguiente" (click)="next()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      @if (view === 'days') {
+        <div class="dp-weekdays">
+          @for (weekday of weekdays; track $index) {
+            <span class="dp-weekday">{{ weekday }}</span>
+          }
+        </div>
+        <div class="dp-grid">
+          @for (cell of cells; track cell.iso) {
+            <button
+              type="button"
+              class="dp-day"
+              [class.dp-outside]="!cell.inMonth"
+              [class.dp-today]="cell.today"
+              [class.dp-selected]="cell.selected"
+              [disabled]="cell.disabled"
+              (click)="selectDay(cell)"
+            >
+              {{ cell.day }}
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="dp-months">
+          @for (name of monthsShort; track $index) {
+            <button
+              type="button"
+              class="dp-month"
+              [class.dp-today]="isCurrentMonth($index + 1)"
+              [class.dp-selected]="isSelectedMonth($index + 1)"
+              (click)="pickMonth($index + 1)"
+            >
+              {{ name }}
+            </button>
+          }
+        </div>
+      }
+
+      <div class="dp-footer">
+        <button type="button" class="dp-link dp-link-muted" (click)="clear()">Borrar</button>
+        <button type="button" class="dp-link" [disabled]="todayDisabled" (click)="selectToday()">Hoy</button>
+      </div>
+    </div>
+  }
+</div>

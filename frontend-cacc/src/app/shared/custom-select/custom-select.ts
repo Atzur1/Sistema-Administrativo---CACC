@@ -1,6 +1,16 @@
-import { Component, ElementRef, HostListener, Input, NgZone, forwardRef } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  Input,
+  NgZone,
+  OnDestroy,
+  ViewChild,
+  forwardRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { FloatingPanel } from '../floating-panel';
 
 // Una opción con texto visible distinto del valor que se guarda (ej. value: '%',
 // label: 'Porcentaje'). Para el caso simple (texto === valor) alcanza con pasar el
@@ -9,6 +19,9 @@ export interface CustomSelectOption {
   value: string | number;
   label: string;
 }
+
+// Alto máximo del menú de opciones (en px); si hay más opciones, la lista scrollea.
+const MENU_MAX_HEIGHT = 224;
 
 // Reemplaza al <select> nativo: el menú flotante abierto de un <select> lo
 // dibuja el sistema operativo y no se puede estilizar (queda gris genérico
@@ -34,7 +47,7 @@ export interface CustomSelectOption {
     },
   ],
 })
-export class CustomSelect implements ControlValueAccessor {
+export class CustomSelect implements ControlValueAccessor, OnDestroy {
   // Cada entrada es un string/number (texto = valor) o un {value, label} cuando
   // el texto a mostrar tiene que ser distinto del valor que viaja al form.
   @Input() options: (string | number | CustomSelectOption)[] = [];
@@ -50,10 +63,34 @@ export class CustomSelect implements ControlValueAccessor {
   private onChange: (value: string | number | null) => void = () => {};
   private onTouched: () => void = () => {};
 
+  @ViewChild('trigger') private triggerRef?: ElementRef<HTMLButtonElement>;
+
+  // El menú no se queda dentro del componente: al abrirse se muestra en <body>, pegado al botón
+  // y siguiéndolo (ver FloatingPanel), para que ningún panel de la pantalla lo tape o recorte.
+  private readonly menu: FloatingPanel;
+
+  @ViewChild('menu')
+  set menuRef(ref: ElementRef<HTMLElement> | undefined) {
+    if (ref) {
+      this.menu.attach(ref.nativeElement);
+    } else {
+      this.menu.detach();
+    }
+  }
+
   constructor(
     private elementRef: ElementRef<HTMLElement>,
     private ngZone: NgZone,
-  ) {}
+  ) {
+    this.menu = new FloatingPanel(ngZone, () => this.triggerRef?.nativeElement, {
+      matchAnchorWidth: true,
+      maxHeight: MENU_MAX_HEIGHT,
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.menu.detach();
+  }
 
   writeValue(value: string | number | null): void {
     this.value = value;
@@ -121,10 +158,13 @@ export class CustomSelect implements ControlValueAccessor {
     });
   }
 
-  // Cierra el menú si el click fue afuera del componente (trigger + lista)
+  // Cierra el menú si el click fue afuera del componente (botón + lista; la lista vive en <body>)
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (this.isOpen && !this.elementRef.nativeElement.contains(event.target as Node)) {
+    const target = event.target as Node;
+    const inside =
+      this.elementRef.nativeElement.contains(target) || this.menu.contains(target);
+    if (this.isOpen && !inside) {
       this.ngZone.run(() => {
         this.isOpen = false;
         this.onTouched();

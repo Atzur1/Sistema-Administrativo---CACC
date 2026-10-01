@@ -64,13 +64,13 @@
 }
 
 /* Menú flotante: acá sí se puede estilizar cada opción (a diferencia del
-   <select> nativo, que lo dibuja el sistema operativo). */
+   <select> nativo, que lo dibuja el sistema operativo). Se mueve a <body> al abrirse
+   (ver CustomSelect.attachMenu), por eso es position: fixed y top/left/width los
+   fija el componente: así ningún panel lo tapa ni lo recorta. */
 .cs-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    right: 0;
-    z-index: 20;
+    position: fixed;
+    z-index: 1000;
+    box-sizing: border-box;
     margin: 0;
     padding: 6px;
     list-style: none;

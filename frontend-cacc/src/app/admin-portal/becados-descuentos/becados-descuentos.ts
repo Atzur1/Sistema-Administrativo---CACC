@@ -11,6 +11,7 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { DiscountService } from '../../services/discounts';
 import {
@@ -61,7 +62,7 @@ type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel' | 'confirmVoid
 @Component({
   selector: 'app-becados-descuentos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DiscountBadge, CustomSelect],
+  imports: [CommonModule, ReactiveFormsModule, DiscountBadge, CustomSelect, CustomDatepicker],
   templateUrl: './becados-descuentos.html',
   styleUrl: './becados-descuentos.css',
 })

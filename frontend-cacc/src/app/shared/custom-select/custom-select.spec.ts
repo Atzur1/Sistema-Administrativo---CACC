@@ -21,8 +21,10 @@ function trigger(fixture: ComponentFixture<CustomSelect>): HTMLButtonElement {
   return fixture.nativeElement.querySelector('.cs-trigger');
 }
 
-function optionTexts(fixture: ComponentFixture<CustomSelect>): string[] {
-  return Array.from(fixture.nativeElement.querySelectorAll('.cs-option')).map(
+// El menú se mueve a <body> al abrirse (para que ningún panel lo tape), así que las
+// opciones se buscan en el documento y no dentro del fixture.
+function optionTexts(_fixture: ComponentFixture<CustomSelect>): string[] {
+  return Array.from(document.body.querySelectorAll('.cs-option')).map(
     (el) => (el as HTMLElement).querySelector('span')?.textContent?.trim() ?? '',
   );
 }
@@ -48,7 +50,7 @@ describe('CustomSelect - simple mode (options as plain strings/numbers)', () => 
     fixture.detectChanges();
     expect(optionTexts(fixture)).toEqual(['Enero', 'Febrero']);
 
-    fixture.nativeElement.querySelectorAll('.cs-option')[1].click();
+    (document.body.querySelectorAll('.cs-option')[1] as HTMLElement).click();
     fixture.detectChanges();
 
     expect(emitted).toBe('Febrero');
@@ -73,7 +75,7 @@ describe('CustomSelect - {value, label} mode (display text different from the st
     fixture.detectChanges();
     expect(optionTexts(fixture)).toEqual(['Porcentaje', 'Monto fijo']);
 
-    fixture.nativeElement.querySelectorAll('.cs-option')[0].click();
+    (document.body.querySelectorAll('.cs-option')[0] as HTMLElement).click();
     fixture.detectChanges();
 
     // El value que viaja al form es '%', no "Porcentaje" — eso es lo que distingue
@@ -89,5 +91,41 @@ describe('CustomSelect - {value, label} mode (display text different from the st
 
     expect(trigger(fixture).textContent).toContain('Monto fijo');
     expect(trigger(fixture).textContent).not.toContain('$');
+  });
+});
+
+describe('CustomSelect - menu placement', () => {
+  it('renders the open menu in <body>, outside the component, and removes it on close', async () => {
+    const fixture = await create((c) => {
+      c.options = ['Enero', 'Febrero'];
+    });
+
+    trigger(fixture).click();
+    fixture.detectChanges();
+
+    const menu = document.body.querySelector('.cs-menu') as HTMLElement;
+    expect(menu).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.cs-menu')).toBeNull();
+    expect(menu.parentElement).toBe(document.body);
+    expect(menu.style.position === '' || menu.style.position === 'fixed').toBe(true);
+
+    (document.body.querySelectorAll('.cs-option')[0] as HTMLElement).click();
+    fixture.detectChanges();
+
+    expect(document.body.querySelector('.cs-menu')).toBeNull();
+  });
+
+  it('removes the menu from <body> if the component is destroyed while open', async () => {
+    const fixture = await create((c) => {
+      c.options = ['Enero'];
+    });
+
+    trigger(fixture).click();
+    fixture.detectChanges();
+    expect(document.body.querySelector('.cs-menu')).not.toBeNull();
+
+    fixture.destroy();
+
+    expect(document.body.querySelector('.cs-menu')).toBeNull();
   });
 });
