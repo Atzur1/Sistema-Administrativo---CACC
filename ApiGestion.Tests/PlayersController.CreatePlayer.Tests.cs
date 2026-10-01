@@ -88,6 +88,20 @@ public class PlayersControllerCreatePlayerTests
     }
 
     [Fact]
+    public void CreatePlayer_WithACategoryFeeInForce_ChargesItInsteadOfTheGenderFee()
+    {
+        var (controller, players, _, aranceles) = CreateController();
+        aranceles.Amounts["Femenino"] = 30000;
+        aranceles.CategoryAmounts[1] = 50000; // ValidRequest uses category 1
+
+        IActionResult result = controller.CreatePlayer(ValidRequest("Femenino"));
+
+        PlayerResponseDTO player = Assert.IsType<PlayerResponseDTO>(Assert.IsType<CreatedResult>(result).Value);
+        Assert.Equal(50000, player.MonthlyFeeAmount);
+        Assert.Equal(50000, players.LastMonthlyFee);
+    }
+
+    [Fact]
     public void CreatePlayer_MaleWithoutEnrollmentFeeInForce_IsRefusedAndCreatesNothing()
     {
         var (controller, players, _, aranceles) = CreateController();
@@ -259,6 +273,7 @@ public class PlayersControllerCreatePlayerTests
     private class FakeArancelesDao : IArancelesDao
     {
         public Dictionary<string, decimal> Amounts { get; } = new();
+        public Dictionary<int, decimal> CategoryAmounts { get; } = new();
         public DateTime? LastDate { get; private set; }
 
         public decimal? ObtenerMontoVigente(string genero, DateTime fecha)
@@ -267,15 +282,27 @@ public class PlayersControllerCreatePlayerTests
             return Amounts.TryGetValue(genero, out decimal amount) ? amount : null;
         }
 
+        // Same hierarchy as the real DAO: the category fee wins, then the gender fee.
+        public decimal? ObtenerMontoVigente(string genero, int idCategoria, DateTime fecha)
+        {
+            if (CategoryAmounts.TryGetValue(idCategoria, out decimal categoryAmount))
+            {
+                LastDate = fecha;
+                return categoryAmount;
+            }
+
+            return ObtenerMontoVigente(genero, fecha);
+        }
+
         public IReadOnlyList<ArancelHistorialItem> ObtenerHistorial() => new List<ArancelHistorialItem>();
 
         public ArancelResumen ObtenerResumen() => new ArancelResumen();
 
-        public void ProgramarArancel(string genero, decimal monto, DateTime vigenteDesde)
+        public void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
         {
         }
 
-        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string genero, decimal monto, DateTime vigenteDesde)
+        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
             => throw new NotSupportedException();
     }
 

@@ -1,5 +1,6 @@
 <div class="cs-root" [class.cs-disabled]="disabled">
   <button
+    #trigger
     type="button"
     class="cs-trigger"
     [class.cs-open]="isOpen"
@@ -26,7 +27,7 @@
   </button>
 
   @if (isOpen) {
-    <ul class="cs-menu" role="listbox">
+    <ul #menu class="cs-menu" role="listbox">
       @for (option of normalizedOptions; track option.value) {
         <li
           class="cs-option"

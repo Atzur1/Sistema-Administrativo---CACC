@@ -76,12 +76,13 @@ namespace DaoLibrary
         // abonadas), con el saldo ya ajustado por beneficio. PagosService las agrupa por período.
         IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador);
 
-        // Genera la cuota pendiente (PAGOS con Estado = false) de cada jugador de ESE género que
-        // todavía no tiene ninguna fila para ese período, usando el arancel de ese género/mes y
-        // el descuento activo si tiene uno. Cargar un arancel de un género nunca toca a los
-        // jugadores del otro género. Se puede llamar repetidas veces sin duplicar: solo inserta
-        // para quien no tenga ya una fila ese período.
-        void GenerarCuotasPendientesDelMes(string genero, int mes, int anio);
-        void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string genero, int mes, int anio);
+        // Genera la cuota pendiente (PAGOS con Estado = false) del mes para cada jugador que todavía
+        // no tiene ninguna fila de cuota para ese período, con el arancel que le corresponde
+        // (el de su categoría si tiene uno vigente; si no, el de su género). genero / idCategoria
+        // acotan a quién alcanza (un arancel de un género nunca toca a los jugadores del otro);
+        // ambos null = todos los jugadores (generación mensual automática). Se puede llamar
+        // repetidas veces sin duplicar: solo inserta para quien no tenga ya una fila ese período.
+        void GenerarCuotasPendientesDelMes(string? genero, int? idCategoria, int mes, int anio);
+        void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int mes, int anio);
     }
 }

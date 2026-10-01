@@ -1,0 +1,292 @@
+:host {
+    display: block;
+}
+
+.dp-root {
+    position: relative;
+    width: 100%;
+}
+
+/* ===== CAMPO (mismo aspecto que app-custom-select) ===== */
+.dp-field {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    box-sizing: border-box;
+    background: var(--action-field-bg);
+    border: 1px solid var(--action-border);
+    border-radius: 9px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.dp-field:hover {
+    border-color: var(--color-brand);
+}
+
+.dp-field:focus-within,
+.dp-field.dp-open {
+    background: var(--action-bg);
+    border-color: var(--action-accent);
+    box-shadow: var(--action-focus-ring);
+}
+
+.dp-field.dp-invalid,
+.dp-field.dp-invalid:hover,
+.dp-field.dp-invalid:focus-within {
+    border-color: var(--color-danger-strong);
+}
+
+.dp-field.dp-invalid:focus-within {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+.dp-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0 4px 0 12px;
+    border: 0;
+    background: transparent;
+    outline: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--color-text);
+}
+
+.dp-input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.8;
+}
+
+.dp-toggle {
+    flex-shrink: 0;
+    width: 40px;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 0 9px 9px 0;
+    background: transparent;
+    color: var(--action-accent);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.dp-toggle:hover {
+    background: var(--color-brand-tint);
+}
+
+.dp-toggle svg {
+    width: 17px;
+    height: 17px;
+}
+
+.dp-disabled .dp-field {
+    opacity: 0.55;
+}
+
+.dp-disabled .dp-toggle {
+    cursor: not-allowed;
+}
+
+/* ===== CALENDARIO =====
+   Se mueve a <body> al abrirse (ver FloatingPanel), por eso es position: fixed y
+   top/left los fija el componente: así ningún panel de la pantalla lo tapa ni lo recorta. */
+.dp-panel {
+    position: fixed;
+    z-index: 1000;
+    box-sizing: border-box;
+    width: 292px;
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16), 0 4px 10px rgba(15, 23, 42, 0.06);
+    animation: fadeIn 0.12s ease both;
+}
+
+.dp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.dp-nav,
+.dp-title,
+.dp-day,
+.dp-month,
+.dp-link {
+    font-family: inherit;
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+}
+
+.dp-nav {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 9px;
+    color: var(--color-brand);
+    transition: background 0.15s ease;
+}
+
+.dp-nav svg {
+    width: 16px;
+    height: 16px;
+}
+
+.dp-nav:hover {
+    background: var(--color-brand-tint);
+}
+
+.dp-title {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-brand-deep);
+    transition: background 0.15s ease;
+}
+
+.dp-title:hover {
+    background: var(--color-brand-tint);
+}
+
+.dp-title-chevron {
+    width: 13px;
+    height: 13px;
+    transition: transform 0.2s ease;
+}
+
+.dp-title-chevron.dp-flipped {
+    transform: rotate(180deg);
+}
+
+/* ===== DÍAS ===== */
+.dp-weekdays,
+.dp-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.dp-weekday {
+    padding: 4px 0 6px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+}
+
+.dp-day {
+    width: 36px;
+    height: 36px;
+    justify-self: center;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 13px;
+    color: #334155;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dp-day:hover:not(:disabled):not(.dp-selected) {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.dp-day.dp-outside {
+    color: #a3adb9;
+}
+
+.dp-day.dp-today:not(.dp-selected) {
+    box-shadow: inset 0 0 0 1.5px var(--color-brand);
+    color: var(--color-brand-deep);
+    font-weight: 600;
+}
+
+.dp-day.dp-selected,
+.dp-month.dp-selected {
+    background: var(--color-brand);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.dp-day:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* ===== MESES ===== */
+.dp-months {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.dp-month {
+    height: 48px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #334155;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dp-month:hover:not(.dp-selected) {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.dp-month.dp-today:not(.dp-selected) {
+    box-shadow: inset 0 0 0 1.5px var(--color-brand);
+    color: var(--color-brand-deep);
+    font-weight: 600;
+}
+
+/* ===== PIE ===== */
+.dp-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.dp-link {
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-brand);
+    transition: background 0.15s ease;
+}
+
+.dp-link:hover:not(:disabled) {
+    background: var(--color-brand-tint);
+}
+
+.dp-link-muted {
+    color: var(--color-text-muted);
+}
+
+.dp-link:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

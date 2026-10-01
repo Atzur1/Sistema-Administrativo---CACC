@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { API_BASE_URL } from '../../services/api-url';
 import { AuthService } from '../../services/auth';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 
 interface AuditEvent {
   id: number;
@@ -31,7 +32,7 @@ interface AuditResponse {
 @Component({
   selector: 'app-auditoria',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect],
+  imports: [CommonModule, FormsModule, CustomSelect, CustomDatepicker],
   templateUrl: './auditoria.html',
   styleUrl: './auditoria.css',
 })

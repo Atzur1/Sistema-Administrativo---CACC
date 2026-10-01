@@ -4,7 +4,9 @@ namespace ServiceLibrary
 {
     public class ProgramarArancelRequest
     {
-        public string Genero { get; set; } = string.Empty;
+        // El arancel es por género O por categoría: se informa exactamente uno de los dos.
+        public string? Genero { get; set; }
+        public int? IdCategoria { get; set; }
         public decimal Monto { get; set; }
         public DateTime VigenteDesde { get; set; }
     }

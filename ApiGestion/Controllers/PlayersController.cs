@@ -86,7 +86,8 @@ public class PlayersController : ControllerBase
         // against the last day of the month, as PagosDao does.
         DateTime joinDate = DateTime.Now.Date;
         DateTime lastDayOfMonth = new DateTime(joinDate.Year, joinDate.Month, DateTime.DaysInMonth(joinDate.Year, joinDate.Month));
-        decimal? monthlyFeeAmount = _arancelesDao.ObtenerMontoVigente(request.Gender, lastDayOfMonth);
+        // The player's category fee wins when it has one in force; otherwise the gender fee.
+        decimal? monthlyFeeAmount = _arancelesDao.ObtenerMontoVigente(request.Gender, (int)categoryId, lastDayOfMonth);
 
         Player created = _playerDAO.CreatePlayer(new Player
         {

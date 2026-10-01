@@ -5,13 +5,15 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { ArancelesService, ArancelHistorialItem } from '../../services/aranceles';
+import { PagosService } from '../../services/pagos';
 import { EnrollmentFeeService } from '../../services/enrollment-fees';
 import {
     EnrollmentFeeModel,
     enrollmentFeeStatusLabel,
     enrollmentFeeStatusClass,
 } from '../../models/EnrollmentFeeModel';
-import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
+import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { NotificationService } from '../../shared/notifications/notification.service';
 
 Chart.register(...registerables);
@@ -20,7 +22,8 @@ Chart.register(...registerables);
 interface FeeRow {
     id: number;
     // 'male' renders the "Masculino" pill, 'female' the "Femenino" one, 'enrollment' the "Inscripción" one
-    category: 'male' | 'female' | 'enrollment';
+    // and 'category' the pill of a fee set for one category (it overrides the gender fee)
+    category: 'male' | 'female' | 'enrollment' | 'category';
     categoryLabel: string;
     amount: string;
     // Stored as ISO so the dates compare and sort directly
@@ -40,7 +43,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
     selector: 'app-actualizacion-aranceles',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect],
+    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect, CustomDatepicker],
     templateUrl: './actualizacion-aranceles.html',
     styleUrl: './actualizacion-aranceles.css',
 })
@@ -54,7 +57,14 @@ export class ActualizacionAranceles implements OnInit {
 
     feeForm: FormGroup;
 
-    categories = ['Masculino', 'Femenino', 'Inscripción masculina'];
+    // What the fee applies to: a gender, the enrollment fee, or one category. A category fee
+    // wins over the gender fee for the players of that category, whatever their gender.
+    // Values: 'genero:Masculino' | 'genero:Femenino' | 'inscripcion' | 'categoria:<id>'
+    targets: CustomSelectOption[] = [
+        { value: 'genero:Masculino', label: 'Masculino' },
+        { value: 'genero:Femenino', label: 'Femenino' },
+        { value: 'inscripcion', label: 'Inscripción masculina' },
+    ];
 
     enviando = false;
 
@@ -144,18 +154,34 @@ export class ActualizacionAranceles implements OnInit {
         private fb: FormBuilder,
         private arancelesService: ArancelesService,
         private enrollmentFeeService: EnrollmentFeeService,
+        private pagosService: PagosService,
         private cdr: ChangeDetectorRef,
         private notifications: NotificationService
     ) {
         this.feeForm = this.fb.group({
-            category: ['', [Validators.required]],
+            target: ['', [Validators.required]],
             amount: ['', [Validators.required, Validators.min(1)]],
             validFrom: ['', [Validators.required]],
         });
     }
 
     ngOnInit() {
+        this.cargarCategorias();
         this.cargarDatos();
+    }
+
+    // Las categorías del club se suman como destinos posibles del arancel.
+    private cargarCategorias() {
+        this.pagosService.getCategorias().subscribe({
+            next: (categorias) => {
+                this.targets = [
+                    ...this.targets,
+                    ...categorias.map(c => ({ value: `categoria:${c.idCategoria}`, label: `Categoría ${c.nombre}` })),
+                ];
+                this.cdr.detectChanges();
+            },
+            error: () => {},
+        });
     }
 
     // Reformatea el Nuevo monto con puntos de miles a medida que se escribe, preservando la
@@ -292,11 +318,14 @@ export class ActualizacionAranceles implements OnInit {
     }
 
     get formSubtitle(): string {
-        const cat = this.feeForm.get('category')?.value;
-        if (cat === 'Inscripción masculina') {
+        const target = this.feeForm.get('target')?.value;
+        if (target === 'inscripcion') {
             return 'Definí el próximo valor de inscripción. Solo se cobra una vez al dar de alta al jugador.';
         }
-        return 'Definí el próximo valor de cuota. Los cambios no son retroactivos: solo aplican a los meses posteriores a su entrada en vigencia.';
+        if (typeof target === 'string' && target.startsWith('categoria:')) {
+            return 'Definí la cuota de esta categoría. Reemplaza al arancel de género para sus jugadores, sea cual sea su género. Los cambios no son retroactivos.';
+        }
+        return 'Definí el próximo valor de cuota. Si nadie lo cambia, se sigue cobrando el vigente todos los meses. Los cambios no son retroactivos: solo aplican a los meses posteriores a su entrada en vigencia.';
     }
 
     // El estado ya viene calculado desde el backend (Vigente/Programado/Anterior).
@@ -329,15 +358,16 @@ export class ActualizacionAranceles implements OnInit {
             return;
         }
 
-        const { category, amount, validFrom } = this.feeForm.value;
+        const { target, amount, validFrom } = this.feeForm.value;
+        const targetLabel = this.targets.find(t => t.value === target)?.label ?? '';
 
         this.enviando = true;
 
-        if (category === 'Inscripción masculina') {
+        if (target === 'inscripcion') {
             this.enrollmentFeeService.createEnrollmentFee({ amount: Number(amount), startDate: validFrom }).subscribe({
                 next: () => {
                     this.enviando = false;
-                    this.feeForm.reset({ category: '', amount: '', validFrom: '' });
+                    this.feeForm.reset({ target: '', amount: '', validFrom: '' });
                     this.montoDisplay = '';
                     this.notifications.notify('Nuevo valor de inscripción masculina programado correctamente.', 'success');
                     this.cargarDatos();
@@ -351,12 +381,16 @@ export class ActualizacionAranceles implements OnInit {
                 },
             });
         } else {
-            this.arancelesService.programar(category, Number(amount), validFrom).subscribe({
+            const destino = typeof target === 'string' && target.startsWith('categoria:')
+                ? { idCategoria: Number(target.slice('categoria:'.length)) }
+                : { genero: String(target).slice('genero:'.length) };
+
+            this.arancelesService.programar(destino, Number(amount), validFrom).subscribe({
                 next: () => {
                     this.enviando = false;
-                    this.feeForm.reset({ category: '', amount: '', validFrom: '' });
+                    this.feeForm.reset({ target: '', amount: '', validFrom: '' });
                     this.montoDisplay = '';
-                    this.notifications.notify(`Nuevo arancel ${category} programado correctamente.`, 'success');
+                    this.notifications.notify(`Nuevo arancel ${targetLabel} programado correctamente.`, 'success');
                     this.cargarDatos();
                     this.cdr.detectChanges();
                 },
@@ -372,10 +406,12 @@ export class ActualizacionAranceles implements OnInit {
 }
 
 function mapHistorialItem(item: ArancelHistorialItem): FeeRow {
+    // Un arancel es por categoría (genero null) o por género
+    const porCategoria = item.genero == null;
     return {
         id: item.idArancel,
-        category: item.genero === 'Femenino' ? 'female' : 'male',
-        categoryLabel: item.genero,
+        category: porCategoria ? 'category' : item.genero === 'Femenino' ? 'female' : 'male',
+        categoryLabel: porCategoria ? `Categoría ${item.nombreCategoria ?? item.idCategoria}` : (item.genero as string),
         amount: `$${item.monto.toLocaleString('es-AR')}`,
         validFrom: item.vigenteDesde.slice(0, 10),
         validTo: item.vigenteHasta ? item.vigenteHasta.slice(0, 10) : '',

@@ -190,10 +190,11 @@ public class PlayersControllerVoidDiscountTests
     private class FakeArancelesDao : IArancelesDao
     {
         public decimal? ObtenerMontoVigente(string genero, DateTime fecha) => null;
+        public decimal? ObtenerMontoVigente(string genero, int idCategoria, DateTime fecha) => null;
         public IReadOnlyList<ArancelHistorialItem> ObtenerHistorial() => new List<ArancelHistorialItem>();
         public ArancelResumen ObtenerResumen() => new ArancelResumen();
-        public void ProgramarArancel(string genero, decimal monto, DateTime vigenteDesde) { }
-        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string genero, decimal monto, DateTime vigenteDesde)
+        public void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde) { }
+        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
             => throw new NotSupportedException();
     }
 

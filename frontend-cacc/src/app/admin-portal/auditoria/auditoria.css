@@ -296,7 +296,8 @@
    arriba no lo alcanza y hereda el peso/tamaño de letra de .filter-field
    (700/11px, pensado para la etiqueta "Desde"/"Persona"/etc., no para el
    valor elegido) — de ahí la tipografía rara y pesada del desplegable. */
-.filter-field app-custom-select {
+.filter-field app-custom-select,
+.filter-field app-custom-datepicker {
   font-size: 13px;
   font-weight: 400;
 }

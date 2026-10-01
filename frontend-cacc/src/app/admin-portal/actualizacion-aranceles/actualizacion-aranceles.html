@@ -47,9 +47,9 @@
     <form class="form-grid" [formGroup]="feeForm" (ngSubmit)="onSubmit()">
 
       <div class="field">
-        <label class="field-label" for="category">Categoría</label>
-        <app-custom-select id="category" [options]="categories" placeholder="Seleccionar categoría"
-                            formControlName="category"></app-custom-select>
+        <label class="field-label" for="target">Aplicar a</label>
+        <app-custom-select id="target" [options]="targets" placeholder="Seleccionar género o categoría"
+                            formControlName="target"></app-custom-select>
       </div>
 
       <div class="field">
@@ -64,7 +64,7 @@
 
       <div class="field">
         <label class="field-label" for="validFrom">Entra en vigencia desde</label>
-        <input id="validFrom" type="date" class="field-input" formControlName="validFrom" />
+        <app-custom-datepicker id="validFrom" formControlName="validFrom"></app-custom-datepicker>
         <span class="field-hint">Podés elegir cualquier fecha, pasada, actual o futura</span>
       </div>
 
@@ -82,14 +82,14 @@
     <article class="panel panel-history">
       <header class="panel-head">
         <h2 class="panel-title">Historial y aranceles programados</h2>
-        <span class="panel-subtitle">Todos los cambios de cuota, del más reciente al más antiguo</span>
+        <span class="panel-subtitle">Todos los cambios de cuota (por género y por categoría), del más reciente al más antiguo</span>
       </header>
 
       <div class="table-wrapper">
         <table class="fees-table">
           <thead>
             <tr>
-              <th>Categoría</th>
+              <th>Género / categoría</th>
               <th>Monto</th>
               <th>Vigente desde</th>
               <th>Vigente hasta</th>

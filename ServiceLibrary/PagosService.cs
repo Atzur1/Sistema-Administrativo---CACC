@@ -249,8 +249,8 @@ namespace ServiceLibrary
         private static string Periodo(DateTime? fechaVencimiento) =>
             fechaVencimiento.HasValue ? $"{NombresMes[fechaVencimiento.Value.Month - 1]} {fechaVencimiento.Value.Year}" : "-";
 
-        // 100% manual: las cuotas solo existen para los meses en los que se cargó un arancel
-        // (ver ArancelesService.ProgramarArancel). Acá no se genera nada por fecha de hoy.
+        // Las cuotas las crea GeneradorCuotasMensuales cada mes (repitiendo el arancel vigente) y
+        // ArancelesService.ProgramarArancel al cargar un arancel. Acá no se genera nada: solo se lee.
         public IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null) => _pagosDao.ObtenerPendientesAgrupados(idCategoria);
 
         public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null) => _pagosDao.ObtenerDeudaPorCategoria(anio, mes);
