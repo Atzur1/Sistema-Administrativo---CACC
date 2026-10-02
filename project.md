@@ -2,7 +2,7 @@
 
 Última actualización: 2026-09-28 (incluye auditoría de responsables y alcance de cuentas del Portal Administrativo).
 
-Este documento comparte el contexto de negocio vigente del equipo que desarrolla el **Portal Administrativo** del Club Atlético Social y Deportivo Camioneros (CACC). Complementa `README.md`, `estructura-tecnica.md` y `database/README.md`; para el estado real del código prevalece siempre el repositorio. Las reglas marcadas como pendientes no deben asumirse como decisiones cerradas.
+Este documento comparte el contexto de negocio vigente del equipo que desarrolla el **Portal Administrativo** del Club Atlético Social y Deportivo Camioneros (CACC). Complementa `README.md`, `estructura-tecnica.md` y `database/README.md`; para los cambios de base de datos, ver `database/InstructivoEquipo.md`; para el estado real del código prevalece siempre el repositorio. Las reglas marcadas como pendientes no deben asumirse como decisiones cerradas.
 
 ## 1. Alcance del equipo
 
