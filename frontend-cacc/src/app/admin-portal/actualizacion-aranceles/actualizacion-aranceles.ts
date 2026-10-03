@@ -341,9 +341,16 @@ export class ActualizacionAranceles implements OnInit {
         return row.estado;
     }
 
-    // An open-ended period shows its state instead of an end date
-    validToLabel(row: FeeRow): string {
-        return row.validTo ? this.formatDate(row.validTo) : this.statusLabel(row);
+    // Fecha desde la que el arancel siguiente lo reemplaza (el día después del último día que
+    // rigió). Un arancel que nadie reemplazó se sigue cobrando todos los meses: no tiene fecha
+    // de fin, así que no muestra ninguna.
+    replacedOnLabel(row: FeeRow): string {
+        return row.validTo ? this.formatDate(this.nextDay(row.validTo)) : '—';
+    }
+
+    private nextDay(isoDate: string): string {
+        const [year, month, day] = isoDate.slice(0, 10).split('-').map(Number);
+        return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
     }
 
     // ISO dates are shown the way they are read locally

@@ -157,14 +157,14 @@ namespace ApiGestion.Reports
                 new[] { "Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm") },
             };
 
-            var columns = new[] { "Género o categoría", "Monto", "Vigente desde", "Vigente hasta", "Estado" };
+            var columns = new[] { "Género o categoría", "Monto", "Vigente desde", "Reemplazado el", "Estado" };
 
             var rows = historial.Select(a => new[]
             {
                 Destino(a),
                 a.Monto.ToString("C0", Ars),
                 a.VigenteDesde.ToString("dd/MM/yyyy"),
-                a.VigenteHasta?.ToString("dd/MM/yyyy") ?? "—",
+                a.VigenteHasta?.AddDays(1).ToString("dd/MM/yyyy") ?? "—",
                 a.Estado,
             });
 
@@ -178,14 +178,14 @@ namespace ApiGestion.Reports
                 new("Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm")),
             };
 
-            var columns = new[] { "Género o categoría", "Monto", "Vigente desde", "Vigente hasta", "Estado" };
+            var columns = new[] { "Género o categoría", "Monto", "Vigente desde", "Reemplazado el", "Estado" };
 
             var rows = historial.Select(a => new[]
             {
                 Destino(a),
                 a.Monto.ToString("C0", Ars),
                 a.VigenteDesde.ToString("dd/MM/yyyy"),
-                a.VigenteHasta?.ToString("dd/MM/yyyy") ?? "—",
+                a.VigenteHasta?.AddDays(1).ToString("dd/MM/yyyy") ?? "—",
                 a.Estado,
             }).ToList();
 
