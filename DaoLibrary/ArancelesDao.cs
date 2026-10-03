@@ -54,6 +54,7 @@ namespace DaoLibrary
         {
             var aranceles = ObtenerTodos();
             var hoy = DateTime.Now.Date;
+            var primerDiaMesActual = new DateTime(hoy.Year, hoy.Month, 1);
             var resultado = new List<ArancelHistorialItem>();
 
             // vigente_hasta se calcula, no se guarda: es el día anterior al vigente_desde del
@@ -85,6 +86,7 @@ namespace DaoLibrary
 
                     resultado.Add(new ArancelHistorialItem
                     {
+                        PuedeCancelar = actual.VigenteDesde.Date >= primerDiaMesActual,
                         IdArancel = actual.IdArancel,
                         Genero = actual.Genero,
                         IdCategoria = actual.IdCategoria,
@@ -128,6 +130,75 @@ namespace DaoLibrary
         {
             using SqlCommand comando = new SqlCommand(InsertArancel, conexion, transaccion);
             CargarParametrosArancel(comando, genero, idCategoria, monto, vigenteDesde);
+            comando.ExecuteNonQuery();
+        }
+
+        public Arancel? ObtenerPorId(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
+        {
+            const string query = @"
+                SELECT a.PK_id_arancel, a.genero, a.FK_id_categoria, c.nombre_categoria, a.monto, a.vigente_desde
+                FROM dbo.ARANCELES a
+                LEFT JOIN dbo.CATEGORIAS c ON c.PK_id_categoria = a.FK_id_categoria
+                WHERE a.PK_id_arancel = @idArancel";
+
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            comando.Parameters.AddWithValue("@idArancel", idArancel);
+            using SqlDataReader reader = comando.ExecuteReader();
+            if (!reader.Read())
+            {
+                return null;
+            }
+
+            return new Arancel
+            {
+                IdArancel = Convert.ToInt32(reader["PK_id_arancel"]),
+                Genero = reader["genero"] == DBNull.Value ? null : reader["genero"].ToString()?.Trim(),
+                IdCategoria = reader["FK_id_categoria"] == DBNull.Value ? null : Convert.ToInt32(reader["FK_id_categoria"]),
+                NombreCategoria = reader["nombre_categoria"] == DBNull.Value ? null : reader["nombre_categoria"].ToString()?.Trim(),
+                Monto = Convert.ToDecimal(reader["monto"]),
+                VigenteDesde = Convert.ToDateTime(reader["vigente_desde"])
+            };
+        }
+
+        // Mismo destino = el mismo género o la misma categoría (un arancel es de uno o de otro, nunca de ambos).
+        private const string MismoDestino = "((@genero IS NOT NULL AND genero = @genero) OR (@idCategoria IS NOT NULL AND FK_id_categoria = @idCategoria))";
+
+        private static void CargarParametrosDestino(SqlCommand comando, string? genero, int? idCategoria)
+        {
+            comando.Parameters.Add("@genero", System.Data.SqlDbType.VarChar, 20).Value = (object?)genero ?? DBNull.Value;
+            comando.Parameters.Add("@idCategoria", System.Data.SqlDbType.Int).Value = (object?)idCategoria ?? DBNull.Value;
+        }
+
+        public DateTime? ObtenerVigenteDesdeEnMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int anio, int mes)
+        {
+            string query = $@"
+                SELECT TOP (1) vigente_desde FROM ARANCELES WITH (UPDLOCK, HOLDLOCK)
+                WHERE {MismoDestino} AND YEAR(vigente_desde) = @anio AND MONTH(vigente_desde) = @mes
+                ORDER BY vigente_desde";
+
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            CargarParametrosDestino(comando, genero, idCategoria);
+            comando.Parameters.AddWithValue("@anio", anio);
+            comando.Parameters.AddWithValue("@mes", mes);
+            var resultado = comando.ExecuteScalar();
+            return resultado == null || resultado == DBNull.Value ? null : Convert.ToDateTime(resultado);
+        }
+
+        public DateTime? ObtenerSiguienteVigenteDesde(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde)
+        {
+            string query = $"SELECT MIN(vigente_desde) FROM ARANCELES WHERE {MismoDestino} AND vigente_desde > @desde";
+
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            CargarParametrosDestino(comando, genero, idCategoria);
+            comando.Parameters.Add("@desde", System.Data.SqlDbType.Date).Value = desde.Date;
+            var resultado = comando.ExecuteScalar();
+            return resultado == null || resultado == DBNull.Value ? null : Convert.ToDateTime(resultado);
+        }
+
+        public void EliminarArancel(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
+        {
+            using SqlCommand comando = new SqlCommand("DELETE FROM ARANCELES WHERE PK_id_arancel = @idArancel", conexion, transaccion);
+            comando.Parameters.AddWithValue("@idArancel", idArancel);
             comando.ExecuteNonQuery();
         }
 

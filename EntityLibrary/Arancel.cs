@@ -29,6 +29,9 @@ namespace EntityLibrary
         public DateTime VigenteDesde { get; set; }
         public DateTime? VigenteHasta { get; set; } // null = todavía sigue vigente (no hay uno más nuevo después)
         public string Estado { get; set; } = string.Empty; // "Vigente" | "Programado" | "Anterior"
+        // Solo se pueden cancelar los aranceles del mes en curso en adelante; los de meses anteriores
+        // son historial (sus cuotas ya se emitieron en períodos cerrados).
+        public bool PuedeCancelar { get; set; }
         public string? ResponsableNombre { get; set; }
         public string? ResponsableApellido { get; set; }
     }

@@ -251,7 +251,7 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         steps: [
             'Entrá a "Actualización de aranceles" y, en "Programar nuevo arancel", elegí a qué aplica: un género o una categoría (la categoría tiene prioridad sobre el género).',
             'Ingresá el nuevo monto y la fecha desde la que entra en vigencia.',
-            'Confirmá: queda en "Historial y aranceles programados" y se notifica automáticamente.',
+            'Confirmá: queda en "Historial y aranceles programados". Hay un solo arancel por mes para cada género o categoría: para cambiar uno, cancelalo antes con el botón "Cancelar" del historial.',
         ],
         action: {
             label: 'Ir a Actualización de aranceles',

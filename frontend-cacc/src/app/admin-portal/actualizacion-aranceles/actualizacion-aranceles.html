@@ -95,6 +95,7 @@
               <th>Reemplazado el</th>
               <th>Responsable</th>
               <th>Estado</th>
+              <th class="col-actions"><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
@@ -113,6 +114,11 @@
                   <span class="status-pill" [ngClass]="'status-' + status(row)">
                     {{ statusLabel(row) }}
                   </span>
+                </td>
+                <td class="col-actions">
+                  @if (row.cancelable) {
+                    <button type="button" class="row-action" (click)="askCancel(row)">Cancelar</button>
+                  }
                 </td>
               </tr>
             }
@@ -136,4 +142,28 @@
       </div>
     </article>
   </section>
+
+  <!-- ===== CONFIRMAR CANCELACIÓN DE UN ARANCEL ===== -->
+  @if (cancelTarget) {
+    <div class="confirm-overlay" (click)="closeCancel()">
+      <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="cancel-title" (click)="$event.stopPropagation()">
+        <h3 id="cancel-title" class="confirm-title">¿Cancelar este arancel?</h3>
+        <p class="confirm-detail">
+          <strong>{{ cancelTarget.categoryLabel }}</strong> · {{ cancelTarget.amount }} · desde el {{ formatDate(cancelTarget.validFrom) }}
+        </p>
+        <ul class="confirm-list">
+          <li>Se quita este arancel de todos los jugadores a los que alcanza.</li>
+          <li>Se eliminan las cuotas pendientes sin pagos emitidas con él.</li>
+          <li>Si alguna de esas cuotas ya tiene un pago, no se puede cancelar.</li>
+          <li>Las cuotas se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.</li>
+        </ul>
+        <div class="confirm-actions">
+          <button type="button" class="confirm-back" (click)="closeCancel()" [disabled]="cancelando">Volver</button>
+          <button type="button" class="confirm-danger" (click)="confirmCancel()" [disabled]="cancelando">
+            {{ cancelando ? 'Cancelando…' : 'Cancelar arancel' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

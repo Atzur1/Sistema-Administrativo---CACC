@@ -48,7 +48,7 @@ namespace ApiGestion.Controllers
         {
             try
             {
-                _arancelesService.ProgramarArancel(new ProgramarArancelRequest
+                ProgramarArancelResultado resultado = _arancelesService.ProgramarArancel(new ProgramarArancelRequest
                 {
                     Genero = request.Genero,
                     IdCategoria = request.IdCategoria,
@@ -56,7 +56,17 @@ namespace ApiGestion.Controllers
                     VigenteDesde = request.VigenteDesde
                 });
 
-                return Ok(new { exito = true, mensaje = "Arancel programado correctamente." });
+                string mensaje = "Arancel programado correctamente.";
+                if (resultado.CuotasReemitidas > 0)
+                {
+                    mensaje += $" Se volvieron a emitir {resultado.CuotasReemitidas} cuota{(resultado.CuotasReemitidas == 1 ? "" : "s")} pendiente{(resultado.CuotasReemitidas == 1 ? "" : "s")} del mes en curso con el monto nuevo.";
+                }
+                if (resultado.CuotasConPagosConservadas > 0)
+                {
+                    mensaje += $" {resultado.CuotasConPagosConservadas} cuota{(resultado.CuotasConPagosConservadas == 1 ? "" : "s")} del mes ya tenía{(resultado.CuotasConPagosConservadas == 1 ? "" : "n")} pagos y se mantuvo{(resultado.CuotasConPagosConservadas == 1 ? "" : "ieron")} sin cambios.";
+                }
+
+                return Ok(new { exito = true, mensaje });
             }
             catch (ArancelInvalidoException ex)
             {
@@ -66,6 +76,34 @@ namespace ApiGestion.Controllers
             {
                 _logger.LogError(ex, "Error interno al programar el arancel");
                 return StatusCode(500, new { exito = false, mensaje = "Error interno al programar el arancel." });
+            }
+        }
+
+        // DELETE api/aranceles/{id} -> botón "Cancelar" del historial. Quita el arancel y las cuotas
+        // pendientes sin pagos emitidas con él; si alguna ya tiene pagos, se rechaza (400).
+        [Authorize(Roles = "1")]
+        [HttpDelete("{idArancel:int}")]
+        public IActionResult CancelarArancel(int idArancel)
+        {
+            try
+            {
+                CancelarArancelResultado resultado = _arancelesService.CancelarArancel(idArancel);
+
+                string mensaje = resultado.CuotasEliminadas > 0
+                    ? $"Arancel cancelado. Se quitaron {resultado.CuotasEliminadas} cuota{(resultado.CuotasEliminadas == 1 ? "" : "s")} pendiente{(resultado.CuotasEliminadas == 1 ? "" : "s")} sin pagos."
+                    : "Arancel cancelado.";
+                mensaje += " Las cuotas se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.";
+
+                return Ok(new { exito = true, mensaje });
+            }
+            catch (ArancelInvalidoException ex)
+            {
+                return BadRequest(new { exito = false, mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error interno al cancelar el arancel {IdArancel}", idArancel);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al cancelar el arancel." });
             }
         }
     }

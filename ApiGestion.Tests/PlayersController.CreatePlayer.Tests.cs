@@ -304,6 +304,15 @@ public class PlayersControllerCreatePlayerTests
 
         public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
             => throw new NotSupportedException();
+
+        public Arancel? ObtenerPorId(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
+            => throw new NotSupportedException();
+        public DateTime? ObtenerVigenteDesdeEnMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int anio, int mes)
+            => throw new NotSupportedException();
+        public DateTime? ObtenerSiguienteVigenteDesde(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde)
+            => throw new NotSupportedException();
+        public void EliminarArancel(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
+            => throw new NotSupportedException();
     }
 
     private class FakeCategoriasDao : ICategoriasDao

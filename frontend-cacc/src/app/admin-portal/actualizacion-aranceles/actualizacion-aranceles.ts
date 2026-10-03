@@ -32,6 +32,8 @@ interface FeeRow {
     validTo: string;
     estado: 'Vigente' | 'Programado' | 'Anterior';
     responsable: string;
+    // Solo los aranceles de cuota del mes en curso en adelante se pueden cancelar
+    cancelable: boolean;
 }
 
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
@@ -359,6 +361,47 @@ export class ActualizacionAranceles implements OnInit {
         return `${day}/${month}/${year}`;
     }
 
+    // ===== Cancelar un arancel =====
+
+    // Arancel que el administrador está por cancelar (muestra la confirmación)
+    cancelTarget: FeeRow | null = null;
+    cancelando = false;
+
+    askCancel(row: FeeRow) {
+        this.cancelTarget = row;
+    }
+
+    closeCancel() {
+        if (!this.cancelando) {
+            this.cancelTarget = null;
+        }
+    }
+
+    confirmCancel() {
+        const row = this.cancelTarget;
+        if (!row || this.cancelando) {
+            return;
+        }
+
+        this.cancelando = true;
+        this.arancelesService.cancelar(row.id).subscribe({
+            next: (respuesta) => {
+                this.cancelando = false;
+                this.cancelTarget = null;
+                this.notifications.notify(respuesta.mensaje || 'Arancel cancelado.', 'success');
+                this.cargarDatos();
+                this.cdr.detectChanges();
+            },
+            error: (err: HttpErrorResponse) => {
+                this.cancelando = false;
+                this.cancelTarget = null;
+                // Ej.: "No se puede cancelar este arancel: 2 cuotas emitidas con él ya tienen pagos registrados."
+                this.notifications.notify(err.error?.mensaje ?? 'No se pudo cancelar el arancel. Intentá de nuevo.', 'error');
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
     onSubmit() {
         if (this.feeForm.invalid) {
             this.feeForm.markAllAsTouched();
@@ -393,11 +436,18 @@ export class ActualizacionAranceles implements OnInit {
                 : { genero: String(target).slice('genero:'.length) };
 
             this.arancelesService.programar(destino, Number(amount), validFrom).subscribe({
-                next: () => {
+                next: (respuesta) => {
                     this.enviando = false;
                     this.feeForm.reset({ target: '', amount: '', validFrom: '' });
                     this.montoDisplay = '';
-                    this.notifications.notify(`Nuevo arancel ${targetLabel} programado correctamente.`, 'success');
+                    // El backend informa qué pasó con las cuotas del mes (se volvieron a emitir, o se
+                    // conservaron las que ya tenían pagos).
+                    this.notifications.notify(
+                        respuesta.mensaje
+                            ? `Nuevo arancel ${targetLabel}. ${respuesta.mensaje}`
+                            : `Nuevo arancel ${targetLabel} programado correctamente.`,
+                        'success',
+                    );
                     this.cargarDatos();
                     this.cdr.detectChanges();
                 },
@@ -424,6 +474,7 @@ function mapHistorialItem(item: ArancelHistorialItem): FeeRow {
         validTo: item.vigenteHasta ? item.vigenteHasta.slice(0, 10) : '',
         estado: item.estado,
         responsable: responsableNombre(item.responsableNombre, item.responsableApellido),
+        cancelable: item.puedeCancelar,
     };
 }
 
@@ -442,6 +493,7 @@ function mapEnrollmentFeeItem(fee: EnrollmentFeeModel): FeeRow {
         validTo: fee.endDate ? fee.endDate.slice(0, 10) : '',
         estado: estadoMap[fee.status] ?? 'Anterior',
         responsable: responsableNombre(fee.responsibleName, fee.responsibleSurname),
+        cancelable: false,
     };
 }
 

@@ -11,12 +11,29 @@ namespace ServiceLibrary
         public DateTime VigenteDesde { get; set; }
     }
 
+    public class ProgramarArancelResultado
+    {
+        // Cuotas pendientes del mes en curso que se volvieron a emitir con el monto nuevo.
+        public int CuotasReemitidas { get; set; }
+
+        // Cuotas del mes en curso que ya tenían algún pago y por eso se mantuvieron sin cambios.
+        public int CuotasConPagosConservadas { get; set; }
+    }
+
+    public class CancelarArancelResultado
+    {
+        // Cuotas pendientes sin pagos que se quitaron junto con el arancel.
+        public int CuotasEliminadas { get; set; }
+    }
+
     public interface IArancelesService
     {
         IReadOnlyList<ArancelHistorialItem> ObtenerHistorial();
 
         ArancelResumen ObtenerResumen();
 
-        void ProgramarArancel(ProgramarArancelRequest request);
+        ProgramarArancelResultado ProgramarArancel(ProgramarArancelRequest request);
+
+        CancelarArancelResultado CancelarArancel(int idArancel);
     }
 }

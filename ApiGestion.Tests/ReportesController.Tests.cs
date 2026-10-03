@@ -158,6 +158,7 @@ public class ReportesControllerTests
     {
         public IReadOnlyList<ArancelHistorialItem> ObtenerHistorial() => new List<ArancelHistorialItem>();
         public ArancelResumen ObtenerResumen() => throw new NotSupportedException();
-        public void ProgramarArancel(ProgramarArancelRequest request) => throw new NotSupportedException();
+        public ProgramarArancelResultado ProgramarArancel(ProgramarArancelRequest request) => throw new NotSupportedException();
+        public CancelarArancelResultado CancelarArancel(int idArancel) => throw new NotSupportedException();
     }
 }
