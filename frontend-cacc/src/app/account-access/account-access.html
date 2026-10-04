@@ -1,115 +1,211 @@
-<main class="main">
-  <div class="access-card">
-    <div class="access-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-      </svg>
-    </div>
+<main class="main" [attr.data-modo]="modo">
+  <img src="/imagen.png" class="brand-image" alt="" aria-hidden="true" />
 
-    <div class="access-header">
-      <h1>Restablecer contraseña</h1>
-      <p>Este enlace está reservado al superadministrador del Portal Administrativo CACC. Tiene una validez de 30 minutos y solo puede usarse una vez.</p>
-    </div>
+  <section class="access-card" aria-labelledby="access-titulo">
+    <span class="card-accent" aria-hidden="true"></span>
 
-    @if (!mensajeExito) {
-      <form [formGroup]="form" (ngSubmit)="submit()">
+    <!-- ===== FORMULARIO ===== -->
+    @if (estado === 'formulario') {
+      <header class="access-header">
+        <div class="access-icon" aria-hidden="true">
+          @if (modo === 'crear') {
+            <!-- llave: primer ingreso -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+            </svg>
+          } @else {
+            <!-- flechas circulares: recuperar acceso -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          }
+        </div>
+        <span class="access-eyebrow">{{ textos.etiqueta }}</span>
+        <h1 id="access-titulo">{{ textos.titulo }}</h1>
+        <p>{{ textos.subtitulo }}</p>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <!-- Contraseña -->
         <div class="form-group">
-          <label for="password">Nueva contraseña</label>
+          <label for="password">{{ modo === 'crear' ? 'Contraseña' : 'Nueva contraseña' }}</label>
           <div class="input-container">
-            <span class="input-icon">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <span class="input-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </span>
-
             <input
               [type]="mostrarPassword ? 'text' : 'password'"
               class="form-control"
               id="password"
               formControlName="password"
               autocomplete="new-password"
-              [disabled]="tokenInvalido"
+              placeholder="Mínimo {{ passwordMinLength }} caracteres"
+              (keydown)="detectarMayusculas($event)"
+              (keyup)="detectarMayusculas($event)"
+              aria-describedby="password-ayuda"
             />
-
-            <span
+            <button
+              type="button"
               class="eye-icon"
-              role="button"
-              tabindex="0"
               (click)="togglePasswordVisibility()"
-              (keydown.enter)="togglePasswordVisibility()"
-              (keydown.space)="togglePasswordVisibility(); $event.preventDefault()"
               [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-              [title]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.aria-pressed]="mostrarPassword"
             >
-              <svg
-                *ngIf="!mostrarPassword"
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="#666"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
+              @if (!mostrarPassword) {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              }
+            </button>
+          </div>
+
+          @if (capsActivo) {
+            <p class="caps-warning" role="status">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7"></path>
               </svg>
-              <svg
-                *ngIf="mostrarPassword"
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="#007F3E"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
+              Bloq Mayús está activado
+            </p>
+          }
+
+          <!-- Fortaleza y recomendaciones en vivo. Solo la longitud mínima bloquea el envío. -->
+          <div id="password-ayuda">
+            <div class="strength" [attr.data-nivel]="fortaleza.nivel" aria-live="polite">
+              <div class="strength-bars" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+              <span class="strength-label">{{ fortaleza.etiqueta || 'Fortaleza de la contraseña' }}</span>
+            </div>
+
+            <ul class="requirements">
+              @for (requisito of requisitos; track requisito.id) {
+                <li [class.is-met]="requisito.cumplido">
+                  <span class="requirement-check" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </span>
+                  <span>{{ requisito.texto }}</span>
+                  @if (!requisito.obligatorio) {
+                    <em class="requirement-tag">recomendado</em>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+
+        <!-- Repetir contraseña -->
+        <div class="form-group">
+          <label for="confirmacion">Repetí la contraseña</label>
+          <div class="input-container" [class.has-error]="confirmacionNoCoincide" [class.is-match]="confirmacionCoincide">
+            <span class="input-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polyline points="9 12 11 14 15 10"></polyline>
               </svg>
             </span>
+            <input
+              [type]="mostrarConfirmacion ? 'text' : 'password'"
+              class="form-control"
+              id="confirmacion"
+              formControlName="confirmacion"
+              autocomplete="new-password"
+              placeholder="Escribila de nuevo"
+              (keydown)="detectarMayusculas($event)"
+              (keyup)="detectarMayusculas($event)"
+              [attr.aria-invalid]="confirmacionNoCoincide"
+            />
+            <button
+              type="button"
+              class="eye-icon"
+              (click)="toggleConfirmacionVisibility()"
+              [attr.aria-label]="mostrarConfirmacion ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.aria-pressed]="mostrarConfirmacion"
+            >
+              @if (!mostrarConfirmacion) {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              }
+            </button>
           </div>
 
-          <!-- Feedback en vivo del requisito de longitud — reemplaza el botón
-               deshabilitado sin ninguna explicación que había antes. -->
-          <div class="password-hint" [class.is-met]="longitudCumplida">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span>Mínimo {{ passwordMinLength }} caracteres ({{ longitudActual }}/{{ passwordMinLength }})</span>
+          @if (confirmacionNoCoincide) {
+            <p class="field-error" role="alert">Las contraseñas no coinciden.</p>
+          } @else if (confirmacionCoincide) {
+            <p class="field-ok">Las contraseñas coinciden.</p>
+          }
+        </div>
+
+        @if (mensajeError) {
+          <div class="alert-banner alert-banner-error" role="alert">
+            <span class="alert-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </span>
+            <span class="alert-text">{{ mensajeError }}</span>
           </div>
-        </div>
+        }
 
-        <div *ngIf="mensajeError" class="alert-banner alert-banner-error" role="alert">
-          <span class="alert-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </span>
-          <span class="alert-text">{{ mensajeError }}</span>
-        </div>
-
-        <button type="submit" class="btn btn-primary" [disabled]="form.invalid || submitting || tokenInvalido">
-          {{ submitting ? 'Guardando…' : 'Guardar contraseña' }}
+        <button type="submit" class="btn btn-primary" [disabled]="form.invalid || submitting">
+          @if (submitting) {
+            <span class="spinner" aria-hidden="true"></span>
+          }
+          {{ submitting ? textos.botonGuardando : textos.boton }}
         </button>
       </form>
-    } @else {
-      <div class="alert-banner alert-banner-success" role="status">
-        <span class="alert-icon">
+
+      <div class="divider"><span></span></div>
+      <a routerLink="/" class="access-footer-link">Volver al inicio de sesión</a>
+    }
+
+    <!-- ===== ÉXITO ===== -->
+    @if (estado === 'exito') {
+      <div class="state-panel" role="status">
+        <div class="state-icon state-icon-success" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
-        </span>
-        <span class="alert-text">{{ mensajeExito }} Te llevamos al inicio de sesión…</span>
+        </div>
+        <h1 id="access-titulo">{{ textos.exitoTitulo }}</h1>
+        <p>{{ textos.exitoDetalle }}</p>
+        <button type="button" class="btn btn-primary" (click)="irAlLogin()">Ir al inicio de sesión</button>
+        <p class="state-note">Te llevamos automáticamente en unos segundos…</p>
       </div>
     }
 
-    <div class="divider"><span></span></div>
-
-    <a routerLink="/" class="access-footer-link">Volver al inicio de sesión</a>
-  </div>
+    <!-- ===== ENLACE INVÁLIDO ===== -->
+    @if (estado === 'enlaceInvalido') {
+      <div class="state-panel" role="alert">
+        <div class="state-icon state-icon-warning" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <h1 id="access-titulo">Este enlace ya no es válido</h1>
+        <p>Venció, ya se usó o está incompleto. Por seguridad, cada enlace dura 30 minutos y sirve una sola vez.</p>
+        <p class="state-advice">{{ textos.enlaceInvalidoConsejo }}</p>
+        <a routerLink="/" class="btn btn-primary btn-link">Volver al inicio de sesión</a>
+      </div>
+    }
+  </section>
 </main>
