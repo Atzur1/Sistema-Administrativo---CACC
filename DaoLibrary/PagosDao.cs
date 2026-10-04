@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace DaoLibrary
 {
-    public class PagosDao : IPagosDao
+    public class PagosDao : IPagosDao, ICuotasPorArancelDao
     {
         private static readonly string[] MesesCompletos =
         {
@@ -119,6 +119,81 @@ namespace DaoLibrary
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
             comando.Parameters.AddWithValue("@id", idPago);
             comando.ExecuteNonQuery();
+        }
+
+        // Filtros compartidos por ContarCuotasConPagos y EliminarCuotasPendientesSinPagos: jugadores
+        // alcanzados (género o categoría), período (fecha_vencimiento) y, si se informa, monto emitido.
+        private const string FiltroCuotasDelArancel = @"
+            p.concepto = 'Cuota'
+            AND p.fecha_vencimiento >= @desde
+            AND (@hasta IS NULL OR p.fecha_vencimiento < @hasta)
+            AND (@genero IS NULL OR LTRIM(RTRIM(pe.genero)) = @genero)
+            AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)";
+
+        // Misma cuota = mismo jugador y mismo mes de fecha_vencimiento. Tiene pagos si alguna de sus filas
+        // está abonada (estado = 1): los abonos parciales y el cobro total marcan filas así.
+        private const string CuotaTienePagos = @"
+            EXISTS (
+                SELECT 1 FROM PAGOS q
+                WHERE q.FK_id_jugador = p.FK_id_jugador AND q.concepto = 'Cuota' AND q.estado = 1
+                  AND YEAR(q.fecha_vencimiento) = YEAR(p.fecha_vencimiento)
+                  AND MONTH(q.fecha_vencimiento) = MONTH(p.fecha_vencimiento))";
+
+        // Los abonos arrastran el monto_base de su cuota, así que filtrar por monto identifica a todas las
+        // filas de las cuotas emitidas con un arancel, pendientes o abonadas.
+        private const string CuotaEmitidaConMonto = @"
+            EXISTS (
+                SELECT 1 FROM PAGOS q
+                WHERE q.FK_id_jugador = p.FK_id_jugador AND q.concepto = 'Cuota' AND q.monto_base = @montoBase
+                  AND YEAR(q.fecha_vencimiento) = YEAR(p.fecha_vencimiento)
+                  AND MONTH(q.fecha_vencimiento) = MONTH(p.fecha_vencimiento))";
+
+        private static void CargarParametrosCuotas(SqlCommand comando, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+        {
+            comando.Parameters.Add("@genero", System.Data.SqlDbType.VarChar, 20).Value = (object?)genero ?? DBNull.Value;
+            comando.Parameters.Add("@idCategoria", System.Data.SqlDbType.Int).Value = (object?)idCategoria ?? DBNull.Value;
+            comando.Parameters.Add("@desde", System.Data.SqlDbType.Date).Value = desde.Date;
+            comando.Parameters.Add("@hasta", System.Data.SqlDbType.Date).Value = hasta.HasValue ? hasta.Value.Date : DBNull.Value;
+            comando.Parameters.Add("@montoBase", System.Data.SqlDbType.Decimal).Value = (object?)montoBase ?? DBNull.Value;
+            comando.Parameters["@montoBase"].Precision = 18;
+            comando.Parameters["@montoBase"].Scale = 2;
+        }
+
+        public int ContarCuotasConPagos(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+        {
+            string query = $@"
+                SELECT COUNT(*) FROM (
+                    SELECT DISTINCT p.FK_id_jugador, YEAR(p.fecha_vencimiento) AS anio, MONTH(p.fecha_vencimiento) AS mes
+                    FROM PAGOS p WITH (UPDLOCK, HOLDLOCK)
+                    JOIN JUGADORES j ON j.PK_id_jugador = p.FK_id_jugador
+                    JOIN PERSONA pe ON pe.PK_id_persona = j.FK_id_persona
+                    WHERE {FiltroCuotasDelArancel}
+                      AND p.estado = 1
+                      AND (@montoBase IS NULL OR {CuotaEmitidaConMonto})
+                ) cuotas;";
+
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            CargarParametrosCuotas(comando, genero, idCategoria, desde, hasta, montoBase);
+            return Convert.ToInt32(comando.ExecuteScalar());
+        }
+
+        public int EliminarCuotasPendientesSinPagos(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+        {
+            // Solo la fila pendiente (estado = 0) de una cuota que no tiene ninguna fila abonada: nunca se
+            // borra algo que ya recibió un pago. TR_AUDIT_PAGOS deja registrado cada borrado.
+            string query = $@"
+                DELETE p
+                FROM PAGOS p WITH (UPDLOCK, HOLDLOCK)
+                JOIN JUGADORES j ON j.PK_id_jugador = p.FK_id_jugador
+                JOIN PERSONA pe ON pe.PK_id_persona = j.FK_id_persona
+                WHERE {FiltroCuotasDelArancel}
+                  AND p.estado = 0
+                  AND (@montoBase IS NULL OR p.monto_base = @montoBase)
+                  AND NOT {CuotaTienePagos};";
+
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            CargarParametrosCuotas(comando, genero, idCategoria, desde, hasta, montoBase);
+            return comando.ExecuteNonQuery();
         }
 
         // Genera la cuota de UN mes puntual para los jugadores que todavía no la tienen. Cada

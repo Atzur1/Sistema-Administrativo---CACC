@@ -74,7 +74,14 @@ builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
 // Aranceles: DAO + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
     new DaoLibrary.ArancelesDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
-builder.Services.AddScoped<ServiceLibrary.IArancelesService, ServiceLibrary.ArancelesService>();
+// Cuotas por arancel (programar / cancelar un arancel): las operaciones de PAGOS que necesita ArancelesService.
+builder.Services.AddScoped<DaoLibrary.ICuotasPorArancelDao>(provider =>
+    new DaoLibrary.PagosDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+builder.Services.AddScoped<ServiceLibrary.IArancelesService>(provider => new ServiceLibrary.ArancelesService(
+    provider.GetRequiredService<DaoLibrary.IArancelesDao>(),
+    provider.GetRequiredService<DaoLibrary.ICuotasPorArancelDao>(),
+    provider.GetRequiredService<DaoLibrary.ISqlTransactionRunner>(),
+    provider.GetRequiredService<DaoLibrary.ICategoriasDao>()));
 
 // Cuotas mensuales automáticas: repite el arancel vigente de cada jugador mes a mes.
 // Se puede apagar con GeneracionCuotas:Habilitada=false.

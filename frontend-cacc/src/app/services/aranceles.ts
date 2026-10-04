@@ -14,6 +14,8 @@ export interface ArancelHistorialItem {
   vigenteDesde: string;
   vigenteHasta: string | null; // null = sigue vigente, todavía no hay uno más nuevo después
   estado: 'Vigente' | 'Programado' | 'Anterior';
+  // Solo se cancelan los aranceles del mes en curso en adelante; los anteriores son historial.
+  puedeCancelar: boolean;
   responsableNombre?: string | null;
   responsableApellido?: string | null;
 }
@@ -41,6 +43,12 @@ export class ArancelesService {
 
   getResumen(): Observable<ArancelResumen> {
     return this.http.get<ArancelResumen>(`${this.apiUrl}/resumen`);
+  }
+
+  // Quita el arancel y las cuotas pendientes sin pagos emitidas con él. El backend lo rechaza (400, con
+  // el motivo en "mensaje") si alguna de esas cuotas ya tiene pagos o si el arancel es de un mes anterior.
+  cancelar(idArancel: number): Observable<ProgramarArancelResponse> {
+    return this.http.delete<ProgramarArancelResponse>(`${this.apiUrl}/${idArancel}`);
   }
 
   // destino: un género ('Masculino' | 'Femenino') o una categoría ({ idCategoria }), uno solo.
