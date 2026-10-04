@@ -42,19 +42,33 @@ namespace ApiGestion.Controllers
             var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
             try
             {
-                var superAdminEmail = _config["Security:SuperAdminEmail"]?.Trim().ToLowerInvariant();
-                if (!string.IsNullOrWhiteSpace(superAdminEmail) &&
-                    string.Equals(email, superAdminEmail, StringComparison.OrdinalIgnoreCase))
+                // Cualquier cuenta con acceso al portal (SuperAdmin o Administrador) puede recuperar su contraseña.
+                // La respuesta es siempre la misma, exista o no la cuenta, para no revelar qué correos están registrados.
+                var account = _accountAccessDao.CreateResetToken(email, tokenHash, DateTime.UtcNow.AddMinutes(30));
+                if (account is not null)
                 {
-                    var account = _accountAccessDao.CreateResetToken(superAdminEmail, tokenHash, DateTime.UtcNow.AddMinutes(30));
-                    if (account is not null) await _emailSender.SendPasswordResetLink(account, token, cancellationToken);
+                    // El envío va aparte: si se esperara acá, responder tardaría más cuando la cuenta existe y esa
+                    // diferencia de tiempo delataría qué correos están registrados.
+                    _ = EnviarEnlaceRecuperacionAsync(account, token);
                 }
             }
             catch (Exception exception) { _logger.LogError(exception, "Falló el procesamiento de recuperación de contraseña."); }
             return Ok(new { mensaje = response });
         }
 
-        // Completa tanto un token de RECUPERACION (reset de contraseña del SuperAdmin)
+        private async Task EnviarEnlaceRecuperacionAsync(string email, string token)
+        {
+            try
+            {
+                await _emailSender.SendPasswordResetLink(email, token, CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "No se pudo enviar el correo de recuperación de contraseña.");
+            }
+        }
+
+        // Completa tanto un token de RECUPERACION (olvidé mi contraseña)
         // como uno de ACTIVACION (alta hecha desde Usuarios y Permisos): el tipo lo
         // resuelve el propio token, no hace falta que el cliente lo indique.
         [HttpPost("account-access/complete")]

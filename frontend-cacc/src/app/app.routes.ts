@@ -18,7 +18,10 @@ import { Auditoria } from './admin-portal/auditoria/auditoria';
 
 export const routes: Routes = [
   { path: '', component: Login },
-  { path: 'restablecer-contrasena', component: AccountAccess },
+  // Mismo componente, dos pantallas: la ruta decide si es el primer ingreso (correo "Crea tu contraseña")
+  // o la recuperación (correo "Reestablece tu contraseña").
+  { path: 'crear-contrasena', component: AccountAccess, data: { modo: 'crear' } },
+  { path: 'restablecer-contrasena', component: AccountAccess, data: { modo: 'restablecer' } },
   // authGuard, no adminGuard: esta pantalla es la elección de entorno para
   // cualquier usuario logueado, no exclusiva de Admin.
   { path: 'portales', component: Portales, canActivate: [authGuard] },

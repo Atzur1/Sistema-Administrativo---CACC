@@ -90,7 +90,6 @@ Configuraciones necesarias:
 | `Jwt:Key` | Clave secreta de al menos 32 bytes; no uses la clave de ejemplo. |
 | `Jwt:Issuer` y `Jwt:Audience` | Emisor y audiencia de los tokens. |
 | `Cors:AllowedOrigins` | Orígenes desde los que se permitirá acceder a la API. En desarrollo: `http://localhost:4200`. |
-| `Security:SuperAdminEmail` | Correo habilitado para solicitar el restablecimiento de la cuenta de SuperAdmin. |
 | `Email:*` | Servidor SMTP, credenciales, remitente y URL pública del frontend para enlaces de acceso. |
 
 Para guardar valores de desarrollo fuera del repositorio:
@@ -103,7 +102,7 @@ dotnet user-secrets set "Jwt:Audience" "SistemaCACC" --project ApiGestion
 dotnet user-secrets set "ConnectionStrings:ConexionSQL" "Server=localhost;Database=TU_BASE;Trusted_Connection=True;TrustServerCertificate=True;" --project ApiGestion
 ```
 
-Agregá del mismo modo las claves `Email:*`, `Security:SuperAdminEmail` y `Cors:AllowedOrigins` que necesite tu entorno. No subas contraseñas SMTP ni claves JWT a Git.
+Agregá del mismo modo las claves `Email:*` y `Cors:AllowedOrigins` que necesite tu entorno. No subas contraseñas SMTP ni claves JWT a Git.
 
 ### 2. Preparar la base de datos
 
