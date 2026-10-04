@@ -71,12 +71,21 @@ public class PlayerDAO
         }
     }
 
-    private static int InsertPerson(SqlConnection connection, SqlTransaction transaction, Player player)
+    // The three insert helpers are internal (not private) so the integration test can run them inside a
+    // transaction it rolls back.
+    //
+    // OUTPUT INTO (not a bare OUTPUT): PERSONA has an audit trigger (TR_AUDIT_PERSONA) and SQL Server
+    // refuses a bare OUTPUT on a table with enabled triggers (Msg 334). This is also what PagosDao does.
+    internal static int InsertPerson(SqlConnection connection, SqlTransaction transaction, Player player)
     {
         string query = @"
+            DECLARE @nueva TABLE (id INT);
+
             INSERT INTO PERSONA (genero, fecha_de_nacimiento, Dni, nombre, apellido)
-            OUTPUT INSERTED.PK_id_persona
-            VALUES (@gender, @birthDate, @dni, @firstName, @lastName);";
+            OUTPUT INSERTED.PK_id_persona INTO @nueva (id)
+            VALUES (@gender, @birthDate, @dni, @firstName, @lastName);
+
+            SELECT id FROM @nueva;";
 
         using SqlCommand command = new SqlCommand(query, connection, transaction);
         command.Parameters.AddWithValue("@gender", player.Gender);
@@ -90,7 +99,7 @@ public class PlayerDAO
 
     // JUGADORES.PK_id_jugador has no IDENTITY: the table lock held until commit keeps
     // two registrations running at once from taking the same id.
-    private static int InsertPlayer(SqlConnection connection, SqlTransaction transaction, int personId, Player player)
+    internal static int InsertPlayer(SqlConnection connection, SqlTransaction transaction, int personId, Player player)
     {
         string query = @"
             DECLARE @id INT;
@@ -111,7 +120,7 @@ public class PlayerDAO
 
     // Same shape as the pending fees PagosDao generates: no payment date or method yet,
     // no benefit linked, base and final amount equal.
-    private static void InsertPendingCharge(SqlConnection connection, SqlTransaction transaction, int playerId, decimal amount, DateTime dueDate, string concept)
+    internal static void InsertPendingCharge(SqlConnection connection, SqlTransaction transaction, int playerId, decimal amount, DateTime dueDate, string concept)
     {
         string query = @"
             DECLARE @id INT;
