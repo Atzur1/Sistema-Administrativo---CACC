@@ -46,6 +46,12 @@ export class UsuariosPortalService {
     return this.http.put<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/rol`, request);
   }
 
+  // El SuperAdmin le manda a una cuenta habilitada el enlace para elegir una contraseña nueva (o para crearla, si
+  // todavía no lo había hecho). El enlace llega siempre al correo de esa cuenta.
+  resetearContrasena(idUsuario: number): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/resetear-contrasena`, {});
+  }
+
   deshabilitar(idUsuario: number): Observable<{ mensaje: string }> {
     return this.http.post<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/deshabilitar`, {});
   }

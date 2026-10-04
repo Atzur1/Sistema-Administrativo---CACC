@@ -94,6 +94,12 @@
                     </span>
                   </td>
                   <td class="cell-actions">
+                    <!-- Solo cuentas activas: una inactiva en la base del otro equipo no puede recibir el correo. -->
+                    @if (usuario.activo) {
+                      <button type="button" class="button-ghost" (click)="pedirEnlace(usuario)">
+                        {{ textoAccionEnlace(usuario) }}
+                      </button>
+                    }
                     <button type="button" class="button-void" (click)="pedirBaja(usuario)">Deshabilitar</button>
                   </td>
                 </tr>
@@ -330,6 +336,42 @@
 }
 
 <!-- ===== REACTIVAR: confirmación ===== -->
+@if (confirmarEnlace(); as usuario) {
+  <div class="dialog-backdrop" (click)="cancelarEnlace()">
+    <div class="dialog dialog-narrow" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="dialog-head">
+        <div class="dialog-head-text">
+          <h2 class="dialog-title">{{ textoAccionEnlace(usuario) }}</h2>
+          <span class="dialog-subtitle">{{ usuario.nombre }} {{ usuario.apellido }}</span>
+        </div>
+        <button type="button" class="dialog-close" (click)="cancelarEnlace()" aria-label="Cerrar">✕</button>
+      </header>
+
+      @if (usuario.activacionPendiente) {
+        <p class="dialog-confirm">
+          Se le envía a <strong>{{ usuario.email }}</strong> un correo nuevo para que cree su contraseña por
+          primera vez. El enlace anterior deja de valer.
+        </p>
+      } @else {
+        <p class="dialog-confirm">
+          Se le envía a <strong>{{ usuario.email }}</strong> un enlace para que elija una contraseña nueva. Vale
+          30 minutos y sirve una sola vez. Su contraseña actual sigue funcionando hasta que la cambie.
+        </p>
+      }
+      <p class="dialog-confirm">Vos no ves ni elegís la contraseña: la define la propia persona desde el enlace.</p>
+
+      <footer class="dialog-actions">
+        <button type="button" class="button-ghost" (click)="cancelarEnlace()" [disabled]="enlaceSubmitting()">
+          Cancelar
+        </button>
+        <button type="button" class="button-primary" (click)="confirmarEnlaceAccion()" [disabled]="enlaceSubmitting()">
+          {{ enlaceSubmitting() ? 'Enviando…' : 'Enviar correo' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
 @if (confirmarReactivar(); as usuario) {
   <div class="dialog-backdrop" (click)="cancelarReactivar()">
     <div class="dialog dialog-narrow" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">

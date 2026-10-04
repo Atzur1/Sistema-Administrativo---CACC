@@ -311,6 +311,11 @@
     white-space: nowrap;
 }
 
+/* Resetear contraseña + Deshabilitar en la misma fila */
+.cell-actions .button-ghost + .button-void {
+    margin-left: 8px;
+}
+
 /* ===== EDITAR CANDIDATO (ícono en la fila) ===== */
 .icon-button {
     display: inline-flex;

@@ -64,6 +64,12 @@ export class Usuarios implements OnInit {
   confirmarReactivar = signal<UsuarioPortal | null>(null);
   reactivarSubmitting = signal(false);
 
+  // "Resetear contraseña": el SuperAdmin le manda a la cuenta el enlace para elegir una nueva. Va siempre al
+  // correo de la propia cuenta: el SuperAdmin no ve ni fija la contraseña de nadie. Si la cuenta todavía no
+  // había creado su contraseña, la misma acción reenvía el correo de "Crea tu contraseña".
+  confirmarEnlace = signal<UsuarioPortal | null>(null);
+  enlaceSubmitting = signal(false);
+
   constructor(
     private readonly usuariosService: UsuariosPortalService,
     private readonly notifications: NotificationService,
@@ -253,6 +259,44 @@ export class Usuarios implements OnInit {
             'error',
           );
           this.confirmarBaja.set(null);
+        },
+      });
+  }
+
+  // ===== Resetear contraseña =====
+
+  textoAccionEnlace(usuario: UsuarioPortal): string {
+    return usuario.activacionPendiente ? 'Reenviar activación' : 'Resetear contraseña';
+  }
+
+  pedirEnlace(usuario: UsuarioPortal): void {
+    this.confirmarEnlace.set(usuario);
+  }
+
+  cancelarEnlace(): void {
+    if (this.enlaceSubmitting()) return;
+    this.confirmarEnlace.set(null);
+  }
+
+  confirmarEnlaceAccion(): void {
+    const usuario = this.confirmarEnlace();
+    if (!usuario || this.enlaceSubmitting()) return;
+
+    this.enlaceSubmitting.set(true);
+    this.usuariosService
+      .resetearContrasena(usuario.idUsuario)
+      .pipe(finalize(() => this.enlaceSubmitting.set(false)))
+      .subscribe({
+        next: (respuesta) => {
+          this.notifications.notify(respuesta.mensaje, 'success');
+          this.confirmarEnlace.set(null);
+        },
+        error: (error) => {
+          this.notifications.notify(
+            error?.error?.mensaje ?? 'No se pudo enviar el correo. Intentá de nuevo.',
+            'error',
+          );
+          this.confirmarEnlace.set(null);
         },
       });
   }

@@ -153,7 +153,8 @@ export class Login implements OnInit {
     });
   }
 
-  // El backend solo emite enlaces para el superadministrador designado.
+  // El backend emite el enlace para cualquier cuenta con acceso al portal (SuperAdmin o Administrador) y responde
+  // igual exista o no, para no revelar qué correos están registrados.
   onForgotPassword(event: Event) {
     event.preventDefault();
     this.forgotForm.reset();

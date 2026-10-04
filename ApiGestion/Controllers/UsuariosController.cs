@@ -90,6 +90,43 @@ namespace ApiGestion.Controllers
             return Ok(new { mensaje = "Cuenta habilitada. Se envió un correo para que active su acceso." });
         }
 
+        // POST api/usuarios/5/resetear-contrasena -> el SuperAdmin le manda a una cuenta habilitada el enlace para
+        // elegir una contraseña nueva. El enlace va SIEMPRE al correo de la propia cuenta (nunca a quien lo pide):
+        // el SuperAdmin no ve ni fija la contraseña de nadie. Según la situación de la cuenta es el correo de
+        // "Reestablece tu contraseña" (ya tenía una) o el de "Crea tu contraseña" (todavía no la había creado,
+        // por ejemplo porque el enlace de activación venció).
+        [HttpPost("{id}/resetear-contrasena")]
+        public async Task<IActionResult> ResetearContrasena(int id, CancellationToken cancellationToken)
+        {
+            const string noEnCondiciones = "Solo se puede enviar el enlace a una cuenta con acceso habilitado y activa.";
+            var estado = _accountAccessDao.ObtenerEstadoAcceso(id);
+            if (estado is null) return BadRequest(new { mensaje = noEnCondiciones });
+
+            try
+            {
+                var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+                var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+                var vence = DateTime.UtcNow.AddMinutes(30);
+
+                if (estado.ActivacionPendiente)
+                {
+                    _accountAccessDao.CreateActivationToken(id, tokenHash, vence);
+                    await _emailSender.SendActivationLink(estado.Email, token, cancellationToken);
+                    return Ok(new { mensaje = $"Se reenvió a {estado.Email} el correo para crear su contraseña." });
+                }
+
+                var email = _accountAccessDao.CreateResetTokenForUser(id, tokenHash, vence);
+                if (email is null) return BadRequest(new { mensaje = noEnCondiciones });
+                await _emailSender.SendPasswordResetLink(email, token, cancellationToken);
+                return Ok(new { mensaje = $"Se envió a {email} el enlace para reestablecer su contraseña." });
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "No se pudo enviar el enlace de contraseña a la cuenta {IdUsuario}.", id);
+                return StatusCode(StatusCodes.Status502BadGateway, new { mensaje = "No se pudo enviar el correo. Reintentá en unos minutos." });
+            }
+        }
+
         // PUT api/usuarios/5/rol -> cambia el rol de alguien ya habilitado.
         [HttpPut("{id}/rol")]
         public IActionResult CambiarRol(int id, [FromBody] CambiarRolRequest request)
