@@ -78,6 +78,25 @@ public class PagosControllerTests
         Assert.NotNull(typeof(PagosController).GetCustomAttribute<AuthorizeAttribute>());
     }
 
+    // HU-022: el panel de Cuotas es solo para SuperAdmin (1) y Administrador (2). Sin
+    // token, el middleware JWT responde 401; con token de otro rol, 403.
+    [Fact]
+    public void Controller_IsRestrictedToTheAdministrativeRoles()
+    {
+        AuthorizeAttribute attr = Assert.Single(typeof(PagosController).GetCustomAttributes<AuthorizeAttribute>());
+
+        Assert.Equal("1,2", attr.Roles);
+    }
+
+    [Fact]
+    public void NoEndpoint_AllowsAnonymousAccess()
+    {
+        Assert.Null(typeof(PagosController).GetCustomAttribute<AllowAnonymousAttribute>());
+        Assert.All(
+            typeof(PagosController).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+            method => Assert.Null(method.GetCustomAttribute<AllowAnonymousAttribute>()));
+    }
+
     // ---- Pendientes / deuda-por-categoria (HU-020) ----
     // El filtro idCategoria en sí (JOIN contra CATEGORIAS, sin bloqueos, etc.) se validó con
     // la API real (QA, 23-24/09); acá solo se cubre que el controller pasa el parámetro tal

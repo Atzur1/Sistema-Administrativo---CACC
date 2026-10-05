@@ -3,7 +3,7 @@ import { Login } from './login/login';
 import { Portales } from './portales/portales';
 import { AdminPortal } from './admin-portal/admin-portal';
 import { ResumenGeneral } from './admin-portal/resumen-general/resumen-general';
-import { adminGuard, authGuard, superAdminGuard, adminHomeRedirect } from './services/auth';
+import { adminGuard, authGuard, superAdminGuard, adminHomeRedirect, FINANCIAL_ACCESS_DENIED } from './services/auth';
 import { ActividadMovimientos } from './admin-portal/actividad-movimientos/actividad-movimientos';
 import { DeudasMorosidad } from './admin-portal/deudas-morosidad/deudas-morosidad';
 import { Usuarios } from './admin-portal/usuarios-y-permisos/usuarios-y-permisos';
@@ -38,7 +38,9 @@ export const routes: Routes = [
       { path: 'auditoria', component: Auditoria, canActivate: [superAdminGuard] },
       { path: 'deudas-morosidad', component: DeudasMorosidad },
       { path: 'usuarios', component: Usuarios, canActivate: [superAdminGuard] },
-      { path: 'cuotas-pagos', component: CuotasPagos },
+      // HU-022: panel financiero. Lo protege adminGuard (rol 1 o 2) del padre; el
+      // dato accesoDenegado es el mensaje que ve quien fuerza la URL sin ese rol.
+      { path: 'cuotas-pagos', component: CuotasPagos, data: { accesoDenegado: FINANCIAL_ACCESS_DENIED } },
       { path: 'jugadores/:id', component: JugadorPerfil, canActivate: [superAdminGuard] },
       // Sin superAdminGuard: es el drill-down al que navega Deudas y Morosidad
       // (rol 1 y 2) al tocar un deudor.

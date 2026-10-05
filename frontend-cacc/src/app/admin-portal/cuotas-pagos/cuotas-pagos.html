@@ -48,6 +48,16 @@
 
   <div class="header-divider"></div>
 
+  <!-- HU-022: error al leer los datos del panel (conexión, permisos o servidor) -->
+  @if (errorCarga) {
+    <div class="load-error" role="alert">
+      <span>{{ errorCarga }}</span>
+      <button type="button" class="clear-filter-btn" (click)="reintentarCarga()" [disabled]="cargandoListas">
+        Reintentar
+      </button>
+    </div>
+  }
+
   <!-- ===== PAYMENT FORM ===== -->
   <section class="form-panel" [class.form-panel-inscripcion]="panelMode === 'inscripcion'">
     <header class="form-head">
@@ -315,9 +325,13 @@
       </header>
 
 
-      @if (pendingLoaded && pendingRows.length === 0) {
+      @if (!pendingLoaded) {
+        <p class="empty-state" aria-live="polite">Cargando cobros pendientes…</p>
+      } @else if (pendingFailed) {
+        <p class="empty-state">No se pudieron cargar los cobros pendientes.</p>
+      } @else if (pendingRows.length === 0) {
         <p class="empty-state">No hay cobros pendientes en este momento.</p>
-      } @else if (pendingLoaded && filteredPendingRows.length === 0) {
+      } @else if (filteredPendingRows.length === 0) {
         <p class="empty-state">Ningún pendiente coincide con la búsqueda.</p>
       } @else {
         <div class="table-wrapper">

@@ -20,6 +20,7 @@ import { formatCompactCurrency } from '../../shared/format-currency';
 import { normalizeText } from '../../shared/normalize-text';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
+import { financialLoadErrorMessage } from '../../shared/http-error-message';
 
 const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -103,6 +104,11 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   pendingRows: PendingRow[] = [];
   pendingLoaded = false;
+  pendingFailed = false;
+
+  // HU-022: error al leer pendientes o métricas (sin conexión, 403, 500). Se muestra
+  // arriba de todo con "Reintentar"; null = sin error.
+  errorCarga: string | null = null;
 
   // Filtros de "Pendientes de cobro": por nombre/DNI, categoría y cantidad de cuotas
   // impagas — todo sobre la lista ya traída (no piden de nuevo al servidor).
@@ -489,8 +495,15 @@ export class CuotasPagos implements OnInit, OnDestroy {
     });
   }
 
+  reintentarCarga() {
+    this.cargarListas();
+  }
+
   private cargarListas() {
     this.cargandoListas = true;
+    this.errorCarga = null;
+    this.pendingLoaded = false;
+    this.pendingFailed = false;
 
     // detectChanges() explícito: HttpClient usa FetchBackend por default y sus respuestas no
     // siempre disparan la detección de cambios basada en zone.js, así que sin esto los campos
@@ -501,8 +514,12 @@ export class CuotasPagos implements OnInit, OnDestroy {
         this.pendingLoaded = true;
         this.cdr.detectChanges();
       },
-      error: () => {
+      // Antes el error caía en "No hay cobros pendientes", que es falso: no se sabe.
+      error: (err: unknown) => {
+        this.pendingRows = [];
         this.pendingLoaded = true;
+        this.pendingFailed = true;
+        this.errorCarga ??= financialLoadErrorMessage(err);
         this.cdr.detectChanges();
       },
     });
@@ -517,7 +534,11 @@ export class CuotasPagos implements OnInit, OnDestroy {
           `${resumen.jugadoresMorosos} ${resumen.jugadoresMorosos === 1 ? 'jugador moroso' : 'jugadores morosos'}`;
         this.cdr.detectChanges();
       },
-      error: () => {},
+      error: (err: unknown) => {
+        this.cargandoListas = false;
+        this.errorCarga ??= financialLoadErrorMessage(err);
+        this.cdr.detectChanges();
+      },
       complete: () => (this.cargandoListas = false),
     });
   }
