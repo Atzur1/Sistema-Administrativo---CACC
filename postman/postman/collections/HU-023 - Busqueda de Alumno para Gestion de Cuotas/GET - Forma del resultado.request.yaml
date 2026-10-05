@@ -1,0 +1,37 @@
+$kind: http-request
+description: "HU-023. Cada resultado trae id, firstName, lastName, dni y categoryName (PlayerSearchResultDto), y la API nunca devuelve más de 50."
+url: "{{baseUrl}}/api/Players/search?term={{hu023Parcial}}"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const apellido = pm.environment.get("hu023Apellido") || "";
+      const sinTildes = apellido.normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, "").normalize("NFC").toLowerCase();
+      pm.environment.set("hu023Parcial", sinTildes.slice(0, 4));
+
+      const dni = pm.environment.get("hu023Dni") || "";
+      pm.environment.set("hu023DniParcial", dni.slice(-4));
+      pm.environment.set("hu023DniConPuntos", dni.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const respuesta = pm.response.json();
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Cada resultado tiene los campos del DTO", function () {
+          respuesta.forEach(j => {
+              pm.expect(j).to.have.all.keys("id", "firstName", "lastName", "dni", "categoryName");
+          });
+      });
+
+      pm.test("No devuelve más de 50 resultados", function () {
+          pm.expect(respuesta.length).to.be.at.most(50);
+      });
+    language: text/javascript
+order: 1791327600004

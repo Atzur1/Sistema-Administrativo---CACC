@@ -1,5 +1,7 @@
-namespace DaoLibrary;
+﻿namespace DaoLibrary;
 
+using System.Data;
+using System.Text;
 using Microsoft.Data.SqlClient;
 using EntityLibrary;
 
@@ -29,6 +31,101 @@ public class PlayerDAO
         command.Parameters.AddWithValue("@dni", dni.Trim());
 
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
+    // Player search on the Cuotas panel (HU-023). A term made only of digits (dots,
+    // spaces and dashes are ignored, so "47.970.803" works) is looked up as part of
+    // the DNI; anything else as part of the last name.
+    //
+    // The last name is compared accent-insensitively: the database collation
+    // (Modern_Spanish_CI_AS) tells "Bazan" from "BAZÁN", and 160 of the 577 real
+    // players have an accented last name. Ñ stays a letter of its own, as in Spanish.
+    //
+    // A LIKE with a leading % cannot seek an index, but JUGADORES is a few hundred
+    // rows: the scan takes milliseconds. TOP keeps a one-letter-wide term from
+    // sending the whole roster.
+    public virtual IReadOnlyList<PlayerSearchResult> SearchPlayersForFeeManagement(string searchTerm, int maxResults)
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        return SearchPlayers(connection, null, searchTerm, maxResults);
+    }
+
+    // Internal with the connection as a parameter so the integration test can run it
+    // inside the transaction it rolls back, as with the insert helpers below.
+    internal static IReadOnlyList<PlayerSearchResult> SearchPlayers(SqlConnection connection, SqlTransaction? transaction, string searchTerm, int maxResults)
+    {
+        string term = searchTerm.Trim();
+        string? dniDigits = OnlyDniDigits(term);
+
+        string filter = dniDigits != null
+            ? @"p.Dni LIKE @pattern ESCAPE '\'"
+            : @"p.apellido COLLATE Modern_Spanish_CI_AI LIKE @pattern ESCAPE '\'";
+
+        // Exact DNI or last names that start with the term go first.
+        string query = $@"
+            SELECT TOP (@maxResults) j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria
+            FROM JUGADORES j
+            JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+            JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
+            WHERE {filter}
+            ORDER BY
+                CASE
+                    WHEN LTRIM(RTRIM(p.Dni)) = @exact THEN 0
+                    WHEN p.apellido COLLATE Modern_Spanish_CI_AI LIKE @prefix ESCAPE '\' THEN 1
+                    ELSE 2
+                END,
+                p.apellido, p.nombre;";
+
+        string value = dniDigits ?? term;
+        string escaped = EscapeLike(value);
+
+        // VarChar, like the columns: an nvarchar parameter would force a conversion of every row.
+        using SqlCommand command = new SqlCommand(query, connection, transaction);
+        command.Parameters.Add("@maxResults", SqlDbType.Int).Value = maxResults;
+        command.Parameters.Add("@pattern", SqlDbType.VarChar, 110).Value = $"%{escaped}%";
+        command.Parameters.Add("@prefix", SqlDbType.VarChar, 110).Value = $"{escaped}%";
+        command.Parameters.Add("@exact", SqlDbType.VarChar, 110).Value = value;
+
+        List<PlayerSearchResult> results = new List<PlayerSearchResult>();
+        using SqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            results.Add(new PlayerSearchResult
+            {
+                Id = Convert.ToInt64(reader["PK_id_jugador"]),
+                FirstName = reader["nombre"].ToString()?.Trim() ?? "",
+                LastName = reader["apellido"].ToString()?.Trim() ?? "",
+                Dni = reader["Dni"].ToString()?.Trim() ?? "",
+                CategoryName = reader["nombre_categoria"].ToString()?.Trim() ?? ""
+            });
+        }
+
+        return results;
+    }
+
+    // The digits of a DNI typed with dots, spaces or dashes, or null when the term
+    // has anything else (then it is a last name).
+    internal static string? OnlyDniDigits(string term)
+    {
+        string digits = new string(term.Where(char.IsAsciiDigit).ToArray());
+        bool onlySeparators = term.All(c => char.IsAsciiDigit(c) || c == '.' || c == ' ' || c == '-');
+
+        return onlySeparators && digits.Length > 0 ? digits : null;
+    }
+
+    // %, _ and [ typed by the user are searched as plain characters, not as wildcards.
+    internal static string EscapeLike(string value)
+    {
+        StringBuilder escaped = new StringBuilder(value.Length);
+        foreach (char c in value)
+        {
+            if (c is '\\' or '%' or '_' or '[')
+            {
+                escaped.Append('\\');
+            }
+            escaped.Append(c);
+        }
+        return escaped.ToString();
     }
 
     // Creates the person, the player and the charges of the registration in one

@@ -1,0 +1,26 @@
+$kind: http-request
+description: "Paso previo de la HU-023. Toma el primer jugador del padrón y guarda su id, apellido y DNI para buscarlo después, así la colección no depende de datos fijos."
+url: "{{baseUrl}}/api/Jugadores"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const jugadores = pm.response.json();
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Hay al menos un jugador para buscar", function () {
+          pm.expect(jugadores).to.be.an("array").that.is.not.empty;
+      });
+
+      const jugador = jugadores[0];
+      pm.environment.set("hu023Id", jugador.idJugador);
+      pm.environment.set("hu023Apellido", jugador.apellido);
+      pm.environment.set("hu023Dni", jugador.dni);
+    language: text/javascript
+order: 1791327600002

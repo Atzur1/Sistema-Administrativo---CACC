@@ -58,6 +58,10 @@
     </div>
   }
 
+  <!-- ===== BÚSQUEDA DE ALUMNO (HU-023) ===== -->
+  <!-- Elegir un alumno abre su deuda y su historial de cuotas, igual que tocar un pendiente -->
+  <app-player-search (selected)="irADeuda($event.id)"></app-player-search>
+
   <!-- ===== PAYMENT FORM ===== -->
   <section class="form-panel" [class.form-panel-inscripcion]="panelMode === 'inscripcion'">
     <header class="form-head">

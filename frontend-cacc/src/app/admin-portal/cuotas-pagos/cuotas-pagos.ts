@@ -19,6 +19,7 @@ import { EnrollmentModel } from '../../models/EnrollmentModel';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { normalizeText } from '../../shared/normalize-text';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { PlayerSearch } from './player-search/player-search';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { financialLoadErrorMessage } from '../../shared/http-error-message';
 
@@ -55,7 +56,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-cuotas-pagos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, CustomSelect],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, CustomSelect, PlayerSearch],
   templateUrl: './cuotas-pagos.html',
   styleUrl: './cuotas-pagos.css',
 })
