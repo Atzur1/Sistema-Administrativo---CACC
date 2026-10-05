@@ -176,6 +176,11 @@
   color: var(--color-danger-strong);
 }
 
+/* HU-024: al día */
+.profile-stat-ok {
+  color: var(--state-pagado-text, #13693a);
+}
+
 .profile-stat-label {
   font-size: 10.5px;
   letter-spacing: 0.04em;
@@ -391,6 +396,13 @@
 .estado-proxima {
   background: var(--state-proxima-bg);
   color: var(--state-proxima-text);
+}
+
+/* HU-024: cuota Pendiente (todavía no venció) en ámbar, entre el verde de Pagado y el rojo de
+   Vencido. Usa la paleta "pendiente" de esta pantalla. */
+.estado-pendiente {
+  background: var(--pending-bg-alt);
+  color: var(--pending-strong);
 }
 
 .estado-cubierta {

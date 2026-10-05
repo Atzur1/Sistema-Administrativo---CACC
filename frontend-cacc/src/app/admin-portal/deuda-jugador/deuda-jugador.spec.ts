@@ -12,6 +12,7 @@ import {
   CuotaPendienteDetalle,
   JugadorResumen,
   PagosService,
+  PlayerStatement,
 } from '../../services/pagos';
 import { NotificationService } from '../../shared/notifications/notification.service';
 
@@ -87,10 +88,35 @@ const respuesta = <T>(valor: T | Error | HttpErrorResponse) =>
       : Promise.resolve(valor as T),
   );
 
+// HU-024: la tabla y el total salen del estado de cuenta. Se arma con las mismas cuotas que
+// usaban los tests de HU-025/026, con el total calculado como lo hace el backend (saldo de las
+// cuotas no pagadas).
+function estadoDeCuenta(cuotas: CuotaJugador[]): PlayerStatement {
+  return {
+    playerId: 3,
+    playerFullName: 'PRUEBA, MATIAS',
+    dni: '99000003',
+    totalDebtAmount: cuotas.filter((c) => c.estado !== 'Pagado').reduce((t, c) => t + c.saldoPendiente, 0),
+    fees: cuotas.map((c) => ({
+      id: c.idPago,
+      periodName: c.periodo,
+      amount: c.montoCuota,
+      amountDue: c.estado === 'Pagado' ? 0 : c.saldoPendiente,
+      amountPaid: c.montoAbonado,
+      dueDate: c.fechaVencimiento,
+      status: c.estado,
+      paidAt: c.fechaPago,
+      paymentMethod: c.metodoPago,
+      coveredByBenefit: c.cubiertaPorBeneficio,
+      benefitReason: c.motivoBeneficio,
+    })),
+  };
+}
+
 interface Opciones {
-  // Una respuesta por cada llamada a getCuotas / getDeuda (la última se repite). Un Error o
-  // HttpErrorResponse simula que esa lectura falla.
-  cuotas?: (CuotaJugador[] | Error | HttpErrorResponse)[];
+  // Una respuesta por cada lectura del estado de cuenta / de getDeuda (la última se repite). Un
+  // Error o HttpErrorResponse simula que esa lectura falla. Un Observable controla cuándo responde.
+  cuotas?: (CuotaJugador[] | Error | HttpErrorResponse | Observable<PlayerStatement>)[];
   deuda?: (CuotaPendienteDetalle[] | Error | HttpErrorResponse)[];
   // Un Observable permite controlar cuándo "responde" el backend al cobro.
   cobro?: CobrarCuotasResponse | HttpErrorResponse | Observable<CobrarCuotasResponse>;
@@ -106,7 +132,11 @@ async function crear(opciones: Opciones = {}) {
   const siguienteDeuda = secuencia(opciones.deuda ?? [[]]);
 
   const pagos = {
-    getCuotas: vi.fn(() => respuesta(siguienteCuotas())),
+    getEstadoDeCuenta: vi.fn(() => {
+      const lote = siguienteCuotas();
+      if (isObservable(lote)) return lote;
+      return Array.isArray(lote) ? respuesta(estadoDeCuenta(lote)) : respuesta<PlayerStatement>(lote);
+    }),
     getDeuda: vi.fn(() => respuesta(siguienteDeuda())),
     cobrarCuotas: vi.fn(() =>
       isObservable(opciones.cobro) ? opciones.cobro : respuesta(opciones.cobro ?? RESPUESTA_COBRO),
@@ -163,10 +193,10 @@ async function seleccionar(el: HTMLElement, refrescar: () => Promise<void>, ...i
 }
 
 describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
-  it('lee las cuotas y la deuda reales del jugador de la ruta', async () => {
+  it('lee el estado de cuenta y la deuda reales del jugador de la ruta', async () => {
     const { pagos } = await crear();
 
-    expect(pagos.getCuotas).toHaveBeenCalledWith(3);
+    expect(pagos.getEstadoDeCuenta).toHaveBeenCalledWith(3);
     expect(pagos.getDeuda).toHaveBeenCalledWith(3);
   });
 
@@ -261,7 +291,7 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
     expect(pagos.cobrarCuotas).not.toHaveBeenCalled();
   });
 
-  it('al confirmar cobra, notifica y vuelve a leer las cuotas y la deuda del backend', async () => {
+  it('al confirmar cobra, notifica y vuelve a leer el estado de cuenta y la deuda del backend', async () => {
     const pagadas = [
       ENERO_PAGADA,
       { ...MARZO, estado: 'Pagado' as const, saldoPendiente: 0, montoAbonado: 85000, metodoPago: 'Transferencia' },
@@ -282,7 +312,7 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
     expect(pagos.cobrarCuotas).toHaveBeenCalledWith(3, [10, 11], 'Transferencia');
     expect(el.querySelector('[role="dialog"]')).toBeNull();
     expect(notificaciones.notify).toHaveBeenCalledWith(expect.stringContaining('170.000'), 'success');
-    expect(pagos.getCuotas).toHaveBeenCalledTimes(2);
+    expect(pagos.getEstadoDeCuenta).toHaveBeenCalledTimes(2);
     expect(pagos.getDeuda).toHaveBeenCalledTimes(2);
     expect(checkbox(el, 10).disabled).toBe(true);
     expect(texto(el.querySelectorAll('.cuotas-table tbody tr')[1])).toContain('Pagado');
@@ -451,7 +481,7 @@ describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () =
     expect(checkbox(ctx.el, 13).disabled).toBe(false);
   });
 
-  it('la deuda mostrada pasa de $255.000 a $85.000 según la deuda que devuelve el backend', async () => {
+  it('la deuda mostrada pasa de $255.000 a $85.000 según el total que devuelve el backend', async () => {
     const ctx = await crear({
       cuotas: [
         [MARZO, ABRIL, MAYO],
@@ -464,7 +494,7 @@ describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () =
     await pagar(ctx, [10, 11]);
 
     expect(totalAdeudado(ctx.el)).toMatch(/\$\s*85\.000/);
-    expect(ctx.pagos.getDeuda).toHaveBeenCalledTimes(2);
+    expect(ctx.pagos.getEstadoDeCuenta).toHaveBeenCalledTimes(2);
   });
 
   it('si se pagó todo, muestra deuda $0 en vez de ocultar el total', async () => {
@@ -556,5 +586,97 @@ describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () =
     expect(totalAdeudado(ctx.el)).toMatch(/\$\s*255\.000/);
     expect(filaDe(ctx.el, 'Marzo 2026')).toContain('Vencido');
     expect(ctx.el.querySelector('.aviso-actualizacion')).toBeNull();
+  });
+});
+
+// ===== HU-024: estado de cuenta del alumno =====
+// Total a abonar y tabla de cuotas desde GET /api/pagos/jugador/{id}/estado-de-cuenta.
+
+const etiquetaTotal = (el: HTMLElement) => texto(el.querySelector('.total-adeudado-label'));
+
+describe('DeudaJugador - estado de cuenta (HU-024)', () => {
+  it('toma la tabla y el total del estado de cuenta, sin pedir el listado de cuotas aparte', async () => {
+    const { pagos, el } = await crear();
+
+    expect(pagos.getEstadoDeCuenta).toHaveBeenCalledExactlyOnceWith(3);
+    expect('getCuotas' in pagos).toBe(false);
+    expect(el.querySelectorAll('.cuotas-table tbody tr')).toHaveLength(4);
+  });
+
+  it('muestra "Total a abonar" con el total que calculó el backend', async () => {
+    const { el } = await crear();
+
+    expect(etiquetaTotal(el)).toBe('Total a abonar');
+    expect(totalAdeudado(el)).toMatch(/\$\s*170\.000/);
+  });
+
+  it('el total es el del estado de cuenta: una inscripción pendiente no lo suma', async () => {
+    const inscripcion = { ...deudaDe(20, 'Octubre 2026', 50000), concepto: 'Inscripcion' };
+    const { el } = await crear({ cuotas: [[MARZO, ABRIL]], deuda: [[...DEUDA_INICIAL.slice(0, 2), inscripcion]] });
+
+    expect(totalAdeudado(el)).toMatch(/\$\s*170\.000/);
+  });
+
+  it('sin deuda muestra $0 y "Sin deuda"', async () => {
+    const { el } = await crear({ cuotas: [[ENERO_PAGADA, pagada(MARZO)]] });
+
+    expect(totalAdeudado(el)).toMatch(/^\$\s*0$/);
+    expect(etiquetaTotal(el)).toBe('Sin deuda');
+    expect(el.querySelector('.total-adeudado')!.classList).toContain('profile-stat-ok');
+  });
+
+  it('cuenta las cuotas adeudadas (no las pagadas ni las cubiertas por beneficio)', async () => {
+    const { el } = await crear();
+
+    const [, cantidad] = Array.from(el.querySelectorAll('.profile-stat')).map((stat) => [
+      texto(stat.querySelector('.profile-stat-value')),
+      texto(stat.querySelector('.profile-stat-label')),
+    ]);
+    expect(cantidad).toEqual(['2', 'Cuotas adeudadas']);
+  });
+
+  it('pinta cada estado con su color: Pagado verde, Pendiente ámbar, Vencido rojo', async () => {
+    const { el } = await crear({ cuotas: [[ENERO_PAGADA, MARZO, ABRIL]] });
+
+    const pill = (periodo: string) =>
+      Array.from(el.querySelectorAll('.cuotas-table tbody tr'))
+        .find((tr) => texto(tr).includes(periodo))!
+        .querySelector('.estado-pill')!;
+    expect(pill('Enero 2026').classList).toContain('estado-pagado');
+    expect(pill('Marzo 2026').classList).toContain('estado-vencida');
+    expect(pill('Abril 2026').classList).toContain('estado-pendiente');
+    expect(texto(pill('Abril 2026'))).toBe('Pendiente');
+  });
+
+  it('muestra las cuotas en el orden cronológico que devuelve el backend', async () => {
+    const { el } = await crear();
+
+    const periodos = Array.from(el.querySelectorAll('.cuotas-table .cuota-periodo')).map(texto);
+    expect(periodos).toEqual(['Enero 2026', 'Marzo 2026', 'Abril 2026', 'Mayo 2026']);
+  });
+
+  it('muestra el indicador de carga mientras el estado de cuenta no llegó', async () => {
+    const { el } = await crear({ cuotas: [new Subject<PlayerStatement>()] });
+
+    expect(texto(el)).toContain('Cargando cuotas...');
+    expect(el.querySelector('.total-adeudado')).toBeNull();
+  });
+
+  it('ante un error de conexión avisa en español con un toast y en la sección', async () => {
+    const { el, notificaciones } = await crear({ cuotas: [new HttpErrorResponse({ status: 0 })] });
+
+    const mensaje = 'No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.';
+    expect(notificaciones.notify).toHaveBeenCalledExactlyOnceWith(mensaje, 'error');
+    expect(texto(el.querySelector('.panel-cuotas .cobro-error'))).toBe(mensaje);
+    expect(el.querySelector('.total-adeudado')).toBeNull();
+  });
+
+  it('ante un error del servidor usa un mensaje propio del estado de cuenta', async () => {
+    const { notificaciones } = await crear({ cuotas: [new HttpErrorResponse({ status: 500 })] });
+
+    expect(notificaciones.notify).toHaveBeenCalledWith(
+      'No se pudo cargar el estado de cuenta de este jugador.',
+      'error',
+    );
   });
 });

@@ -788,6 +788,49 @@ namespace DaoLibrary
         // el Historial de Pagos). El saldo ajustado usa el mismo criterio que el detalle de deuda.
         public IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador)
         {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            return LeerMovimientosCuotas(conexion, idJugador);
+        }
+
+        // HU-024: estado de cuenta del jugador. Lee sus datos y las filas de sus cuotas en una
+        // sola conexión; null si el jugador no existe. Solo concepto 'Cuota': la inscripción se
+        // abona por separado y es otro ingreso, así que no forma parte del estado de cuenta.
+        // Los montos son los congelados en PAGOS al emitirse cada cuota (monto_base, regla §2.3).
+        public PlayerStatementAccount? GetPlayerStatementAccount(int playerId)
+        {
+            const string queryJugador = @"
+                SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni
+                FROM JUGADORES j
+                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                WHERE j.PK_id_jugador = @idJugador";
+
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+
+            PlayerStatementAccount cuenta;
+            using (SqlCommand comando = new SqlCommand(queryJugador, conexion))
+            {
+                comando.Parameters.Add("@idJugador", System.Data.SqlDbType.Int).Value = playerId;
+                using SqlDataReader reader = comando.ExecuteReader();
+                if (!reader.Read())
+                {
+                    return null;
+                }
+
+                cuenta = new PlayerStatementAccount
+                {
+                    PlayerId = Convert.ToInt32(reader["PK_id_jugador"]),
+                    FirstName = reader["nombre"].ToString()?.Trim() ?? "",
+                    LastName = reader["apellido"].ToString()?.Trim() ?? "",
+                    Dni = reader["Dni"].ToString()?.Trim() ?? ""
+                };
+            }
+
+            cuenta.Movements = LeerMovimientosCuotas(conexion, playerId);
+            return cuenta;
+        }
+
+        private static IReadOnlyList<CuotaMovimiento> LeerMovimientosCuotas(SqlConnection conexion, int idJugador)
+        {
             var movimientos = new List<CuotaMovimiento>();
 
             string query = $@"
@@ -800,7 +843,6 @@ namespace DaoLibrary
                 WHERE pg.FK_id_jugador = @idJugador AND pg.concepto = 'Cuota' AND pg.fecha_vencimiento IS NOT NULL
                 ORDER BY pg.fecha_vencimiento, pg.fecha_pago, pg.PK_id_pago";
 
-            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using SqlCommand comando = new SqlCommand(query, conexion);
             comando.Parameters.AddWithValue("@idJugador", idJugador);
 

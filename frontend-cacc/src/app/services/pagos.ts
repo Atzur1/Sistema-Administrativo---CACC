@@ -97,6 +97,48 @@ export interface CuotaPendienteDetalle {
 // HU-025: una cuota mensual del jugador con su estado real (calculado por la API).
 export type EstadoCuotaJugador = 'Pendiente' | 'Vencido' | 'Pagado';
 
+// HU-024: contrato de GET /api/pagos/jugador/{id}/estado-de-cuenta (PlayerStatementDto).
+// Solo cuotas mensuales: la inscripción se abona por separado.
+export interface PlayerStatement {
+  playerId: number;
+  playerFullName: string;
+  dni: string;
+  totalDebtAmount: number; // Saldo de las Pendientes y Vencidas, con beneficios y abonos aplicados
+  fees: FeeItem[]; // En orden cronológico
+}
+
+export interface FeeItem {
+  id: number; // Pendiente/Vencido: la cuota a cobrar. Pagado: el último cobro del período.
+  periodName: string; // "Marzo 2026"
+  amount: number; // Monto congelado con que se emitió la cuota
+  amountDue: number; // Lo que se cobra hoy (0 si está pagada o cubierta)
+  amountPaid: number;
+  dueDate: string; // "2026-03-31": último día del mes que cubre
+  status: EstadoCuotaJugador;
+  paidAt: string | null;
+  paymentMethod: string | null;
+  coveredByBenefit: boolean;
+  benefitReason: string | null;
+}
+
+// La tabla de cobro de la ficha (HU-025) trabaja con CuotaJugador: el estado de cuenta se
+// adapta a esa forma para no duplicar la lógica de selección y cobro.
+export function feeToCuotaJugador(fee: FeeItem): CuotaJugador {
+  return {
+    idPago: fee.id,
+    periodo: fee.periodName,
+    fechaVencimiento: fee.dueDate,
+    montoCuota: fee.amount,
+    saldoPendiente: fee.amountDue,
+    montoAbonado: fee.amountPaid,
+    estado: fee.status,
+    cubiertaPorBeneficio: fee.coveredByBenefit,
+    motivoBeneficio: fee.benefitReason,
+    metodoPago: fee.paymentMethod,
+    fechaPago: fee.paidAt,
+  };
+}
+
 export interface CuotaJugador {
   idPago: number; // Pendiente/Vencido: la cuota a cobrar. Pagado: el último cobro del período.
   periodo: string; // "Marzo 2026"
@@ -204,6 +246,11 @@ export class PagosService {
   // HU-025: cuotas del jugador (pendientes, vencidas y pagadas) para la tabla de cobro.
   getCuotas(idJugador: number): Observable<CuotaJugador[]> {
     return this.http.get<CuotaJugador[]>(`${this.apiUrl}/pagos/cuotas/${idJugador}`);
+  }
+
+  // HU-024: estado de cuenta del jugador (encabezado, total a abonar y cuotas con su estado).
+  getEstadoDeCuenta(idJugador: number): Observable<PlayerStatement> {
+    return this.http.get<PlayerStatement>(`${this.apiUrl}/pagos/jugador/${idJugador}/estado-de-cuenta`);
   }
 
   // HU-025: cobro atómico de las cuotas seleccionadas. El operador no viaja en el body: la API

@@ -229,6 +229,7 @@ public class JugadoresControllerTests
         public DateTime MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, int idJugador, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago, int idUsuarioRegistro) => throw new NotSupportedException();
         public bool ExisteJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador) => throw new NotSupportedException();
+        public PlayerStatementAccount? GetPlayerStatementAccount(int playerId) => throw new NotSupportedException();
         public void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal) => throw new NotSupportedException();
         public IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null) => throw new NotSupportedException();
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors) => throw new NotSupportedException();

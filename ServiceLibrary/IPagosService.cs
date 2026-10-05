@@ -64,6 +64,9 @@ namespace ServiceLibrary
         // HU-025: cuotas del jugador con su estado (Pendiente, Vencido o Pagado) para la ficha financiera.
         IReadOnlyList<CuotaJugador> ObtenerCuotasJugador(int idJugador);
 
+        // HU-024: estado de cuenta del jugador (cuotas con estado y total a abonar); null si no existe.
+        PlayerStatement? GetPlayerStatement(int playerId);
+
         IReadOnlyList<PendienteJugador> ObtenerPendientes(int? idCategoria = null);
 
         IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null);

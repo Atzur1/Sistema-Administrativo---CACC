@@ -384,6 +384,112 @@ public class PagosControllerTests
         Assert.Equal(new[] { 12 }, pagosService.CuotasCalls);
     }
 
+    // ---- Estado de cuenta (HU-024) ----
+    // El cálculo de estados y del total vive en PagosService (PagosService.Statement.Tests.cs);
+    // acá solo se cubre que el controller lo expone con la forma del DTO.
+
+    private static PlayerStatement Statement() => new()
+    {
+        PlayerId = 12,
+        FirstName = "NICOLÁS",
+        LastName = "BAZÁN",
+        Dni = "47970803",
+        TotalDebtAmount = 85_000m,
+        Fees = new List<CuotaJugador>
+        {
+            new()
+            {
+                IdPago = 9, Periodo = "Febrero 2026", FechaVencimiento = new DateTime(2026, 2, 1),
+                MontoCuota = 70_000m, MontoAbonado = 70_000m, Estado = "Pagado",
+                MetodoPago = "Efectivo", FechaPago = new DateTime(2026, 2, 5)
+            },
+            new()
+            {
+                IdPago = 10, Periodo = "Marzo 2026", FechaVencimiento = new DateTime(2026, 3, 1),
+                MontoCuota = 85_000m, SaldoPendiente = 85_000m, Estado = "Vencido"
+            }
+        }
+    };
+
+    [Fact]
+    public void GetPlayerStatement_MapsTheHeaderTotalAndEveryFee()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        pagosService.StatementResult = Statement();
+
+        OkObjectResult ok = Assert.IsType<OkObjectResult>(controller.GetPlayerStatement(12));
+
+        PlayerStatementDto dto = Assert.IsType<PlayerStatementDto>(ok.Value);
+        Assert.Equal(new[] { 12 }, pagosService.StatementCalls);
+        Assert.Equal(12, dto.PlayerId);
+        Assert.Equal("BAZÁN, NICOLÁS", dto.PlayerFullName);
+        Assert.Equal("47970803", dto.Dni);
+        Assert.Equal(85_000m, dto.TotalDebtAmount);
+        Assert.Equal(new[] { "Febrero 2026", "Marzo 2026" }, dto.Fees.Select(f => f.PeriodName));
+
+        FeeItemDto febrero = dto.Fees[0];
+        Assert.Equal(9, febrero.Id);
+        Assert.Equal(70_000m, febrero.Amount);
+        Assert.Equal(0m, febrero.AmountDue);
+        Assert.Equal("Pagado", febrero.Status);
+        Assert.Equal("2026-02-05", febrero.PaidAt);
+        Assert.Equal("Efectivo", febrero.PaymentMethod);
+
+        FeeItemDto marzo = dto.Fees[1];
+        Assert.Equal(85_000m, marzo.AmountDue);
+        Assert.Equal("Vencido", marzo.Status);
+        Assert.Null(marzo.PaidAt);
+    }
+
+    [Theory]
+    [InlineData(2026, 2, "2026-02-28")]
+    [InlineData(2028, 2, "2028-02-29")]
+    [InlineData(2026, 3, "2026-03-31")]
+    [InlineData(2026, 12, "2026-12-31")]
+    public void GetPlayerStatement_DueDateIsTheLastDayOfTheMonthTheFeeCovers(int anio, int mes, string esperado)
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        pagosService.StatementResult = new PlayerStatement
+        {
+            Fees = new List<CuotaJugador> { new() { FechaVencimiento = new DateTime(anio, mes, 1), Estado = "Pendiente" } }
+        };
+
+        OkObjectResult ok = Assert.IsType<OkObjectResult>(controller.GetPlayerStatement(1));
+
+        Assert.Equal(esperado, Assert.IsType<PlayerStatementDto>(ok.Value).Fees.Single().DueDate);
+    }
+
+    [Fact]
+    public void GetPlayerStatement_UnknownPlayer_Returns404()
+    {
+        (PagosController controller, _) = CreateController();
+
+        NotFoundObjectResult notFound = Assert.IsType<NotFoundObjectResult>(controller.GetPlayerStatement(999));
+
+        Assert.Contains("Jugador no encontrado", notFound.Value!.ToString());
+    }
+
+    [Fact]
+    public void GetPlayerStatement_DatabaseError_Returns500WithoutDetails()
+    {
+        (PagosController controller, FakePagosService pagosService) = CreateController();
+        pagosService.StatementError = new InvalidOperationException("timeout de SQL");
+
+        ObjectResult result = Assert.IsType<ObjectResult>(controller.GetPlayerStatement(12));
+
+        Assert.Equal(500, result.StatusCode);
+        Assert.DoesNotContain("timeout", result.Value!.ToString());
+    }
+
+    [Fact]
+    public void GetPlayerStatement_IsAGetUnderJugadorEstadoDeCuenta()
+    {
+        MethodInfo method = typeof(PagosController).GetMethod(nameof(PagosController.GetPlayerStatement))!;
+
+        Assert.Equal("jugador/{idJugador:int}/estado-de-cuenta", Assert.Single(method.GetCustomAttributes<HttpGetAttribute>()).Template);
+        Assert.Null(method.GetCustomAttribute<AllowAnonymousAttribute>());
+    }
+
     private class FakePagosService : IPagosService
     {
         public ResumenPagos ResumenResult { get; set; } = new();
@@ -418,6 +524,21 @@ public class PagosControllerTests
         {
             CuotasCalls.Add(idJugador);
             return CuotasResult;
+        }
+
+        public PlayerStatement? StatementResult { get; set; }
+        public Exception? StatementError { get; set; }
+        public List<int> StatementCalls { get; } = new();
+
+        public PlayerStatement? GetPlayerStatement(int playerId)
+        {
+            StatementCalls.Add(playerId);
+            if (StatementError != null)
+            {
+                throw StatementError;
+            }
+
+            return StatementResult;
         }
 
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors)

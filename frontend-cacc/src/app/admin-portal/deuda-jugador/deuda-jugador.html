@@ -30,22 +30,26 @@
         </div>
       </div>
 
-      <!-- HU-026: con datos reales cargados se muestra siempre, también $0 al saldar todo -->
-      @if (deudaCargada) {
+      <!-- HU-024/026: total a abonar del estado de cuenta (solo cuotas mensuales). Con datos
+           reales cargados se muestra siempre: $0 y "Sin deuda" al estar al día. -->
+      @if (estadoCuentaCargado) {
         <div class="profile-stats">
           <div class="profile-stat">
             <span
               class="profile-stat-value total-adeudado"
               [class.profile-stat-danger]="montoTotalAdeudado > 0"
+              [class.profile-stat-ok]="montoTotalAdeudado <= 0"
               >{{ formatMonto(montoTotalAdeudado) }}</span
             >
-            <span class="profile-stat-label">Total adeudado</span>
+            <span class="profile-stat-label total-adeudado-label">{{
+              montoTotalAdeudado > 0 ? 'Total a abonar' : 'Sin deuda'
+            }}</span>
           </div>
           <div class="profile-stat-divider"></div>
           <div class="profile-stat">
-            <span class="profile-stat-value">{{ cuotas.length }}</span>
+            <span class="profile-stat-value">{{ cuotasAdeudadas }}</span>
             <span class="profile-stat-label">{{
-              cuotas.length === 1 ? 'Cuota pendiente' : 'Cuotas pendientes'
+              cuotasAdeudadas === 1 ? 'Cuota adeudada' : 'Cuotas adeudadas'
             }}</span>
           </div>
         </div>

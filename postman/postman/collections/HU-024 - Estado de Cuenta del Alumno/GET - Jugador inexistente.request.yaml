@@ -1,0 +1,19 @@
+$kind: http-request
+description: "HU-024. Un jugador que no existe responde 404 con un mensaje en español."
+url: "{{baseUrl}}/api/Pagos/jugador/999999/estado-de-cuenta"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code es 404", function () {
+          pm.response.to.have.status(404);
+      });
+
+      pm.test("Explica el motivo", function () {
+          pm.expect(pm.response.json().mensaje).to.equal("Jugador no encontrado.");
+      });
+    language: text/javascript
+order: 1791414000006
