@@ -11,31 +11,42 @@ public sealed class AccountAccessDao(string connectionString)
 {
     // ===== Recuperación de contraseña (olvidé mi contraseña) =====
 
-    // Crea el token de recuperación para la cuenta con ese correo. Sirve para cualquier rol con acceso al
-    // portal (SuperAdmin y Administrador): antes solo el SuperAdmin podía recuperarla. Devuelve el correo si
-    // la cuenta existe y está en condiciones, o null — el llamador responde igual en los dos casos.
-    public string? CreateResetToken(string email, string tokenHash, DateTime expiresUtc) =>
-        EnTransaccion((connection, transaction) => CreateResetTokenCore(connection, transaction, email, tokenHash, expiresUtc));
+    // Crea el token de recuperación para la cuenta con ese DNI (o, en la transición, ese correo). Sirve para
+    // cualquier rol con acceso al portal (SuperAdmin y Administrador). Devuelve el correo de la cuenta, al que
+    // hay que mandar el enlace, si existe y está en condiciones, o null — el llamador responde igual en los dos casos.
+    public string? CreateResetToken(string identifier, string tokenHash, DateTime expiresUtc) =>
+        EnTransaccion((connection, transaction) => CreateResetTokenCore(connection, transaction, identifier, tokenHash, expiresUtc));
 
     // Lo mismo, pero lo pide un SuperAdmin para una cuenta puntual (botón "Resetear contraseña" de Usuarios y
     // Permisos). El enlace va siempre al correo de la propia cuenta, nunca a quien lo pidió.
     public string? CreateResetTokenForUser(int userId, string tokenHash, DateTime expiresUtc) =>
         EnTransaccion((connection, transaction) => CreateResetTokenForUserCore(connection, transaction, userId, tokenHash, expiresUtc));
 
-    internal static string? CreateResetTokenCore(SqlConnection connection, SqlTransaction transaction, string email, string tokenHash, DateTime expiresUtc)
+    internal static string? CreateResetTokenCore(SqlConnection connection, SqlTransaction transaction, string identifier, string tokenHash, DateTime expiresUtc)
     {
-        int? userId;
+        var wanted = IdentificadorCuenta.Interpretar(identifier);
+        if (wanted is null) return null;
+
+        int userId;
+        string? email;
+        // TOP (2): si dos cuentas respondieran al mismo identificador no se adivina cuál es; no se manda nada.
         using (var find = new SqlCommand(
-            "SELECT PK_id_usuario FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE email = @email AND activo = 1 AND activacion_pendiente = 0 AND acceso_portal = 1",
+            $@"SELECT TOP (2) PK_id_usuario, email FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK)
+               WHERE {(wanted.Value.EsCorreo ? "email = @valor" : AuthDao.DniNormalizadoSql + " = @valor")}
+                 AND activo = 1 AND activacion_pendiente = 0 AND acceso_portal = 1",
             connection, transaction))
         {
-            find.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = email;
-            var result = find.ExecuteScalar();
-            userId = result is null ? null : Convert.ToInt32(result);
+            find.Parameters.Add("@valor", SqlDbType.NVarChar, 254).Value = wanted.Value.Valor;
+            using var reader = find.ExecuteReader();
+            if (!reader.Read()) return null;
+            userId = reader.GetInt32(0);
+            email = reader.IsDBNull(1) ? null : reader.GetString(1).Trim();
+            if (reader.Read()) return null;
         }
-        if (userId is null) return null;
+        // El enlace va al correo que la cuenta tiene cargado, nunca a lo que escribió quien lo pidió.
+        if (string.IsNullOrWhiteSpace(email)) return null;
 
-        InsertResetToken(connection, transaction, userId.Value, tokenHash, expiresUtc);
+        InsertResetToken(connection, transaction, userId, tokenHash, expiresUtc);
         return email;
     }
 

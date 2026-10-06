@@ -75,7 +75,9 @@
                       </span>
                       <div class="user-identity">
                         <span class="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</span>
-                        <span class="user-email">{{ usuario.email }}</span>
+                        <span class="user-email">
+                          @if (usuario.dni) { DNI {{ usuario.dni }} · } {{ usuario.email }}
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -215,21 +217,21 @@
   </section>
 </div>
 
-<!-- ===== EDITAR CANDIDATO: nombre / apellido / mail ===== -->
+<!-- ===== EDITAR CANDIDATO: nombre / apellido / DNI / mail ===== -->
 @if (dialogEditar(); as candidato) {
   <div class="dialog-backdrop" (click)="cerrarEditar()">
     <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <header class="dialog-head">
         <div class="dialog-head-text">
           <h2 class="dialog-title">Corregir datos</h2>
-          <span class="dialog-subtitle">DNI {{ candidato.dni }}</span>
+          <span class="dialog-subtitle">{{ candidato.nombre }} {{ candidato.apellido }}</span>
         </div>
         <button type="button" class="dialog-close" (click)="cerrarEditar()" aria-label="Cerrar">✕</button>
       </header>
 
       <p class="dialog-confirm">
-        Con esto podés editar estos datos por si son incorrectos. Solo corrige lo que
-        se ve acá, no toca el DNI ni ningún otro dato del padrón.
+        Con esto podés editar estos datos por si son incorrectos. El DNI es el usuario con el que la
+        persona va a ingresar al portal. Solo corrige lo que se ve acá, no toca ningún otro dato del padrón.
       </p>
 
       <div class="field-group">
@@ -240,6 +242,11 @@
       <div class="field-group">
         <label class="field-label" for="editar-apellido">Apellido</label>
         <input id="editar-apellido" type="text" class="field-input" [(ngModel)]="editarApellido" [disabled]="editarSubmitting()" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="editar-dni">DNI</label>
+        <input id="editar-dni" type="text" inputmode="numeric" class="field-input" [(ngModel)]="editarDni" [disabled]="editarSubmitting()" />
       </div>
 
       <div class="field-group">
@@ -276,8 +283,8 @@
       </header>
 
       <p class="dialog-confirm">
-        Se va a enviar un correo de activación a <strong>{{ candidato.email }}</strong> para que cree su
-        contraseña. Confirmá que el mail es correcto antes de continuar: si está mal, el acceso de
+        Va a ingresar al portal con su DNI <strong>{{ candidato.dni || 'sin cargar' }}</strong>. Se va a enviar
+        un correo de activación a <strong>{{ candidato.email }}</strong> para que cree su contraseña. Confirmá que el mail es correcto antes de continuar: si está mal, el acceso de
         administrador le llegaría a otra persona. Podés corregirlo con el lápiz antes de habilitar.
       </p>
 

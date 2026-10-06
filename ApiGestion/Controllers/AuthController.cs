@@ -20,31 +20,33 @@ namespace ApiGestion.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly AccountAccessDao _accountAccessDao;
         private readonly EmailLinkSender _emailSender;
+        private readonly LoginThrottle _loginThrottle;
 
         // Inyectamos el AuthDao y la configuración (para leer la clave JWT)
         public AuthController(AuthDao authDao, IConfiguration config, ILogger<AuthController> logger,
-            AccountAccessDao accountAccessDao, EmailLinkSender emailSender)
+            AccountAccessDao accountAccessDao, EmailLinkSender emailSender, LoginThrottle loginThrottle)
         {
             _authDao = authDao;
             _config = config;
             _logger = logger;
             _accountAccessDao = accountAccessDao;
             _emailSender = emailSender;
+            _loginThrottle = loginThrottle;
         }
 
         [HttpPost("password-reset/request")]
         [EnableRateLimiting("account-email")]
-        public async Task<IActionResult> SolicitarRestablecimiento([FromBody] EmailRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> SolicitarRestablecimiento([FromBody] RecuperacionRequest request, CancellationToken cancellationToken)
         {
-            const string response = "Si el correo corresponde a una cuenta activa, recibirá instrucciones para continuar.";
-            var email = request.Email.Trim().ToLowerInvariant();
+            const string response = "Si los datos corresponden a una cuenta activa, el enlace llegará al correo registrado en esa cuenta.";
             var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
             var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
             try
             {
                 // Cualquier cuenta con acceso al portal (SuperAdmin o Administrador) puede recuperar su contraseña.
-                // La respuesta es siempre la misma, exista o no la cuenta, para no revelar qué correos están registrados.
-                var account = _accountAccessDao.CreateResetToken(email, tokenHash, DateTime.UtcNow.AddMinutes(30));
+                // La respuesta es siempre la misma, exista o no la cuenta, para no revelar qué DNI o correos están
+                // registrados. El enlace va al correo que la cuenta tiene cargado, no a lo que se escribió acá.
+                var account = _accountAccessDao.CreateResetToken(request.Usuario, tokenHash, DateTime.UtcNow.AddMinutes(30));
                 if (account is not null)
                 {
                     // El envío va aparte: si se esperara acá, responder tardaría más cuando la cuenta existe y esa
@@ -87,11 +89,21 @@ namespace ApiGestion.Controllers
         {
             try
             {
+                // Límite por cuenta (además del de IP). Cuenta los fallos de cualquier identificador, exista o no,
+                // para que bloquearse no revele qué DNI o correos están registrados.
+                var identificador = IdentificadorCuenta.Interpretar(request.Usuario);
+                var clave = identificador?.Valor;
+                if (clave is not null && _loginThrottle.Bloqueado(clave))
+                    return StatusCode(StatusCodes.Status429TooManyRequests,
+                        new { mensaje = "Demasiados intentos fallidos. Esperá unos minutos antes de volver a intentar." });
+
                 // Consultamos directamente a la base de datos usando nuestra capa DAO
                 var usuarioEncontrado = _authDao.ValidarLogin(request.Usuario, request.Contrasena);
 
                 if (usuarioEncontrado != null)
                 {
+                    if (clave is not null) _loginThrottle.Limpiar(clave);
+
                     // Generamos el token JWT con el rol adentro
                     string token = GenerarToken(usuarioEncontrado.IdUsuario, usuarioEncontrado.Email, usuarioEncontrado.IdRol, usuarioEncontrado.TokenVersion);
 
@@ -107,6 +119,7 @@ namespace ApiGestion.Controllers
                 }
 
                 // Si devuelve null, las credenciales no coinciden con la BD
+                if (clave is not null) _loginThrottle.RegistrarFallo(clave);
                 return Unauthorized(new { mensaje = "Usuario o contraseña incorrectos." });
             }
             catch (Exception ex)

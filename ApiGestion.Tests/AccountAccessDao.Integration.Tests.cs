@@ -62,6 +62,44 @@ public class AccountAccessDaoIntegrationTests
         finally { transaction.Rollback(); connection.Dispose(); }
     }
 
+    private static string DniDe(SqlConnection connection, SqlTransaction transaction, int id)
+    {
+        using var command = new SqlCommand("SELECT dni FROM dbo.USUARIO WHERE PK_id_usuario = @id", connection, transaction);
+        command.Parameters.AddWithValue("@id", id);
+        var dni = command.ExecuteScalar() as string;
+        Assert.False(string.IsNullOrWhiteSpace(dni), "La cuenta Administrador de la base de prueba necesita tener DNI cargado.");
+        return dni!;
+    }
+
+    [IntegracionFact]
+    public void ForgotPassword_TheDniIdentifiesTheAccountAndTheLinkGoesToItsOwnEmail()
+    {
+        var (connection, transaction) = Abrir();
+        try
+        {
+            var (id, email) = AdministradorHabilitado(connection, transaction);
+            string dni = DniDe(connection, transaction, id);
+
+            // Con puntos o sin ellos es el mismo DNI; el enlace va al correo de la cuenta, no a lo que se escribió.
+            string conFormato = dni[..^3] + "." + dni[^3..];
+            Assert.Equal(email, AccountAccessDao.CreateResetTokenCore(connection, transaction, dni, NuevoHash(), Vence));
+            Assert.Equal(email, AccountAccessDao.CreateResetTokenCore(connection, transaction, conFormato, NuevoHash(), Vence));
+        }
+        finally { transaction.Rollback(); connection.Dispose(); }
+    }
+
+    [IntegracionFact]
+    public void ForgotPassword_AnUnknownDniGetsNothing()
+    {
+        var (connection, transaction) = Abrir();
+        try
+        {
+            Assert.Null(AccountAccessDao.CreateResetTokenCore(connection, transaction, "99999999", NuevoHash(), Vence));
+            Assert.Null(AccountAccessDao.CreateResetTokenCore(connection, transaction, "no es un dni", NuevoHash(), Vence));
+        }
+        finally { transaction.Rollback(); connection.Dispose(); }
+    }
+
     [IntegracionFact]
     public void ForgotPassword_AnUnknownEmailGetsNothing()
     {

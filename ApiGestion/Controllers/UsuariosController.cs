@@ -45,15 +45,27 @@ namespace ApiGestion.Controllers
         [HttpGet("deshabilitados")]
         public IActionResult ListarDeshabilitados() => Ok(_usuariosDao.ListarDeshabilitados());
 
-        // PUT api/usuarios/5 -> corrige nombre/apellido/mail de un candidato antes
-        // de habilitarlo, por si el otro equipo los cargó mal.
+        // PUT api/usuarios/5 -> corrige nombre/apellido/DNI/mail de un candidato antes
+        // de habilitarlo, por si hubo un error de carga.
         [HttpPut("{id}")]
         public IActionResult EditarCandidato(int id, [FromBody] EditarCandidatoRequest request)
         {
-            if (!_usuariosDao.EditarDatosCandidato(id, request.Nombre, request.Apellido, request.Email))
-                return BadRequest(new { mensaje = "No se encontró a ese candidato sin acceso todavía." });
-            return Ok(new { mensaje = "Datos corregidos." });
+            var resultado = _usuariosDao.EditarDatosCandidato(id, request.Nombre, request.Apellido, request.Dni, request.Email);
+            if (resultado == EditarCandidatoResultado.Ok) return Ok(new { mensaje = "Datos corregidos." });
+
+            var mensaje = resultado switch
+            {
+                EditarCandidatoResultado.DniInvalido => MensajeDniInvalido,
+                EditarCandidatoResultado.DniEnUso => MensajeDniEnUso,
+                _ => "No se encontró a ese candidato sin acceso todavía."
+            };
+            return resultado == EditarCandidatoResultado.NoEncontrado
+                ? BadRequest(new { mensaje })
+                : UnprocessableEntity(new { mensaje });
         }
+
+        private const string MensajeDniInvalido = "El DNI no es válido: tiene que tener entre 6 y 9 números.";
+        private const string MensajeDniEnUso = "Ese DNI ya lo usa otra cuenta con acceso al portal.";
 
         // POST api/usuarios/5/habilitar -> otorga acceso_portal=1 + rol_portal y
         // dispara el mail de activación.
@@ -67,6 +79,8 @@ namespace ApiGestion.Controllers
                 {
                     HabilitarResultado.EmailNoCoincide => "El mail no coincide con el que tiene cargado esa persona.",
                     HabilitarResultado.NoEncontrado => "No se encontró a esa persona sin acceso todavía, o ya está habilitada.",
+                    HabilitarResultado.DniInvalido => "Antes de habilitarla hay que cargar un DNI válido (con el lápiz): es el usuario con el que va a ingresar.",
+                    HabilitarResultado.DniEnUso => MensajeDniEnUso,
                     _ => "No se pudo habilitar el acceso."
                 };
                 return BadRequest(new { mensaje });
@@ -151,7 +165,7 @@ namespace ApiGestion.Controllers
         public IActionResult Reactivar(int id)
         {
             if (!_usuariosDao.Reactivar(id))
-                return BadRequest(new { mensaje = "No se encontró a esa persona entre las cuentas deshabilitadas." });
+                return BadRequest(new { mensaje = "No se pudo reactivar: verificá que la persona esté entre las deshabilitadas y que su DNI no lo use otra cuenta con acceso." });
             return Ok(new { mensaje = "Acceso restablecido." });
         }
     }

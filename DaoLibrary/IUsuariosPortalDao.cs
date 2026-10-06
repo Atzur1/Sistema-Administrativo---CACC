@@ -7,7 +7,19 @@ namespace DaoLibrary
         Ok,
         NoEncontrado,
         EmailNoCoincide,
-        RolInvalido
+        RolInvalido,
+        // El DNI es el usuario del login: sin un DNI válido, o con uno que ya usa otra cuenta con acceso,
+        // no se puede habilitar.
+        DniInvalido,
+        DniEnUso
+    }
+
+    public enum EditarCandidatoResultado
+    {
+        Ok,
+        NoEncontrado,
+        DniInvalido,
+        DniEnUso
     }
 
     public interface IUsuariosPortalDao
@@ -24,14 +36,15 @@ namespace DaoLibrary
         IReadOnlyList<UsuarioPortal> ListarDeshabilitados();
 
         // Corrige los datos de un candidato todavía sin acceso, por si el otro equipo
-        // los cargó mal — sobre todo el mail: evita que el enlace de activación
-        // termine en manos de otra persona. Solo antes de habilitar: una vez con
-        // acceso, editar estos datos es un cambio de identidad de cuenta distinto,
-        // no una corrección de carga.
-        bool EditarDatosCandidato(int idUsuario, string nombre, string apellido, string email);
+        // los cargó mal — el mail (evita que el enlace de activación termine en manos de
+        // otra persona) y el DNI (es el usuario con el que va a ingresar). Solo antes de
+        // habilitar: una vez con acceso, editar estos datos es un cambio de identidad de
+        // cuenta distinto, no una corrección de carga.
+        EditarCandidatoResultado EditarDatosCandidato(int idUsuario, string nombre, string apellido, string dni, string email);
 
         // Confirma el mail (evita habilitar a la persona equivocada por un error de
-        // carga del otro equipo) y otorga acceso_portal=1 + rol_portal. Deja
+        // carga del otro equipo), exige un DNI válido y no repetido entre las cuentas con
+        // acceso (lo guarda solo con dígitos) y otorga acceso_portal=1 + rol_portal. Deja
         // activacion_pendiente=1: falta que la persona complete su contraseña con
         // el enlace de activación. Devuelve el email para poder enviar el correo.
         (HabilitarResultado Resultado, string? Email) Habilitar(int idUsuario, string emailConfirmado, int rolPortal);
