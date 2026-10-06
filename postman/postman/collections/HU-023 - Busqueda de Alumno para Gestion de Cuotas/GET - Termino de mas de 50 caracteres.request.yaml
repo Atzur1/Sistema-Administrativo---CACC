@@ -1,0 +1,29 @@
+$kind: http-request
+description: "HU-023. La API rechaza el término con 400 y un mensaje en español, sin consultar la base."
+url: "{{baseUrl}}/api/Players/search?term=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const apellido = pm.environment.get("hu023Apellido") || "";
+      const sinTildes = apellido.normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, "").normalize("NFC").toLowerCase();
+      pm.environment.set("hu023Parcial", sinTildes.slice(0, 4));
+
+      const dni = pm.environment.get("hu023Dni") || "";
+      pm.environment.set("hu023DniParcial", dni.slice(-4));
+      pm.environment.set("hu023DniConPuntos", dni.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Status code es 400", function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test("Explica el motivo", function () {
+          pm.expect(pm.response.json().mensaje).to.equal("La búsqueda admite hasta 50 caracteres.");
+      });
+    language: text/javascript
+order: 1791327600013

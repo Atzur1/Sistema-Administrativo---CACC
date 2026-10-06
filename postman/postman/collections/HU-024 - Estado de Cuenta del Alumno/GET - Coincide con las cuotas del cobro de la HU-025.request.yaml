@@ -1,0 +1,23 @@
+$kind: http-request
+description: "HU-024 y HU-025. El estado de cuenta y la tabla de cobro usan el mismo cálculo: período, estado y saldo de cada cuota tienen que coincidir. Depende de la request anterior."
+url: "{{baseUrl}}/api/Pagos/cuotas/{{hu024Id}}"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const cuotas = pm.response.json();
+      const estado = JSON.parse(pm.environment.get("hu024Estado"));
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Mismas cuotas, estados y saldos", function () {
+          pm.expect(cuotas.map(c => [c.periodo, c.estado, c.estado === "Pagado" ? 0 : c.saldoPendiente]))
+              .to.eql(estado.fees.map(f => [f.periodName, f.status, f.amountDue]));
+      });
+    language: text/javascript
+order: 1791414000004

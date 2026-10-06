@@ -202,6 +202,29 @@ namespace ServiceLibrary
         public IReadOnlyList<CuotaJugador> ObtenerCuotasJugador(int idJugador)
             => ConstruirEstadoDeCuotas(_pagosDao.ObtenerMovimientosCuotas(idJugador), DateTime.Today);
 
+        public PlayerStatement? GetPlayerStatement(int playerId)
+        {
+            var cuenta = _pagosDao.GetPlayerStatementAccount(playerId);
+            return cuenta == null ? null : BuildPlayerStatement(cuenta, DateTime.Today);
+        }
+
+        // HU-024: las cuotas salen de ConstruirEstadoDeCuotas, el mismo cálculo que usa la tabla de
+        // cobro (HU-025), así el estado de cuenta y lo que se puede cobrar nunca difieren. El total
+        // suma el saldo de las Pendientes y Vencidas, que ya descuenta beneficios y abonos parciales.
+        public static PlayerStatement BuildPlayerStatement(PlayerStatementAccount cuenta, DateTime hoy)
+        {
+            var cuotas = ConstruirEstadoDeCuotas(cuenta.Movements, hoy);
+            return new PlayerStatement
+            {
+                PlayerId = cuenta.PlayerId,
+                FirstName = cuenta.FirstName,
+                LastName = cuenta.LastName,
+                Dni = cuenta.Dni,
+                Fees = cuotas,
+                TotalDebtAmount = cuotas.Where(c => c.Estado != EstadosCuota.Pagado).Sum(c => c.SaldoPendiente)
+            };
+        }
+
         // Agrupa las filas de PAGOS de cada período en una sola cuota. Mientras exista la fila
         // pendiente (estado = 0), la cuota se puede cobrar por su saldo; si ya no existe (se cobró
         // completa por /cobro o por abonos que la cubrieron), está pagada. Vencida = pasó el

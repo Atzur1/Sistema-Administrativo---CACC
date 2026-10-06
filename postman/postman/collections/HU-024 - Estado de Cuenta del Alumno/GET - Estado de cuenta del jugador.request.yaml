@@ -1,0 +1,65 @@
+$kind: http-request
+description: "HU-024. Devuelve el encabezado del jugador, el total a abonar y sus cuotas con el estado de cada una. Guarda la respuesta para compararla con las cuotas del cobro (HU-025)."
+url: "{{baseUrl}}/api/Pagos/jugador/{{hu024Id}}/estado-de-cuenta"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const estado = pm.response.json();
+      pm.environment.set("hu024Estado", JSON.stringify(estado));
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Tiene la forma de PlayerStatementDto", function () {
+          pm.expect(estado).to.have.all.keys("playerId", "playerFullName", "dni", "totalDebtAmount", "fees");
+          pm.expect(estado.playerId).to.equal(Number(pm.environment.get("hu024Id")));
+      });
+
+      pm.test("Cada cuota tiene la forma de FeeItemDto", function () {
+          estado.fees.forEach(f => pm.expect(f).to.have.all.keys(
+              "id", "periodName", "amount", "amountDue", "amountPaid", "dueDate", "status",
+              "paidAt", "paymentMethod", "coveredByBenefit", "benefitReason"));
+      });
+
+      pm.test("Los estados son Pagado, Pendiente o Vencido", function () {
+          estado.fees.forEach(f => pm.expect(["Pagado", "Pendiente", "Vencido"]).to.include(f.status));
+      });
+
+      pm.test("Las cuotas están en orden cronológico", function () {
+          const fechas = estado.fees.map(f => f.dueDate);
+          pm.expect(fechas).to.eql([...fechas].sort());
+      });
+
+      pm.test("Vencen el último día del mes que cubren", function () {
+          estado.fees.forEach(f => {
+              const [anio, mes, dia] = f.dueDate.split("-").map(Number);
+              pm.expect(dia).to.equal(new Date(anio, mes, 0).getDate());
+          });
+      });
+
+      pm.test("Vencido solo si ya pasó el vencimiento", function () {
+          const hoy = new Date().toISOString().slice(0, 10);
+          estado.fees.filter(f => f.status !== "Pagado").forEach(f => {
+              pm.expect(f.status).to.equal(hoy > f.dueDate ? "Vencido" : "Pendiente");
+          });
+      });
+
+      pm.test("El total a abonar es la suma de lo adeudado en Pendientes y Vencidas", function () {
+          const suma = estado.fees.filter(f => f.status !== "Pagado").reduce((t, f) => t + f.amountDue, 0);
+          pm.expect(Math.round(estado.totalDebtAmount * 100)).to.equal(Math.round(suma * 100));
+      });
+
+      pm.test("Una cuota pagada no adeuda nada", function () {
+          estado.fees.filter(f => f.status === "Pagado").forEach(f => pm.expect(f.amountDue).to.equal(0));
+      });
+
+      pm.test("Responde en menos de 2 segundos", function () {
+          pm.expect(pm.response.responseTime).to.be.below(2000);
+      });
+    language: text/javascript
+order: 1791414000003

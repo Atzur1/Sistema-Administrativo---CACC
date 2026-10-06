@@ -440,6 +440,7 @@ public class PagosServiceCobroTests
         public HistorialPagosResultado ObtenerHistorialPagos(int idJugador, int page, int pageSize) => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador) => throw new NotSupportedException();
+        public PlayerStatementAccount? GetPlayerStatementAccount(int playerId) => throw new NotSupportedException();
         public void GenerarCuotasPendientesDelMes(string? genero, int? idCategoria, int mes, int anio) => throw new NotSupportedException();
         public void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int mes, int anio) => throw new NotSupportedException();
     }

@@ -1,0 +1,28 @@
+$kind: http-request
+description: "HU-024. La inscripción se abona por separado y es otro ingreso: no aparece en el estado de cuenta ni suma al total. Compara contra el detalle de deuda, que sí la incluye."
+url: "{{baseUrl}}/api/Pagos/deuda/{{hu024Id}}"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const deuda = pm.response.json();
+      const estado = JSON.parse(pm.environment.get("hu024Estado"));
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Ninguna cuota del estado de cuenta es una inscripción", function () {
+          const inscripciones = deuda.filter(c => c.concepto === "Inscripcion").map(c => c.idPago);
+          estado.fees.forEach(f => pm.expect(inscripciones).to.not.include(f.id));
+      });
+
+      pm.test("El total a abonar es el de las cuotas, sin la inscripción", function () {
+          const cuotas = deuda.filter(c => c.concepto !== "Inscripcion").reduce((t, c) => t + Math.max(0, c.saldoPendiente), 0);
+          pm.expect(Math.round(estado.totalDebtAmount * 100)).to.equal(Math.round(cuotas * 100));
+      });
+    language: text/javascript
+order: 1791414000005

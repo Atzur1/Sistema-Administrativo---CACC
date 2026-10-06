@@ -1,0 +1,275 @@
+/* HU-023: mismos tokens y medidas que los paneles y filtros de Cuotas y Pagos */
+.player-search {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.search-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+}
+
+.search-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.search-subtitle {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.search-bar {
+    display: flex;
+    gap: 8px;
+}
+
+.search-field {
+    position: relative;
+    flex: 1 1 auto;
+    max-width: 420px;
+    min-width: 0;
+}
+
+.search-field-icon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 15px;
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+.search-field input {
+    width: 100%;
+    height: 38px;
+    padding: 0 36px 0 34px;
+    box-sizing: border-box;
+    background: var(--action-field-bg);
+    border: 1px solid var(--action-border);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+/* El "×" nativo de type=search se reemplaza por el propio, igual en todos los navegadores */
+.search-field input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.search-field input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.8;
+}
+
+.search-field input:hover {
+    border-color: var(--color-brand);
+}
+
+.search-field input:focus {
+    background: var(--action-bg);
+    border-color: var(--action-accent);
+    box-shadow: var(--action-focus-ring);
+}
+
+.search-spinner {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    width: 14px;
+    height: 14px;
+    margin-top: -9px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-brand);
+    border-radius: 50%;
+    animation: playerSearchSpin 0.7s linear infinite;
+}
+
+@keyframes playerSearchSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.search-clear {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.search-clear:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text);
+}
+
+.search-submit,
+.select-btn {
+    flex-shrink: 0;
+    height: 38px;
+    padding: 0 16px;
+    background: var(--color-brand);
+    border: none;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.search-submit:hover:not(:disabled),
+.select-btn:hover {
+    background: var(--color-brand-hover);
+}
+
+.search-submit:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.search-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.search-hint-error {
+    color: var(--color-danger);
+}
+
+.search-retry {
+    margin-left: 6px;
+    padding: 0;
+    background: none;
+    border: none;
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.search-empty {
+    padding: 18px 12px;
+    background: var(--color-bg-page-alt);
+    border: 1px dashed var(--color-border);
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    text-align: center;
+    animation: fadeIn 0.25s ease both;
+}
+
+.search-table-wrapper {
+    overflow-x: auto;
+    transition: opacity 0.2s ease;
+}
+
+/* Mientras llega una búsqueda nueva, los resultados anteriores quedan visibles pero atenuados */
+.search-table-wrapper.is-refreshing {
+    opacity: 0.55;
+}
+
+.search-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.search-table th {
+    padding: 0 10px 8px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.search-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-bg-page);
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.search-table tbody tr {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.search-table tbody tr:hover {
+    background: var(--color-bg-hover);
+}
+
+.search-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.cell-strong {
+    font-weight: 600;
+}
+
+.cell-muted {
+    color: var(--color-text-muted);
+}
+
+.cell-action {
+    text-align: right;
+}
+
+.select-btn {
+    height: 30px;
+    padding: 0 12px;
+    font-size: 11.5px;
+    white-space: nowrap;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .search-field {
+        max-width: none;
+    }
+
+    .search-table th:nth-child(4),
+    .search-table td:nth-child(4) {
+        display: none;
+    }
+}

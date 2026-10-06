@@ -10,9 +10,12 @@ import {
   CuotaPendienteDetalle,
   JugadorResumen,
   PagosService,
+  PlayerStatement,
+  feeToCuotaJugador,
 } from '../../services/pagos';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
+import { financialLoadErrorMessage } from '../../shared/http-error-message';
 
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -69,9 +72,9 @@ export class DeudaJugador implements OnInit, OnDestroy {
   private mensajeExitoTimer?: ReturnType<typeof setTimeout>;
 
   // ===== HU-025: cobro de una o varias cuotas completas (POST /api/pagos/cobro) =====
-  // Convive con "Pagar saldo" (abono parcial de una cuota). La tabla sale de GET
-  // /api/pagos/cuotas y, después de cada cobro, se vuelve a leer: el estado "Pagado" siempre
-  // lo informa el backend, nunca se pinta localmente.
+  // Convive con "Pagar saldo" (abono parcial de una cuota). La tabla sale del estado de cuenta
+  // (HU-024) y, después de cada cobro, se vuelve a leer: el estado "Pagado" siempre lo informa
+  // el backend, nunca se pinta localmente.
   cuotasJugador: CuotaJugador[] = [];
   cargandoCuotas = true;
   errorCuotas = '';
@@ -82,8 +85,13 @@ export class DeudaJugador implements OnInit, OnDestroy {
   errorCobro = '';
   private seleccion = new Set<number>();
 
+  // ===== HU-024: estado de cuenta (GET /api/pagos/jugador/{id}/estado-de-cuenta) =====
+  // La tarjeta "Total a abonar" y la tabla de cuotas salen de esa misma respuesta, así el total
+  // siempre coincide con la tabla. Solo cuotas mensuales: la inscripción se abona por separado.
+  estadoCuentaCargado = false; // La tarjeta se muestra (incluido $0) solo con datos reales del backend
+  private totalAAbonar = 0;
+
   // ===== HU-026: estado de cuenta después de un cobro =====
-  deudaCargada = false; // Muestra "Total adeudado" (incluido $0) solo con datos reales del backend
   actualizandoEstadoCuenta = false;
   avisoActualizacion = '';
   private ultimaActualizacionTrasPago = false;
@@ -118,8 +126,13 @@ export class DeudaJugador implements OnInit, OnDestroy {
     return `${this.jugador.apellido[0] ?? ''}${this.jugador.nombre[0] ?? ''}`.toUpperCase();
   }
 
+  // HU-024: lo calcula el backend (saldo de las cuotas Pendientes y Vencidas).
   get montoTotalAdeudado(): number {
-    return this.cuotas.reduce((total, cuota) => total + cuota.saldoPendiente, 0);
+    return this.totalAAbonar;
+  }
+
+  get cuotasAdeudadas(): number {
+    return this.cuotasJugador.filter((c) => c.estado !== 'Pagado' && c.saldoPendiente > 0).length;
   }
 
   private cargarJugador() {
@@ -143,7 +156,6 @@ export class DeudaJugador implements OnInit, OnDestroy {
       next: (cuotas) => {
         this.cuotas = cuotas;
         this.cargandoDeuda = false;
-        this.deudaCargada = true;
         this.cdr.detectChanges();
       },
       error: () => {
@@ -156,19 +168,26 @@ export class DeudaJugador implements OnInit, OnDestroy {
 
   private cargarCuotas() {
     this.cargandoCuotas = true;
-    this.pagosService.getCuotas(this.idJugador).subscribe({
-      next: (cuotas) => {
-        this.aplicarCuotas(cuotas);
+    this.pagosService.getEstadoDeCuenta(this.idJugador).subscribe({
+      next: (estado) => {
+        this.aplicarEstadoDeCuenta(estado);
         this.cargandoCuotas = false;
         this.errorCuotas = '';
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err: unknown) => {
         this.cargandoCuotas = false;
-        this.errorCuotas = 'No se pudieron cargar las cuotas de este jugador.';
+        this.errorCuotas = financialLoadErrorMessage(err, 'No se pudo cargar el estado de cuenta de este jugador.');
+        this.notifications.notify(this.errorCuotas, 'error');
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private aplicarEstadoDeCuenta(estado: PlayerStatement) {
+    this.totalAAbonar = estado.totalDebtAmount;
+    this.estadoCuentaCargado = true;
+    this.aplicarCuotas(estado.fees.map(feeToCuotaJugador));
   }
 
   private aplicarCuotas(cuotas: CuotaJugador[]) {
@@ -182,7 +201,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     );
   }
 
-  // HU-026: tras un cobro se vuelven a leer del backend la grilla de cuotas y la deuda, juntas,
+  // HU-026: tras un cobro se vuelven a leer del backend el estado de cuenta y la deuda, juntos,
   // sin recargar la página. Si esa lectura falla, el cobro NO se reintenta (ya quedó persistido):
   // se avisa que la vista puede estar desactualizada y se ofrece repetir solo la lectura.
   private actualizarEstadoDeCuenta(trasPagoConfirmado: boolean) {
@@ -192,12 +211,11 @@ export class DeudaJugador implements OnInit, OnDestroy {
 
     forkJoin({
       deuda: this.pagosService.getDeuda(this.idJugador),
-      cuotas: this.pagosService.getCuotas(this.idJugador),
+      estado: this.pagosService.getEstadoDeCuenta(this.idJugador),
     }).subscribe({
-      next: ({ deuda, cuotas }) => {
+      next: ({ deuda, estado }) => {
         this.cuotas = deuda;
-        this.deudaCargada = true;
-        this.aplicarCuotas(cuotas);
+        this.aplicarEstadoDeCuenta(estado);
         this.errorCuotas = '';
         this.avisoActualizacion = '';
         this.actualizandoEstadoCuenta = false;
@@ -353,7 +371,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     if (cuota.cubiertaPorBeneficio) {
       return 'estado-cubierta';
     }
-    return cuota.estado === 'Vencido' ? 'estado-vencida' : 'estado-proxima';
+    return cuota.estado === 'Vencido' ? 'estado-vencida' : 'estado-pendiente';
   }
 
   estadoCuotaTexto(cuota: CuotaJugador): string {

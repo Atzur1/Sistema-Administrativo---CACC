@@ -1,0 +1,15 @@
+$kind: http-request
+description: "HU-024. Con un token inválido responde 401."
+url: "{{baseUrl}}/api/Pagos/jugador/{{hu024Id}}/estado-de-cuenta"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer token-invalido"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code es 401", function () {
+          pm.response.to.have.status(401);
+      });
+    language: text/javascript
+order: 1791414000008

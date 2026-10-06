@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router, CanActivateFn } from '@angular/router';
+import { Router, CanActivateFn, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { API_BASE_URL } from './api-url';
 
@@ -14,6 +14,23 @@ export interface UsuarioLogueado {
 }
 
 const SESSION_KEY = 'cacc-session';
+
+// HU-022: mensaje para quien fuerza la URL de una sección financiera sin rol
+// administrativo. Se declara en la ruta (data.accesoDenegado) y lo lee el guard.
+export const FINANCIAL_ACCESS_DENIED =
+  'Acceso Denegado: No cuenta con permisos suficientes para acceder al panel financiero.';
+
+// adminGuard corre en el padre /admin/portal, antes que los hijos: para saber a qué
+// sección se intentaba entrar hay que bajar hasta la ruta hoja del snapshot.
+function accesoDenegadoDe(root: ActivatedRouteSnapshot): string | null {
+  let route: ActivatedRouteSnapshot | null = root;
+  let mensaje: string | null = null;
+  while (route) {
+    mensaje = (route.data?.['accesoDenegado'] as string | undefined) ?? mensaje;
+    route = route.firstChild;
+  }
+  return mensaje;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -114,7 +131,7 @@ export const authGuard: CanActivateFn = () => {
   return true;
 };
 
-export const adminGuard: CanActivateFn = () => {
+export const adminGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -125,7 +142,7 @@ export const adminGuard: CanActivateFn = () => {
   }
 
   if (!authService.isAdmin()) {
-    alert('No tienes permisos para acceder al Portal Administrativo.');
+    alert(accesoDenegadoDe(state.root) ?? 'No tienes permisos para acceder al Portal Administrativo.');
     router.navigate(['/portales']);
     return false;
   }

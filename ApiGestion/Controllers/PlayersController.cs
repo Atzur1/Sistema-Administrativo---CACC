@@ -118,6 +118,50 @@ public class PlayersController : ControllerBase
         });
     }
 
+    public const int MinSearchTermLength = 2;
+    public const int MaxSearchTermLength = 50;
+    public const int MaxSearchResults = 50;
+
+    // Player search on the Cuotas panel (HU-023): by DNI or last name, so the
+    // operator can open that player's fees and debt. Both administrative roles
+    // manage fees, as on the rest of PagosController.
+    [Authorize(Roles = "1,2")]
+    [HttpGet("search")]
+    public IActionResult SearchPlayers([FromQuery] string? term)
+    {
+        string trimmed = term?.Trim() ?? "";
+
+        if (trimmed.Length < MinSearchTermLength)
+        {
+            return BadRequest(new { mensaje = $"Ingresá al menos {MinSearchTermLength} caracteres del DNI o del apellido." });
+        }
+
+        if (trimmed.Length > MaxSearchTermLength)
+        {
+            return BadRequest(new { mensaje = $"La búsqueda admite hasta {MaxSearchTermLength} caracteres." });
+        }
+
+        try
+        {
+            IReadOnlyList<PlayerSearchResult> players = _playerDAO.SearchPlayersForFeeManagement(trimmed, MaxSearchResults);
+            _logger.LogInformation("Player search returned {Count} matches", players.Count);
+
+            return Ok(players.Select(player => new PlayerSearchResultDto
+            {
+                Id = player.Id,
+                FirstName = player.FirstName,
+                LastName = player.LastName,
+                Dni = player.Dni,
+                CategoryName = player.CategoryName
+            }).ToList());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching players");
+            return StatusCode(500, new { mensaje = "No se pudo realizar la búsqueda de alumnos." });
+        }
+    }
+
     // Feeds the badge on the treasury grid: a single call returns every active
     // discount and the front end matches them by PlayerId.
     [Authorize(Roles = "1,2")]

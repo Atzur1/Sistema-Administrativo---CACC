@@ -1,0 +1,32 @@
+$kind: http-request
+description: "HU-023. Buscar por el DNI exacto devuelve al jugador primero."
+url: "{{baseUrl}}/api/Players/search?term={{hu023Dni}}"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const apellido = pm.environment.get("hu023Apellido") || "";
+      const sinTildes = apellido.normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, "").normalize("NFC").toLowerCase();
+      pm.environment.set("hu023Parcial", sinTildes.slice(0, 4));
+
+      const dni = pm.environment.get("hu023Dni") || "";
+      pm.environment.set("hu023DniParcial", dni.slice(-4));
+      pm.environment.set("hu023DniConPuntos", dni.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const respuesta = pm.response.json();
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("El jugador del DNI exacto aparece primero", function () {
+          pm.expect(respuesta[0].id).to.equal(Number(pm.environment.get("hu023Id")));
+          pm.expect(respuesta[0].dni).to.equal(pm.environment.get("hu023Dni"));
+      });
+    language: text/javascript
+order: 1791327600005

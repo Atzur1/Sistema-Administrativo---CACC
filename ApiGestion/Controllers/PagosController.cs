@@ -146,6 +146,49 @@ namespace ApiGestion.Controllers
             return Ok(_pagosService.ObtenerCuotasJugador(idJugador));
         }
 
+        // GET api/pagos/jugador/5/estado-de-cuenta -> HU-024: estado de cuenta del jugador con sus
+        // cuotas en orden cronológico (estado Pagado/Pendiente/Vencido) y el total a abonar.
+        // 404 si el jugador no existe. Roles 1 y 2, como el resto de PagosController.
+        [HttpGet("jugador/{idJugador:int}/estado-de-cuenta")]
+        public IActionResult GetPlayerStatement(int idJugador)
+        {
+            try
+            {
+                PlayerStatement? estado = _pagosService.GetPlayerStatement(idJugador);
+                if (estado == null)
+                {
+                    return NotFound(new { exito = false, mensaje = "Jugador no encontrado." });
+                }
+
+                return Ok(new PlayerStatementDto
+                {
+                    PlayerId = estado.PlayerId,
+                    PlayerFullName = $"{estado.LastName}, {estado.FirstName}",
+                    Dni = estado.Dni,
+                    TotalDebtAmount = estado.TotalDebtAmount,
+                    Fees = estado.Fees.Select(cuota => new FeeItemDto
+                    {
+                        Id = cuota.IdPago,
+                        PeriodName = cuota.Periodo,
+                        Amount = cuota.MontoCuota,
+                        AmountDue = cuota.Estado == EstadosCuota.Pagado ? 0 : cuota.SaldoPendiente,
+                        AmountPaid = cuota.MontoAbonado,
+                        DueDate = cuota.FechaVencimiento.AddMonths(1).AddDays(-1).ToString("yyyy-MM-dd"),
+                        Status = cuota.Estado,
+                        PaidAt = cuota.FechaPago?.ToString("yyyy-MM-dd"),
+                        PaymentMethod = cuota.MetodoPago,
+                        CoveredByBenefit = cuota.CubiertaPorBeneficio,
+                        BenefitReason = cuota.MotivoBeneficio
+                    }).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error interno al obtener el estado de cuenta del jugador {IdJugador}", idJugador);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el estado de cuenta." });
+            }
+        }
+
         // POST api/pagos/cobro -> HU-025: cobro atómico de una o varias cuotas pendientes/vencidas
         // de un jugador (todas o ninguna). El operador sale del JWT, no del body.
         // Body:  { "idJugador": 12, "idsPago": [45, 46], "metodoPago": "Efectivo" }

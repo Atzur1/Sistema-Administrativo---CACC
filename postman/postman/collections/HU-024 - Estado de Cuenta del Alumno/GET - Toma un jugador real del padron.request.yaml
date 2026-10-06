@@ -1,0 +1,25 @@
+$kind: http-request
+description: "Paso previo de la HU-024. Guarda en hu024Id el primer jugador del padrón, si todavía no hay uno elegido en el entorno."
+url: "{{baseUrl}}/api/Jugadores"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const jugadores = pm.response.json();
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Hay al menos un jugador", function () {
+          pm.expect(jugadores).to.be.an("array").that.is.not.empty;
+      });
+
+      if (!pm.environment.get("hu024Id")) {
+          pm.environment.set("hu024Id", jugadores[0].idJugador);
+      }
+    language: text/javascript
+order: 1791414000002

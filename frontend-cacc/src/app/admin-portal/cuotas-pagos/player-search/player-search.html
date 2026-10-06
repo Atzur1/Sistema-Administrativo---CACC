@@ -1,0 +1,75 @@
+<!-- HU-023: búsqueda de alumnos por DNI o apellido -->
+<section class="player-search" aria-labelledby="player-search-title">
+  <header class="search-head">
+    <h2 class="search-title" id="player-search-title">Buscar alumno</h2>
+    <span class="search-subtitle">Por DNI o apellido, para ver sus cuotas y su deuda</span>
+  </header>
+
+  <form class="search-bar" role="search" (submit)="$event.preventDefault(); submit()">
+    <div class="search-field">
+      <svg class="search-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="search" name="term" autocomplete="off" maxlength="50"
+             placeholder="Ej.: 47970803 o Bazán"
+             aria-label="DNI o apellido del alumno"
+             [value]="term()" (input)="onInput($any($event.target).value)" />
+      @if (loading()) {
+        <span class="search-spinner" aria-hidden="true"></span>
+      } @else if (term()) {
+        <button type="button" class="search-clear" (click)="clear()" aria-label="Limpiar búsqueda">×</button>
+      }
+    </div>
+    <button type="submit" class="search-submit" [disabled]="loading()">Buscar</button>
+  </form>
+
+  <div class="search-body" aria-live="polite">
+    @if (tooShort) {
+      <p class="search-hint">Ingresá al menos {{ minLength }} caracteres del DNI o del apellido.</p>
+    } @else if (loading() && results() === null) {
+      <p class="search-hint">Buscando alumnos…</p>
+    } @else if (failed()) {
+      <p class="search-hint search-hint-error">No se pudo completar la búsqueda.
+        <button type="button" class="search-retry" (click)="submit()">Reintentar</button>
+      </p>
+    } @else if (results(); as list) {
+      @if (list.length === 0) {
+        <div class="search-empty">No se encontraron alumnos con ese criterio de búsqueda</div>
+      } @else {
+        <div class="search-table-wrapper" [class.is-refreshing]="loading()">
+          <table class="search-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>DNI</th>
+                <th>Categoría</th>
+                <th><span class="visually-hidden">Acción</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (player of list; track player.id) {
+                <tr (click)="select(player)">
+                  <td>{{ player.firstName }}</td>
+                  <td class="cell-strong">{{ player.lastName }}</td>
+                  <td class="cell-muted">{{ player.dni }}</td>
+                  <td class="cell-muted">{{ player.categoryName }}</td>
+                  <td class="cell-action">
+                    <button type="button" class="select-btn" (click)="$event.stopPropagation(); select(player)">
+                      Ver cuotas
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (list.length >= maxResults) {
+          <p class="search-hint">Se muestran los primeros {{ maxResults }} resultados. Refiná la búsqueda para ver otros.</p>
+        }
+      }
+    }
+  </div>
+</section>

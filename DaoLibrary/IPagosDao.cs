@@ -76,6 +76,9 @@ namespace DaoLibrary
         // abonadas), con el saldo ya ajustado por beneficio. PagosService las agrupa por período.
         IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador);
 
+        // HU-024: datos del jugador y las filas de sus cuotas; null si el jugador no existe.
+        PlayerStatementAccount? GetPlayerStatementAccount(int playerId);
+
         // Genera la cuota pendiente (PAGOS con Estado = false) del mes para cada jugador que todavía
         // no tiene ninguna fila de cuota para ese período, con el arancel que le corresponde
         // (el de su categoría si tiene uno vigente; si no, el de su género). genero / idCategoria

@@ -1,0 +1,35 @@
+$kind: http-request
+description: "HU-023. Una parte del DNI (los últimos 4 dígitos) también encuentra al jugador."
+url: "{{baseUrl}}/api/Players/search?term={{hu023DniParcial}}"
+method: GET
+headers:
+  - key: Authorization
+    value: "Bearer {{authToken}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const apellido = pm.environment.get("hu023Apellido") || "";
+      const sinTildes = apellido.normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, "").normalize("NFC").toLowerCase();
+      pm.environment.set("hu023Parcial", sinTildes.slice(0, 4));
+
+      const dni = pm.environment.get("hu023Dni") || "";
+      pm.environment.set("hu023DniParcial", dni.slice(-4));
+      pm.environment.set("hu023DniConPuntos", dni.replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const respuesta = pm.response.json();
+
+      pm.test("Status code es 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Encuentra al jugador", function () {
+          pm.expect(respuesta.map(j => j.id)).to.include(Number(pm.environment.get("hu023Id")));
+      });
+
+      pm.test("Todos los resultados contienen esos dígitos en el DNI", function () {
+          respuesta.forEach(j => pm.expect(j.dni).to.include(pm.environment.get("hu023DniParcial")));
+      });
+    language: text/javascript
+order: 1791327600007
