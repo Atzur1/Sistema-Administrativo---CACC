@@ -16,6 +16,9 @@
     "sidebar topbar"
     "sidebar content";
   height: 100vh;
+  /* dvh = alto visible real (sin barras del navegador); 100vh queda de respaldo
+     para navegadores viejos. Con 100vh el pie del sidebar quedaba cortado. */
+  height: 100dvh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -59,12 +62,15 @@
   box-shadow: 8px 0 30px rgba(0, 0, 0, 0.3);
 }
 
+/* Un solo scroll: el de .sidebar-nav. Antes este contenedor y el nav tenían
+   overflow-y: auto los dos, y en pantallas bajas (notebooks) aparecían dos
+   barras anidadas y el pie (Cambiar portal / Cerrar sesión) quedaba cortado.
+   Ahora header y footer quedan fijos y solo la lista de secciones se desplaza. */
 .sidebar-scroll {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* ===== TEXTO QUE APARECE/DESAPARECE AL EXPANDIR =====
@@ -169,6 +175,25 @@
      quedarlo) — apenas algo se pasa por unos px del ancho (ej. "MONITOREO"
      en modo colapsado) aparece una barra horizontal que no debería existir. */
   overflow-x: hidden;
+  /* Sin min-height: 0 un hijo flex no se achica por debajo de su contenido y
+     empuja al footer fuera de la pantalla en vez de scrollear. */
+  min-height: 0;
+  /* Barra fina y casi invisible sobre el degradé, en vez de la gris nativa. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
 }
 
 /* Siempre en columna (nunca cambia a "block"/flex — "display" tampoco es
@@ -525,6 +550,7 @@
     width: 240px;
     max-width: 82vw;
     height: 100vh;
+    height: 100dvh;
     transform: translateX(-100%);
     box-shadow: 4px 0 25px rgba(0, 0, 0, 0.4);
     transition: transform 0.28s ease;
@@ -564,6 +590,88 @@
 
   .breadcrumb-current {
     font-size: 12px;
+  }
+}
+
+/* ===== PANTALLAS BAJAS (NOTEBOOKS) =====
+   El menú completo del SuperAdmin mide ~720px de alto con el espaciado de
+   escritorio; en una notebook (1366x768 menos barras del navegador quedan
+   ~640px) no entraba. Se compacta por alto, no por ancho: el ancho de la
+   notebook es de escritorio y el riel de íconos sigue igual. Solo cambian
+   valores fijos (alto, padding, tamaño de letra), no el layout, así que las
+   transiciones de expandir/colapsar siguen funcionando igual. */
+@media (max-height: 800px) {
+  .sidebar-header {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .sidebar-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-name {
+    font-size: 13.5px;
+    line-height: 1.25;
+  }
+
+  .sidebar-nav {
+    padding: 8px 0;
+  }
+
+  .nav-group {
+    padding: 4px 0;
+  }
+
+  .nav-group + .nav-group {
+    margin-top: 6px;
+  }
+
+  .sidebar:hover .nav-group-title,
+  .sidebar:focus-within .nav-group-title,
+  .sidebar.is-open .nav-group-title {
+    margin-bottom: 4px;
+  }
+
+  .nav-item {
+    height: 36px;
+  }
+
+  .sidebar-footer {
+    padding: 8px 0;
+    gap: 4px;
+  }
+}
+
+@media (max-height: 660px) {
+  .sidebar-header {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .brand-name {
+    font-size: 12.5px;
+  }
+
+  .sidebar-nav {
+    padding: 4px 0;
+  }
+
+  .nav-group {
+    padding: 2px 0;
+  }
+
+  .nav-group + .nav-group {
+    margin-top: 4px;
+  }
+
+  .nav-item {
+    height: 32px;
+  }
+
+  .sidebar-footer {
+    padding: 6px 0;
   }
 }
 
