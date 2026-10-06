@@ -521,6 +521,11 @@
   grid-area: content;
   background: var(--color-bg-page-alt);
   overflow-y: auto;
+  /* Lugar libre al final para el botón flotante del DT Administrativo (56px +
+     24px de margen): sin esto, al llegar al fondo tapa la última fila o el
+     borde de la última tarjeta. Las pantallas usan min-height: 100% del área
+     de contenido, así que este padding no agrega scroll si todo entra. */
+  padding-bottom: 72px;
 }
 
 /* ===== RESPONSIVE ===== */
