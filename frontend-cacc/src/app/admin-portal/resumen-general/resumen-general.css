@@ -587,13 +587,18 @@
 }
 
 /* ===== RESPONSIVE ===== */
+/* Notebooks (1280/1366px): restando el menú y los márgenes, la columna
+   ancha (1.6fr) queda angosta para su contenido. Hasta 1400px los paneles
+   de abajo se apilan a ancho completo. */
+@media (max-width: 1400px) {
+  .bottom-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 1100px) {
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .bottom-row {
-    grid-template-columns: 1fr;
   }
 }
 
