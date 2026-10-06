@@ -35,9 +35,10 @@ export class AuthService {
     );
   }
 
-  requestPasswordReset(email: string): Observable<{ mensaje: string }> {
+  // `usuario` es el DNI de la cuenta (o, durante la transición, su correo); el enlace llega al correo registrado.
+  requestPasswordReset(usuario: string): Observable<{ mensaje: string }> {
     return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/password-reset/request`, {
-      email,
+      usuario,
     });
   }
 

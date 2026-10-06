@@ -42,5 +42,7 @@ export interface CambiarRolRequest {
 export interface EditarCandidatoRequest {
   nombre: string;
   apellido: string;
+  // Es el usuario con el que la persona ingresa al portal. Con o sin puntos: el servidor lo guarda solo con dígitos.
+  dni: string;
   email: string;
 }

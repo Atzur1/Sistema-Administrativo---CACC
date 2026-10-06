@@ -119,21 +119,56 @@ namespace DaoLibrary
                     AND password_hash IS NOT NULL AND rol_portal IS NOT NULL",
                 conexion);
             comando.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-            return comando.ExecuteNonQuery() == 1;
+            try
+            {
+                return comando.ExecuteNonQuery() == 1;
+            }
+            catch (SqlException excepcion) when (excepcion.Number is 2601 or 2627)
+            {
+                // Otra cuenta con acceso ya usa el mismo DNI (índice único del login): no se puede reactivar.
+                return false;
+            }
         }
 
-        public bool EditarDatosCandidato(int idUsuario, string nombre, string apellido, string email)
+        public EditarCandidatoResultado EditarDatosCandidato(int idUsuario, string nombre, string apellido, string dni, string email)
         {
             using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
+            var resultado = EditarDatosCandidatoCore(conexion, transaccion, idUsuario, nombre, apellido, dni, email);
+            if (resultado == EditarCandidatoResultado.Ok) transaccion.Commit(); else transaccion.Rollback();
+            return resultado;
+        }
+
+        internal static EditarCandidatoResultado EditarDatosCandidatoCore(
+            SqlConnection conexion, SqlTransaction transaccion, int idUsuario, string nombre, string apellido, string dni, string email)
+        {
+            var dniNormalizado = IdentificadorCuenta.NormalizarDni(dni);
+            if (dniNormalizado is null) return EditarCandidatoResultado.DniInvalido;
+            if (DniEnUsoPorOtraCuenta(conexion, transaccion, dniNormalizado, idUsuario)) return EditarCandidatoResultado.DniEnUso;
+
             using var comando = new SqlCommand(
-                @"UPDATE dbo.USUARIO SET nombre = @nombre, apellido = @apellido, email = @email
+                @"UPDATE dbo.USUARIO SET nombre = @nombre, apellido = @apellido, dni = @dni, email = @email
                   WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
-                conexion);
+                conexion, transaccion);
             comando.Parameters.Add("@nombre", SqlDbType.NVarChar, 100).Value = nombre.Trim();
             comando.Parameters.Add("@apellido", SqlDbType.NVarChar, 100).Value = apellido.Trim();
+            comando.Parameters.Add("@dni", SqlDbType.NVarChar, 40).Value = dniNormalizado;
             comando.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = email.Trim();
             comando.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-            return comando.ExecuteNonQuery() == 1;
+            return comando.ExecuteNonQuery() == 1 ? EditarCandidatoResultado.Ok : EditarCandidatoResultado.NoEncontrado;
+        }
+
+        // El DNI es el usuario del login: dos cuentas con acceso no pueden compartirlo (el índice único
+        // UX_USUARIO_dni_acceso_portal lo garantiza; esto permite avisarlo con un mensaje claro).
+        private static bool DniEnUsoPorOtraCuenta(SqlConnection conexion, SqlTransaction transaccion, string dniNormalizado, int idExcluido)
+        {
+            using var buscar = new SqlCommand(
+                $@"SELECT TOP (1) 1 FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK)
+                   WHERE acceso_portal = 1 AND PK_id_usuario <> @id AND {AuthDao.DniNormalizadoSql} = @dni",
+                conexion, transaccion);
+            buscar.Parameters.Add("@id", SqlDbType.Int).Value = idExcluido;
+            buscar.Parameters.Add("@dni", SqlDbType.NVarChar, 40).Value = dniNormalizado;
+            return buscar.ExecuteScalar() is not null;
         }
 
         public (HabilitarResultado Resultado, string? Email) Habilitar(int idUsuario, string emailConfirmado, int rolPortal)
@@ -142,44 +177,43 @@ namespace DaoLibrary
 
             using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
+            var resultado = HabilitarCore(conexion, transaccion, idUsuario, emailConfirmado, rolPortal);
+            if (resultado.Resultado == HabilitarResultado.Ok) transaccion.Commit(); else transaccion.Rollback();
+            return resultado;
+        }
 
+        internal static (HabilitarResultado Resultado, string? Email) HabilitarCore(
+            SqlConnection conexion, SqlTransaction transaccion, int idUsuario, string emailConfirmado, int rolPortal)
+        {
             string? email;
+            string? dni;
             using (var buscar = new SqlCommand(
-                "SELECT email FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
+                "SELECT email, dni FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
                 conexion, transaccion))
             {
                 buscar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-                var resultado = buscar.ExecuteScalar();
-                if (resultado is null)
-                {
-                    transaccion.Commit();
-                    return (HabilitarResultado.NoEncontrado, null);
-                }
-                email = resultado as string;
+                using var lector = buscar.ExecuteReader();
+                if (!lector.Read()) return (HabilitarResultado.NoEncontrado, null);
+                email = lector.IsDBNull(0) ? null : lector.GetString(0);
+                dni = lector.IsDBNull(1) ? null : lector.GetString(1);
             }
 
             if (!string.Equals(email?.Trim(), emailConfirmado.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                transaccion.Commit();
                 return (HabilitarResultado.EmailNoCoincide, null);
-            }
 
-            using (var actualizar = new SqlCommand(
-                @"UPDATE dbo.USUARIO SET acceso_portal = 1, rol_portal = @rol, activacion_pendiente = 1
+            // Sin un DNI válido la cuenta no tendría usuario con el cual ingresar.
+            var dniNormalizado = IdentificadorCuenta.NormalizarDni(dni);
+            if (dniNormalizado is null) return (HabilitarResultado.DniInvalido, null);
+            if (DniEnUsoPorOtraCuenta(conexion, transaccion, dniNormalizado, idUsuario)) return (HabilitarResultado.DniEnUso, null);
+
+            using var actualizar = new SqlCommand(
+                @"UPDATE dbo.USUARIO SET acceso_portal = 1, rol_portal = @rol, activacion_pendiente = 1, dni = @dni
                   WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
-                conexion, transaccion))
-            {
-                actualizar.Parameters.Add("@rol", SqlDbType.Int).Value = rolPortal;
-                actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-                if (actualizar.ExecuteNonQuery() != 1)
-                {
-                    transaccion.Rollback();
-                    return (HabilitarResultado.NoEncontrado, null);
-                }
-            }
-
-            transaccion.Commit();
-            return (HabilitarResultado.Ok, email);
+                conexion, transaccion);
+            actualizar.Parameters.Add("@dni", SqlDbType.NVarChar, 40).Value = dniNormalizado;
+            actualizar.Parameters.Add("@rol", SqlDbType.Int).Value = rolPortal;
+            actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
+            return actualizar.ExecuteNonQuery() == 1 ? (HabilitarResultado.Ok, email) : (HabilitarResultado.NoEncontrado, null);
         }
 
         public bool CambiarRol(int idUsuario, int nuevoRolPortal)

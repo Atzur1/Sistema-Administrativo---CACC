@@ -59,7 +59,7 @@ export class Login implements OnInit {
     });
 
     this.forgotForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      usuario: ['', [Validators.required]],
     });
   }
 
@@ -142,10 +142,12 @@ export class Login implements OnInit {
           this.mostrarOverlay = false;
           this.mensajeError =
             err.status === 401
-              ? 'El usuario o la contraseña no coinciden con una cuenta activa.'
-              : err.status === 0
-                ? 'No se pudo conectar con la API. Verificá que el backend esté iniciado con HTTPS.'
-                : 'No se pudo completar el inicio de sesión. Revisá la configuración de la API o la base de datos.';
+              ? 'El DNI o la contraseña no coinciden con una cuenta activa.'
+              : err.status === 429
+                ? (err.error?.mensaje ?? 'Demasiados intentos. Esperá unos minutos antes de volver a intentar.')
+                : err.status === 0
+                  ? 'No se pudo conectar con la API. Verificá que el backend esté iniciado con HTTPS.'
+                  : 'No se pudo completar el inicio de sesión. Revisá la configuración de la API o la base de datos.';
           this.mensajeExito = '';
           this.cdr.detectChanges();
         });
@@ -154,7 +156,7 @@ export class Login implements OnInit {
   }
 
   // El backend emite el enlace para cualquier cuenta con acceso al portal (SuperAdmin o Administrador) y responde
-  // igual exista o no, para no revelar qué correos están registrados.
+  // igual exista o no, para no revelar qué DNI o correos están registrados.
   onForgotPassword(event: Event) {
     event.preventDefault();
     this.forgotForm.reset();
@@ -177,12 +179,12 @@ export class Login implements OnInit {
       return;
     }
 
-    const { email } = this.forgotForm.value;
+    const { usuario } = this.forgotForm.value;
     this.forgotEnviando = true;
     this.forgotError = '';
     this.forgotMensaje = '';
 
-    this.authService.requestPasswordReset(email).subscribe({
+    this.authService.requestPasswordReset(usuario).subscribe({
       next: (response) => {
         this.ngZone.run(() => {
           this.forgotEnviando = false;

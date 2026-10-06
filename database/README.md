@@ -11,6 +11,7 @@ automáticamente al iniciar en `Development`, registrándolas en `dbo.__CaccMigr
 |---|---|---|
 | `migrations/` | Migraciones automáticas. Todo cambio nuevo va acá. | Sí |
 | `V2026*.sql` (raíz) | Scripts manuales históricos del equipo, hasta `V20260929_07`. Forman la base común que verifica `migrations/V20260930_01__verificar_base_equipo.sql`. | No |
+| `esquema/ClubCamioneros_crear_base.sql` | Un solo script que crea la base desde cero (estructura + catálogos, sin datos de personas) para probar la integración con otros equipos. Generado desde la base de desarrollo; hay que regenerarlo cuando cambie la estructura. | No |
 | `upgrades/` | Diagnóstico y actualización puntual de `ClubCamionerosPRUEBA` del 23/09/2026. | No |
 
 No agregar scripts nuevos en la raíz ni copiar los históricos a `migrations/`: usan `GO` y

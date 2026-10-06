@@ -9,8 +9,16 @@ public class AuthDao
 
     public AuthDao(string cadenaConexion) => _cadenaConexion = cadenaConexion;
 
-    public Usuario? ValidarLogin(string email, string contrasenia)
+    // Expresión SQL de la columna dni sin puntos, espacios ni guiones, para compararla con el DNI ya normalizado
+    // (IdentificadorCuenta.NormalizarDni). Los datos del otro equipo pueden venir con formato.
+    internal const string DniNormalizadoSql = "REPLACE(REPLACE(REPLACE(dni, '.', ''), ' ', ''), '-', '')";
+
+    // El usuario es el DNI; mientras dura la transición también se acepta el correo de la cuenta.
+    public Usuario? ValidarLogin(string identificador, string contrasenia)
     {
+        var buscado = IdentificadorCuenta.Interpretar(identificador);
+        if (buscado is null) return null;
+
         using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
         // acceso_portal es el gate real de ingreso: FK_id_rol es del otro equipo y no
         // autoriza nada acá. rol_portal (propio, 1 = SuperAdmin, 2 = Administrador) es
@@ -18,16 +26,18 @@ public class AuthDao
         // significa que UsuariosPortalDao.Habilitar ya dio el acceso pero la persona
         // todavía no completó el enlace de activación: sin esto, una contraseña vieja
         // que el otro equipo haya dejado cargada serviría para entrar antes de tiempo.
-        const string query = "SELECT PK_id_usuario, email, nombre, apellido, dni, contrasenia, password_hash, token_version, acceso_portal, rol_portal FROM USUARIO WHERE email = @email AND activo = 1 AND acceso_portal = 1 AND activacion_pendiente = 0";
+        // TOP (2): si dos cuentas respondieran al mismo identificador no se adivina cuál es; no se deja entrar a ninguna.
+        string query = $@"SELECT TOP (2) PK_id_usuario, email, nombre, apellido, dni, contrasenia, password_hash, token_version, acceso_portal, rol_portal
+            FROM USUARIO
+            WHERE {(buscado.Value.EsCorreo ? "email = @valor" : DniNormalizadoSql + " = @valor")}
+              AND activo = 1 AND acceso_portal = 1 AND activacion_pendiente = 0";
         using var comando = new SqlCommand(query, conexion);
-        comando.Parameters.Add("@email", System.Data.SqlDbType.NVarChar, 254).Value = email;
+        comando.Parameters.Add("@valor", System.Data.SqlDbType.NVarChar, 254).Value = buscado.Value.Valor;
         using var reader = comando.ExecuteReader();
         if (!reader.Read()) return null;
 
         var hash = reader["password_hash"] as string;
         var legacy = reader["contrasenia"] as string;
-        if (hash is not null ? !PasswordHasher.Verify(contrasenia, hash) : !string.Equals(contrasenia, legacy, StringComparison.Ordinal))
-            return null;
 
         var usuario = new Usuario
         {
@@ -43,6 +53,11 @@ public class AuthDao
         // La constraint CK_USUARIO_acceso_portal_requiere_rol garantiza que rol_portal
         // no sea NULL cuando acceso_portal = 1, que es lo único que llega hasta acá.
         usuario.IdRol = usuario.RolPortal!.Value;
+        if (reader.Read()) return null; // identificador ambiguo
+
+        if (hash is not null ? !PasswordHasher.Verify(contrasenia, hash) : !string.Equals(contrasenia, legacy, StringComparison.Ordinal))
+            return null;
+
         var necesitaMigracion = hash is null;
         reader.Close();
         if (necesitaMigracion) ActualizarHash(conexion, usuario.IdUsuario, contrasenia);
