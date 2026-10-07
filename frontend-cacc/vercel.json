@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "dist/frontend-cacc",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
