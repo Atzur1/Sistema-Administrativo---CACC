@@ -127,6 +127,7 @@
 
     <!-- Bottom actions: switch portal and log out -->
     <div class="sidebar-footer">
+    @if (isSuperAdmin) {
     <button class="nav-item nav-action" (click)="cambiarPortal()" title="Cambiar portal">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="17 1 21 5 17 9"></polyline>
@@ -136,6 +137,7 @@
         </svg>
         <span>Cambiar portal</span>
     </button>
+    }
 
     <button class="nav-item nav-action" (click)="cerrarSesion()" title="Cerrar sesión">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -169,7 +171,11 @@
     </button>
 
     <div class="topbar-breadcrumb">
+    @if (isSuperAdmin) {
     <button type="button" class="breadcrumb-portal" (click)="cambiarPortal()">Portal administrativo</button>
+    } @else {
+    <span class="breadcrumb-portal">Portal administrativo</span>
+    }
     <span class="breadcrumb-separator">·</span>
     <span class="breadcrumb-current">{{ currentPageTitle }}</span>
     </div>

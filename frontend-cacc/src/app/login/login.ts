@@ -129,7 +129,7 @@ export class Login implements OnInit {
               this.cdr.detectChanges();
 
               setTimeout(() => {
-                this.ngZone.run(() => this.router.navigate(['/portales']));
+                this.ngZone.run(() => this.authService.irAlInicio(this.router));
               }, TRANSICION_A_PORTALES_MS);
             });
           }, LECTURA_MENSAJE_EXITO_MS);
