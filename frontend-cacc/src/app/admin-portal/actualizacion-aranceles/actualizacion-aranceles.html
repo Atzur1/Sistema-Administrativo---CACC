@@ -68,9 +68,15 @@
         <span class="field-hint">Podés elegir cualquier fecha, pasada, actual o futura</span>
       </div>
 
-      <button type="submit" class="submit-button" [disabled]="feeForm.invalid || enviando">
-        Programar actualización
-      </button>
+      <div class="submit-row action-with-help">
+        <button type="submit" class="submit-button" [disabled]="feeForm.invalid || enviando">
+          Programar actualización
+        </button>
+        <app-help-hint
+          label="Programar actualización"
+          text="Carga el nuevo monto de la cuota desde la fecha elegida. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago. Si es un mes pasado, solo se emiten las cuotas que faltan. Solo puede haber un arancel por mes para el mismo género o categoría."
+        />
+      </div>
 
     </form>
   </section>
@@ -117,7 +123,13 @@
                 </td>
                 <td class="col-actions">
                   @if (row.cancelable) {
-                    <button type="button" class="row-action" (click)="askCancel(row)">Cancelar</button>
+                    <span class="action-with-help">
+                      <button type="button" class="row-action" (click)="askCancel(row)">Cancelar</button>
+                      <app-help-hint
+                        label="Cancelar arancel"
+                        text="Quita este arancel y borra las cuotas pendientes que se emitieron con él. Si alguna de esas cuotas ya tiene un pago, no se puede cancelar. Sirve para corregir un monto o una fecha mal cargados: después programás el correcto."
+                      />
+                    </span>
                   }
                 </td>
               </tr>

@@ -380,18 +380,30 @@
 
         <footer class="dialog-actions">
           @if (discount.status === 'Active' || discount.status === 'Scheduled') {
-            <button type="button" class="button-ghost" (click)="askCancelConfirmation()">
-              Cancelar bonificación
-            </button>
+            <span class="action-with-help">
+              <button type="button" class="button-ghost" (click)="askCancelConfirmation()">
+                Cancelar bonificación
+              </button>
+              <app-help-hint
+                label="Cancelar bonificación"
+                text="Corta la bonificación desde hoy. Las cuotas que ya vencieron conservan el descuento; las siguientes se cobran completas. Usalo cuando el beneficio estuvo bien otorgado y termina antes de tiempo."
+              />
+            </span>
           }
           @if (discount.status === 'Cancelled') {
             <!-- Distinto de Cancelar: para cuando la bonificación se asignó por error, no para
                  dar de baja una que corrió bien un tiempo. Solo para Cancelled: una Expired
                  cumplió su fecha de cierre sin que nadie la cortara antes, esos meses ya se
                  dieron por saldados y no se tocan. -->
-            <button type="button" class="button-void" (click)="askVoidConfirmation()">
-              Anular
-            </button>
+            <span class="action-with-help">
+              <button type="button" class="button-void" (click)="askVoidConfirmation()">
+                Anular
+              </button>
+              <app-help-hint
+                label="Anular"
+                text="Solo para una bonificación asignada por error. Le saca el descuento a todas las cuotas desde que empezó: las que no se pagaron se cobran completas. Los pagos ya registrados se mantienen. No se puede deshacer."
+              />
+            </span>
           }
           <!-- Possible since HU-012: what the API refuses is an overlapping
                period, not a second benefit -->
@@ -438,8 +450,9 @@
         </p>
         <p class="dialog-confirm dialog-confirm-warning">
           A diferencia de cancelar, esto le saca el beneficio a
-          <strong>todos los meses que cubrió, incluidos los que ya pasaron</strong> — van a
-          volver a figurar como deuda. Usalo solo si esta bonificación se asignó por error.
+          <strong>todas las cuotas desde que empezó la bonificación</strong>: las que todavía
+          no se pagaron vuelven a cobrarse completas. Los pagos ya registrados se mantienen. Usalo
+          solo si esta bonificación se asignó por error.
         </p>
 
         <footer class="dialog-actions">

@@ -1,0 +1,19 @@
+<button
+  #trigger
+  type="button"
+  class="help-trigger"
+  [attr.aria-label]="label ? 'Ayuda: ' + label : 'Ayuda'"
+  [attr.aria-expanded]="open()"
+  [attr.aria-describedby]="open() ? tooltipId : null"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+  (focus)="show()"
+  (blur)="hide()"
+  (keydown.escape)="hide()"
+  (click)="toggle($event)"
+>
+  ?
+</button>
+@if (open()) {
+  <div #tooltip class="help-tooltip" role="tooltip" [id]="tooltipId">{{ text }}</div>
+}

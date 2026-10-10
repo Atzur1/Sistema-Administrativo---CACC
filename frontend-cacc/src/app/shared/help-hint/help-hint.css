@@ -1,0 +1,56 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.help-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--color-border, #e4e7e4);
+  border-radius: 50%;
+  background: var(--color-bg-card, #ffffff);
+  color: var(--color-text-muted, #555a55);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.help-trigger:hover,
+.help-trigger[aria-expanded='true'] {
+  border-color: var(--color-brand, #00a651);
+  background: var(--color-brand-tint, #e7f4ea);
+  color: var(--color-brand-deep, #007f3e);
+}
+
+.help-trigger:focus-visible {
+  outline: 2px solid var(--color-brand, #00a651);
+  outline-offset: 2px;
+}
+
+/* Se muestra en <body> (FloatingPanel): position fixed y por encima de los diálogos (z-index 1000). */
+.help-tooltip {
+  position: fixed;
+  z-index: 1100;
+  box-sizing: border-box;
+  max-width: min(300px, calc(100vw - 16px));
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #1f2937;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+  pointer-events: none;
+}

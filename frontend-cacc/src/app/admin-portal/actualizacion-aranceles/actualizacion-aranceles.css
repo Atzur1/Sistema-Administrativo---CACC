@@ -244,6 +244,11 @@
 }
 
 /* ===== SUBMIT ===== */
+/* Botón + ayuda "?": la fila completa del formulario en cualquier cantidad de columnas. */
+.submit-row {
+    grid-column: 1 / -1;
+}
+
 .submit-button {
     grid-column: span 3;
     padding: 11px;

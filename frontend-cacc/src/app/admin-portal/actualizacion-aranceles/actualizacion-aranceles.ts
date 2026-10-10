@@ -13,6 +13,7 @@ import {
     enrollmentFeeStatusClass,
 } from '../../models/EnrollmentFeeModel';
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
+import { HelpHint } from '../../shared/help-hint/help-hint';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { NotificationService } from '../../shared/notifications/notification.service';
 
@@ -45,7 +46,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
     selector: 'app-actualizacion-aranceles',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect, CustomDatepicker],
+    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect, CustomDatepicker, HelpHint],
     templateUrl: './actualizacion-aranceles.html',
     styleUrl: './actualizacion-aranceles.css',
 })
