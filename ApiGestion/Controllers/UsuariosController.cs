@@ -43,12 +43,12 @@ namespace ApiGestion.Controllers
         [HttpGet("deshabilitados")]
         public IActionResult ListarDeshabilitados() => Ok(_usuariosDao.ListarDeshabilitados());
 
-        // PUT api/usuarios/5 -> corrige nombre/apellido/DNI/mail de un candidato antes
-        // de habilitarlo, por si hubo un error de carga.
+        // PUT api/usuarios/5 -> corrige nombre/apellido/DNI de un candidato antes
+        // de habilitarlo, por si hubo un error de carga. El mail no se modifica (ver IUsuariosPortalDao).
         [HttpPut("{id}")]
         public IActionResult EditarCandidato(int id, [FromBody] EditarCandidatoRequest request)
         {
-            var resultado = _usuariosDao.EditarDatosCandidato(id, request.Nombre, request.Apellido, request.Dni, request.Email);
+            var resultado = _usuariosDao.EditarDatosCandidato(id, request.Nombre, request.Apellido, request.Dni);
             if (resultado == EditarCandidatoResultado.Ok) return Ok(new { mensaje = "Datos corregidos." });
 
             var mensaje = resultado switch

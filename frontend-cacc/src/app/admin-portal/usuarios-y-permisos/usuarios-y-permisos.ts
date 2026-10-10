@@ -39,13 +39,12 @@ export class Usuarios implements OnInit {
   // no perder la elección si el habilitar tarda un toque en confirmarse.
   rolElegido = new Map<number, RolPortal>();
 
-  // "Editar candidato": corrige nombre/apellido/DNI/mail antes de habilitar, por
+  // "Editar candidato": corrige nombre/apellido/DNI (no el mail) antes de habilitar, por
   // si hubo un error de carga. El DNI es el usuario con el que va a ingresar.
   dialogEditar = signal<UsuarioCandidato | null>(null);
   editarNombre = '';
   editarApellido = '';
   editarDni = '';
-  editarEmail = '';
   editarSubmitting = signal(false);
   editarError = signal<string | null>(null);
 
@@ -126,13 +125,12 @@ export class Usuarios implements OnInit {
     }
   }
 
-  // ===== Editar candidato (nombre / apellido / DNI / mail) =====
+  // ===== Editar candidato (nombre / apellido / DNI; el mail se muestra pero no se modifica) =====
 
   abrirEditar(candidato: UsuarioCandidato): void {
     this.editarNombre = candidato.nombre;
     this.editarApellido = candidato.apellido;
     this.editarDni = candidato.dni;
-    this.editarEmail = candidato.email;
     this.editarError.set(null);
     this.dialogEditar.set(candidato);
   }
@@ -149,9 +147,8 @@ export class Usuarios implements OnInit {
     const nombre = this.editarNombre.trim();
     const apellido = this.editarApellido.trim();
     const dni = this.editarDni.trim();
-    const email = this.editarEmail.trim();
-    if (!nombre || !apellido || !dni || !email) {
-      this.editarError.set('Completá nombre, apellido, DNI y mail.');
+    if (!nombre || !apellido || !dni) {
+      this.editarError.set('Completá nombre, apellido y DNI.');
       return;
     }
 
@@ -159,14 +156,13 @@ export class Usuarios implements OnInit {
     this.editarError.set(null);
 
     this.usuariosService
-      .editarCandidato(candidato.idUsuario, { nombre, apellido, dni, email })
+      .editarCandidato(candidato.idUsuario, { nombre, apellido, dni })
       .pipe(finalize(() => this.editarSubmitting.set(false)))
       .subscribe({
         next: () => {
           candidato.nombre = nombre;
           candidato.apellido = apellido;
           candidato.dni = dni.replace(/\D/g, ''); // el servidor lo guarda solo con dígitos
-          candidato.email = email;
           this.dialogEditar.set(null);
           this.notifications.notify('Datos corregidos.', 'success');
         },

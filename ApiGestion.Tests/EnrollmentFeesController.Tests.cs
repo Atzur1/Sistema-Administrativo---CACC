@@ -65,7 +65,8 @@ public class EnrollmentFeesControllerTests
     public void CreateEnrollmentFee_WithAFreeStartDate_ReturnsCreatedWithTheStoredFee()
     {
         (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
-        EnrollmentFeeRequestDTO request = new EnrollmentFeeRequestDTO { Amount = 55000, StartDate = new DateTime(2026, 10, 1, 15, 30, 0) };
+        DateTime futuro = RelojNegocio.Hoy.AddMonths(1);
+        EnrollmentFeeRequestDTO request = new EnrollmentFeeRequestDTO { Amount = 55000, StartDate = futuro.AddHours(15).AddMinutes(30) };
 
         IActionResult result = controller.CreateEnrollmentFee(request);
 
@@ -74,7 +75,7 @@ public class EnrollmentFeesControllerTests
         Assert.Equal($"/api/enrollmentfees/{fee.Id}", created.Location);
         Assert.Equal(55000, fee.Amount);
         // The time of day is dropped: a fee is in force from the start of that day
-        Assert.Equal("2026-10-01", fee.StartDate);
+        Assert.Equal(futuro.ToString("yyyy-MM-dd"), fee.StartDate);
         Assert.Single(dao.Fees);
     }
 
@@ -82,12 +83,35 @@ public class EnrollmentFeesControllerTests
     public void CreateEnrollmentFee_WithAStartDateAlreadyTaken_ReturnsBadRequestAndCreatesNothing()
     {
         (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
-        dao.Fees.Add(new EnrollmentFee { Id = 1, Amount = 50000, StartDate = new DateTime(2026, 10, 1) });
+        DateTime futuro = RelojNegocio.Hoy.AddMonths(1);
+        dao.Fees.Add(new EnrollmentFee { Id = 1, Amount = 50000, StartDate = futuro });
 
-        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Amount = 60000, StartDate = new DateTime(2026, 10, 1) });
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Amount = 60000, StartDate = futuro });
 
         Assert.IsType<BadRequestObjectResult>(result);
         Assert.Single(dao.Fees);
+    }
+
+    // Regla del club: ningún arancel (tampoco el de inscripción) se programa con fecha anterior a hoy.
+    [Fact]
+    public void CreateEnrollmentFee_WithAPastStartDate_ReturnsBadRequestAndCreatesNothing()
+    {
+        (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
+
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Amount = 60000, StartDate = RelojNegocio.Hoy.AddDays(-1) });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Empty(dao.Fees);
+    }
+
+    [Fact]
+    public void CreateEnrollmentFee_StartingToday_IsAccepted()
+    {
+        (EnrollmentFeesController controller, _) = CreateController();
+
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Amount = 60000, StartDate = RelojNegocio.Hoy });
+
+        Assert.IsType<CreatedResult>(result);
     }
 
     [Theory]

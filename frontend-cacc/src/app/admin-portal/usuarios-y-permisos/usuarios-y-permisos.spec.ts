@@ -139,9 +139,26 @@ describe('Usuarios - Corregir el DNI de un candidato', () => {
     component.guardarEdicion();
 
     expect(editarCandidato).toHaveBeenCalledWith(20, {
-      nombre: 'Carla', apellido: 'Candidata', dni: '30.555.777', email: 'carla@cacc.test',
+      nombre: 'Carla', apellido: 'Candidata', dni: '30.555.777',
     });
     expect(candidato.dni).toBe('30555777');
+  });
+
+  // El mail no se modifica desde el portal: si se pudiera, un SuperAdmin podría habilitar la cuenta de otra
+  // persona con su propio correo. Se muestra para que se pueda verificar, pero no es editable ni viaja.
+  it('muestra el mail como solo lectura y no lo manda al guardar', async () => {
+    const { component, element, fixture, editarCandidato } = await create();
+
+    component.abrirEditar(component.candidatos()[0]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const mail = element.querySelector('#editar-email') as HTMLInputElement;
+    expect(mail.disabled).toBe(true);
+    expect(mail.value).toBe('carla@cacc.test');
+
+    component.guardarEdicion();
+    expect(editarCandidato).toHaveBeenCalledWith(20, expect.not.objectContaining({ email: expect.anything() }));
   });
 
   it('no deja guardar sin DNI', async () => {

@@ -275,6 +275,13 @@ public class PlayersController : ControllerBase
 
         Discount discount = BuildDiscount(playerId, request, reason!);
 
+        // Regla del club: nadie asigna becas ni descuentos con fecha pasada. Una bonificación que empieza antes
+        // de hoy le borra deuda ya vencida: eso es condonar, no becar.
+        if (discount.StartDate.Date < RelojNegocio.Hoy)
+        {
+            return UnprocessableEntity(new { mensaje = $"La bonificación no puede empezar antes de hoy ({RelojNegocio.Hoy:dd/MM/yyyy})." });
+        }
+
         // Asked before writing only to name the offending benefit in the error;
         // the write path checks again while holding the range.
         Discount? clash = _discountDao.GetOverlappingDiscount(playerId, discount.StartDate, discount.EndDate);

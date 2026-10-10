@@ -223,7 +223,7 @@
   </section>
 </div>
 
-<!-- ===== EDITAR CANDIDATO: nombre / apellido / DNI / mail ===== -->
+<!-- ===== EDITAR CANDIDATO: nombre / apellido / DNI (el mail se muestra pero no se modifica) ===== -->
 @if (dialogEditar(); as candidato) {
   <div class="dialog-backdrop" (click)="cerrarEditar()">
     <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
@@ -257,7 +257,11 @@
 
       <div class="field-group">
         <label class="field-label" for="editar-email">Mail</label>
-        <input id="editar-email" type="email" class="field-input" [(ngModel)]="editarEmail" [disabled]="editarSubmitting()" />
+        <input id="editar-email" type="email" class="field-input" [value]="candidato.email" disabled />
+        <span class="field-hint">
+          El mail no se modifica desde el portal: a esa dirección llega el enlace de activación. Si está mal
+          cargado, lo corrige el equipo que administra las cuentas.
+        </span>
       </div>
 
       @if (editarError()) {

@@ -53,9 +53,15 @@ public class EnrollmentFeesController : ControllerBase
     {
         DateTime startDate = request.StartDate!.Value.Date;
 
+        // Misma regla que el arancel mensual: no se programa con fecha pasada.
+        if (startDate < RelojNegocio.Hoy)
+        {
+            return BadRequest(new { mensaje = $"La fecha de vigencia no puede ser anterior a hoy ({RelojNegocio.Hoy:dd/MM/yyyy})." });
+        }
+
         if (_enrollmentFeeDAO.GetEnrollmentFeeByStartDate(startDate) != null)
         {
-            return BadRequest($"An enrollment fee already starts on {startDate:yyyy-MM-dd}.");
+            return BadRequest(new { mensaje = $"Ya hay un arancel de inscripción que rige desde el {startDate:dd/MM/yyyy}." });
         }
 
         EnrollmentFee created = _enrollmentFeeDAO.CreateEnrollmentFee(new EnrollmentFee

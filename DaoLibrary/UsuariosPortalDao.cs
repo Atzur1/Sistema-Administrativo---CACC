@@ -130,30 +130,29 @@ namespace DaoLibrary
             }
         }
 
-        public EditarCandidatoResultado EditarDatosCandidato(int idUsuario, string nombre, string apellido, string dni, string email)
+        public EditarCandidatoResultado EditarDatosCandidato(int idUsuario, string nombre, string apellido, string dni)
         {
             using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
-            var resultado = EditarDatosCandidatoCore(conexion, transaccion, idUsuario, nombre, apellido, dni, email);
+            var resultado = EditarDatosCandidatoCore(conexion, transaccion, idUsuario, nombre, apellido, dni);
             if (resultado == EditarCandidatoResultado.Ok) transaccion.Commit(); else transaccion.Rollback();
             return resultado;
         }
 
         internal static EditarCandidatoResultado EditarDatosCandidatoCore(
-            SqlConnection conexion, SqlTransaction transaccion, int idUsuario, string nombre, string apellido, string dni, string email)
+            SqlConnection conexion, SqlTransaction transaccion, int idUsuario, string nombre, string apellido, string dni)
         {
             var dniNormalizado = IdentificadorCuenta.NormalizarDni(dni);
             if (dniNormalizado is null) return EditarCandidatoResultado.DniInvalido;
             if (DniEnUsoPorOtraCuenta(conexion, transaccion, dniNormalizado, idUsuario)) return EditarCandidatoResultado.DniEnUso;
 
             using var comando = new SqlCommand(
-                @"UPDATE dbo.USUARIO SET nombre = @nombre, apellido = @apellido, dni = @dni, email = @email
+                @"UPDATE dbo.USUARIO SET nombre = @nombre, apellido = @apellido, dni = @dni
                   WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
                 conexion, transaccion);
             comando.Parameters.Add("@nombre", SqlDbType.NVarChar, 100).Value = nombre.Trim();
             comando.Parameters.Add("@apellido", SqlDbType.NVarChar, 100).Value = apellido.Trim();
             comando.Parameters.Add("@dni", SqlDbType.NVarChar, 40).Value = dniNormalizado;
-            comando.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = email.Trim();
             comando.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
             return comando.ExecuteNonQuery() == 1 ? EditarCandidatoResultado.Ok : EditarCandidatoResultado.NoEncontrado;
         }
