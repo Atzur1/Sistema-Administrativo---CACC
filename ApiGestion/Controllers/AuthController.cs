@@ -6,7 +6,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using ApiGestion.Services;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace ApiGestion.Controllers
@@ -39,8 +38,7 @@ namespace ApiGestion.Controllers
         public async Task<IActionResult> SolicitarRestablecimiento([FromBody] RecuperacionRequest request, CancellationToken cancellationToken)
         {
             const string response = "Si los datos corresponden a una cuenta activa, el enlace llegará al correo registrado en esa cuenta.";
-            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-            var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+            var (token, tokenHash) = TokenAccesoCuenta.Generar();
             try
             {
                 // Cualquier cuenta con acceso al portal (SuperAdmin o Administrador) puede recuperar su contraseña.
@@ -77,7 +75,7 @@ namespace ApiGestion.Controllers
         [EnableRateLimiting("account-email")]
         public IActionResult CompletarAcceso([FromBody] CompleteAccountAccessRequest request)
         {
-            var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(request.Token)));
+            var tokenHash = TokenAccesoCuenta.Hash(request.Token);
             if (!_accountAccessDao.CompleteAccountAccess(tokenHash, PasswordHasher.Hash(request.Password)))
                 return BadRequest(new { mensaje = "El enlace no es válido o venció." });
             return Ok(new { mensaje = "La contraseña se actualizó. Ya puede iniciar sesión." });
@@ -127,6 +125,19 @@ namespace ApiGestion.Controllers
                 _logger.LogError(ex, "Error durante la autenticación");
                 return StatusCode(500, new { mensaje = "Error interno en el servidor." });
             }
+        }
+
+        // POST api/auth/logout -> invalida el token actual (y cualquier otra sesión abierta de esa cuenta).
+        // Sin esto, cerrar sesión solo borraba el token del navegador y seguía sirviendo hasta su vencimiento.
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            if (!int.TryParse(User.FindFirst("idUsuario")?.Value, out var idUsuario))
+                return Unauthorized();
+
+            _authDao.InvalidarSesiones(idUsuario);
+            return NoContent();
         }
 
         private string GenerarToken(int idUsuario, string email, int idRol, int tokenVersion)

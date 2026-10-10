@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using ApiGestion.Models;
 using ApiGestion.Services;
 using DaoLibrary;
@@ -88,8 +86,7 @@ namespace ApiGestion.Controllers
 
             try
             {
-                var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-                var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+                var (token, tokenHash) = TokenAccesoCuenta.Generar();
                 _accountAccessDao.CreateActivationToken(id, tokenHash, DateTime.UtcNow.AddMinutes(30));
                 // Recién habilitada, la cuenta ya tiene acceso: de ahí sale el nombre para saludarla en el correo.
                 var nombre = _accountAccessDao.ObtenerEstadoAcceso(id)?.Nombre;
@@ -120,8 +117,7 @@ namespace ApiGestion.Controllers
 
             try
             {
-                var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-                var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+                var (token, tokenHash) = TokenAccesoCuenta.Generar();
                 var vence = DateTime.UtcNow.AddMinutes(30);
 
                 if (estado.ActivacionPendiente)

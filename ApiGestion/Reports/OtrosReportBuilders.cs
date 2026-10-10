@@ -16,7 +16,7 @@ namespace ApiGestion.Reports
             {
                 new[] { "Club Atlético Camioneros de Córdoba" },
                 new[] { "Reporte de Pagos Recibidos" },
-                new[] { "Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm") },
+                new[] { "Fecha de emisión", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm") },
                 new[] { "Total recaudado (listado)", pagos.Sum(p => p.Monto).ToString("C0", Ars) },
             };
 
@@ -37,7 +37,7 @@ namespace ApiGestion.Reports
         {
             var meta = new List<PdfMetaItem>
             {
-                new("Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm")),
+                new("Fecha de emisión", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm")),
                 new("Total recaudado (listado)", pagos.Sum(p => p.Monto).ToString("C0", Ars), Highlight: true),
             };
 
@@ -88,7 +88,7 @@ namespace ApiGestion.Reports
             {
                 new[] { "Club Atlético Camioneros de Córdoba" },
                 new[] { "Reporte de Becados y Descuentos" },
-                new[] { "Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm") },
+                new[] { "Fecha de emisión", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm") },
                 new[] { "Beneficios listados", beneficios.Count.ToString() },
             };
 
@@ -112,7 +112,7 @@ namespace ApiGestion.Reports
         {
             var meta = new List<PdfMetaItem>
             {
-                new("Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm")),
+                new("Fecha de emisión", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm")),
                 new("Beneficios listados", beneficios.Count.ToString()),
             };
 
@@ -154,7 +154,7 @@ namespace ApiGestion.Reports
             {
                 new[] { "Club Atlético Camioneros de Córdoba" },
                 new[] { "Reporte de Actualización de Aranceles" },
-                new[] { "Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm") },
+                new[] { "Fecha de emisión", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm") },
             };
 
             var columns = new[] { "Género o categoría", "Monto", "Vigente desde", "Reemplazado el", "Estado" };
@@ -175,7 +175,7 @@ namespace ApiGestion.Reports
         {
             var meta = new List<PdfMetaItem>
             {
-                new("Fecha de emisión", DateTime.Now.ToString("dd/MM/yyyy HH:mm")),
+                new("Fecha de emisión", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm")),
             };
 
             var columns = new[] { "Género o categoría", "Monto", "Vigente desde", "Reemplazado el", "Estado" };

@@ -53,7 +53,7 @@ namespace DaoLibrary
         public IReadOnlyList<ArancelHistorialItem> ObtenerHistorial()
         {
             var aranceles = ObtenerTodos();
-            var hoy = DateTime.Now.Date;
+            var hoy = RelojNegocio.Hoy;
             var primerDiaMesActual = new DateTime(hoy.Year, hoy.Month, 1);
             var resultado = new List<ArancelHistorialItem>();
 
@@ -106,7 +106,7 @@ namespace DaoLibrary
 
         public ArancelResumen ObtenerResumen()
         {
-            var hoy = DateTime.Now.Date;
+            var hoy = RelojNegocio.Hoy;
             return new ArancelResumen
             {
                 ArancelMasculinoVigente = ObtenerMontoVigente("Masculino", hoy),

@@ -38,7 +38,7 @@ describe('JugadoresService', () => {
           tipoValorBeneficio: null,
           porcentajeBeneficio: null,
           montoFijoBeneficio: null,
-          abonos: [{ monto: 85000, metodoPago: 'Transferencia', fechaPago: '2026-09-19T00:00:00' }],
+          abonos: [{ idPago: 1, monto: 85000, metodoPago: 'Transferencia', fechaPago: '2026-09-19T00:00:00' }],
         },
       ],
       total: 1,
@@ -61,9 +61,29 @@ describe('JugadoresService', () => {
     req.flush({});
   });
 
-  it('no expone operaciones de escritura', () => {
+  // El historial sigue sin operaciones que editen importes ni fechas. Las únicas escrituras son la baja y
+  // reactivación del jugador y la anulación auditada de un pago cargado por error (con motivo, solo SuperAdmin).
+  it('solo expone como escrituras la baja/reactivación y la anulación auditada de pagos', () => {
     const metodos = Object.getOwnPropertyNames(JugadoresService.prototype).filter((nombre) => nombre !== 'constructor');
 
-    expect(metodos.sort()).toEqual(['getHistorialPagos', 'getJugador']);
+    expect(metodos.sort()).toEqual(['anularPago', 'darDeBaja', 'getHistorialPagos', 'getJugador', 'reactivar']);
+  });
+
+  it('anula un pago por su id y con el motivo, contra el endpoint de pagos', () => {
+    servicio.anularPago(45, 'Se cargó dos veces').subscribe();
+
+    const req = http.expectOne('/api/pagos/45/anular');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ motivo: 'Se cargó dos veces' });
+    req.flush({ mensaje: 'ok', saldoReabierto: 85000 });
+  });
+
+  it('da de baja al jugador sin fecha (el servidor toma hoy)', () => {
+    servicio.darDeBaja(3).subscribe();
+
+    const req = http.expectOne('/api/jugadores/3/baja');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({ mensaje: 'ok' });
   });
 });

@@ -91,6 +91,9 @@ Configuraciones necesarias:
 | `Jwt:Issuer` y `Jwt:Audience` | Emisor y audiencia de los tokens. |
 | `Cors:AllowedOrigins` | Orígenes desde los que se permitirá acceder a la API. En desarrollo: `http://localhost:4200`. |
 | `Email:*` | Servidor SMTP, credenciales, remitente y URL pública del frontend para enlaces de acceso. |
+| `ForwardedHeaders:Enabled` | `true` solo si la API corre detrás de un proxy (Railway, un balanceador, IIS con ARR). Así ve la IP real de cada usuario (límite de intentos de login) y sabe que el pedido llegó por HTTPS. No activarlo si la API está expuesta directamente. |
+
+Para producción, además: completar la URL real de la API en `frontend-cacc/src/environments/environment.prod.ts` e incluir el dominio del frontend en `Cors:AllowedOrigins`. Las fechas de negocio (pagos, vencimientos, "hoy") se calculan siempre en hora argentina, sin importar la zona horaria del servidor; la base necesita SQL Server 2016 o superior.
 
 Para guardar valores de desarrollo fuera del repositorio:
 

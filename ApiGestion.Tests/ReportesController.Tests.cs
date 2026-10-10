@@ -126,6 +126,7 @@ public class ReportesControllerTests
 
     private class FakePagosService : IPagosService
     {
+public AnularPagoResultado AnularPago(AnularPagoRequest request) => throw new NotSupportedException();
         public IReadOnlyList<PendienteJugador> PendientesResult { get; set; } = new List<PendienteJugador> { Deudor(1, "AFA 20067") };
         public List<int?> PendientesCalls { get; } = new();
 

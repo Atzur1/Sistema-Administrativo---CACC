@@ -1,5 +1,7 @@
 # Estructura Técnica — Sistema Administrativo CACC
 
+> **Aviso (2026-10-10):** varias secciones de este documento describen una etapa temprana del proyecto y ya no reflejan el código (por ejemplo, hoy hay JWT con autorización por rol, CORS restringido, `ServiceLibrary` y contraseñas solo con hash). Para el estado actual, ver `README.md` y `project.md`; ante cualquier diferencia, prevalece el código.
+
 Documento técnico de cómo está armado el repositorio. Complementa a `README.md` (visión general) y a `project-sistema-administrativo-cacc.md` (producto y portales).
 
 ## Visión general
@@ -62,7 +64,7 @@ Proyecto - Sistema Administrativo - CACC/
 
 ### DaoLibrary
 
-- **AuthDao.cs**: `ValidarLogin(email, contrasenia): Usuario?`. SQL crudo parametrizado contra la tabla `USUARIO` usando `Microsoft.Data.SqlClient` (sin ORM, sin EF, sin stored procedures). **Compara la contraseña en texto plano** (gap de seguridad conocido).
+- **AuthDao.cs**: `ValidarLogin(dni o correo, contraseña): Usuario?`. SQL crudo parametrizado contra la tabla `USUARIO` usando `Microsoft.Data.SqlClient` (sin ORM, sin EF, sin stored procedures). Verifica solo contra `password_hash` (PBKDF2); la columna `contrasenia` en texto plano ya no se lee.
 
 ### EntityLibrary
 
@@ -127,12 +129,12 @@ npx prettier --write .
 
 ## Deuda técnica y pendientes
 
-1. Contraseñas en texto plano (comparación directa en SQL).
-2. Sin JWT/token, sin sesión, sin guard: `/portales` es accesible sin login.
-3. CORS totalmente abierto — ok para dev, debe restringirse antes de desplegar.
+1. ~~Contraseñas en texto plano~~: resuelto, solo se aceptan contraseñas con hash.
+2. ~~Sin JWT ni guard~~: resuelto (JWT con versión de token, guards por rol).
+3. ~~CORS abierto~~: resuelto (`Cors:AllowedOrigins`).
 4. URL de API duplicada en `login.ts` y `services/auth.ts`; `AuthService` duplicado sin uso.
 5. `auth.spec.ts` roto: importa `Auth` inexistente (el archivo exporta `AuthService`).
-6. `WeatherForecastController` / `WeatherForecast.cs`: template residual sin limpiar.
+6. ~~`WeatherForecastController`~~: eliminado.
 7. `app.html` huérfano: `app.ts` usa template inline.
 8. `.gitignore` raíz es de C/C++: no cubre `bin/`, `obj/` ni `node_modules/` (el frontend tiene el suyo propio).
 9. Tests existentes son boilerplate ("should create").

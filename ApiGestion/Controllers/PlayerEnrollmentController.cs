@@ -16,13 +16,19 @@ public class PlayerEnrollmentController : ControllerBase
     private readonly ILogger<PlayerEnrollmentController> _logger;
     private readonly EnrollmentDAO _enrollmentDAO;
     private readonly EnrollmentFeeDAO _enrollmentFeeDAO;
+    private readonly IJugadoresDao _jugadoresDao;
 
-    public PlayerEnrollmentController(ILogger<PlayerEnrollmentController> logger, EnrollmentDAO enrollmentDAO, EnrollmentFeeDAO enrollmentFeeDAO)
+    public PlayerEnrollmentController(ILogger<PlayerEnrollmentController> logger, EnrollmentDAO enrollmentDAO, EnrollmentFeeDAO enrollmentFeeDAO, IJugadoresDao jugadoresDao)
     {
         _logger = logger;
         _enrollmentDAO = enrollmentDAO;
         _enrollmentFeeDAO = enrollmentFeeDAO;
+        _jugadoresDao = jugadoresDao;
     }
+
+    // Mismo claim que usa AuditActorMiddleware: quien cobra sale del JWT, nunca del body.
+    private int? IdUsuarioAutenticado() =>
+        int.TryParse(User?.FindFirst("idUsuario")?.Value, out var id) && id > 0 ? id : null;
 
     [HttpGet]
     public IActionResult GetEnrollment(long playerId)
@@ -30,7 +36,7 @@ public class PlayerEnrollmentController : ControllerBase
         Enrollment? enrollment = _enrollmentDAO.GetEnrollmentByPlayerId(playerId);
         if (enrollment == null)
         {
-            return NotFound($"Player {playerId} has no enrollment fee.");
+            return NotFound(new { mensaje = $"El jugador #{playerId} no tiene inscripción." });
         }
 
         return Ok(MapToDto(enrollment));
@@ -42,6 +48,18 @@ public class PlayerEnrollmentController : ControllerBase
         decimal amount = request.Amount!.Value;
         string paymentMethod = request.PaymentMethod.Trim();
 
+        int? idUsuario = IdUsuarioAutenticado();
+        if (idUsuario == null)
+        {
+            return Unauthorized(new { mensaje = "No se pudo identificar al usuario de la sesión. Volvé a iniciar sesión." });
+        }
+
+        JugadorResumen? player = playerId is > 0 and <= int.MaxValue ? _jugadoresDao.ObtenerJugadorPorId((int)playerId) : null;
+        if (player == null)
+        {
+            return NotFound(new { mensaje = $"No existe el jugador #{playerId}." });
+        }
+
         Enrollment? enrollment = _enrollmentDAO.GetEnrollmentByPlayerId(playerId);
 
         // Player has no enrollment row yet: create it on the fly using the current
@@ -49,24 +67,32 @@ public class PlayerEnrollmentController : ControllerBase
         // any case where the sign-up flow did not charge the fee.
         if (enrollment == null)
         {
+            // La inscripción es solo de la rama masculina (HU-033), la misma regla que el alta del jugador.
+            // Una inscripción que ya existe (por ejemplo, cargada antes de esta regla) se sigue pudiendo
+            // cobrar más abajo; lo que no se hace es crearle una nueva a quien no le corresponde.
+            if (player.Genero != PlayerRequestDTO.MaleGender)
+            {
+                return BadRequest(new { mensaje = "La inscripción corresponde solo a la rama masculina: este jugador no tiene inscripción para cobrar." });
+            }
+
             EnrollmentFee? currentFee = _enrollmentFeeDAO.GetCurrentEnrollmentFee();
             if (currentFee == null)
             {
-                return Conflict("There is no active enrollment fee. Set one in Actualización de aranceles before registering a payment.");
+                return Conflict(new { mensaje = "No hay un arancel de inscripción vigente. Cargalo en Actualización de aranceles antes de registrar el pago." });
             }
 
             if (amount > currentFee.Amount)
             {
-                return BadRequest($"The amount exceeds the enrollment fee (${currentFee.Amount:N0}).");
+                return BadRequest(new { mensaje = $"El monto supera el arancel de inscripción (${currentFee.Amount:N0})." });
             }
 
             EnrollmentPayment? firstPayment = _enrollmentDAO.CreateEnrollmentAndFirstPayment(
-                playerId, currentFee.Amount, amount, paymentMethod, DateTime.Now.Date);
+                playerId, currentFee.Amount, amount, paymentMethod, RelojNegocio.Hoy, idUsuario);
 
             if (firstPayment == null)
             {
                 _logger.LogWarning("Race condition on first enrollment payment for player {PlayerId}", playerId);
-                return Conflict("The enrollment was created by another request at the same time. Reload and try again.");
+                return Conflict(new { mensaje = "Otra operación creó la inscripción al mismo tiempo. Actualizá la pantalla y volvé a intentar." });
             }
 
             _logger.LogInformation("Enrollment created and first payment {PaymentId} of {Amount} registered for player {PlayerId}", firstPayment.Id, amount, playerId);
@@ -76,19 +102,19 @@ public class PlayerEnrollmentController : ControllerBase
 
         if (enrollment.PendingBalance == 0)
         {
-            return BadRequest($"The enrollment fee of player {playerId} is already fully paid.");
+            return BadRequest(new { mensaje = "La inscripción de este jugador ya está totalmente pagada." });
         }
 
         if (amount > enrollment.PendingBalance)
         {
-            return BadRequest($"The amount exceeds the pending balance of the enrollment fee (${enrollment.PendingBalance:N0}).");
+            return BadRequest(new { mensaje = $"El monto supera el saldo pendiente de la inscripción (${enrollment.PendingBalance:N0})." });
         }
 
-        EnrollmentPayment? payment = _enrollmentDAO.CreateEnrollmentPayment(playerId, amount, paymentMethod, DateTime.Now.Date);
+        EnrollmentPayment? payment = _enrollmentDAO.CreateEnrollmentPayment(playerId, amount, paymentMethod, RelojNegocio.Hoy, idUsuario);
         if (payment == null)
         {
             _logger.LogWarning("Concurrent enrollment payment rejected for player {PlayerId}", playerId);
-            return Conflict("The enrollment fee changed while it was being paid. Reload it and try again.");
+            return Conflict(new { mensaje = "La inscripción cambió mientras se registraba el pago. Actualizá la pantalla y volvé a intentar." });
         }
 
         _logger.LogInformation("Enrollment payment {PaymentId} of {Amount} registered for player {PlayerId}", payment.Id, amount, playerId);

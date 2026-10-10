@@ -40,7 +40,7 @@ function periodo(
     tipoValorBeneficio: null,
     porcentajeBeneficio: null,
     montoFijoBeneficio: null,
-    abonos: [{ monto, metodoPago: 'Transferencia', fechaPago: '2026-09-19T00:00:00' }],
+    abonos: [{ idPago: 1, monto, metodoPago: 'Transferencia', fechaPago: '2026-09-19T00:00:00' }],
     ...extra,
   };
 }
@@ -82,6 +82,9 @@ const respuesta = <T>(valor: T | 'error') =>
 async function crear(opciones: Opciones = {}) {
   const servicio = {
     getJugador: vi.fn(() => respuesta(opciones.jugador ?? JUGADOR)),
+    anularPago: vi.fn((_idPago: number, _motivo: string) => respuesta({ mensaje: 'Pago anulado.', saldoReabierto: 85000 })),
+    darDeBaja: vi.fn((_id: number, _fecha?: string) => respuesta({ mensaje: 'Jugador dado de baja.' })),
+    reactivar: vi.fn((_id: number) => respuesta({ mensaje: 'Jugador reactivado.' })),
     getHistorialPagos: vi.fn((_id: number, page: number) =>
       respuesta((opciones.historialPorPagina ?? (() => historial([])))(page)),
     ),
@@ -240,8 +243,8 @@ describe('JugadorPerfil - historial de pagos', () => {
     it('lista todos los abonos de un período pagado en partes', async () => {
       const enPartes = periodo('Enero 2026', 70000, {
         abonos: [
-          { monto: 20000, metodoPago: 'Efectivo', fechaPago: '2026-01-10T00:00:00' },
-          { monto: 50000, metodoPago: 'Transferencia', fechaPago: '2026-01-25T00:00:00' },
+          { idPago: 1, monto: 20000, metodoPago: 'Efectivo', fechaPago: '2026-01-10T00:00:00' },
+          { idPago: 2, monto: 50000, metodoPago: 'Transferencia', fechaPago: '2026-01-25T00:00:00' },
         ],
       });
       const { el } = await crear({ historialPorPagina: () => historial([enPartes]) });
@@ -446,13 +449,95 @@ describe('JugadorPerfil - historial de pagos', () => {
       expect(el.querySelectorAll('input, textarea, select, [contenteditable]').length).toBe(0);
     });
 
-    it('los únicos botones son Volver y la paginación', async () => {
+    // Además de Volver y la paginación, solo hay acciones auditadas: dar de baja/reactivar al jugador y
+    // anular un abono cargado por error. Ninguna edita importes ni fechas.
+    it('los únicos botones son Volver, la paginación, la baja del jugador y Anular por abono', async () => {
       const { el } = await crear({ historialPorPagina: () => historial(DIEZ_PERIODOS, 25) });
 
       const clases = Array.from(el.querySelectorAll('button')).map(
         (b) => b.className.split(' ')[0],
       );
-      expect(clases.every((c) => c === 'back-button' || c === 'pagination-button')).toBe(true);
+      const permitidas = ['back-button', 'pagination-button', 'profile-action', 'help-trigger', 'abono-anular'];
+      expect(clases.every((c) => permitidas.includes(c))).toBe(true);
+      expect(el.querySelectorAll('.abono-anular').length).toBe(DIEZ_PERIODOS.length);
+    });
+
+    it('un jugador dado de baja muestra la fecha y ofrece Reactivar en vez de Dar de baja', async () => {
+      const { el } = await crear({
+        jugador: { ...JUGADOR, fechaBaja: '2026-09-30T00:00:00' },
+        historialPorPagina: () => historial([]),
+      });
+
+      expect(el.querySelector('.profile-baja')?.textContent).toContain('30/09/2026');
+      expect(el.querySelector('.profile-action')?.textContent?.trim()).toBe('Reactivar');
+    });
+  });
+
+  // Anulación y baja: mismo popup de confirmación que el resto del portal. Nada se graba hasta confirmar.
+  describe('anular un pago', () => {
+    async function abrirAnulacion() {
+      const ctx = await crear({ historialPorPagina: () => historial([periodo('Septiembre 2026', 85000)]) });
+      (ctx.el.querySelector('.abono-anular') as HTMLButtonElement).click();
+      ctx.fixture.detectChanges();
+      return ctx;
+    }
+
+    it('abre el popup con el detalle del pago y sin llamar a la API', async () => {
+      const { el, servicio } = await abrirAnulacion();
+
+      expect(texto(el.querySelector('.dialog-title'))).toBe('Anular pago');
+      expect(texto(el.querySelector('.anular-detalle'))).toContain('Septiembre 2026');
+      expect(servicio.anularPago).not.toHaveBeenCalled();
+    });
+
+    it('no deja confirmar hasta que el motivo tenga al menos 5 caracteres', async () => {
+      const { el, fixture, component } = await abrirAnulacion();
+      const confirmar = () => el.querySelector('.dialog-actions .button-danger') as HTMLButtonElement;
+
+      expect(confirmar().disabled).toBe(true);
+
+      component.motivoAnulacion = 'Pago duplicado';
+      fixture.detectChanges();
+      expect(confirmar().disabled).toBe(false);
+    });
+
+    it('al confirmar manda el id del abono y el motivo, y cierra el popup', async () => {
+      const { el, fixture, component, servicio } = await abrirAnulacion();
+      component.motivoAnulacion = '  Pago duplicado  ';
+      fixture.detectChanges();
+
+      (el.querySelector('.dialog-actions .button-danger') as HTMLButtonElement).click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(servicio.anularPago).toHaveBeenCalledWith(1, 'Pago duplicado');
+      expect(el.querySelector('.dialog')).toBeNull();
+    });
+
+    it('Volver cierra el popup sin anular nada', async () => {
+      const { el, fixture, servicio } = await abrirAnulacion();
+
+      (el.querySelector('.dialog-actions .button-ghost') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(el.querySelector('.dialog')).toBeNull();
+      expect(servicio.anularPago).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('dar de baja', () => {
+    it('propone la fecha de hoy y la manda al confirmar', async () => {
+      const { el, fixture, component, servicio } = await crear();
+      (el.querySelector('.profile-action-danger') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(texto(el.querySelector('.dialog-title'))).toBe('Dar de baja');
+      expect(component.fechaBaja).toBe(component.hoy);
+
+      (el.querySelector('.dialog-actions .button-danger') as HTMLButtonElement).click();
+      await fixture.whenStable();
+
+      expect(servicio.darDeBaja).toHaveBeenCalledWith(3, component.hoy);
     });
   });
 });

@@ -492,6 +492,7 @@ public class PagosControllerTests
 
     private class FakePagosService : IPagosService
     {
+public AnularPagoResultado AnularPago(AnularPagoRequest request) => throw new NotSupportedException();
         public ResumenPagos ResumenResult { get; set; } = new();
         public IReadOnlyList<PlayerAccount> PlayerAccountsResult { get; set; } = new List<PlayerAccount>();
         public Exception? PlayerAccountsError { get; set; }

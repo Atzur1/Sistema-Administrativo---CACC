@@ -1,3 +1,4 @@
+using ApiGestion.Models;
 using DaoLibrary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -64,6 +65,68 @@ namespace ApiGestion.Controllers
             {
                 _logger.LogError(ex, "Error interno al obtener el jugador {JugadorId}", id);
                 return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el jugador." });
+            }
+        }
+
+        // POST api/jugadores/{id}/baja  Body (opcional): { "fecha": "2026-10-15" } -> por defecto, hoy.
+        // El jugador deja de recibir cuotas desde el mes siguiente al de la baja. Solo SuperAdmin.
+        [Authorize(Roles = "1")]
+        [HttpPost("{id:int}/baja")]
+        public IActionResult DarDeBaja(int id, [FromBody] BajaJugadorRequestDto? request)
+        {
+            DateTime hoy = EntityLibrary.RelojNegocio.Hoy;
+            DateTime fecha = request?.Fecha?.Date ?? hoy;
+            if (fecha > hoy)
+            {
+                return BadRequest(new { exito = false, mensaje = "La fecha de baja no puede ser futura." });
+            }
+
+            try
+            {
+                var (resultado, cuotasEliminadas) = _jugadoresDao.DarDeBaja(id, fecha);
+                return resultado switch
+                {
+                    BajaJugadorResultado.NoEncontrado => NotFound(new { exito = false, mensaje = "Jugador no encontrado." }),
+                    BajaJugadorResultado.YaDadoDeBaja => Conflict(new { exito = false, mensaje = "El jugador ya está dado de baja." }),
+                    BajaJugadorResultado.FechaInvalida => BadRequest(new { exito = false, mensaje = "La fecha de baja no puede ser anterior a la de alta." }),
+                    _ => Ok(new
+                    {
+                        exito = true,
+                        cuotasEliminadas,
+                        mensaje = cuotasEliminadas > 0
+                            ? $"Jugador dado de baja. Se quitaron {cuotasEliminadas} cuota(s) sin pagos de meses posteriores a la baja."
+                            : "Jugador dado de baja. No se le emitirán más cuotas."
+                    })
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error interno al dar de baja al jugador {JugadorId}", id);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al dar de baja al jugador." });
+            }
+        }
+
+        // POST api/jugadores/{id}/reactivar -> vuelve a emitirle cuotas desde el mes en curso. Solo SuperAdmin.
+        [Authorize(Roles = "1")]
+        [HttpPost("{id:int}/reactivar")]
+        public IActionResult Reactivar(int id)
+        {
+            try
+            {
+                if (!_jugadoresDao.Reactivar(id))
+                {
+                    return BadRequest(new { exito = false, mensaje = "No se pudo reactivar: el jugador no existe o no estaba dado de baja." });
+                }
+
+                // La cuota del mes en curso se emite ahora, sin esperar al próximo turno del generador.
+                DateTime hoy = EntityLibrary.RelojNegocio.Hoy;
+                _pagosDao.GenerarCuotasPendientesDelMes(null, null, hoy.Month, hoy.Year);
+                return Ok(new { exito = true, mensaje = "Jugador reactivado." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error interno al reactivar al jugador {JugadorId}", id);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al reactivar al jugador." });
             }
         }
 

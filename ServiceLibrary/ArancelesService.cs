@@ -21,7 +21,7 @@ namespace ServiceLibrary
             _cuotasDao = cuotasDao;
             _transactionRunner = transactionRunner;
             _categoriasDao = categoriasDao;
-            _hoy = reloj ?? (() => DateTime.Today);
+            _hoy = reloj ?? (() => RelojNegocio.Hoy);
         }
 
         public IReadOnlyList<ArancelHistorialItem> ObtenerHistorial() => _arancelesDao.ObtenerHistorial();

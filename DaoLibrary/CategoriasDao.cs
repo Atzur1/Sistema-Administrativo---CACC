@@ -25,7 +25,7 @@ namespace DaoLibrary
         public IReadOnlyList<Categoria> ObtenerTodas()
         {
             var resultado = new List<Categoria>();
-            const string query = "SELECT PK_id_categoria, nombre_categoria FROM CATEGORIAS WITH (NOLOCK) ORDER BY nombre_categoria";
+            const string query = "SELECT PK_id_categoria, nombre_categoria FROM CATEGORIAS ORDER BY nombre_categoria";
 
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 

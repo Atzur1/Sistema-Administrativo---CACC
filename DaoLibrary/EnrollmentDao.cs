@@ -74,10 +74,12 @@ public class EnrollmentDAO
     // left or the amount exceeds it: another payment got in first. The controller
     // already checked it, but only a check under the lock is safe from two payments
     // arriving at the same time.
-    public virtual EnrollmentPayment? CreateEnrollmentPayment(long playerId, decimal amount, string paymentMethod, DateTime paymentDate)
+    // idUsuarioRegistro: el operador autenticado (JWT), para que el cobro deje constancia de quién lo hizo.
+    public virtual EnrollmentPayment? CreateEnrollmentPayment(long playerId, decimal amount, string paymentMethod, DateTime paymentDate, int? idUsuarioRegistro = null)
     {
         using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
         using SqlTransaction transaction = connection.BeginTransaction();
+        BloqueoEscrituraPagos.Tomar(connection, transaction);
 
         try
         {
@@ -115,7 +117,7 @@ public class EnrollmentDAO
                 return null;
             }
 
-            long paymentId = InsertPayment(connection, transaction, playerId, originalAmount, amount, paymentMethod, paymentDate, dueDate);
+            long paymentId = InsertPayment(connection, transaction, playerId, originalAmount, amount, paymentMethod, paymentDate, dueDate, idUsuarioRegistro);
 
             decimal remaining = balance - amount;
             if (remaining == 0)
@@ -147,14 +149,15 @@ public class EnrollmentDAO
     // Creates the enrollment row (estado=0, balance = enrollmentAmount - paymentAmount)
     // and the first payment (estado=1) in one transaction. Used for players who were
     // registered before HU-033 and never had an enrollment row, or whose enrollment
-    // was omitted at sign-up. Returns null only if the table lock detects a race
-    // (extremely unlikely for a first-time insert, but the caller handles it).
+    // was omitted at sign-up. Returns null only if the locked check finds an enrollment
+    // created concurrently (extremely unlikely for a first-time insert, but the caller handles it).
     public virtual EnrollmentPayment? CreateEnrollmentAndFirstPayment(
         long playerId, decimal enrollmentAmount, decimal paymentAmount,
-        string paymentMethod, DateTime paymentDate)
+        string paymentMethod, DateTime paymentDate, int? idUsuarioRegistro = null)
     {
         using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
         using SqlTransaction transaction = connection.BeginTransaction();
+        BloqueoEscrituraPagos.Tomar(connection, transaction);
 
         try
         {
@@ -183,9 +186,9 @@ public class EnrollmentDAO
             {
                 string pendingQuery = @"
                     DECLARE @id INT;
-                    SELECT @id = ISNULL(MAX(PK_id_pago), 0) + 1 FROM PAGOS WITH (TABLOCKX, HOLDLOCK);
+                    SET @id = NEXT VALUE FOR dbo.SEQ_PAGOS;
                     INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, concepto)
-                    VALUES (@id, @playerId, @enrollmentAmount, NULL, @remaining, @paymentDate, '', @paymentDate, 0, @concept);";
+                    VALUES (@id, @playerId, @enrollmentAmount, NULL, @remaining, NULL, NULL, @paymentDate, 0, @concept);";
 
                 using SqlCommand pendingCmd = new SqlCommand(pendingQuery, connection, transaction);
                 pendingCmd.Parameters.AddWithValue("@playerId", playerId);
@@ -196,7 +199,7 @@ public class EnrollmentDAO
                 pendingCmd.ExecuteNonQuery();
             }
 
-            long paymentId = InsertPayment(connection, transaction, playerId, enrollmentAmount, paymentAmount, paymentMethod, paymentDate, paymentDate);
+            long paymentId = InsertPayment(connection, transaction, playerId, enrollmentAmount, paymentAmount, paymentMethod, paymentDate, paymentDate, idUsuarioRegistro);
 
             transaction.Commit();
 
@@ -215,16 +218,16 @@ public class EnrollmentDAO
         }
     }
 
-    // PK_id_pago has no IDENTITY: the table lock held until commit keeps two payments
-    // from taking the same id, the same as PagosDao.InsertarPago.
-    private static long InsertPayment(SqlConnection connection, SqlTransaction transaction, long playerId, decimal originalAmount, decimal amount, string paymentMethod, DateTime paymentDate, DateTime dueDate)
+    // The id comes from the dbo.SEQ_PAGOS sequence, the same as PagosDao.InsertarPago.
+    // fecha_hora_registro y FK_id_usuario_registro: misma trazabilidad que los cobros de cuotas (quién y cuándo).
+    private static long InsertPayment(SqlConnection connection, SqlTransaction transaction, long playerId, decimal originalAmount, decimal amount, string paymentMethod, DateTime paymentDate, DateTime dueDate, int? idUsuarioRegistro)
     {
-        string query = @"
+        string query = $@"
             DECLARE @id INT;
-            SELECT @id = ISNULL(MAX(PK_id_pago), 0) + 1 FROM PAGOS WITH (TABLOCKX, HOLDLOCK);
+            SET @id = NEXT VALUE FOR dbo.SEQ_PAGOS;
 
-            INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, concepto)
-            VALUES (@id, @playerId, @originalAmount, NULL, @amount, @paymentDate, @paymentMethod, @dueDate, 1, @concept);
+            INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, concepto, fecha_hora_registro, FK_id_usuario_registro)
+            VALUES (@id, @playerId, @originalAmount, NULL, @amount, @paymentDate, @paymentMethod, @dueDate, 1, @concept, {SqlReloj.Ahora}, @idUsuarioRegistro);
 
             SELECT @id;";
 
@@ -236,6 +239,7 @@ public class EnrollmentDAO
         command.Parameters.AddWithValue("@paymentMethod", paymentMethod);
         command.Parameters.AddWithValue("@dueDate", dueDate.Date);
         command.Parameters.AddWithValue("@concept", EnrollmentConcept);
+        command.Parameters.Add("@idUsuarioRegistro", System.Data.SqlDbType.Int).Value = (object?)idUsuarioRegistro ?? DBNull.Value;
 
         return Convert.ToInt64(command.ExecuteScalar());
     }

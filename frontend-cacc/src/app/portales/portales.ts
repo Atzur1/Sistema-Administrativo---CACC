@@ -42,7 +42,7 @@ export class Portales {
   }
 
   cerrarSesion() {
-    this.authService.logout();
+    this.authService.cerrarSesion();
     this.router.navigate(['/']);
   }
 }

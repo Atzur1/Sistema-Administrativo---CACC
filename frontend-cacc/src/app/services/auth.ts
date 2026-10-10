@@ -97,9 +97,22 @@ export class AuthService {
     router.navigate([this.isSuperAdmin() ? '/portales' : '/admin/portal']);
   }
 
+  // Solo borra la sesión del navegador (lo usa el interceptor cuando el servidor ya rechazó el token).
   logout() {
     this.usuario = null;
     sessionStorage.removeItem(SESSION_KEY);
+  }
+
+  // Cierre de sesión elegido por el usuario: además le pide al servidor que invalide el token, que si no
+  // seguiría sirviendo hasta su vencimiento. Si el servidor no responde, la sesión local se cierra igual.
+  cerrarSesion() {
+    const token = this.getToken();
+    if (token) {
+      this.http
+        .post(`${API_BASE_URL}/auth/logout`, null, { headers: { Authorization: `Bearer ${token}` } })
+        .subscribe({ error: () => {} });
+    }
+    this.logout();
   }
 
   private restoreSession(): UsuarioLogueado | null {

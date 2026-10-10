@@ -3,6 +3,19 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth';
+import { API_BASE_URL } from '../services/api-url';
+
+// Pedidos a la API: la base es '/api' en desarrollo (proxy) y una URL absoluta en producción
+// (environment.prod.ts). Antes se comparaba contra '/api/' fijo, así que en producción el token
+// nunca se adjuntaba y toda la API protegida respondía 401. Tampoco se manda a otros orígenes.
+function esDeLaApi(url: string): boolean {
+  return url === API_BASE_URL || url.startsWith(`${API_BASE_URL}/`);
+}
+
+// Login, recuperación y activación funcionan sin sesión (y con una vencida). Logout sí necesita el token.
+function esPublica(url: string): boolean {
+  return url.startsWith(`${API_BASE_URL}/auth/`) && !url.startsWith(`${API_BASE_URL}/auth/logout`);
+}
 
 // Adjunta el JWT guardado en el login a cada request saliente. Sin esto, todo endpoint con
 // [Authorize] en el backend devuelve 401 aunque el usuario ya haya iniciado sesión.
@@ -13,7 +26,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   // Public account-access endpoints must remain usable with an expired session
   // and a bad password must not be mistaken for a revoked authenticated session.
-  if (!token || !req.url.startsWith('/api/') || req.url.startsWith('/api/auth/')) {
+  if (!token || !esDeLaApi(req.url) || esPublica(req.url)) {
     return next(req);
   }
 

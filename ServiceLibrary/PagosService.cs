@@ -39,13 +39,15 @@ namespace ServiceLibrary
             // insert son atómicos, así que ningún request concurrente puede colarse entre medio.
             return _transactionRunner.EjecutarEnTransaccion((conexion, transaccion) =>
             {
+                if (!_pagosDao.ExisteJugador(conexion, transaccion, request.IdJugador))
+                {
+                    throw new CobroInvalidoException($"El jugador #{request.IdJugador} no existe.");
+                }
+
                 var pendiente = _pagosDao.ObtenerPagoPendienteDeJugadorEnPeriodo(conexion, transaccion, request.IdJugador, mes, anio);
 
                 if (pendiente == null)
                 {
-                    // Sin cuota generada para este período (ej. todavía no había arancel vigente
-                    // cuando se armó la lista de pendientes): comportamiento de siempre, pago
-                    // directo ya abonado, bloqueando duplicados.
                     var existente = _pagosDao.ObtenerPagoAbonadoDeJugadorEnPeriodo(conexion, transaccion, request.IdJugador, mes, anio);
                     if (existente != null)
                     {
@@ -53,7 +55,20 @@ namespace ServiceLibrary
                             $"Ya existe un pago registrado para este jugador en {request.Periodo} {anio} (pago #{existente.IdPago}).");
                     }
 
-                    return InsertarAbono(conexion, transaccion, request, new DateTime(anio, mes, 1));
+                    // Sin cuota emitida para el período (un mes futuro que se paga por adelantado, o uno que
+                    // el generador todavía no alcanzó): se emite primero con el arancel que le corresponde al
+                    // jugador y el pago se registra contra ella. Antes se aceptaba un pago directo por
+                    // CUALQUIER monto, y como el generador saltea a quien ya tiene una fila en el mes, un pago
+                    // de $1 dejaba ese mes saldado para siempre.
+                    if (!_pagosDao.EmitirCuotaDeJugador(conexion, transaccion, request.IdJugador, mes, anio))
+                    {
+                        throw new CobroInvalidoException(
+                            $"No se puede registrar un pago para {request.Periodo} {anio}: no hay un arancel vigente para este jugador en ese mes, " +
+                            "o el jugador no estaba en el club (antes de su alta o después de su baja).");
+                    }
+
+                    pendiente = _pagosDao.ObtenerPagoPendienteDeJugadorEnPeriodo(conexion, transaccion, request.IdJugador, mes, anio)
+                        ?? throw new InvalidOperationException("La cuota recién emitida no se encontró.");
                 }
 
                 // Hay una cuota pendiente para este período: este pago es un abono contra ella,
@@ -101,14 +116,92 @@ namespace ServiceLibrary
             });
         }
 
+        // Anula un abono cargado por error (solo SuperAdmin, con motivo). El abono sale de PAGOS y queda
+        // registrado en PAGOS_ANULADOS; su monto vuelve al saldo de la cuota o inscripción que cubría:
+        // si la deuda seguía abierta se le suma al pendiente, y si ya estaba saldada se vuelve a abrir
+        // por lo que falta (monto original menos los demás abonos). El beneficio de Becados y Descuentos
+        // se sigue aplicando al leer, igual que siempre.
+        public AnularPagoResultado AnularPago(AnularPagoRequest request)
+        {
+            string motivo = (request.Motivo ?? string.Empty).Trim();
+            if (request.IdPago <= 0)
+            {
+                throw new CobroInvalidoException("Debe indicar un pago válido.");
+            }
+            if (motivo.Length < 5 || motivo.Length > 500)
+            {
+                throw new CobroInvalidoException("Indicá el motivo de la anulación (entre 5 y 500 caracteres).");
+            }
+            if (request.IdUsuarioAnulacion <= 0)
+            {
+                throw new CobroInvalidoException("No se pudo identificar al usuario que anula el pago.");
+            }
+
+            return _transactionRunner.EjecutarEnTransaccion((conexion, transaccion) =>
+            {
+                var abono = _pagosDao.ObtenerPagoParaAnular(conexion, transaccion, request.IdPago)
+                    ?? throw new CobroInvalidoException($"El pago #{request.IdPago} no existe o ya fue anulado.");
+                if (!abono.Estado)
+                {
+                    throw new CobroInvalidoException($"El registro #{request.IdPago} es una deuda pendiente, no un pago: no se puede anular.");
+                }
+
+                // Pagos históricos sin período cargado: no hay a qué cuota devolverle el saldo.
+                var filas = abono.FechaVencimiento.HasValue || abono.Concepto == "Inscripcion"
+                    ? _pagosDao.ObtenerFilasDeLaMismaDeuda(conexion, transaccion, abono)
+                    : new List<Pago> { abono };
+
+                _pagosDao.RegistrarAnulacionYEliminarAbono(conexion, transaccion, abono, motivo, request.IdUsuarioAnulacion);
+
+                decimal saldoReabierto = 0;
+                if (abono.FechaVencimiento.HasValue)
+                {
+                    var pendiente = filas.FirstOrDefault(f => !f.Estado);
+                    if (pendiente != null)
+                    {
+                        saldoReabierto = pendiente.MontoFinal + abono.MontoFinal;
+                        _pagosDao.ActualizarSaldoPendiente(conexion, transaccion, pendiente.IdPago, saldoReabierto);
+                    }
+                    else
+                    {
+                        decimal otrosAbonos = filas.Where(f => f.Estado && f.IdPago != abono.IdPago).Sum(f => f.MontoFinal);
+                        saldoReabierto = abono.MontoBase - otrosAbonos;
+                        if (saldoReabierto > 0)
+                        {
+                            _pagosDao.InsertarPago(conexion, transaccion, new Pago
+                            {
+                                IdJugador = abono.IdJugador,
+                                MontoBase = abono.MontoBase,
+                                MontoFinal = saldoReabierto,
+                                FechaVencimiento = abono.FechaVencimiento,
+                                Estado = false,
+                                Concepto = abono.Concepto
+                            });
+                        }
+                        else
+                        {
+                            saldoReabierto = 0;
+                        }
+                    }
+                }
+
+                return new AnularPagoResultado
+                {
+                    IdPago = abono.IdPago,
+                    IdJugador = abono.IdJugador,
+                    MontoAnulado = abono.MontoFinal,
+                    SaldoReabierto = saldoReabierto
+                };
+            });
+        }
+
         // Inserta la fila de PAGOS que representa la plata efectivamente recibida (Estado = true),
-        // sea un pago directo (sin cuota previa) o un abono contra una cuota pendiente.
-        // idJugadorDescuento queda de rastro de qué beneficio (si hubo uno) se le aplicó a este abono.
-        // montoBaseCuota: el monto ORIGINAL de la cuota completa (antes de abonos/beneficio); si es
-        // null (pago directo sin cuota previa) se usa el propio monto del abono.
+        // como abono contra una cuota pendiente. idJugadorDescuento queda de rastro de qué beneficio
+        // (si hubo uno) se le aplicó. montoBaseCuota: el monto ORIGINAL de la cuota completa (antes de
+        // abonos/beneficio).
         private RegistrarPagoResultado InsertarAbono(SqlConnection conexion, SqlTransaction transaccion, RegistrarPagoRequest request, DateTime fechaVencimiento, int? idJugadorDescuento = null, decimal? montoBaseCuota = null)
         {
-            var fechaPago = DateTime.Now.Date; // PAGOS.fecha_pago es DATE: no admite componente de hora
+            var fechaPago = RelojNegocio.Hoy; // PAGOS.fecha_pago es DATE: no admite componente de hora
 
             var pago = new Pago
             {
@@ -182,7 +275,7 @@ namespace ServiceLibrary
 
                 // fecha_pago: el cobro se asienta el día en que se registra (no hay carga
                 // retroactiva). La hora exacta de registro la fija SQL Server en el UPDATE.
-                var fechaPago = DateTime.Now.Date;
+                var fechaPago = RelojNegocio.Hoy;
                 var fechaHoraRegistro = _pagosDao.MarcarPagosComoAbonados(
                     conexion, transaccion, request.IdJugador, ids, fechaPago, metodoPago, request.IdUsuarioRegistro);
 
@@ -200,12 +293,12 @@ namespace ServiceLibrary
         }
 
         public IReadOnlyList<CuotaJugador> ObtenerCuotasJugador(int idJugador)
-            => ConstruirEstadoDeCuotas(_pagosDao.ObtenerMovimientosCuotas(idJugador), DateTime.Today);
+            => ConstruirEstadoDeCuotas(_pagosDao.ObtenerMovimientosCuotas(idJugador), RelojNegocio.Hoy);
 
         public PlayerStatement? GetPlayerStatement(int playerId)
         {
             var cuenta = _pagosDao.GetPlayerStatementAccount(playerId);
-            return cuenta == null ? null : BuildPlayerStatement(cuenta, DateTime.Today);
+            return cuenta == null ? null : BuildPlayerStatement(cuenta, RelojNegocio.Hoy);
         }
 
         // HU-024: las cuotas salen de ConstruirEstadoDeCuotas, el mismo cálculo que usa la tabla de
@@ -324,7 +417,7 @@ namespace ServiceLibrary
 
             // Rango amplio a propósito (no solo año actual +- 2): el form limita las opciones,
             // pero esto es la última barrera del lado del servidor contra un año absurdo.
-            if (request.Anio < 2000 || request.Anio > DateTime.Now.Year + 1)
+            if (request.Anio < 2000 || request.Anio > RelojNegocio.Ahora.Year + 1)
             {
                 throw new CobroInvalidoException($"Año inválido: '{request.Anio}'.");
             }
@@ -338,6 +431,12 @@ namespace ServiceLibrary
             {
                 throw new CobroInvalidoException(
                     $"Método de pago inválido: '{request.MetodoPago}'. Valores permitidos: {string.Join(", ", MetodosPago.Validos)}.");
+            }
+
+            // Igual que en /cobro: el operador sale del JWT y es obligatorio para la trazabilidad.
+            if (request.IdUsuarioRegistro is null or <= 0)
+            {
+                throw new CobroInvalidoException("No se pudo identificar al usuario que registra el pago.");
             }
 
             return (mes, request.Anio);

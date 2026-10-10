@@ -20,6 +20,7 @@ namespace DaoLibrary
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
             using SqlTransaction transaccion = conexion.BeginTransaction();
+            BloqueoEscrituraPagos.Tomar(conexion, transaccion);
             try
             {
                 T resultado = operacion(conexion, transaccion);

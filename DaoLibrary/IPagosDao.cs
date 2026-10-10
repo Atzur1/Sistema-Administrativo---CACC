@@ -43,6 +43,23 @@ namespace DaoLibrary
         DateTime MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, int idJugador, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago, int idUsuarioRegistro);
         void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal);
 
+        // Emite la cuota de UN jugador para ese período con el arancel que le corresponde, si todavía no
+        // tiene ninguna. false si no se emitió (no existe, ya la tiene, no estaba en el club ese mes, o
+        // no hay arancel vigente para él).
+        bool EmitirCuotaDeJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio);
+
+        // ---- Anulación de pagos cargados por error ----
+
+        // La fila de PAGOS con bloqueo (UPDLOCK/HOLDLOCK), con concepto, operador y hora de registro; null si no existe.
+        Pago? ObtenerPagoParaAnular(SqlConnection conexion, SqlTransaction transaccion, int idPago);
+
+        // Todas las filas (pendiente y abonos) de la misma cuota o inscripción que ese pago, con bloqueo:
+        // mismo jugador y concepto, y para cuotas el mismo mes de fecha_vencimiento.
+        IReadOnlyList<Pago> ObtenerFilasDeLaMismaDeuda(SqlConnection conexion, SqlTransaction transaccion, Pago pago);
+
+        // Deja el registro permanente de la anulación (PAGOS_ANULADOS) y borra el abono de PAGOS.
+        void RegistrarAnulacionYEliminarAbono(SqlConnection conexion, SqlTransaction transaccion, Pago abono, string motivo, int idUsuarioAnulacion);
+
         // ---- Lecturas simples, sin transacción (mismo estilo que AuthDao) ----
 
         // idCategoria: null trae todas las categorías (comportamiento previo, sin cambios). Con un

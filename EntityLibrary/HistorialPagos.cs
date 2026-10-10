@@ -3,6 +3,8 @@ namespace EntityLibrary
     // Un abono puntual (una fila real de PAGOS) dentro del período al que pertenece.
     public class PagoHistorialAbono
     {
+        // Id de la fila de PAGOS del abono: es lo que se manda a POST api/pagos/{id}/anular.
+        public int IdPago { get; set; }
         public decimal Monto { get; set; }
         public string MetodoPago { get; set; } = string.Empty;
         public DateTime FechaPago { get; set; }

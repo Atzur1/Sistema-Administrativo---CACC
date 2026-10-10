@@ -14,16 +14,16 @@ public class EnrollmentFeeDAO
 
     // End date and status are resolved here and nowhere else, against the clock of
     // the database server: a fee ends the day before the next one starts.
-    private const string SelectWithStatus = @"
+    private const string SelectWithStatus = $@"
         SELECT
             PK_id_arancel_inscripcion,
             monto,
             vigente_desde,
             DATEADD(DAY, -1, LEAD(vigente_desde) OVER (ORDER BY vigente_desde)) AS vigente_hasta,
             CASE
-                WHEN vigente_desde > CAST(GETDATE() AS DATE) THEN 0
+                WHEN vigente_desde > {SqlReloj.Hoy} THEN 0
                 WHEN LEAD(vigente_desde) OVER (ORDER BY vigente_desde) IS NULL
-                  OR LEAD(vigente_desde) OVER (ORDER BY vigente_desde) > CAST(GETDATE() AS DATE) THEN 1
+                  OR LEAD(vigente_desde) OVER (ORDER BY vigente_desde) > {SqlReloj.Hoy} THEN 1
                 ELSE 2
             END AS estado,
             actor.nombre_usuario AS responsable_nombre,

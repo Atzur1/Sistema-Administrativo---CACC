@@ -163,6 +163,8 @@ public class PlayersControllerSearchTests
 
     private class FakeJugadoresDao : IJugadoresDao
     {
+public (BajaJugadorResultado Resultado, int CuotasEliminadas) DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
+        public bool Reactivar(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<JugadorResumen> ListarJugadores() => new List<JugadorResumen>();
         public JugadorResumen? ObtenerJugadorPorId(int idJugador) => null;
     }
@@ -194,6 +196,7 @@ public class PlayersControllerSearchTests
 
 // HU-023: el SQL de la búsqueda sobre una base real. Crea un jugador propio dentro de una
 // transacción que se revierte, así no depende de los datos de la base ni deja nada.
+[Collection(BaseDeDatosCollection.Nombre)]
 public class PlayerSearchIntegrationTests
 {
     [IntegracionFact]

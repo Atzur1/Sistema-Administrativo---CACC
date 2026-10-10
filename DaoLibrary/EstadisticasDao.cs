@@ -41,14 +41,14 @@ namespace DaoLibrary
                 SELECT
                     (SELECT COUNT(*) FROM JUGADORES) AS total_jugadores,
                     (SELECT COUNT(DISTINCT FK_id_categoria) FROM JUGADORES) AS cantidad_categorias,
-                    (SELECT COUNT(*) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR(GETDATE()) AND MONTH(fecha_pago) = MONTH(GETDATE())) AS pagos_del_mes,
-                    (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR(GETDATE())) AS recaudado_anio,
+                    (SELECT COUNT(*) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR({SqlReloj.Ahora}) AND MONTH(fecha_pago) = MONTH({SqlReloj.Ahora})) AS pagos_del_mes,
+                    (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR({SqlReloj.Ahora})) AS recaudado_anio,
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS
-                        WHERE estado = 1 AND fecha_pago >= DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
-                                          AND fecha_pago <  DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)) AS ingresado_mes_actual,
+                        WHERE estado = 1 AND fecha_pago >= DATEADD(MONTH, DATEDIFF(MONTH, 0, {SqlReloj.Ahora}), 0)
+                                          AND fecha_pago <  DATEADD(MONTH, DATEDIFF(MONTH, 0, {SqlReloj.Ahora}) + 1, 0)) AS ingresado_mes_actual,
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS
-                        WHERE estado = 1 AND fecha_pago >= DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) - 1, 0)
-                                          AND fecha_pago <  DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)) AS ingresado_mes_anterior,
+                        WHERE estado = 1 AND fecha_pago >= DATEADD(MONTH, DATEDIFF(MONTH, 0, {SqlReloj.Ahora}) - 1, 0)
+                                          AND fecha_pago <  DATEADD(MONTH, DATEDIFF(MONTH, 0, {SqlReloj.Ahora}), 0)) AS ingresado_mes_anterior,
                     (SELECT ISNULL(SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}), 0)
                         FROM PAGOS pg
                         {DescuentosSql.ApplyDescuentoActivo}
@@ -104,19 +104,19 @@ namespace DaoLibrary
         // "enero" en el gráfico, no para "septiembre". Los pagos históricos previos a este sistema
         // nunca tuvieron fecha_vencimiento cargada, así que caen a fecha_pago como respaldo (sin
         // esto, esos ~1258 pagos reales desaparecerían del gráfico).
-        // "periodo <= GETDATE()": no puede estar fechado en el futuro. Sin este filtro, una fila
+        // "periodo <= SqlReloj.Ahora": no puede estar fechado en el futuro. Sin este filtro, una fila
         // con un año mal cargado (ej. un typo "2926" en vez de "2026") se cuela como el mes "más
         // reciente" y desplaza meses reales del gráfico.
         private static List<PuntoRecaudacionMensual> ObtenerRecaudacionMensual(SqlConnection conexion)
         {
-            string query = @"
+            string query = $@"
                 SELECT TOP (8) YEAR(periodo) AS anio, MONTH(periodo) AS mes, SUM(monto_final) AS monto
                 FROM (
                     SELECT monto_final, COALESCE(fecha_vencimiento, fecha_pago) AS periodo
                     FROM PAGOS
                     WHERE estado = 1
                 ) x
-                WHERE periodo IS NOT NULL AND periodo <= GETDATE()
+                WHERE periodo IS NOT NULL AND periodo <= {SqlReloj.Ahora}
                 GROUP BY YEAR(periodo), MONTH(periodo)
                 ORDER BY YEAR(periodo) DESC, MONTH(periodo) DESC";
 
@@ -146,14 +146,14 @@ namespace DaoLibrary
         // la inscripción (HU-033) no es haber cubierto la cuota del mes.
         private static List<PuntoCoberturaMensual> ObtenerCoberturaMensual(SqlConnection conexion, int totalJugadores)
         {
-            string query = @"
+            string query = $@"
                 SELECT TOP (6) YEAR(periodo) AS anio, MONTH(periodo) AS mes, COUNT(DISTINCT FK_id_jugador) AS jugadores_que_pagaron
                 FROM (
                     SELECT FK_id_jugador, COALESCE(fecha_vencimiento, fecha_pago) AS periodo
                     FROM PAGOS
                     WHERE estado = 1 AND concepto = 'Cuota'
                 ) x
-                WHERE periodo IS NOT NULL AND periodo <= GETDATE()
+                WHERE periodo IS NOT NULL AND periodo <= {SqlReloj.Ahora}
                 GROUP BY YEAR(periodo), MONTH(periodo)
                 ORDER BY YEAR(periodo) DESC, MONTH(periodo) DESC";
 

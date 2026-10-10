@@ -114,7 +114,7 @@ namespace ApiGestion.Controllers
             return File(pdf, "application/pdf", $"reporte-aranceles_{Timestamp()}.pdf");
         }
 
-        private static string Timestamp() => DateTime.Now.ToString("yyyyMMdd_HHmm");
+        private static string Timestamp() => RelojNegocio.Ahora.ToString("yyyyMMdd_HHmm");
 
         // QA (24/09, HU-021): con una categoría filtrada sin deudores hoy, el nombre
         // salía como "Categoría #N" porque se leía de la propia fila del padrón (que
@@ -135,6 +135,6 @@ namespace ApiGestion.Controllers
         // padrón de deudores no está acotado a un período (es la deuda pendiente de
         // HOY, no de un mes puntual), así que se informa como la temporada vigente
         // hasta la fecha de emisión — mismo criterio que sugirió QA en la revisión.
-        private static string PeriodoLabel() => $"Temporada {DateTime.Now.Year}, hasta {DateTime.Now:dd/MM/yyyy}";
+        private static string PeriodoLabel() => $"Temporada {RelojNegocio.Ahora.Year}, hasta {RelojNegocio.Ahora:dd/MM/yyyy}";
     }
 }

@@ -139,9 +139,22 @@ public class PlayerDAO
     {
         using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
         using SqlTransaction transaction = connection.BeginTransaction();
+        BloqueoEscrituraPagos.Tomar(connection, transaction);
 
         try
         {
+            // ExistsPersonByDni (antes de la transacción) solo da el mensaje rápido; esta verificación con
+            // bloqueo de rango es la que impide que dos altas simultáneas del mismo DNI pasen las dos.
+            using (SqlCommand duplicate = new SqlCommand(
+                "SELECT COUNT(*) FROM PERSONA WITH (UPDLOCK, HOLDLOCK) WHERE LTRIM(RTRIM(Dni)) = @dni;", connection, transaction))
+            {
+                duplicate.Parameters.AddWithValue("@dni", player.Dni.Trim());
+                if (Convert.ToInt32(duplicate.ExecuteScalar()) > 0)
+                {
+                    throw new DaoLibrary.Exceptions.DniDuplicadoException(player.Dni.Trim());
+                }
+            }
+
             int personId = InsertPerson(connection, transaction, player);
             int playerId = InsertPlayer(connection, transaction, personId, player);
 
@@ -194,13 +207,13 @@ public class PlayerDAO
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
-    // JUGADORES.PK_id_jugador has no IDENTITY: the table lock held until commit keeps
-    // two registrations running at once from taking the same id.
+    // The id comes from the dbo.SEQ_JUGADORES sequence (migration V20261011_04): unique even when two
+    // registrations run at once, without locking the table.
     internal static int InsertPlayer(SqlConnection connection, SqlTransaction transaction, int personId, Player player)
     {
         string query = @"
             DECLARE @id INT;
-            SELECT @id = ISNULL(MAX(PK_id_jugador), 0) + 1 FROM JUGADORES WITH (TABLOCKX, HOLDLOCK);
+            SET @id = NEXT VALUE FOR dbo.SEQ_JUGADORES;
 
             INSERT INTO JUGADORES (PK_id_jugador, FK_id_persona, FK_id_categoria, fecha_alta)
             VALUES (@id, @personId, @categoryId, @joinDate);
@@ -221,7 +234,7 @@ public class PlayerDAO
     {
         string query = @"
             DECLARE @id INT;
-            SELECT @id = ISNULL(MAX(PK_id_pago), 0) + 1 FROM PAGOS WITH (TABLOCKX, HOLDLOCK);
+            SET @id = NEXT VALUE FOR dbo.SEQ_PAGOS;
 
             INSERT INTO PAGOS (PK_id_pago, FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado, concepto)
             VALUES (@id, @playerId, @amount, NULL, @amount, NULL, NULL, @dueDate, 0, @concept);";

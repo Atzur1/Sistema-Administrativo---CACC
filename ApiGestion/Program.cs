@@ -10,6 +10,27 @@ var builder = WebApplication.CreateBuilder(args);
 // HU-021: licencia Community de QuestPDF (gratuita para orgs de este tamaño).
 QuestPDF.Settings.License = LicenseType.Community;
 
+// Una sola lectura de la cadena de conexión para todos los DAO.
+var conexionSql = builder.Configuration.GetConnectionString("ConexionSQL") ?? "";
+
+// Detrás de un proxy (Railway, un balanceador, IIS con ARR) la IP que ve la API es la del proxy: sin esto
+// el límite de intentos de login por IP se compartía entre TODOS los usuarios, y la redirección a HTTPS
+// no sabía que el pedido original ya era HTTPS. Opt-in (ForwardedHeaders:Enabled=true) porque confiar en
+// X-Forwarded-For sin un proxy delante permitiría falsear la IP y saltear el límite.
+var usarCabecerasDeProxy = builder.Configuration.GetValue<bool>("ForwardedHeaders:Enabled");
+if (usarCabecerasDeProxy)
+{
+    builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+            | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+        // Solo el salto del proxy de la plataforma, que no tiene una IP fija conocida.
+        options.ForwardLimit = 1;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
+
 builder.Services.AddControllers();
 builder.Services.AddRateLimiter(options =>
 {
@@ -45,40 +66,40 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<DaoLibrary.AuthDao>(provider =>
-    new DaoLibrary.AuthDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.AuthDao(conexionSql));
 builder.Services.AddScoped<DaoLibrary.IAuditDao>(provider =>
-    new DaoLibrary.AuditDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.AuditDao(conexionSql));
 builder.Services.AddScoped<DaoLibrary.AccountAccessDao>(provider =>
-    new DaoLibrary.AccountAccessDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.AccountAccessDao(conexionSql));
 builder.Services.AddScoped<DaoLibrary.IUsuariosPortalDao>(provider =>
-    new DaoLibrary.UsuariosPortalDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.UsuariosPortalDao(conexionSql));
 builder.Services.AddSingleton<ApiGestion.Services.EmailLinkSender>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ApiGestion.Services.LoginThrottle>();
 
 // Cuotas y pagos: DAO + runner transaccional + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IPagosDao>(provider =>
-    new DaoLibrary.PagosDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.PagosDao(conexionSql));
 builder.Services.AddScoped<DaoLibrary.ISqlTransactionRunner>(provider =>
-    new DaoLibrary.SqlTransactionRunner(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.SqlTransactionRunner(conexionSql));
 builder.Services.AddScoped<ServiceLibrary.IPagosService, ServiceLibrary.PagosService>();
 
 builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
-    new DaoLibrary.JugadoresDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.JugadoresDao(conexionSql));
 
 builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
-    new DaoLibrary.EstadisticasDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.EstadisticasDao(conexionSql));
 
 // Categorías: catálogo para el selector de Deudas y Morosidad (HU-020)
 builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
-    new DaoLibrary.CategoriasDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.CategoriasDao(conexionSql));
 
 // Aranceles: DAO + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
-    new DaoLibrary.ArancelesDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.ArancelesDao(conexionSql));
 // Cuotas por arancel (programar / cancelar un arancel): las operaciones de PAGOS que necesita ArancelesService.
 builder.Services.AddScoped<DaoLibrary.ICuotasPorArancelDao>(provider =>
-    new DaoLibrary.PagosDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.PagosDao(conexionSql));
 builder.Services.AddScoped<ServiceLibrary.IArancelesService>(provider => new ServiceLibrary.ArancelesService(
     provider.GetRequiredService<DaoLibrary.IArancelesDao>(),
     provider.GetRequiredService<DaoLibrary.ICuotasPorArancelDao>(),
@@ -92,15 +113,15 @@ if (builder.Configuration.GetValue<bool?>("GeneracionCuotas:Habilitada") ?? true
 
 // Inscripción única de la rama masculina (HU-033)
 builder.Services.AddScoped<DaoLibrary.EnrollmentFeeDAO>(provider =>
-    new DaoLibrary.EnrollmentFeeDAO(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.EnrollmentFeeDAO(conexionSql));
 builder.Services.AddScoped<DaoLibrary.PlayerDAO>(provider =>
-    new DaoLibrary.PlayerDAO(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.PlayerDAO(conexionSql));
 builder.Services.AddScoped<DaoLibrary.EnrollmentDAO>(provider =>
-    new DaoLibrary.EnrollmentDAO(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.EnrollmentDAO(conexionSql));
 
 // Becados y descuentos
 builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
-    new DaoLibrary.DiscountDao(builder.Configuration.GetConnectionString("ConexionSQL") ?? ""));
+    new DaoLibrary.DiscountDao(conexionSql));
 
 // 4. NUEVO: Configuración de autenticación JWT
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -155,6 +176,19 @@ if (app.Configuration.GetValue<bool?>("DatabaseMigrations:Enabled") ?? app.Envir
     await ApiGestion.Database.EjecutorMigraciones.EjecutarAsync(
         conexion, app.Logger, app.Lifetime.ApplicationStopping);
 }
+
+if (usarCabecerasDeProxy)
+    app.UseForwardedHeaders();
+
+// Cualquier excepción que un controller no atrape responde un 500 con el mismo formato que el resto de la
+// API ({ exito, mensaje }), sin detalles internos; el detalle queda en el log.
+app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+{
+    var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+    app.Logger.LogError(error, "Error no controlado en {Metodo} {Ruta}", context.Request.Method, context.Request.Path);
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    await context.Response.WriteAsJsonAsync(new { exito = false, mensaje = "Error interno del servidor. Intentá de nuevo en unos minutos." });
+}));
 
 if (app.Environment.IsDevelopment())
 {

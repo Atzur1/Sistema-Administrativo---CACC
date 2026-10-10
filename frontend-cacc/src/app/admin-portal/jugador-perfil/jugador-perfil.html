@@ -26,6 +26,22 @@
         <div class="profile-info">
           <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
           <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+          @if (dadoDeBaja) {
+            <span class="profile-baja">Dado de baja el {{ formatFecha(jugador.fechaBaja!) }}</span>
+          }
+        </div>
+        <div class="profile-actions">
+          @if (dadoDeBaja) {
+            <button type="button" class="profile-action" (click)="abrirReactivar()">Reactivar</button>
+          } @else {
+            <button type="button" class="profile-action profile-action-danger" (click)="abrirBaja()">
+              Dar de baja
+            </button>
+          }
+          <app-help-hint
+            label="Baja del jugador"
+            text="Dar de baja deja de generarle cuotas a partir del mes siguiente a la baja. Las cuotas sin pagos de meses posteriores se quitan; la deuda anterior se mantiene. Reactivar vuelve a generarle cuotas desde el mes en curso."
+          />
         </div>
       </div>
 
@@ -116,7 +132,17 @@
                     <span class="abono-meta"
                       >{{ abono.metodoPago }} · {{ formatFecha(abono.fechaPago) }} · Responsable: {{ responsableAbono(abono.responsableNombre, abono.responsableApellido) }} · {{ abono.fechaHoraRegistro ? (abono.fechaHoraRegistro | date: 'dd/MM/yyyy HH:mm:ss' : 'America/Argentina/Buenos_Aires') : 'Hora de registro no disponible' }}</span
                     >
-                    <span class="abono-monto">{{ formatMonto(abono.monto) }}</span>
+                    <span class="abono-end">
+                      <span class="abono-monto">{{ formatMonto(abono.monto) }}</span>
+                      <button
+                        type="button"
+                        class="abono-anular"
+                        (click)="abrirAnulacion(abono, item)"
+                        title="Anular este pago si se cargó por error"
+                      >
+                        Anular
+                      </button>
+                    </span>
                   </li>
                 }
               </ul>
@@ -149,3 +175,152 @@
     }
   </section>
 </div>
+
+<!-- ===== CONFIRMACIONES (baja, reactivación y anulación de pagos) =====
+     Mismo popup que Becados y Descuentos y Deuda de Jugador: nada se graba hasta confirmar, y si la
+     API rechaza la operación el motivo se muestra adentro del popup. -->
+@if (dialogo) {
+  <div class="dialog-backdrop" (click)="cerrarDialogo()">
+    <div
+      class="dialog"
+      [class.dialog-danger]="dialogo !== 'reactivar'"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="perfilDialogTitulo"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="dialog-head">
+        <div class="dialog-head-text">
+          <h2 class="dialog-title" id="perfilDialogTitulo">
+            @switch (dialogo) {
+              @case ('baja') {
+                Dar de baja
+              }
+              @case ('reactivar') {
+                Reactivar jugador
+              }
+              @case ('anular') {
+                Anular pago
+              }
+            }
+          </h2>
+          <span class="dialog-subtitle">{{ jugador?.nombreCompleto }}</span>
+        </div>
+        <button type="button" class="dialog-close" (click)="cerrarDialogo()" aria-label="Cerrar" [disabled]="procesando">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </header>
+
+      @if (errorDialogo) {
+        <p class="dialog-error" role="alert">{{ errorDialogo }}</p>
+      }
+
+      <!-- ----- BAJA ----- -->
+      @if (dialogo === 'baja') {
+        <p class="dialog-confirm">
+          El jugador deja de recibir cuotas a partir del mes siguiente a la baja. La deuda que ya tiene se
+          mantiene y se puede seguir cobrando.
+        </p>
+        <div class="field">
+          <label class="field-label" for="fechaBaja">Fecha de baja</label>
+          <app-custom-datepicker
+            id="fechaBaja"
+            [(ngModel)]="fechaBaja"
+            [min]="minFechaBaja"
+            [max]="hoy"
+          ></app-custom-datepicker>
+          <span class="field-hint">El día en que dejó el club. No puede ser futura ni anterior a su alta.</span>
+        </div>
+        <p class="dialog-confirm dialog-confirm-warning">
+          Las cuotas <strong>sin pagos</strong> de meses posteriores a la baja se quitan.
+        </p>
+
+        <footer class="dialog-actions">
+          <button type="button" class="button-ghost" (click)="cerrarDialogo()" [disabled]="procesando">
+            Volver
+          </button>
+          <button type="button" class="button-danger" (click)="confirmarBaja()" [disabled]="procesando || !fechaBaja">
+            {{ procesando ? 'Dando de baja…' : 'Sí, dar de baja' }}
+          </button>
+        </footer>
+      }
+
+      <!-- ----- REACTIVAR ----- -->
+      @if (dialogo === 'reactivar') {
+        <p class="dialog-confirm">
+          ¿Confirmás que querés reactivar a <strong>{{ jugador?.nombreCompleto }}</strong>? Vuelve a generar
+          su cuota desde el mes en curso. Los meses en que estuvo dado de baja no se cobran.
+        </p>
+
+        <footer class="dialog-actions">
+          <button type="button" class="button-ghost" (click)="cerrarDialogo()" [disabled]="procesando">
+            Volver
+          </button>
+          <button type="button" class="button-primary" (click)="confirmarReactivar()" [disabled]="procesando">
+            {{ procesando ? 'Reactivando…' : 'Sí, reactivar' }}
+          </button>
+        </footer>
+      }
+
+      <!-- ----- ANULAR PAGO ----- -->
+      @if (dialogo === 'anular' && abonoAnular; as anular) {
+        <dl class="anular-detalle">
+          <div>
+            <dt>Período</dt>
+            <dd>
+              {{ anular.item.periodo }}
+              @if (anular.item.concepto === 'Inscripcion') {
+                · Inscripción
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Monto</dt>
+            <dd class="anular-monto">{{ formatMonto(anular.abono.monto) }}</dd>
+          </div>
+          <div>
+            <dt>Método y fecha</dt>
+            <dd>{{ anular.abono.metodoPago }} · {{ formatFecha(anular.abono.fechaPago) }}</dd>
+          </div>
+        </dl>
+
+        <p class="dialog-confirm dialog-confirm-warning">
+          El pago deja de contar y su monto <strong>vuelve a quedar como deuda</strong>. Queda registrado
+          quién lo anuló, cuándo y por qué. No se puede deshacer.
+        </p>
+
+        <div class="field">
+          <label class="field-label" for="motivoAnulacion">Motivo de la anulación</label>
+          <textarea
+            id="motivoAnulacion"
+            class="field-input field-textarea"
+            rows="3"
+            [maxlength]="motivoMaximo"
+            [(ngModel)]="motivoAnulacion"
+            placeholder="Ej.: se registró en el jugador equivocado"
+          ></textarea>
+          <span class="field-hint" [class.field-hint-error]="motivoAnulacion.length > 0 && !motivoValido">
+            Mínimo {{ motivoMinimo }} caracteres · {{ motivoAnulacion.trim().length }}/{{ motivoMaximo }}
+          </span>
+        </div>
+
+        <footer class="dialog-actions">
+          <button type="button" class="button-ghost" (click)="cerrarDialogo()" [disabled]="procesando">
+            Volver
+          </button>
+          <button
+            type="button"
+            class="button-danger"
+            (click)="confirmarAnulacion()"
+            [disabled]="procesando || !motivoValido"
+          >
+            {{ procesando ? 'Anulando…' : 'Sí, anular pago' }}
+          </button>
+        </footer>
+      }
+    </div>
+  </div>
+}

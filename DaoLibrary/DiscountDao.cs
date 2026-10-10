@@ -44,7 +44,7 @@ public class DiscountDao
 
     // The state of a benefit, resolved here and nowhere else (HU-012).
     //
-    // It is computed against GETDATE(), the clock of the database server, so it
+    // It is computed against SqlReloj.Hoy (the club date, Argentina), so it
     // does not depend on the machine the administrator is sitting at. It is not
     // stored either: a benefit stops being valid the day its range ends, with no
     // scheduled job and no flag for anybody to flip.
@@ -53,20 +53,20 @@ public class DiscountDao
     // beneficio anulado (VoidDiscount) también deja estado_activo = 0, y lo distingue la marca
     // anulado. No se deduce de las fechas: cancelar uno Programado también deja
     // fecha_cancelacion antes de fecha_inicio, y eso es Cancelled, no Voided.
-    private const string StatusExpression = @"
+    private const string StatusExpression = $@"
         CASE
             WHEN jd.anulado = 1 THEN 4
             WHEN jd.estado_activo = 0 THEN 3
-            WHEN CAST(GETDATE() AS DATE) < jd.fecha_inicio THEN 0
-            WHEN CAST(GETDATE() AS DATE) > jd.fecha_fin THEN 2
+            WHEN {SqlReloj.Hoy} < jd.fecha_inicio THEN 0
+            WHEN {SqlReloj.Hoy} > jd.fecha_fin THEN 2
             ELSE 1
         END";
 
     // A benefit applies today when it was not cancelled and today falls inside
     // its range. Written against the same criteria as StatusExpression.
-    private const string InForceFilter = @"
+    private const string InForceFilter = $@"
         jd.estado_activo = 1
-        AND CAST(GETDATE() AS DATE) BETWEEN jd.fecha_inicio AND jd.fecha_fin";
+        AND {SqlReloj.Hoy} BETWEEN jd.fecha_inicio AND jd.fecha_fin";
 
     public DiscountDao(string connectionString)
     {
@@ -100,8 +100,8 @@ public class DiscountDao
             WHERE jd.estado_activo = 1 AND jd.FK_id_jugador = @playerId
             ORDER BY
                 CASE
-                    WHEN CAST(GETDATE() AS DATE) BETWEEN jd.fecha_inicio AND jd.fecha_fin THEN 0
-                    WHEN jd.fecha_inicio > CAST(GETDATE() AS DATE) THEN 1
+                    WHEN {SqlReloj.Hoy} BETWEEN jd.fecha_inicio AND jd.fecha_fin THEN 0
+                    WHEN jd.fecha_inicio > {SqlReloj.Hoy} THEN 1
                     ELSE 2
                 END,
                 jd.fecha_inicio;";
@@ -309,7 +309,8 @@ public class DiscountDao
     // Edits a benefit of a player, with the same overlap guard as the insert but
     // ignoring the row being edited, which obviously collides with itself.
     //
-    // Scoped by estado_activo = 1 so a cancelled record can never be revived by
+    // Scoped by estado_activo = 1 and fecha_fin >= hoy, so neither a cancelled nor a finished benefit
+    // can be changed (ServiceLibrary.ReglasEdicionBeneficio decides the rest), and a cancelled record can never be revived by
     // an update. Returns false when the row was not found, null when the new
     // range collides with another benefit of the same player.
     public bool? UpdateDiscount(Discount discount)
@@ -323,7 +324,7 @@ public class DiscountDao
               AND fecha_inicio <= @endDate
               AND @startDate <= fecha_fin;";
 
-        string updateQuery = @"
+        string updateQuery = $@"
             UPDATE JUGADORES_DESCUENTOS
             SET FK_id_descuento = @typeId,
                 tipo_valor      = @valueType,
@@ -333,7 +334,8 @@ public class DiscountDao
                 fecha_fin       = @endDate
             WHERE PK_id_jugador_descuento = @id
               AND FK_id_jugador = @playerId
-              AND estado_activo = 1;";
+              AND estado_activo = 1
+              AND fecha_fin >= {SqlReloj.Hoy};";
 
         int affectedRows;
 
@@ -394,12 +396,12 @@ public class DiscountDao
     // (vence el 01/02, antes del corte).
     public virtual bool DeactivateDiscount(long playerId, long discountId)
     {
-        string query = @"
+        string query = $@"
             UPDATE JUGADORES_DESCUENTOS
             SET estado_activo = 0,
                 fecha_cancelacion = CASE
-                    WHEN CAST(GETDATE() AS DATE) < fecha_inicio THEN EOMONTH(fecha_inicio, -1)
-                    ELSE CAST(GETDATE() AS DATE)
+                    WHEN {SqlReloj.Hoy} < fecha_inicio THEN EOMONTH(fecha_inicio, -1)
+                    ELSE {SqlReloj.Hoy}
                 END
             WHERE FK_id_jugador = @playerId
               AND PK_id_jugador_descuento = @discountId

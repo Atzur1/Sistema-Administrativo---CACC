@@ -184,6 +184,8 @@ public class JugadoresControllerTests
 
     private class FakeJugadoresDao : IJugadoresDao
     {
+public (BajaJugadorResultado Resultado, int CuotasEliminadas) DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
+        public bool Reactivar(int idJugador) => throw new NotSupportedException();
         public JugadorResumen? Player { get; init; }
         public Exception? LookupError { get; init; }
 
@@ -202,6 +204,10 @@ public class JugadoresControllerTests
 
     private class FakePagosDao : IPagosDao
     {
+public bool EmitirCuotaDeJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio) => throw new NotSupportedException();
+        public Pago? ObtenerPagoParaAnular(SqlConnection conexion, SqlTransaction transaccion, int idPago) => throw new NotSupportedException();
+        public IReadOnlyList<Pago> ObtenerFilasDeLaMismaDeuda(SqlConnection conexion, SqlTransaction transaccion, Pago pago) => throw new NotSupportedException();
+        public void RegistrarAnulacionYEliminarAbono(SqlConnection conexion, SqlTransaction transaccion, Pago abono, string motivo, int idUsuarioAnulacion) => throw new NotSupportedException();
         public List<HistoryCall> HistoryCalls { get; } = new();
         public Exception? HistoryError { get; init; }
         public HistorialPagosResultado HistoryResult { get; } = new() { Total = 1, Page = 1, PageSize = 10 };

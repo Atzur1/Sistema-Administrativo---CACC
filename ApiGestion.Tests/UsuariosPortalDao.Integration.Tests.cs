@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 // Habilitar y corregir candidatos con el DNI como usuario del login. Corre contra una base de desarrollo real
 // (CACC_TEST_DB, ver PlayerDao.Integration.Tests.cs) dentro de una transacción que se revierte, así que no deja
 // cuentas ni auditoría. Cada prueba crea sus propias filas de USUARIO.
+[Collection(BaseDeDatosCollection.Nombre)]
 public class UsuariosPortalDaoIntegrationTests
 {
     private static (SqlConnection Connection, SqlTransaction Transaction) Abrir()

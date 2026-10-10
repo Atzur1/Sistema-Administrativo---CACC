@@ -22,7 +22,7 @@ namespace DaoLibrary
         // rango fecha_inicio/fecha_fin de siempre.
         public const string ApplyDescuentoActivo = @"
             OUTER APPLY (
-                SELECT TOP (1) jd.FK_id_descuento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo
+                SELECT TOP (1) jd.PK_id_jugador_descuento, jd.FK_id_descuento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo
                 FROM JUGADORES_DESCUENTOS jd
                 WHERE jd.FK_id_jugador = pg.FK_id_jugador
                   AND pg.concepto = 'Cuota'

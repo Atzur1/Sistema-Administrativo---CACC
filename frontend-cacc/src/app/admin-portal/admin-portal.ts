@@ -112,7 +112,7 @@ cambiarPortal() {
 
 // Log out and return to the login screen
 cerrarSesion() {
-    this.authService.logout();
+    this.authService.cerrarSesion();
     this.router.navigate(['/']);
     }
 }

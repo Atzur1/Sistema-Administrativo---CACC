@@ -48,6 +48,22 @@ describe('authInterceptor', () => {
     expect(navigate).toHaveBeenCalledWith(['/'], { queryParams: { sesion: 'vencida' } });
   });
 
+  it('never sends the token to another origin', () => {
+    http.get('https://otro-sitio.example.com/api/jugadores').subscribe();
+
+    const request = httpTesting.expectOne('https://otro-sitio.example.com/api/jugadores');
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush({});
+  });
+
+  it('attaches the token to the logout request so the server can revoke it', () => {
+    http.post('/api/auth/logout', null).subscribe();
+
+    const request = httpTesting.expectOne('/api/auth/logout');
+    expect(request.request.headers.get('Authorization')).toBe(`Bearer ${token}`);
+    request.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
   it('does not attach the stale token to public login requests', () => {
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     http.post('/api/auth/login', { usuario: 'admin@cacc.com', contrasena: 'incorrecta' }).subscribe({

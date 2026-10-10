@@ -1,5 +1,5 @@
 {
-  "outputDirectory": "dist/frontend-cacc",
+  "outputDirectory": "dist/frontend-cacc/browser",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

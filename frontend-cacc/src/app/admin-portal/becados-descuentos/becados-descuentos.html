@@ -359,19 +359,17 @@
                   <span class="status-pill" [ngClass]="statusClassOf(item)">{{
                     statusOf(item)
                   }}</span>
-                  <button
-                    type="button"
-                    class="row-action"
-                    (click)="startEditing(item)"
-                    [disabled]="item.status === 'Cancelled' || item.status === 'Voided'"
-                    [title]="
-                      item.status === 'Cancelled' || item.status === 'Voided'
-                        ? 'Esta bonificación ya no está vigente'
-                        : ''
-                    "
-                  >
-                    Editar
-                  </button>
+                  @if (puedeEditar) {
+                    <button
+                      type="button"
+                      class="row-action"
+                      (click)="startEditing(item)"
+                      [disabled]="!esEditable(item)"
+                      [title]="esEditable(item) ? '' : motivoNoEditable"
+                    >
+                      Editar
+                    </button>
+                  }
                 </li>
               }
             </ul>
@@ -410,10 +408,16 @@
           <button type="button" class="button-ghost" (click)="startNewBenefit()">
             Asignar otro período
           </button>
-          @if (discount.status === 'Active' || discount.status === 'Scheduled') {
-            <button type="button" class="button-primary" (click)="startEditing()">
-              Editar bonificación
-            </button>
+          @if (esEditable(discount)) {
+            <span class="action-with-help">
+              <button type="button" class="button-primary" (click)="startEditing()">
+                Editar bonificación
+              </button>
+              <app-help-hint
+                label="Editar bonificación"
+                text="Una bonificación programada se puede corregir completa. Una en curso solo admite cambiar la fecha de finalización: para cambiar el motivo o el valor, cancelala y asigná una nueva desde hoy. Las finalizadas, canceladas o anuladas quedan cerradas."
+              />
+            </span>
           }
         </footer>
       }
@@ -473,6 +477,12 @@
       <!-- ----- ASSIGNMENT / EDIT FORM ----- -->
       @if (dialogView() === 'form') {
         <form class="dialog-form" [formGroup]="benefitForm" (ngSubmit)="onSubmit()">
+          @if (editandoEnCurso) {
+            <p class="benefit-note">
+              Esta bonificación está en curso: solo se puede cambiar la fecha de finalización. Para
+              cambiar el motivo o el valor, cancelala y asigná una nueva desde hoy.
+            </p>
+          }
           <div class="field-row">
             <div class="field">
               <label class="field-label" for="reason">Motivo</label>
@@ -551,6 +561,7 @@
               <app-custom-datepicker
                 id="startDate"
                 formControlName="startDate"
+                [min]="minFechaDesde"
                 [invalid]="!!dateRangeErrorMessage"
                 required
               ></app-custom-datepicker>
@@ -561,6 +572,7 @@
               <app-custom-datepicker
                 id="endDate"
                 formControlName="endDate"
+                [min]="minFechaHasta"
                 [invalid]="!!dateRangeErrorMessage"
                 required
               ></app-custom-datepicker>
