@@ -2,6 +2,8 @@ namespace ApiGestion.Tests;
 
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -17,11 +19,17 @@ public class PlayerEnrollmentControllerTests
 {
     private const long PlayerId = 6;
 
-    private static (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) CreateController(EnrollmentFee? currentFee = null)
+    private const int OperatorId = 7;
+
+    private static (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) CreateController(EnrollmentFee? currentFee = null, string gender = "Masculino", bool playerExists = true, bool authenticated = true)
     {
         FakeEnrollmentDAO dao = new FakeEnrollmentDAO();
         FakeEnrollmentFeeDAO feeDao = new FakeEnrollmentFeeDAO { Current = currentFee };
-        return (new PlayerEnrollmentController(NullLogger<PlayerEnrollmentController>.Instance, dao, feeDao), dao);
+        FakeJugadoresDao jugadores = new FakeJugadoresDao { Player = playerExists ? new JugadorResumen { IdJugador = (int)PlayerId, Genero = gender } : null };
+        PlayerEnrollmentController controller = new PlayerEnrollmentController(NullLogger<PlayerEnrollmentController>.Instance, dao, feeDao, jugadores);
+        ClaimsIdentity identity = authenticated ? new ClaimsIdentity(new[] { new Claim("idUsuario", OperatorId.ToString()) }, "test") : new ClaimsIdentity();
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) } };
+        return (controller, dao);
     }
 
     private static Enrollment PendingEnrollment(decimal balance)
@@ -72,7 +80,8 @@ public class PlayerEnrollmentControllerTests
         Assert.Equal(20000, payment.Amount);
         Assert.Equal(20000, dao.LastAmount);
         Assert.Equal("Efectivo", dao.LastPaymentMethod);
-        Assert.Equal(DateTime.Now.Date, dao.LastPaymentDate);
+        Assert.Equal(RelojNegocio.Hoy, dao.LastPaymentDate);
+        Assert.Equal(OperatorId, dao.LastUserId);
     }
 
     [Fact]
@@ -119,6 +128,55 @@ public class PlayerEnrollmentControllerTests
         IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
 
         Assert.IsType<ConflictObjectResult>(result);
+        Assert.Null(dao.LastAmount);
+    }
+
+    [Fact]
+    public void CreateEnrollmentPayment_ForAFemalePlayerWithoutEnrollment_IsRefusedAndCreatesNothing()
+    {
+        (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController(
+            new EnrollmentFee { Amount = 50000, StartDate = new DateTime(2026, 1, 1) }, gender: "Femenino");
+
+        IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.False(dao.FirstPaymentCreated);
+    }
+
+    [Fact]
+    public void CreateEnrollmentPayment_ForAMalePlayerWithoutEnrollment_CreatesItWithTheOperator()
+    {
+        (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController(
+            new EnrollmentFee { Amount = 50000, StartDate = new DateTime(2026, 1, 1) });
+
+        IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
+
+        Assert.IsType<CreatedResult>(result);
+        Assert.True(dao.FirstPaymentCreated);
+        Assert.Equal(OperatorId, dao.LastUserId);
+    }
+
+    [Fact]
+    public void CreateEnrollmentPayment_ForAPlayerThatDoesNotExist_ReturnsNotFound()
+    {
+        (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController(playerExists: false);
+        dao.Enrollment = PendingEnrollment(30000);
+
+        IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
+
+        Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Null(dao.LastAmount);
+    }
+
+    [Fact]
+    public void CreateEnrollmentPayment_WithoutAnIdentifiedOperator_IsUnauthorized()
+    {
+        (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController(authenticated: false);
+        dao.Enrollment = PendingEnrollment(30000);
+
+        IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
+
+        Assert.IsType<UnauthorizedObjectResult>(result);
         Assert.Null(dao.LastAmount);
     }
 
@@ -174,6 +232,8 @@ public class PlayerEnrollmentControllerTests
         public decimal? LastAmount { get; private set; }
         public string? LastPaymentMethod { get; private set; }
         public DateTime? LastPaymentDate { get; private set; }
+        public int? LastUserId { get; private set; }
+        public bool FirstPaymentCreated { get; private set; }
 
         public FakeEnrollmentDAO() : base("")
         {
@@ -184,7 +244,7 @@ public class PlayerEnrollmentControllerTests
             return Enrollment;
         }
 
-        public override EnrollmentPayment? CreateEnrollmentPayment(long playerId, decimal amount, string paymentMethod, DateTime paymentDate)
+        public override EnrollmentPayment? CreateEnrollmentPayment(long playerId, decimal amount, string paymentMethod, DateTime paymentDate, int? idUsuarioRegistro = null)
         {
             if (RefusePayment)
             {
@@ -194,8 +254,27 @@ public class PlayerEnrollmentControllerTests
             LastAmount = amount;
             LastPaymentMethod = paymentMethod;
             LastPaymentDate = paymentDate;
+            LastUserId = idUsuarioRegistro;
             return new EnrollmentPayment { Id = 99, Amount = amount, PaymentMethod = paymentMethod, PaymentDate = paymentDate };
         }
+
+        public override EnrollmentPayment? CreateEnrollmentAndFirstPayment(long playerId, decimal enrollmentAmount, decimal paymentAmount, string paymentMethod, DateTime paymentDate, int? idUsuarioRegistro = null)
+        {
+            FirstPaymentCreated = true;
+            LastAmount = paymentAmount;
+            LastUserId = idUsuarioRegistro;
+            return new EnrollmentPayment { Id = 100, Amount = paymentAmount, PaymentMethod = paymentMethod, PaymentDate = paymentDate };
+        }
+    }
+
+    private class FakeJugadoresDao : IJugadoresDao
+    {
+        public JugadorResumen? Player { get; set; }
+
+        public JugadorResumen? ObtenerJugadorPorId(int idJugador) => Player;
+        public IReadOnlyList<JugadorResumen> ListarJugadores() => throw new NotSupportedException();
+        public (BajaJugadorResultado Resultado, int CuotasEliminadas) DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
+        public bool Reactivar(int idJugador) => throw new NotSupportedException();
     }
 
     private class FakeEnrollmentFeeDAO : EnrollmentFeeDAO

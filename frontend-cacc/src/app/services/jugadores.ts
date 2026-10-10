@@ -5,6 +5,7 @@ import { JugadorResumen } from './pagos';
 import { API_BASE_URL } from './api-url';
 
 export interface PagoHistorialAbono {
+  idPago: number; // fila de PAGOS del abono: la que se anula con anularPago()
   monto: number;
   metodoPago: string;
   fechaPago: string;
@@ -41,6 +42,20 @@ export class JugadoresService {
 
   getJugador(id: number): Observable<JugadorResumen> {
     return this.http.get<JugadorResumen>(`${this.apiUrl}/${id}`);
+  }
+
+  // Baja del jugador (deja de generar cuotas desde el mes siguiente). Sin fecha, el servidor toma hoy.
+  darDeBaja(id: number, fecha?: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${this.apiUrl}/${id}/baja`, fecha ? { fecha } : {});
+  }
+
+  reactivar(id: number): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${this.apiUrl}/${id}/reactivar`, null);
+  }
+
+  // Anula un abono del historial cargado por error (solo SuperAdmin). Su monto vuelve al saldo pendiente.
+  anularPago(idPago: number, motivo: string): Observable<{ mensaje: string; saldoReabierto: number }> {
+    return this.http.post<{ mensaje: string; saldoReabierto: number }>(`${API_BASE_URL}/pagos/${idPago}/anular`, { motivo });
   }
 
   getHistorialPagos(id: number, page: number, pageSize: number): Observable<HistorialPagosResultado> {

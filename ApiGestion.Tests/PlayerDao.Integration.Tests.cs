@@ -26,6 +26,7 @@ public sealed class IntegracionFactAttribute : FactAttribute
 // HU-033: las pruebas del controlador usan un PlayerDAO falso, así que no ejecutan este SQL. Esta sí lo hace,
 // sobre una base real con los triggers de auditoría puestos. Cubre el error 334 de "OUTPUT sin INTO" en PERSONA,
 // que dejaba el alta de jugadores fallando en toda base con la auditoría aplicada.
+[Collection(BaseDeDatosCollection.Nombre)]
 public class PlayerDaoIntegrationTests
 {
     [IntegracionFact]
@@ -79,4 +80,12 @@ public class PlayerDaoIntegrationTests
         command.Parameters.AddWithValue("@id", id);
         return Convert.ToInt32(command.ExecuteScalar());
     }
+}
+
+// Las pruebas de integración comparten una misma base real: corren de a una, no en paralelo, para que
+// las transacciones de una prueba no se crucen con las de otra.
+[CollectionDefinition(Nombre, DisableParallelization = true)]
+public sealed class BaseDeDatosCollection
+{
+    public const string Nombre = "Base de datos";
 }

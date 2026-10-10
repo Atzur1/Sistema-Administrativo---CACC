@@ -1,6 +1,9 @@
 @ApiGestion_HostAddress = http://localhost:5118
 
-GET {{ApiGestion_HostAddress}}/weatherforecast/
-Accept: application/json
+# Público: no requiere token.
+POST {{ApiGestion_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "usuario": "<dni>", "contrasena": "<contraseña>" }
 
 ###

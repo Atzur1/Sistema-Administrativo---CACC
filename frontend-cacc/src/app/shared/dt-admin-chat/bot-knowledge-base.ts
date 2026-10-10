@@ -197,7 +197,7 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         steps: [
             'Entrá a "Becados y descuentos" y, en "Asignar bonificación", buscá al jugador.',
             'Elegí el motivo, el tipo de valor (porcentaje o monto) y la vigencia, y guardá.',
-            'En "Beneficios asignados" abrí un jugador para ver su historial, editar, cancelar o anular la bonificación.',
+            'En "Beneficios asignados" abrí un jugador para ver su historial, cancelar o anular. Editar es solo de SuperAdmin y solo en bonificaciones en curso (fecha de fin) o programadas.',
         ],
         action: {
             label: 'Ir a Becados y descuentos',

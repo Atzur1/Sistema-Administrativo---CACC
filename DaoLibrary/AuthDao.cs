@@ -27,17 +27,22 @@ public class AuthDao
         // todavía no completó el enlace de activación: sin esto, una contraseña vieja
         // que el otro equipo haya dejado cargada serviría para entrar antes de tiempo.
         // TOP (2): si dos cuentas respondieran al mismo identificador no se adivina cuál es; no se deja entrar a ninguna.
-        string query = $@"SELECT TOP (2) PK_id_usuario, email, nombre, apellido, dni, contrasenia, password_hash, token_version, acceso_portal, rol_portal
+        string query = $@"SELECT TOP (2) PK_id_usuario, email, nombre, apellido, dni, password_hash, token_version, acceso_portal, rol_portal
             FROM USUARIO
             WHERE {(buscado.Value.EsCorreo ? "email = @valor" : DniNormalizadoSql + " = @valor")}
               AND activo = 1 AND acceso_portal = 1 AND activacion_pendiente = 0";
         using var comando = new SqlCommand(query, conexion);
         comando.Parameters.Add("@valor", System.Data.SqlDbType.NVarChar, 254).Value = buscado.Value.Valor;
         using var reader = comando.ExecuteReader();
-        if (!reader.Read()) return null;
+        if (!reader.Read())
+        {
+            // Mismo costo que verificar una contraseña real: sin esto, "ese DNI no existe" respondía
+            // notablemente más rápido que "contraseña incorrecta" y delataba qué DNI tienen cuenta.
+            PasswordHasher.Verify(contrasenia, HashDeReferencia);
+            return null;
+        }
 
         var hash = reader["password_hash"] as string;
-        var legacy = reader["contrasenia"] as string;
 
         var usuario = new Usuario
         {
@@ -55,13 +60,29 @@ public class AuthDao
         usuario.IdRol = usuario.RolPortal!.Value;
         if (reader.Read()) return null; // identificador ambiguo
 
-        if (hash is not null ? !PasswordHasher.Verify(contrasenia, hash) : !string.Equals(contrasenia, legacy, StringComparison.Ordinal))
+        // Solo contraseñas con hash (PBKDF2). La columna contrasenia en texto plano ya no se lee: una cuenta
+        // sin password_hash no puede entrar hasta crear su contraseña con el enlace de activación o de
+        // "¿Olvidaste tu contraseña?". Se gasta igual el tiempo de una verificación para no delatarla.
+        if (hash is null)
+        {
+            PasswordHasher.Verify(contrasenia, HashDeReferencia);
             return null;
+        }
 
-        var necesitaMigracion = hash is null;
-        reader.Close();
-        if (necesitaMigracion) ActualizarHash(conexion, usuario.IdUsuario, contrasenia);
-        return usuario;
+        return PasswordHasher.Verify(contrasenia, hash) ? usuario : null;
+    }
+
+    // Hash válido de una contraseña al azar, solo para gastar el mismo tiempo que una verificación real.
+    private static readonly string HashDeReferencia = PasswordHasher.Hash(Guid.NewGuid().ToString("N"));
+
+    // Cierre de sesión en el servidor: subir token_version invalida todos los JWT emitidos hasta ahora
+    // para esa cuenta (OnTokenValidated los compara), en vez de esperar a que venzan solos.
+    public void InvalidarSesiones(int idUsuario)
+    {
+        using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
+        using var comando = new SqlCommand("UPDATE USUARIO SET token_version = token_version + 1 WHERE PK_id_usuario = @id", conexion);
+        comando.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idUsuario;
+        comando.ExecuteNonQuery();
     }
 
     public bool UsuarioActivoConRol(int idUsuario, int idRol, int tokenVersion)
@@ -73,13 +94,4 @@ public class AuthDao
         comando.Parameters.Add("@version", System.Data.SqlDbType.Int).Value = tokenVersion;
         return comando.ExecuteScalar() is not null;
     }
-
-    private static void ActualizarHash(SqlConnection conexion, int idUsuario, string contrasenia)
-    {
-        using var comando = new SqlCommand("UPDATE USUARIO SET password_hash = @hash, contrasenia = NULL WHERE PK_id_usuario = @id AND activo = 1 AND password_hash IS NULL", conexion);
-        comando.Parameters.Add("@hash", System.Data.SqlDbType.NVarChar, 512).Value = PasswordHasher.Hash(contrasenia);
-        comando.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idUsuario;
-        comando.ExecuteNonQuery();
-    }
-
 }

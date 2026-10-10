@@ -392,6 +392,10 @@ public class PagosServiceCobroTests
 
     private sealed class FakePagosDao : IPagosDao
     {
+public bool EmitirCuotaDeJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio) => throw new NotSupportedException();
+        public Pago? ObtenerPagoParaAnular(SqlConnection conexion, SqlTransaction transaccion, int idPago) => throw new NotSupportedException();
+        public IReadOnlyList<Pago> ObtenerFilasDeLaMismaDeuda(SqlConnection conexion, SqlTransaction transaccion, Pago pago) => throw new NotSupportedException();
+        public void RegistrarAnulacionYEliminarAbono(SqlConnection conexion, SqlTransaction transaccion, Pago abono, string motivo, int idUsuarioAnulacion) => throw new NotSupportedException();
         public List<Pago> Pagos { get; } = new();
         public bool JugadorExiste { get; set; } = true;
         public DescuentoAplicable? Descuento { get; set; }

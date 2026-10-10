@@ -1,4 +1,5 @@
 using DaoLibrary;
+using EntityLibrary;
 
 namespace ApiGestion.Services;
 
@@ -28,7 +29,7 @@ public sealed class GeneradorCuotasMensuales : BackgroundService
         using var timer = new PeriodicTimer(Intervalo);
         do
         {
-            GenerarMesActual(DateTime.Now);
+            GenerarMesActual(RelojNegocio.Ahora);
         }
         while (await SiguienteTurnoAsync(timer, stoppingToken));
     }

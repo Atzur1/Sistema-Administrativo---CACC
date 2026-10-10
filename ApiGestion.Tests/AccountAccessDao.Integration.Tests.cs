@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 // Recuperación de contraseña para Administradores (rol 2), no solo para el SuperAdmin. El SQL corre contra una base
 // de desarrollo real (CACC_TEST_DB, ver PlayerDao.Integration.Tests.cs) dentro de una transacción que se revierte,
 // así que no deja tokens, contraseñas ni auditoría. Usa una cuenta Administrador que ya exista en esa base.
+[Collection(BaseDeDatosCollection.Nombre)]
 public class AccountAccessDaoIntegrationTests
 {
     private static readonly DateTime Vence = DateTime.UtcNow.AddMinutes(30);

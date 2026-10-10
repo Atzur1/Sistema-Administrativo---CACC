@@ -84,21 +84,30 @@ public class PlayersController : ControllerBase
 
         // A monthly fee set on the 5th covers the whole month, so it is looked up
         // against the last day of the month, as PagosDao does.
-        DateTime joinDate = DateTime.Now.Date;
+        DateTime joinDate = RelojNegocio.Hoy;
         DateTime lastDayOfMonth = new DateTime(joinDate.Year, joinDate.Month, DateTime.DaysInMonth(joinDate.Year, joinDate.Month));
         // The player's category fee wins when it has one in force; otherwise the gender fee.
         decimal? monthlyFeeAmount = _arancelesDao.ObtenerMontoVigente(request.Gender, (int)categoryId, lastDayOfMonth);
 
-        Player created = _playerDAO.CreatePlayer(new Player
+        Player created;
+        try
         {
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
-            Dni = dni,
-            BirthDate = request.BirthDate!.Value.Date,
-            Gender = request.Gender,
-            CategoryId = categoryId,
-            JoinDate = joinDate
-        }, monthlyFeeAmount, enrollmentFeeAmount);
+            created = _playerDAO.CreatePlayer(new Player
+            {
+                FirstName = request.FirstName.Trim(),
+                LastName = request.LastName.Trim(),
+                Dni = dni,
+                BirthDate = request.BirthDate!.Value.Date,
+                Gender = request.Gender,
+                CategoryId = categoryId,
+                JoinDate = joinDate
+            }, monthlyFeeAmount, enrollmentFeeAmount);
+        }
+        catch (DaoLibrary.Exceptions.DniDuplicadoException)
+        {
+            // Otra alta con el mismo DNI ganó la carrera entre la verificación de arriba y la transacción.
+            return BadRequest($"A person with DNI {dni} is already registered.");
+        }
 
         _logger.LogInformation("Player {PlayerId} registered (monthly fee: {MonthlyFee}, enrollment fee: {EnrollmentFee})",
             created.Id, monthlyFeeAmount, enrollmentFeeAmount);
@@ -292,9 +301,9 @@ public class PlayersController : ControllerBase
         return Created($"/api/players/{playerId}/discount", MapToDto(stored ?? created));
     }
 
-    // Edits a benefit the player already holds. Only a benefit that was not
-    // cancelled can be touched: a cancelled one stays as it was granted.
-    [Authorize(Roles = "1,2")]
+    // Edita una bonificación del jugador. Solo SuperAdmin (el rol 2 asigna, cancela y anula, pero no
+    // edita), y solo lo que todavía no es historia: ver ServiceLibrary.ReglasEdicionBeneficio.
+    [Authorize(Roles = "1")]
     [HttpPut("{playerId}/discount")]
     public IActionResult UpdateDiscount(long playerId, DiscountRequestDTO request, long discountId = 0)
     {
@@ -316,6 +325,13 @@ public class PlayersController : ControllerBase
 
         Discount discount = BuildDiscount(playerId, request, reason!);
         discount.Id = current.Id;
+
+        var edicion = ServiceLibrary.ReglasEdicionBeneficio.Evaluar(current, discount, RelojNegocio.Hoy);
+        if (edicion != ServiceLibrary.ResultadoEdicionBeneficio.Permitida)
+        {
+            var mensaje = new { mensaje = ServiceLibrary.ReglasEdicionBeneficio.Mensaje(edicion) };
+            return edicion == ServiceLibrary.ResultadoEdicionBeneficio.Cerrada ? Conflict(mensaje) : UnprocessableEntity(mensaje);
+        }
 
         Discount? clash = _discountDao.GetOverlappingDiscount(playerId, discount.StartDate, discount.EndDate, current.Id);
         if (clash != null)

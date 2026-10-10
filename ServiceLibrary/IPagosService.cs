@@ -24,6 +24,22 @@ namespace ServiceLibrary
     }
 
     // HU-025: cobro de una o varias cuotas pendientes/vencidas de un mismo jugador.
+    public class AnularPagoRequest
+    {
+        public int IdPago { get; set; }
+        public string Motivo { get; set; } = string.Empty;
+        public int IdUsuarioAnulacion { get; set; }
+    }
+
+    public class AnularPagoResultado
+    {
+        public int IdPago { get; set; }
+        public int IdJugador { get; set; }
+        public decimal MontoAnulado { get; set; }
+        // Cuánto volvió a quedar pendiente en la cuota/inscripción (sin el beneficio, que se aplica al leer).
+        public decimal SaldoReabierto { get; set; }
+    }
+
     public class CobrarPagosPendientesRequest
     {
         public int IdJugador { get; set; }
@@ -54,9 +70,13 @@ namespace ServiceLibrary
 
     public interface IPagosService
     {
-        // Backea el form "Registrar pago": crea un nuevo PAGOS ya abonado para jugador+período+monto.
-        // Lanza CobroInvalidoException si ese jugador ya tiene un pago abonado para ese período (re-cobro).
+        // Backea el form "Registrar pago": abono (total o parcial) contra la cuota del período. Si la cuota
+        // no está emitida, la emite antes con el arancel del jugador; nunca acepta un monto mayor al saldo.
+        // Lanza CobroInvalidoException si ese período ya está pagado (re-cobro) o no corresponde cuota.
         RegistrarPagoResultado RegistrarPago(RegistrarPagoRequest request);
+
+        // Anula un abono cargado por error y devuelve su monto al saldo de la deuda que cubría.
+        AnularPagoResultado AnularPago(AnularPagoRequest request);
 
         // HU-025: cobro atómico de cuotas pendientes/vencidas de un jugador (todas o ninguna).
         CobrarPagosPendientesResultado CobrarPagosPendientes(CobrarPagosPendientesRequest request);
