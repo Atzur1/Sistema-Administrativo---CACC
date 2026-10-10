@@ -82,6 +82,22 @@ public class PlayersControllerVoidDiscountTests
         Assert.False(discounts.VoidCalled);
     }
 
+    [Theory]
+    [InlineData(DiscountStatus.Active)]
+    [InlineData(DiscountStatus.Scheduled)]
+    [InlineData(DiscountStatus.Voided)]
+    public void VoidDiscount_OnABenefitThatIsNotCancelled_ReturnsConflict(DiscountStatus status)
+    {
+        Discount discount = CancelledDiscount();
+        discount.Status = status;
+        var (controller, discounts) = CreateController(discount);
+
+        IActionResult result = controller.VoidDiscount(PlayerId, DiscountId);
+
+        Assert.IsType<ConflictObjectResult>(result);
+        Assert.False(discounts.VoidCalled);
+    }
+
     [Fact]
     public void VoidDiscount_WithAnUnknownDiscountId_ReturnsNotFound()
     {

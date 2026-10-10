@@ -31,7 +31,8 @@ public enum DiscountStatus
     // Taken down by an administrator, whatever the range says
     Cancelled = 3,
 
-    // Asignado por error y anulado: a diferencia de Cancelled, ni siquiera cuenta para los
-    // meses que ya pasaron — es como si nunca se hubiera otorgado. Ver DiscountDao.VoidDiscount.
+    // Asignado por error y anulado: a diferencia de Cancelled, no cuenta para ninguna cuota
+    // pendiente desde su inicio — es como si nunca se hubiera otorgado. Lo ya cobrado se
+    // mantiene. Ver DiscountDao.VoidDiscount.
     Voided = 4
 }
