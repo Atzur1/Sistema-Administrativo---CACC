@@ -90,6 +90,13 @@ export class AuthService {
     return this.getRol() === 1;
   }
 
+  // Donde cae cada cuenta recien logueada (y a donde se la devuelve si pide una pantalla que no es suya):
+  //  - SuperAdmin (1): la eleccion de portales; es el unico que la ve.
+  //  - Administrador (2): directo al Portal Administrativo, sin pasar por la eleccion.
+  irAlInicio(router: Router): void {
+    router.navigate([this.isSuperAdmin() ? '/portales' : '/admin/portal']);
+  }
+
   logout() {
     this.usuario = null;
     sessionStorage.removeItem(SESSION_KEY);
@@ -125,6 +132,25 @@ export const authGuard: CanActivateFn = () => {
   if (!authService.isAuthenticated()) {
     alert('Debes iniciar sesión para acceder a esta sección.');
     router.navigate(['/']);
+    return false;
+  }
+
+  return true;
+};
+
+// Pantalla de eleccion de portales: la ve unicamente el SuperAdmin. Cualquier otra cuenta va directo a su portal.
+export const portalesGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isAuthenticated()) {
+    alert('Debes iniciar sesión para acceder a esta sección.');
+    router.navigate(['/']);
+    return false;
+  }
+
+  if (!authService.isSuperAdmin()) {
+    authService.irAlInicio(router);
     return false;
   }
 

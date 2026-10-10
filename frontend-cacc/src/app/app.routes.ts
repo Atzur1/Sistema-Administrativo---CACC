@@ -3,7 +3,7 @@ import { Login } from './login/login';
 import { Portales } from './portales/portales';
 import { AdminPortal } from './admin-portal/admin-portal';
 import { ResumenGeneral } from './admin-portal/resumen-general/resumen-general';
-import { adminGuard, authGuard, superAdminGuard, adminHomeRedirect, FINANCIAL_ACCESS_DENIED } from './services/auth';
+import { adminGuard, portalesGuard, superAdminGuard, adminHomeRedirect, FINANCIAL_ACCESS_DENIED } from './services/auth';
 import { ActividadMovimientos } from './admin-portal/actividad-movimientos/actividad-movimientos';
 import { DeudasMorosidad } from './admin-portal/deudas-morosidad/deudas-morosidad';
 import { Usuarios } from './admin-portal/usuarios-y-permisos/usuarios-y-permisos';
@@ -22,9 +22,8 @@ export const routes: Routes = [
   // o la recuperación (correo "Reestablece tu contraseña").
   { path: 'crear-contrasena', component: AccountAccess, data: { modo: 'crear' } },
   { path: 'restablecer-contrasena', component: AccountAccess, data: { modo: 'restablecer' } },
-  // authGuard, no adminGuard: esta pantalla es la elección de entorno para
-  // cualquier usuario logueado, no exclusiva de Admin.
-  { path: 'portales', component: Portales, canActivate: [authGuard] },
+  // Elección de portal: solo la ve el SuperAdmin (portalesGuard); el resto entra directo a su portal.
+  { path: 'portales', component: Portales, canActivate: [portalesGuard] },
 
   // Admin portal (parent) with its dashboards as children
   {
