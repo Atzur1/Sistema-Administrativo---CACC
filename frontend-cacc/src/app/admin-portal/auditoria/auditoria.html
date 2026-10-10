@@ -50,13 +50,14 @@
           placeholder="Buscar por nombre, apellido o correo"
       /></label>
       <label class="filter-field"
-        ><span>Sección</span
-        ><input
-          type="search"
-          name="entity"
+        ><span>Sección</span>
+        <app-custom-select
+          [options]="secciones"
+          placeholder="Pagos y aranceles"
           [(ngModel)]="entity"
-          placeholder="Ej.: pagos, aranceles"
-      /></label>
+          name="entity"
+        ></app-custom-select>
+      </label>
       <label class="filter-field"
         ><span>Tipo de cambio</span>
         <app-custom-select

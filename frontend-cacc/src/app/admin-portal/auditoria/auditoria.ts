@@ -29,6 +29,20 @@ interface AuditResponse {
   items: AuditEvent[];
 }
 
+// Nombre legible de cada sección auditada: etiqueta las filas y arma las opciones del filtro "Sección".
+const SECCIONES: Record<string, string> = {
+  PAGOS: 'Pago',
+  ARANCELES: 'Arancel mensual',
+  ARANCELES_INSCRIPCION: 'Arancel de inscripción',
+  JUGADORES_DESCUENTOS: 'Beneficio de jugador',
+  JUGADORES: 'Ficha de jugador',
+  PERSONA: 'Datos personales',
+  USUARIO: 'Cuenta administrativa',
+  CATEGORIAS: 'División',
+  TIPO_DESCUENTO: 'Tipo de beneficio',
+  TOKEN_ACCESO_CUENTA: 'Acceso a cuenta',
+};
+
 @Component({
   selector: 'app-auditoria',
   standalone: true,
@@ -59,6 +73,10 @@ export class Auditoria {
     { value: 'ARANCEL_ACTUALIZADO', label: 'Arancel actualizado' },
     { value: 'DELETE', label: 'Eliminado' },
   ];
+  // Sección: antes era texto libre que tenía que coincidir con el nombre interno de la tabla (para ver los
+  // enlaces de contraseña había que escribir "TOKEN_ACCESO_CUENTA"). Sin elegir ninguna, el backend muestra
+  // solo pagos y aranceles (ver AuditDao.Search); el resto se ve eligiéndolo acá.
+  readonly secciones = Object.entries(SECCIONES).map(([value, label]) => ({ value, label }));
   items: AuditEvent[] = [];
   total = 0;
   page = 1;
@@ -170,6 +188,8 @@ export class Auditoria {
     if (this.esCuotaSaldada(item)) return 'Cuota saldada';
     if (item.entity === 'PAGOS' && item.action === 'INSERT') return 'Pago realizado';
     if (item.entity === 'ARANCELES') return 'Arancel actualizado';
+    // Alta de un enlace de contraseña (HU-068): el autor de la fila es quien lo pidió.
+    if (item.entity === 'TOKEN_ACCESO_CUENTA' && item.action === 'INSERT') return 'Enlace enviado';
     return Auditoria.ACCIONES_GENERICAS[item.action] ?? item.action;
   }
 
@@ -193,19 +213,7 @@ export class Auditoria {
   }
 
   entidadLegible(entity: string): string {
-    const labels: Record<string, string> = {
-      PAGOS: 'Pago',
-      ARANCELES: 'Arancel mensual',
-      ARANCELES_INSCRIPCION: 'Arancel de inscripción',
-      JUGADORES_DESCUENTOS: 'Beneficio de jugador',
-      JUGADORES: 'Ficha de jugador',
-      PERSONA: 'Datos personales',
-      USUARIO: 'Cuenta administrativa',
-      CATEGORIAS: 'División',
-      TIPO_DESCUENTO: 'Tipo de beneficio',
-      TOKEN_ACCESO_CUENTA: 'Acceso a cuenta',
-    };
-    return labels[entity] ?? entity.replaceAll('_', ' ').toLocaleLowerCase('es-AR');
+    return SECCIONES[entity] ?? entity.replaceAll('_', ' ').toLocaleLowerCase('es-AR');
   }
 
   campos(json: string | null): Array<{ label: string; value: string }> {
@@ -243,6 +251,7 @@ export class Auditoria {
         idRol: 'Rol',
         activacionPendiente: 'Activación pendiente',
         credencialActualizada: 'Contraseña actualizada',
+        idUsuario: 'Cuenta afectada',
         tipo: 'Tipo de enlace',
         venceUtc: 'Vencimiento del enlace',
         consumidoUtc: 'Enlace utilizado',
@@ -263,6 +272,8 @@ export class Auditoria {
       return value === true || value === 1 ? 'Sí' : 'No';
     }
     if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+    if (key === 'tipo' && value === 'RECUPERACION') return 'Reestablecer contraseña';
+    if (key === 'tipo' && value === 'ACTIVACION') return 'Crear contraseña (primer ingreso)';
     if (typeof value === 'number' && key.toLocaleLowerCase().includes('monto')) {
       return new Intl.NumberFormat('es-AR', {
         style: 'currency',

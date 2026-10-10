@@ -180,6 +180,48 @@ public class AccountAccessDaoIntegrationTests
         finally { transaction.Rollback(); connection.Dispose(); }
     }
 
+    // HU-068 (devolución de QA): la auditoría tiene que registrar como autor al SuperAdmin que pidió el enlace, no a
+    // la cuenta afectada. El autor llega a SQL Server por SqlAuditActorContext (lo carga AuditActorMiddleware con el
+    // idUsuario del token) y SqlConnectionFactory.Open lo deja en SESSION_CONTEXT; el trigger de TOKEN_ACCESO_CUENTA
+    // solo cae en la cuenta afectada cuando la conexión no trae autor. Por eso esta prueba abre la conexión con
+    // SqlConnectionFactory, igual que el endpoint, y no con Abrir().
+    [IntegracionFact]
+    public void SuperAdminButton_RecordsTheSuperAdminWhoAskedAsTheAuthor()
+    {
+        const int superAdminQueLoPide = 987654321; // distinto de cualquier cuenta real, para no confundirlo con la afectada
+        using var actor = SqlAuditActorContext.Push(superAdminQueLoPide);
+        using var connection = SqlConnectionFactory.Open(Environment.GetEnvironmentVariable(IntegracionFactAttribute.Variable)!);
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var (id, _) = CuentaConContrasena(connection, transaction);
+
+            AccountAccessDao.CreateResetTokenForUserCore(connection, transaction, id, NuevoHash(), Vence);
+
+            using var command = new SqlCommand(
+                @"SELECT TOP (1) a.id_usuario FROM dbo.AUDITORIA_CAMBIOS a
+                  WHERE a.entidad = N'TOKEN_ACCESO_CUENTA' AND a.accion = 'INSERT'
+                    AND JSON_VALUE(a.datos_despues, '$.idUsuario') = CONVERT(NVARCHAR(20), @id)
+                  ORDER BY a.PK_id_evento DESC", connection, transaction);
+            command.Parameters.AddWithValue("@id", id);
+            Assert.Equal(superAdminQueLoPide, Convert.ToInt32(command.ExecuteScalar()));
+        }
+        finally { transaction.Rollback(); }
+    }
+
+    // Cualquier cuenta con acceso y la contraseña ya creada (SuperAdmin o Administrador): la prueba de autoría no
+    // depende del rol de la cuenta afectada, y así corre también en una base que solo tiene al SuperAdmin.
+    private static (int Id, string Email) CuentaConContrasena(SqlConnection connection, SqlTransaction transaction)
+    {
+        using var command = new SqlCommand(
+            @"SELECT TOP (1) PK_id_usuario, email FROM dbo.USUARIO
+              WHERE acceso_portal = 1 AND activo = 1 AND activacion_pendiente = 0 AND email IS NOT NULL
+              ORDER BY PK_id_usuario", connection, transaction);
+        using var reader = command.ExecuteReader();
+        Assert.True(reader.Read(), "La base de prueba necesita una cuenta con acceso al portal y la contraseña ya creada.");
+        return (reader.GetInt32(0), reader.GetString(1).Trim());
+    }
+
     [IntegracionFact]
     public void SuperAdminButton_DoesNotApplyToAnAccountThatNeverCreatedItsPassword()
     {
