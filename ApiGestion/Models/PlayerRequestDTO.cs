@@ -1,6 +1,7 @@
 namespace ApiGestion.Models;
 
 using System.ComponentModel.DataAnnotations;
+using EntityLibrary;
 
 // Inbound contract of the player registration form (HU-033)
 public class PlayerRequestDTO : IValidatableObject
@@ -39,7 +40,7 @@ public class PlayerRequestDTO : IValidatableObject
                 new[] { nameof(Gender) });
         }
 
-        if (BirthDate != null && BirthDate.Value.Date >= DateTime.Now.Date)
+        if (BirthDate != null && BirthDate.Value.Date >= RelojNegocio.Hoy)
         {
             yield return new ValidationResult(
                 "The birth date must be in the past.",

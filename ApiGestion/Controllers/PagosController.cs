@@ -64,7 +64,7 @@ namespace ApiGestion.Controllers
         [HttpGet("deuda-por-categoria")]
         public IActionResult ObtenerDeudaPorCategoria([FromQuery] int? anio = null, [FromQuery] int? mes = null)
         {
-            return Ok(_pagosService.ObtenerDeudaPorCategoria(anio ?? DateTime.Now.Year, mes));
+            return Ok(_pagosService.ObtenerDeudaPorCategoria(anio ?? RelojNegocio.Ahora.Year, mes));
         }
 
         // GET api/pagos/recientes?top=10 -> panel "Últimos pagos"
@@ -103,6 +103,11 @@ namespace ApiGestion.Controllers
         [HttpPost("registrar")]
         public IActionResult RegistrarPago([FromBody] RegistrarPagoRequestDto request)
         {
+            if (IdUsuarioAutenticado() == null)
+            {
+                return Unauthorized(new { exito = false, mensaje = "No se pudo identificar al usuario de la sesión. Volvé a iniciar sesión." });
+            }
+
             try
             {
                 var resultado = _pagosService.RegistrarPago(new RegistrarPagoRequest
@@ -240,6 +245,52 @@ namespace ApiGestion.Controllers
             {
                 _logger.LogError(ex, "Error interno al procesar el cobro");
                 return StatusCode(500, new { exito = false, mensaje = "Error interno al procesar el cobro." });
+            }
+        }
+
+        // POST api/pagos/45/anular -> anula un pago cargado por error. Solo SuperAdmin.
+        // Body:  { "motivo": "Se registró en el jugador equivocado" }
+        // 200:   { exito, idPago, idJugador, montoAnulado, saldoReabierto, mensaje }
+        // 400:   pago inexistente, ya anulado, es una deuda (no un pago) o motivo inválido
+        [Authorize(Roles = "1")]
+        [HttpPost("{idPago:int}/anular")]
+        public IActionResult AnularPago(int idPago, [FromBody] AnularPagoRequestDto request)
+        {
+            int? idUsuario = IdUsuarioAutenticado();
+            if (idUsuario == null)
+            {
+                return Unauthorized(new { exito = false, mensaje = "No se pudo identificar al usuario de la sesión. Volvé a iniciar sesión." });
+            }
+
+            try
+            {
+                var resultado = _pagosService.AnularPago(new AnularPagoRequest
+                {
+                    IdPago = idPago,
+                    Motivo = request.Motivo,
+                    IdUsuarioAnulacion = idUsuario.Value
+                });
+
+                _logger.LogInformation("Pago {IdPago} anulado por el usuario {IdUsuario}", idPago, idUsuario.Value);
+
+                return Ok(new
+                {
+                    exito = true,
+                    idPago = resultado.IdPago,
+                    idJugador = resultado.IdJugador,
+                    montoAnulado = resultado.MontoAnulado,
+                    saldoReabierto = resultado.SaldoReabierto,
+                    mensaje = "Pago anulado. Su monto volvió al saldo pendiente."
+                });
+            }
+            catch (CobroInvalidoException ex)
+            {
+                return BadRequest(new { exito = false, mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error interno al anular el pago {IdPago}", idPago);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al anular el pago." });
             }
         }
 

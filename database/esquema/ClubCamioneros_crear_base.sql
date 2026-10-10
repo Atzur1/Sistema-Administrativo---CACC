@@ -20,7 +20,8 @@
 
    LO QUE CONVIENE SABER (diseno, no errores)
      - USUARIO.PK_id_usuario, PAGOS, JUGADORES y otras tablas NO usan IDENTITY: el id se calcula con
-       MAX+1 en el codigo de la API. PERSONA, TIPO_DESCUENTO, JUGADORES_DESCUENTOS, ARANCELES,
+       MAX+1 (USUARIO, que carga el otro equipo). PAGOS y JUGADORES lo toman de las secuencias SEQ_PAGOS y
+       SEQ_JUGADORES, que crea la migracion V20261011_04 al iniciar la API por primera vez. PERSONA, TIPO_DESCUENTO, JUGADORES_DESCUENTOS, ARANCELES,
        ARANCELES_INSCRIPCION, AUDITORIA_CAMBIOS y TOKEN_ACCESO_CUENTA si son IDENTITY.
      - Los triggers TR_AUDIT_* registran cada cambio en AUDITORIA_CAMBIOS; el responsable sale de
        SESSION_CONTEXT('idUsuario'). Si el codigo que escribe no lo setea, queda sin responsable.
@@ -596,11 +597,13 @@ GO
    La base queda sin usuarios. Para probar el portal hace falta una primera cuenta SuperAdmin. En el sistema
    real, las personas y los usuarios los da de alta el otro equipo y el SuperAdmin los habilita desde
    "Usuarios y Permisos"; esto solo resuelve el arranque en una base de PRUEBAS vacia.
-   Para usarlo: descomentar, cambiar DNI, correo y contrasena, y ejecutar. Entra con el DNI. En el primer
-   ingreso la API guarda la contrasena cifrada y borra este texto plano. NO usar en produccion.
+   Para usarlo: descomentar, poner DNI y un correo real al que tengas acceso, y ejecutar. La cuenta queda
+   SIN contrasena (el portal no acepta contrasenas en texto plano): en la pantalla de ingreso usar
+   "Olvidaste tu contrasena?" con ese DNI y crearla desde el enlace que llega al correo. En desarrollo, con
+   Email:LogResetLink = true, el enlace aparece en la consola de la API en lugar de enviarse.
 
-INSERT dbo.USUARIO (PK_id_usuario, nombre, apellido, dni, email, contrasenia, FK_id_rol, activo, acceso_portal, rol_portal)
-VALUES (1, N'Super', N'Admin Prueba', N'12345678', N'superadmin.prueba@ejemplo.com', N'CambiarEsta#2026', 1, 1, 1, 1);
+INSERT dbo.USUARIO (PK_id_usuario, nombre, apellido, dni, email, FK_id_rol, activo, acceso_portal, rol_portal)
+VALUES (1, N'Super', N'Admin Prueba', N'12345678', N'tu.correo@ejemplo.com', 1, 1, 1, 1);
 */
 
 SET NOEXEC OFF;

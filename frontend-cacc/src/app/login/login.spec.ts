@@ -39,7 +39,11 @@ describe('Login - secuencia de carga tras un login correcto', () => {
       providers: [
         {
           provide: AuthService,
-          useValue: { login: vi.fn(() => of({ email: 'admin@cacc.com', rol: 1, token: 'tok' })) },
+          useValue: {
+            login: vi.fn(() => of({ email: 'admin@cacc.com', rol: 1, token: 'tok' })),
+            // Desde el ingreso por rol, el login navega con irAlInicio: la cuenta del test es SuperAdmin (rol 1).
+            irAlInicio: vi.fn((router: Router) => router.navigate(['/portales'])),
+          },
         },
         { provide: Router, useValue: { navigate } },
       ],

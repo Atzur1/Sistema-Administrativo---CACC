@@ -12,6 +12,9 @@ export interface JugadorResumen {
   genero: string; // "Masculino" | "Femenino"
   categoria: string;
   nombreCompleto: string;
+  fechaAlta?: string | null;
+  // null = activo. Con fecha, el jugador dejó el club y no se le emiten más cuotas.
+  fechaBaja?: string | null;
 }
 
 export interface PendienteJugador {

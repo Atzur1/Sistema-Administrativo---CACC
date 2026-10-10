@@ -27,6 +27,7 @@ import {
   statusToneClass,
 } from '../../models/DiscountModel';
 import { PagosService, JugadorResumen } from '../../services/pagos';
+import { AuthService } from '../../services/auth';
 import { normalizeText } from '../../shared/normalize-text';
 
 // Player shape this screen was originally built against (repo de Atzur1).
@@ -149,6 +150,7 @@ export class BecadosDescuentos implements OnInit {
     private discountService: DiscountService,
     private pagosService: PagosService,
     private notifications: NotificationService,
+    private authService: AuthService,
   ) {
     this.lookupForm = this.fb.group({
       player: ['', [Validators.required, this.knownPlayerValidator]],
@@ -438,12 +440,13 @@ export class BecadosDescuentos implements OnInit {
   // that was clicked.
   startEditing(discount: DiscountModel | null = null) {
     const target = discount ?? this.currentDiscount();
-    if (target === null) {
+    if (target === null || !this.esEditable(target)) {
       return;
     }
 
     this.currentDiscount.set(target);
 
+    this.benefitForm.enable({ emitEvent: false });
     this.benefitForm.reset({
       reason: target.type,
       valueType: target.valueType,
@@ -453,8 +456,48 @@ export class BecadosDescuentos implements OnInit {
       endDate: target.endDate,
     });
 
+    // En curso: lo ya transcurrido es historia, solo se mueve la fecha de fin (el servidor lo exige igual).
+    if (target.status === 'Active') {
+      for (const campo of ['reason', 'valueType', 'percentage', 'fixedAmount', 'startDate']) {
+        this.benefitForm.get(campo)!.disable({ emitEvent: false });
+      }
+    }
+
     this.dialogError.set('');
     this.dialogView.set('form');
+  }
+
+  // ===== EDICIÓN: quién y qué =====
+  // Solo el SuperAdmin edita; el rol 2 asigna, cancela y anula. Y solo lo que todavía no es historia:
+  // una bonificación finalizada, cancelada o anulada queda cerrada. La regla real vive en el servidor
+  // (ReglasEdicionBeneficio); acá solo se evita ofrecer lo que la API va a rechazar.
+  get puedeEditar(): boolean {
+    return this.authService.isSuperAdmin();
+  }
+
+  esEditable(discount: DiscountModel): boolean {
+    return this.puedeEditar && (discount.status === 'Active' || discount.status === 'Scheduled');
+  }
+
+  get editandoEnCurso(): boolean {
+    return this.isEditing && this.currentDiscount()?.status === 'Active';
+  }
+
+  // Al editar no se puede llevar nada al pasado: una programada no empieza antes de hoy y ninguna
+  // termina antes de hoy (para cortarla está Cancelar).
+  get minFechaDesde(): string {
+    return this.isEditing && this.currentDiscount()?.status === 'Scheduled' ? this.today() : '';
+  }
+
+  get minFechaHasta(): string {
+    return this.isEditing ? this.today() : '';
+  }
+
+  get motivoNoEditable(): string {
+    if (!this.puedeEditar) {
+      return 'Solo un SuperAdmin puede editar bonificaciones';
+    }
+    return 'Esta bonificación está cerrada y no se puede editar';
   }
 
   // Grants an additional benefit for a period the player does not have covered.
@@ -502,6 +545,7 @@ export class BecadosDescuentos implements OnInit {
   // end of the year, which is the cycle the club grants benefits for. Both are
   // editable; they are a starting point, not a decision.
   private resetBenefitForm() {
+    this.benefitForm.enable({ emitEvent: false });
     this.benefitForm.reset({
       reason: '',
       valueType: '',
@@ -759,7 +803,8 @@ export class BecadosDescuentos implements OnInit {
   }
 
   private buildRequest(): DiscountRequest {
-    const raw = this.benefitForm.value;
+    // getRawValue: al editar una bonificación en curso los campos bloqueados también viajan (con su valor actual).
+    const raw = this.benefitForm.getRawValue();
     const valueType: BenefitValueType = raw.valueType;
 
     return {
@@ -778,6 +823,11 @@ export class BecadosDescuentos implements OnInit {
   // Turns an API failure into something the administrator can act on. The
   // server answers in English; what reaches the screen is always in Spanish.
   private messageFor(error: HttpErrorResponse, action: string): string {
+    // Las reglas de edición (bonificación cerrada, en curso, programada) responden { mensaje } en español.
+    const mensajeApi = typeof error.error === 'object' ? error.error?.mensaje : null;
+    if (typeof mensajeApi === 'string' && mensajeApi) {
+      return mensajeApi;
+    }
     if (error.status === 409) {
       // Anular's 409 is never an overlap (it takes no date range) — it means the benefit is
       // not a cancelled one anymore (someone else voided it, or the screen was out of date).
