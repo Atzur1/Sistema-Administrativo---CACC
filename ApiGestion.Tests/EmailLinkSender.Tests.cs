@@ -67,6 +67,37 @@ public class EmailLinkSenderTests
         Assert.Contains($"{BaseUrl}/restablecer-contrasena?token={Token}", reestablece);
     }
 
+    // Quien recibe el correo tiene que reconocer que es para él: se lo saluda por su nombre.
+    [Fact]
+    public void BothEmails_GreetThePersonByName()
+    {
+        string crea = WebUtility.HtmlDecode(EmailLinkSender.CreateBody(BaseUrl, Token, CorreosAcceso.CreaContrasena, "Laura"));
+        string reestablece = WebUtility.HtmlDecode(EmailLinkSender.CreateBody(BaseUrl, Token, CorreosAcceso.ReestableceContrasena, "Laura"));
+        string texto = EmailLinkSender.CreatePlainTextBody(BaseUrl, Token, CorreosAcceso.CreaContrasena, "Laura");
+
+        Assert.Contains("Hola, Laura:", crea);
+        Assert.Contains("Hola, Laura:", reestablece);
+        Assert.Contains("Hola, Laura:", texto);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void WithoutAName_TheGreetingStaysGeneric(string? nombre)
+    {
+        Assert.Equal("Hola:", EmailLinkSender.Saludo(nombre));
+    }
+
+    [Fact]
+    public void TheName_IsHtmlEncoded()
+    {
+        string html = EmailLinkSender.CreateBody(BaseUrl, Token, CorreosAcceso.CreaContrasena, "<b>Ana</b>");
+
+        Assert.DoesNotContain("<b>Ana</b>", html);
+        Assert.Contains("&lt;b&gt;Ana&lt;/b&gt;", html);
+    }
+
     [Fact]
     public void Link_EscapesTheTokenAndToleratesATrailingSlashInTheBaseUrl()
     {
