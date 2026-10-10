@@ -44,5 +44,5 @@ export interface EditarCandidatoRequest {
   apellido: string;
   // Es el usuario con el que la persona ingresa al portal. Con o sin puntos: el servidor lo guarda solo con dígitos.
   dni: string;
-  email: string;
+  // Sin mail: no se modifica desde el portal (a esa dirección llega el enlace de activación).
 }

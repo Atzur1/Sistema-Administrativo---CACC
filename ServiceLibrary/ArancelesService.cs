@@ -59,6 +59,15 @@ namespace ServiceLibrary
                 throw new ArancelInvalidoException("El monto debe ser mayor a cero.");
             }
 
+            // Regla del club: no se programan aranceles con fecha pasada. Un mes cerrado no se reescribe, y una
+            // fecha mal tipeada (por ejemplo, un año anterior) generaba deuda retroactiva que después no se podía
+            // cancelar porque ese mes ya era historial. Un arancel cargado hoy igual cubre todo el mes en curso.
+            if (request.VigenteDesde.Date < _hoy().Date)
+            {
+                throw new ArancelInvalidoException(
+                    $"La fecha de vigencia no puede ser anterior a hoy ({_hoy():dd/MM/yyyy}). Los aranceles solo se programan para el mes en curso o meses futuros.");
+            }
+
             string? genero = tieneGenero ? request.Genero : null;
             DateTime vigenteDesde = request.VigenteDesde.Date;
             DateTime mesDelArancel = PrimerDiaDelMes(vigenteDesde);
@@ -90,8 +99,8 @@ namespace ServiceLibrary
                 }
 
                 // Mes en curso: las cuotas ya emitidas (con el arancel anterior) se vuelven a emitir con el
-                // monto nuevo, salvo las que ya recibieron algún pago, que no se tocan.
-                // Mes pasado: solo se emiten las cuotas que falten; las existentes quedan como están.
+                // monto nuevo, salvo las que ya recibieron algún pago, que no se tocan. (Un mes pasado no llega
+                // hasta acá: lo rechaza la validación de la fecha.)
                 if (mesDelArancel == mesActual)
                 {
                     DateTime mesSiguiente = mesDelArancel.AddMonths(1);

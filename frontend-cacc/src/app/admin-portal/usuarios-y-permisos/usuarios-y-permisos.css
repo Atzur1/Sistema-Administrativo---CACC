@@ -648,3 +648,10 @@
         row-gap: 10px;
     }
 }
+
+/* Aclaración debajo de un campo (mismo estilo que los formularios de Becados y Descuentos). */
+.field-hint {
+    font-size: 10.5px;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+}

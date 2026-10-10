@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { ArancelesService, ArancelHistorialItem } from '../../services/aranceles';
@@ -164,9 +164,26 @@ export class ActualizacionAranceles implements OnInit {
         this.feeForm = this.fb.group({
             target: ['', [Validators.required]],
             amount: ['', [Validators.required, Validators.min(1)]],
-            validFrom: ['', [Validators.required]],
+            validFrom: ['', [Validators.required, this.noAnteriorAHoy]],
         });
     }
+
+    // Regla del club: no se programan aranceles (mensuales ni de inscripción) con fecha pasada. El servidor
+    // lo rechaza igual; acá el calendario no deja elegirla y el botón queda deshabilitado.
+    // Fecha local del navegador en ISO (aaaa-mm-dd), que se compara como texto sin problemas de zona horaria.
+    get hoy(): string {
+        const ahora = new Date();
+        return `${ahora.getFullYear()}-${`${ahora.getMonth() + 1}`.padStart(2, '0')}-${`${ahora.getDate()}`.padStart(2, '0')}`;
+    }
+
+    get fechaPasada(): boolean {
+        return !!this.feeForm?.get('validFrom')?.hasError('fechaPasada');
+    }
+
+    private noAnteriorAHoy = (control: AbstractControl): ValidationErrors | null => {
+        const valor = control.value as string;
+        return valor && valor < this.hoy ? { fechaPasada: true } : null;
+    };
 
     ngOnInit() {
         this.cargarCategorias();

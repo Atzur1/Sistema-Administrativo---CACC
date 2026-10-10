@@ -64,8 +64,13 @@
 
       <div class="field">
         <label class="field-label" for="validFrom">Entra en vigencia desde</label>
-        <app-custom-datepicker id="validFrom" formControlName="validFrom"></app-custom-datepicker>
-        <span class="field-hint">Podés elegir cualquier fecha, pasada, actual o futura</span>
+        <app-custom-datepicker id="validFrom" formControlName="validFrom" [min]="hoy"
+                               [invalid]="fechaPasada"></app-custom-datepicker>
+        @if (fechaPasada) {
+          <span class="field-error">La fecha no puede ser anterior a hoy.</span>
+        } @else {
+          <span class="field-hint">Desde hoy en adelante: no se programan aranceles con fecha pasada.</span>
+        }
       </div>
 
       <div class="submit-row action-with-help">
@@ -74,7 +79,7 @@
         </button>
         <app-help-hint
           label="Programar actualización"
-          text="Carga el nuevo monto de la cuota desde la fecha elegida. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago. Si es un mes pasado, solo se emiten las cuotas que faltan. Solo puede haber un arancel por mes para el mismo género o categoría."
+          text="Carga el nuevo monto de la cuota desde la fecha elegida. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago. No se pueden programar fechas pasadas. Solo puede haber un arancel por mes para el mismo género o categoría."
         />
       </div>
 

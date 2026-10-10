@@ -171,7 +171,7 @@ public class DiscountDao
 
     // Resolves a reason typed by the client into its catalogue id. Returns null
     // when the reason does not exist, which is how an invalid motive is caught.
-    public DiscountType? GetDiscountTypeByName(string name)
+    public virtual DiscountType? GetDiscountTypeByName(string name)
     {
         DiscountType? foundType = null;
         string query = "SELECT PK_id_descuento, tipo_descuento FROM TIPO_DESCUENTO WHERE tipo_descuento = @name;";

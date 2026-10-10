@@ -166,7 +166,7 @@ export class BecadosDescuentos implements OnInit {
         startDate: ['', [Validators.required]],
         endDate: ['', [Validators.required]],
       },
-      { validators: [this.benefitValueValidator, this.dateRangeValidator] },
+      { validators: [this.benefitValueValidator, this.dateRangeValidator, this.noPastDatesValidator] },
     );
 
     this.filterForm = this.fb.group({
@@ -485,12 +485,14 @@ export class BecadosDescuentos implements OnInit {
 
   // Al editar no se puede llevar nada al pasado: una programada no empieza antes de hoy y ninguna
   // termina antes de hoy (para cortarla está Cancelar).
+  // Regla del club: nadie asigna ni corrige una bonificación para que empiece o termine antes de hoy. (En una
+  // en curso la fecha de inicio ya pasó, pero ese campo está bloqueado y no se envía cambiado.)
   get minFechaDesde(): string {
-    return this.isEditing && this.currentDiscount()?.status === 'Scheduled' ? this.today() : '';
+    return this.today();
   }
 
   get minFechaHasta(): string {
-    return this.isEditing ? this.today() : '';
+    return this.today();
   }
 
   get motivoNoEditable(): string {
@@ -648,10 +650,33 @@ export class BecadosDescuentos implements OnInit {
   // and not after pressing a button that was never going to work.
   get dateRangeErrorMessage(): string {
     const errors = this.benefitForm.errors ?? {};
+    if (errors['startInPast']) {
+      return 'La bonificación no puede empezar antes de hoy.';
+    }
+    if (errors['endInPast']) {
+      return 'La fecha de finalización no puede ser anterior a hoy.';
+    }
     return errors['endNotAfterStart']
       ? 'La fecha de finalización debe ser posterior a la fecha de inicio.'
       : '';
   }
+
+  // Regla del club: ninguna bonificación se asigna ni se corrige hacia el pasado (empezar antes de hoy le
+  // borraría deuda ya vencida). Si la fecha de inicio está bloqueada (bonificación en curso), no se valida:
+  // ya pasó y no se envía cambiada. El servidor aplica la misma regla.
+  private noPastDatesValidator = (group: AbstractControl): ValidationErrors | null => {
+    const start = group.get('startDate');
+    const end = group.get('endDate');
+    const today = this.today();
+
+    if (start?.enabled && start.value && start.value < today) {
+      return { startInPast: true };
+    }
+    if (end?.enabled && end.value && end.value < today) {
+      return { endInPast: true };
+    }
+    return null;
+  };
 
   // Single message for the rest of the form, shown above the actions
   get formErrorMessage(): string {

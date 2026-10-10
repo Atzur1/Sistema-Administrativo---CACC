@@ -107,7 +107,7 @@ public class UsuariosPortalDaoIntegrationTests
         {
             int id = InsertarUsuario(connection, transaction, "90777888", "corregir@cacc.test", conAcceso: false);
 
-            var resultado = UsuariosPortalDao.EditarDatosCandidatoCore(connection, transaction, id, "Nombre", "Apellido", "90.999.000", "corregir@cacc.test");
+            var resultado = UsuariosPortalDao.EditarDatosCandidatoCore(connection, transaction, id, "Nombre", "Apellido", "90.999.000");
 
             Assert.Equal(EditarCandidatoResultado.Ok, resultado);
             Assert.Equal("90999000", DniGuardado(connection, transaction, id));
@@ -125,9 +125,9 @@ public class UsuariosPortalDaoIntegrationTests
             int id = InsertarUsuario(connection, transaction, "90343434", "candidata@cacc.test", conAcceso: false);
 
             Assert.Equal(EditarCandidatoResultado.DniInvalido,
-                UsuariosPortalDao.EditarDatosCandidatoCore(connection, transaction, id, "N", "A", "12", "candidata@cacc.test"));
+                UsuariosPortalDao.EditarDatosCandidatoCore(connection, transaction, id, "N", "A", "12"));
             Assert.Equal(EditarCandidatoResultado.DniEnUso,
-                UsuariosPortalDao.EditarDatosCandidatoCore(connection, transaction, id, "N", "A", "90121212", "candidata@cacc.test"));
+                UsuariosPortalDao.EditarDatosCandidatoCore(connection, transaction, id, "N", "A", "90121212"));
             Assert.Equal("90343434", DniGuardado(connection, transaction, id)); // no se tocó
         }
         finally { transaction.Rollback(); connection.Dispose(); }

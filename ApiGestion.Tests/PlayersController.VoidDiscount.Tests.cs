@@ -49,6 +49,31 @@ public class PlayersControllerVoidDiscountTests
         Status = DiscountStatus.Expired,
     };
 
+    // ===== AssignDiscount: sin fechas pasadas =====
+
+    // Regla del club: nadie (ni SuperAdmin ni Administrador) asigna becas o descuentos con fecha de inicio
+    // anterior a hoy, porque eso borraría deuda ya vencida. Se rechaza antes de tocar la base.
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(-400)]
+    public void AssignDiscount_StartingBeforeToday_IsRefused(int diasAtras)
+    {
+        var (controller, _) = CreateController();
+        DateTime inicio = RelojNegocio.Hoy.AddDays(diasAtras);
+
+        IActionResult result = controller.AssignDiscount(PlayerId, new DiscountRequestDTO
+        {
+            Reason = "Becado",
+            ValueType = "%",
+            Percentage = 100,
+            StartDate = inicio.ToString("yyyy-MM-dd"),
+            EndDate = RelojNegocio.Hoy.AddMonths(3).ToString("yyyy-MM-dd")
+        });
+
+        var rechazo = Assert.IsType<UnprocessableEntityObjectResult>(result);
+        Assert.Contains("no puede empezar antes de hoy", rechazo.Value!.ToString());
+    }
+
     // ===== VoidDiscount =====
 
     [Fact]
@@ -172,6 +197,8 @@ public class PlayersControllerVoidDiscountTests
 
         public FakeDiscountDao(Discount? stored = null) : base("") => _stored = stored;
 
+        public override DiscountType? GetDiscountTypeByName(string name) => new DiscountType { Id = 1, Name = name };
+
         public override List<Discount> GetDiscountsByPlayer(long playerId)
             => _stored != null && _stored.PlayerId == playerId
                 ? new List<Discount> { _stored }
@@ -192,7 +219,7 @@ public class PlayersControllerVoidDiscountTests
 public (BajaJugadorResultado Resultado, int CuotasEliminadas) DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
         public bool Reactivar(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<JugadorResumen> ListarJugadores() => new List<JugadorResumen>();
-        public JugadorResumen? ObtenerJugadorPorId(int idJugador) => null;
+        public JugadorResumen? ObtenerJugadorPorId(int idJugador) => new JugadorResumen { IdJugador = idJugador };
     }
 
     private class FakePlayerDAO : PlayerDAO

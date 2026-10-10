@@ -35,12 +35,11 @@ namespace DaoLibrary
         // tienen password_hash y rol_portal de cuando estaban activos).
         IReadOnlyList<UsuarioPortal> ListarDeshabilitados();
 
-        // Corrige los datos de un candidato todavía sin acceso, por si el otro equipo
-        // los cargó mal — el mail (evita que el enlace de activación termine en manos de
-        // otra persona) y el DNI (es el usuario con el que va a ingresar). Solo antes de
-        // habilitar: una vez con acceso, editar estos datos es un cambio de identidad de
-        // cuenta distinto, no una corrección de carga.
-        EditarCandidatoResultado EditarDatosCandidato(int idUsuario, string nombre, string apellido, string dni, string email);
+        // Corrige nombre, apellido y DNI de un candidato todavía sin acceso, por si el otro equipo los cargó
+        // mal (el DNI es el usuario con el que va a ingresar). El MAIL NO se modifica desde el portal: el enlace
+        // de activación va a ese correo, y si el SuperAdmin pudiera cambiarlo podría habilitar la cuenta de otra
+        // persona con su propio correo y actuar a su nombre. Un mail mal cargado lo corrige el otro equipo.
+        EditarCandidatoResultado EditarDatosCandidato(int idUsuario, string nombre, string apellido, string dni);
 
         // Confirma el mail (evita habilitar a la persona equivocada por un error de
         // carga del otro equipo), exige un DNI válido y no repetido entre las cuentas con

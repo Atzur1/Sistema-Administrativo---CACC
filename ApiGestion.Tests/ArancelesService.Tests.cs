@@ -26,7 +26,7 @@ public class ArancelesServiceTests
         Genero = genero,
         IdCategoria = idCategoria,
         Monto = monto,
-        VigenteDesde = desde ?? new DateTime(2026, 10, 1)
+        VigenteDesde = desde ?? Hoy
     };
 
     // ===== Validaciones (corren antes de tocar la base) =====
@@ -128,16 +128,32 @@ public class ArancelesServiceTests
         Assert.Equal(0, resultado.CuotasReemitidas);
     }
 
-    [Fact]
-    public void ProgramarArancel_ForAPastMonth_OnlyEmitsTheMissingCuotas()
+    // Regla del club: no se programan aranceles con fecha pasada, ni de un mes anterior ni de un día anterior
+    // del mes en curso. Se rechaza antes de abrir la transacción: no se graba ni se emite nada.
+    [Theory]
+    [InlineData(2026, 9, 21)]
+    [InlineData(2026, 10, 2)]
+    [InlineData(2020, 10, 3)]
+    public void ProgramarArancel_WithAPastDate_IsRefusedAndChangesNothing(int anio, int mes, int dia)
     {
-        var (service, _, cuotas) = Create();
+        var (service, aranceles, cuotas) = Create();
 
-        service.ProgramarArancel(Request("Masculino", null, 80000, new DateTime(2026, 9, 21)));
+        var ex = Assert.Throws<ArancelInvalidoException>(() =>
+            service.ProgramarArancel(Request("Masculino", null, 80000, new DateTime(anio, mes, dia))));
 
-        // Un mes cerrado no se reescribe: no se borra nada, solo se completan las cuotas que falten.
-        Assert.Equal(new[] { "generar" }, cuotas.Llamadas.Select(l => l.Operacion));
-        Assert.Equal(9, cuotas.Llamadas[0].Mes);
+        Assert.Contains("no puede ser anterior a hoy", ex.Message);
+        Assert.Empty(aranceles.Programados);
+        Assert.Empty(cuotas.Llamadas);
+    }
+
+    [Fact]
+    public void ProgramarArancel_ForToday_IsAccepted()
+    {
+        var (service, aranceles, _) = Create();
+
+        service.ProgramarArancel(Request("Masculino", null, 80000, Hoy));
+
+        Assert.Single(aranceles.Programados);
     }
 
     // ===== Cancelar =====
