@@ -53,9 +53,9 @@ public class AccountAccessDaoIntegrationTests
         {
             var (id, email) = AdministradorHabilitado(connection, transaction);
 
-            string? resultado = AccountAccessDao.CreateResetTokenCore(connection, transaction, email, NuevoHash(), Vence);
+            DestinatarioCorreo? resultado = AccountAccessDao.CreateResetTokenCore(connection, transaction, email, NuevoHash(), Vence);
 
-            Assert.Equal(email, resultado);
+            Assert.Equal(email, resultado?.Email);
             Assert.Equal(1, Contar(connection, transaction,
                 "SELECT COUNT(*) FROM dbo.TOKEN_ACCESO_CUENTA WHERE id_usuario = @id AND tipo = 'RECUPERACION' AND consumido_utc IS NULL", id));
         }
@@ -82,8 +82,8 @@ public class AccountAccessDaoIntegrationTests
 
             // Con puntos o sin ellos es el mismo DNI; el enlace va al correo de la cuenta, no a lo que se escribió.
             string conFormato = dni[..^3] + "." + dni[^3..];
-            Assert.Equal(email, AccountAccessDao.CreateResetTokenCore(connection, transaction, dni, NuevoHash(), Vence));
-            Assert.Equal(email, AccountAccessDao.CreateResetTokenCore(connection, transaction, conFormato, NuevoHash(), Vence));
+            Assert.Equal(email, AccountAccessDao.CreateResetTokenCore(connection, transaction, dni, NuevoHash(), Vence)?.Email);
+            Assert.Equal(email, AccountAccessDao.CreateResetTokenCore(connection, transaction, conFormato, NuevoHash(), Vence)?.Email);
         }
         finally { transaction.Rollback(); connection.Dispose(); }
     }
@@ -106,7 +106,7 @@ public class AccountAccessDaoIntegrationTests
         var (connection, transaction) = Abrir();
         try
         {
-            string? resultado = AccountAccessDao.CreateResetTokenCore(connection, transaction, "no-existe@cacc.invalid", NuevoHash(), Vence);
+            DestinatarioCorreo? resultado = AccountAccessDao.CreateResetTokenCore(connection, transaction, "no-existe@cacc.invalid", NuevoHash(), Vence);
 
             Assert.Null(resultado);
         }
@@ -173,9 +173,9 @@ public class AccountAccessDaoIntegrationTests
         {
             var (id, email) = AdministradorHabilitado(connection, transaction);
 
-            string? destino = AccountAccessDao.CreateResetTokenForUserCore(connection, transaction, id, NuevoHash(), Vence);
+            DestinatarioCorreo? destino = AccountAccessDao.CreateResetTokenForUserCore(connection, transaction, id, NuevoHash(), Vence);
 
-            Assert.Equal(email, destino); // al correo de la propia cuenta, nunca al de quien lo pide
+            Assert.Equal(email, destino?.Email); // al correo de la propia cuenta, nunca al de quien lo pide
         }
         finally { transaction.Rollback(); connection.Dispose(); }
     }

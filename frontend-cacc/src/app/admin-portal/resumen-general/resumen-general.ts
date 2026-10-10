@@ -147,7 +147,10 @@ export class ResumenGeneral implements OnInit {
   private buildGreeting(): string {
     const hora = new Date().getHours();
     const momento = hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
-    const nombre = this.authService.getUsuario()?.email?.split('@')[0] ?? 'Admin';
+    // El nombre de la cuenta, igual que la barra superior. El usuario del correo queda solo para una
+    // cuenta sin nombre cargado: saludar a "alexandermonelli50" no reconoce a nadie.
+    const usuario = this.authService.getUsuario();
+    const nombre = usuario?.nombre?.trim() || usuario?.email?.split('@')[0] || 'Admin';
     return `${momento}, ${nombre}`;
   }
 

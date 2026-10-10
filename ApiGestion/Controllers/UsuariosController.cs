@@ -91,7 +91,9 @@ namespace ApiGestion.Controllers
                 var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
                 var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
                 _accountAccessDao.CreateActivationToken(id, tokenHash, DateTime.UtcNow.AddMinutes(30));
-                await _emailSender.SendActivationLink(email, token, cancellationToken);
+                // Recién habilitada, la cuenta ya tiene acceso: de ahí sale el nombre para saludarla en el correo.
+                var nombre = _accountAccessDao.ObtenerEstadoAcceso(id)?.Nombre;
+                await _emailSender.SendActivationLink(email, nombre, token, cancellationToken);
             }
             catch (Exception exception)
             {
@@ -125,14 +127,14 @@ namespace ApiGestion.Controllers
                 if (estado.ActivacionPendiente)
                 {
                     _accountAccessDao.CreateActivationToken(id, tokenHash, vence);
-                    await _emailSender.SendActivationLink(estado.Email, token, cancellationToken);
+                    await _emailSender.SendActivationLink(estado.Email, estado.Nombre, token, cancellationToken);
                     return Ok(new { mensaje = $"Se reenvió a {estado.Email} el correo para crear su contraseña." });
                 }
 
-                var email = _accountAccessDao.CreateResetTokenForUser(id, tokenHash, vence);
-                if (email is null) return BadRequest(new { mensaje = noEnCondiciones });
-                await _emailSender.SendPasswordResetLink(email, token, cancellationToken);
-                return Ok(new { mensaje = $"Se envió a {email} el enlace para reestablecer su contraseña." });
+                var destinatario = _accountAccessDao.CreateResetTokenForUser(id, tokenHash, vence);
+                if (destinatario is null) return BadRequest(new { mensaje = noEnCondiciones });
+                await _emailSender.SendPasswordResetLink(destinatario.Email, destinatario.Nombre, token, cancellationToken);
+                return Ok(new { mensaje = $"Se envió a {destinatario.Email} el enlace para reestablecer su contraseña." });
             }
             catch (Exception exception)
             {

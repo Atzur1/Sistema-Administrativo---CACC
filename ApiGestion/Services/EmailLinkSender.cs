@@ -49,15 +49,16 @@ public sealed class EmailLinkSender(
     ILogger<EmailLinkSender> logger,
     IHostEnvironment environment)
 {
-    // Recuperación de contraseña (SuperAdmin, desde "¿Olvidaste tu contraseña?").
-    public Task SendPasswordResetLink(string email, string token, CancellationToken cancellationToken) =>
-        SendLink(email, token, CorreosAcceso.ReestableceContrasena, cancellationToken);
+    // Recuperación de contraseña (desde "¿Olvidaste tu contraseña?" o el botón de Usuarios y Permisos).
+    // nombre: el de la cuenta, para saludarla; null si no lo tiene cargado.
+    public Task SendPasswordResetLink(string email, string? nombre, string token, CancellationToken cancellationToken) =>
+        SendLink(email, nombre, token, CorreosAcceso.ReestableceContrasena, cancellationToken);
 
     // Primer ingreso de una cuenta recién habilitada por un SuperAdmin (Usuarios y Permisos).
-    public Task SendActivationLink(string email, string token, CancellationToken cancellationToken) =>
-        SendLink(email, token, CorreosAcceso.CreaContrasena, cancellationToken);
+    public Task SendActivationLink(string email, string? nombre, string token, CancellationToken cancellationToken) =>
+        SendLink(email, nombre, token, CorreosAcceso.CreaContrasena, cancellationToken);
 
-    private async Task SendLink(string email, string token, TipoCorreoAcceso tipo, CancellationToken cancellationToken)
+    private async Task SendLink(string email, string? nombre, string token, TipoCorreoAcceso tipo, CancellationToken cancellationToken)
     {
         var host = configuration["Email:SmtpHost"];
         var from = configuration["Email:From"];
@@ -79,8 +80,8 @@ public sealed class EmailLinkSender(
 
         var bodyBuilder = new BodyBuilder
         {
-            HtmlBody = CreateBody(baseUrl, token, tipo),
-            TextBody = CreatePlainTextBody(baseUrl, token, tipo)
+            HtmlBody = CreateBody(baseUrl, token, tipo, nombre),
+            TextBody = CreatePlainTextBody(baseUrl, token, tipo, nombre)
         };
         var headerImage = bodyBuilder.LinkedResources.Add(imagePath);
         headerImage.ContentId = "cacc-email-header";
@@ -117,7 +118,11 @@ public sealed class EmailLinkSender(
     internal static string BuildLink(string baseUrl, string token, TipoCorreoAcceso tipo) =>
         $"{baseUrl.TrimEnd('/')}{tipo.Ruta}?token={Uri.EscapeDataString(token)}";
 
-    internal static string CreateBody(string baseUrl, string token, TipoCorreoAcceso tipo)
+    // Para que quien recibe el correo se reconozca: "Hola, Juan:". Sin nombre cargado queda "Hola:".
+    internal static string Saludo(string? nombre) =>
+        string.IsNullOrWhiteSpace(nombre) ? "Hola:" : $"Hola, {nombre.Trim()}:";
+
+    internal static string CreateBody(string baseUrl, string token, TipoCorreoAcceso tipo, string? nombre = null)
     {
         var safeLink = WebUtility.HtmlEncode(BuildLink(baseUrl, token, tipo));
         var heading = WebUtility.HtmlEncode(tipo.Titulo);
@@ -145,7 +150,7 @@ public sealed class EmailLinkSender(
                       <div style="padding-bottom:9px;color:#a87921;font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;">{{label}}</div>
                       <h1 style="margin:0;color:#173d29;font-size:27px;line-height:1.3;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">{{heading}}</h1>
                     </td></tr>
-                    <tr><td bgcolor="#eef6ef" style="padding:9px 40px 0;background-color:#eef6ef;background-image:radial-gradient(ellipse at 100% 50%,rgba(0,127,62,.10) 0%,rgba(0,127,62,0) 58%),linear-gradient(100deg,#f2f8f3 0%,#eaf4ed 100%);color:#405148;font-size:15px;line-height:1.7;">{{WebUtility.HtmlEncode(tipo.Intro)}}</td></tr>
+                    <tr><td bgcolor="#eef6ef" style="padding:9px 40px 0;background-color:#eef6ef;background-image:radial-gradient(ellipse at 100% 50%,rgba(0,127,62,.10) 0%,rgba(0,127,62,0) 58%),linear-gradient(100deg,#f2f8f3 0%,#eaf4ed 100%);color:#405148;font-size:15px;line-height:1.7;"><p style="margin:0 0 8px;color:#173d29;font-weight:700;">{{WebUtility.HtmlEncode(Saludo(nombre))}}</p>{{WebUtility.HtmlEncode(tipo.Intro)}}</td></tr>
                     <tr><td align="left" bgcolor="#eef6ef" style="padding:25px 40px 22px;background-color:#eef6ef;background-image:radial-gradient(ellipse at 0% 50%,rgba(0,166,81,.12) 0%,rgba(0,166,81,0) 60%),linear-gradient(100deg,#f2f8f3 0%,#eaf4ed 100%);">
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" bgcolor="#007f3e" style="background-color:#007f3e;background-image:linear-gradient(110deg,#00a651 0%,#007f3e 55%,#005a2b 100%);border-radius:6px;">
                         <a href="{{safeLink}}" style="display:inline-block;padding:15px 25px;border:1px solid #007f3e;border-radius:6px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;">{{WebUtility.HtmlEncode(tipo.Accion)}}</a>
@@ -169,8 +174,8 @@ public sealed class EmailLinkSender(
             """;
     }
 
-    internal static string CreatePlainTextBody(string baseUrl, string token, TipoCorreoAcceso tipo) =>
-        $"{tipo.Titulo.ToUpperInvariant()}\n\n{tipo.Intro}\n\n{tipo.Accion}: {BuildLink(baseUrl, token, tipo)}\n\n{tipo.NotaVencimiento}\n\n{tipo.NotaIgnorar}";
+    internal static string CreatePlainTextBody(string baseUrl, string token, TipoCorreoAcceso tipo, string? nombre = null) =>
+        $"{tipo.Titulo.ToUpperInvariant()}\n\n{Saludo(nombre)}\n\n{tipo.Intro}\n\n{tipo.Accion}: {BuildLink(baseUrl, token, tipo)}\n\n{tipo.NotaVencimiento}\n\n{tipo.NotaIgnorar}";
 
     private static void ValidateBaseUrl(string? baseUrl)
     {

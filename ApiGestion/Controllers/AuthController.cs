@@ -58,11 +58,11 @@ namespace ApiGestion.Controllers
             return Ok(new { mensaje = response });
         }
 
-        private async Task EnviarEnlaceRecuperacionAsync(string email, string token)
+        private async Task EnviarEnlaceRecuperacionAsync(DestinatarioCorreo destinatario, string token)
         {
             try
             {
-                await _emailSender.SendPasswordResetLink(email, token, CancellationToken.None);
+                await _emailSender.SendPasswordResetLink(destinatario.Email, destinatario.Nombre, token, CancellationToken.None);
             }
             catch (Exception exception)
             {
