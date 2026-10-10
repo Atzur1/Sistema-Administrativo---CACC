@@ -11,6 +11,7 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { HelpHint } from '../../shared/help-hint/help-hint';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { DiscountService } from '../../services/discounts';
@@ -62,7 +63,7 @@ type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel' | 'confirmVoid
 @Component({
   selector: 'app-becados-descuentos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DiscountBadge, CustomSelect, CustomDatepicker],
+  imports: [CommonModule, ReactiveFormsModule, DiscountBadge, CustomSelect, CustomDatepicker, HelpHint],
   templateUrl: './becados-descuentos.html',
   styleUrl: './becados-descuentos.css',
 })
@@ -778,10 +779,10 @@ export class BecadosDescuentos implements OnInit {
   // server answers in English; what reaches the screen is always in Spanish.
   private messageFor(error: HttpErrorResponse, action: string): string {
     if (error.status === 409) {
-      // Anular's 409 is never an overlap (it takes no date range) — it means the benefit
-      // already ran its full course and is protected from voiding.
+      // Anular's 409 is never an overlap (it takes no date range) — it means the benefit is
+      // not a cancelled one anymore (someone else voided it, or the screen was out of date).
       if (action === 'anular') {
-        return 'Esta bonificación ya cumplió su fecha de cierre: esos meses ya se consideran saldados y no se puede anular.';
+        return 'Esta bonificación ya no se puede anular: solo se anulan las canceladas que todavía no fueron anuladas. Actualizá la pantalla.';
       }
       // The API names the benefit in the way and its period, which is what
       // the administrator needs to fix the dates. It answers in English,

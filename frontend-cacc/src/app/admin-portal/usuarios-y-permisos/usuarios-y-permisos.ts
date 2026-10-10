@@ -5,6 +5,7 @@ import { finalize } from 'rxjs';
 import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
+import { HelpHint } from '../../shared/help-hint/help-hint';
 import {
   ROL_PORTAL_LABELS,
   RolPortal,
@@ -20,7 +21,7 @@ const ROL_OPTIONS: CustomSelectOption[] = [
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect],
+  imports: [CommonModule, FormsModule, CustomSelect, HelpHint],
   templateUrl: './usuarios-y-permisos.html',
   styleUrl: './usuarios-y-permisos.css',
 })

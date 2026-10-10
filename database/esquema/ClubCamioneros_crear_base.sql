@@ -170,6 +170,7 @@ CREATE TABLE dbo.[JUGADORES_DESCUENTOS] (
     [fecha_inicio] date NOT NULL,
     [fecha_fin] date NOT NULL,
     [fecha_cancelacion] date NULL,
+    [anulado] bit NOT NULL CONSTRAINT [DF_JUGDESC_ANULADO] DEFAULT ((0)),
     CONSTRAINT [PK_JUGADORES_DESCUENTOS] PRIMARY KEY CLUSTERED ([PK_id_jugador_descuento]),
     CONSTRAINT [CK_JUGDESC_MONTO_POSITIVO] CHECK ([monto_fijo] IS NULL OR [monto_fijo]>(0)),
     CONSTRAINT [CK_JUGDESC_PORCENTAJE_RANGO] CHECK ([porcentaje] IS NULL OR [porcentaje]>(0) AND [porcentaje]<=(100)),

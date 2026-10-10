@@ -58,7 +58,8 @@ describe('Usuarios - Resetear contraseña', () => {
   it('aparece en las cuentas activas y no en la que está inactiva en la base del otro equipo', async () => {
     const { element } = await create();
 
-    const botones = Array.from(element.querySelectorAll('.panel-users .cell-actions button'))
+    // Sin el "?" de ayuda (app-help-hint) que acompaña a Deshabilitar: no es una acción.
+    const botones = Array.from(element.querySelectorAll('.panel-users .cell-actions button:not(.help-trigger)'))
       .map((b) => b.textContent?.trim())
       .filter((t) => t !== 'Deshabilitar');
 

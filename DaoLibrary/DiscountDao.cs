@@ -50,13 +50,12 @@ public class DiscountDao
     // scheduled job and no flag for anybody to flip.
     //
     // The numbers match EntityLibrary.DiscountStatus. Voided viene primero que Cancelled: un
-    // beneficio anulado (VoidDiscount) también deja estado_activo = 0, pero se distingue porque
-    // fecha_cancelacion quedó ANTES de fecha_inicio a propósito (ver VoidDiscount) — un
-    // beneficio cancelado de verdad nunca tiene esa combinación, porque cancelar en
-    // DeactivateDiscount siempre pone la fecha de hoy, que es posterior a cuando arrancó.
+    // beneficio anulado (VoidDiscount) también deja estado_activo = 0, y lo distingue la marca
+    // anulado. No se deduce de las fechas: cancelar uno Programado también deja
+    // fecha_cancelacion antes de fecha_inicio, y eso es Cancelled, no Voided.
     private const string StatusExpression = @"
         CASE
-            WHEN jd.estado_activo = 0 AND jd.fecha_cancelacion < jd.fecha_inicio THEN 4
+            WHEN jd.anulado = 1 THEN 4
             WHEN jd.estado_activo = 0 THEN 3
             WHEN CAST(GETDATE() AS DATE) < jd.fecha_inicio THEN 0
             WHEN CAST(GETDATE() AS DATE) > jd.fecha_fin THEN 2
@@ -388,12 +387,20 @@ public class DiscountDao
     // que ese beneficio sigue contando para una cuota (DescuentosSql.ApplyDescuentoActivo,
     // PagosDao.ObtenerDescuentoAplicableEnPeriodo): cancelar no debe reescribir meses ya
     // cubiertos en el pasado, solo dejar de aplicar de acá para adelante.
+    //
+    // Uno cancelado antes de empezar (Programado) nunca llegó a aplicar, así que su corte va al
+    // último día del mes previo al inicio, igual que al anular. Con la fecha de hoy, uno que
+    // arrancaba el 15/02 y se cancela el 10/02 le seguía descontando la cuota de febrero
+    // (vence el 01/02, antes del corte).
     public virtual bool DeactivateDiscount(long playerId, long discountId)
     {
         string query = @"
             UPDATE JUGADORES_DESCUENTOS
             SET estado_activo = 0,
-                fecha_cancelacion = CAST(GETDATE() AS DATE)
+                fecha_cancelacion = CASE
+                    WHEN CAST(GETDATE() AS DATE) < fecha_inicio THEN EOMONTH(fecha_inicio, -1)
+                    ELSE CAST(GETDATE() AS DATE)
+                END
             WHERE FK_id_jugador = @playerId
               AND PK_id_jugador_descuento = @discountId
               AND estado_activo = 1;";
@@ -414,14 +421,17 @@ public class DiscountDao
         return affectedRows > 0;
     }
 
-    // Anula un beneficio asignado por error: a diferencia de DeactivateDiscount, esto no
-    // protege los meses ya pasados — los saca a TODOS, pasados incluidos, como si el beneficio
-    // nunca se hubiera otorgado. No requiere estado_activo = 1: se puede anular tanto uno
-    // todavía vigente como uno que ya se había cancelado por las buenas y recién ahora se nota
-    // que fue un error.
+    // Anula un beneficio asignado por error: a diferencia de DeactivateDiscount, el beneficio
+    // deja de contar para todas las cuotas que cubría desde su fecha_inicio, como si nunca se
+    // hubiera otorgado. Las cuotas anteriores a fecha_inicio no se tocan, y lo ya cobrado
+    // tampoco: el beneficio se resuelve solo sobre lo que sigue pendiente, así que una cuota
+    // pagada con el descuento sigue pagada y un abono parcial se descuenta del saldo completo.
     //
-    // Reusa fecha_cancelacion (no agrega una columna nueva) llevándola a ANTES de fecha_inicio:
-    // el último día del mes previo al que arrancó. DescuentosSql.ApplyDescuentoActivo y
+    // Solo se anula uno ya cancelado (estado_activo = 0 y todavía no anulado); el controller
+    // lo valida antes, y el WHERE lo repite para la ventana entre esa lectura y este UPDATE.
+    //
+    // El efecto sobre las cuotas sale de fecha_cancelacion, llevada a ANTES de fecha_inicio: el
+    // último día del mes previo al que arrancó (anulado solo define el estado que se muestra). DescuentosSql.ApplyDescuentoActivo y
     // PagosDao.ObtenerDescuentoAplicableEnPeriodo ya exigen "la cuota venció en o antes de
     // fecha_cancelacion" — con la cancelación empujada a un mes que ninguna cuota cubierta por
     // este beneficio pudo haber vencido, la condición nunca se cumple para ninguna. EOMONTH(
@@ -429,16 +439,14 @@ public class DiscountDao
     // del mes haya arrancado fecha_inicio.
     public virtual bool VoidDiscount(long playerId, long discountId)
     {
-        // Guarda de más: un beneficio Expired (estado_activo = 1 y ya pasó fecha_fin sin haber
-        // sido cancelado antes) queda afuera aunque el controller ya lo valida antes de llamar
-        // acá — cubre la ventana entre esa lectura y este UPDATE.
         string query = @"
             UPDATE JUGADORES_DESCUENTOS
-            SET estado_activo = 0,
+            SET anulado = 1,
                 fecha_cancelacion = EOMONTH(fecha_inicio, -1)
             WHERE FK_id_jugador = @playerId
               AND PK_id_jugador_descuento = @discountId
-              AND NOT (estado_activo = 1 AND CAST(GETDATE() AS DATE) > fecha_fin);";
+              AND estado_activo = 0
+              AND anulado = 0;";
 
         int affectedRows;
 

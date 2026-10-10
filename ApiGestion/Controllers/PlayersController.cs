@@ -382,10 +382,11 @@ public class PlayersController : ControllerBase
         return NoContent();
     }
 
-    // Anula un beneficio asignado por error. A diferencia de CancelDiscount, esto no respeta
-    // los meses que ya pasaron: los saca a todos, como si el beneficio nunca se hubiera
-    // otorgado. Pensado para corregir una asignación equivocada, no para dar de baja una que
-    // corrió bien un tiempo y se quiere terminar antes — para eso está Cancelar.
+    // Anula un beneficio asignado por error. A diferencia de CancelDiscount, no respeta los
+    // meses entre su inicio y la cancelación: deja de contar para todas sus cuotas, como si
+    // nunca se hubiera otorgado. Lo ya cobrado se mantiene (ver DiscountDao.VoidDiscount).
+    // Pensado para corregir una asignación equivocada, no para dar de baja una que corrió bien
+    // un tiempo y se quiere terminar antes — para eso está Cancelar.
     [Authorize(Roles = "1,2")]
     [HttpDelete("{playerId}/discount/void")]
     public IActionResult VoidDiscount(long playerId, long discountId)
@@ -399,18 +400,24 @@ public class PlayersController : ControllerBase
             return BadRequest("The discount id must be greater than zero.");
         }
 
-        // Un beneficio que ya cumplió su fecha de cierre sin haber sido cancelado antes
-        // (Expired) es intocable: esos meses ya se dieron por saldados y anularlo generaría
-        // deuda sobre un período que el club ya considera cerrado. Sólo uno que fue cortado
-        // antes de tiempo (Cancelled) puede anularse.
+        // Sólo uno que fue cortado antes de tiempo (Cancelled) puede anularse, la misma regla
+        // que aplica la pantalla. Uno vigente o programado se cancela primero. Uno que ya
+        // cumplió su fecha de cierre sin haber sido cancelado (Expired) es intocable: esos
+        // meses ya se dieron por saldados y anularlo generaría deuda sobre un período que el
+        // club ya considera cerrado.
         Discount? current = FindDiscount(playerId, discountId);
         if (current == null)
         {
             return NotFound($"Player {playerId} has no such benefit to void.");
         }
-        if (current.Status == DiscountStatus.Expired)
+        if (current.Status != DiscountStatus.Cancelled)
         {
-            return Conflict("This benefit already ran its full course; it cannot be voided.");
+            return Conflict(current.Status switch
+            {
+                DiscountStatus.Expired => "This benefit already ran its full course; it cannot be voided.",
+                DiscountStatus.Voided => "This benefit is already voided.",
+                _ => "Only a cancelled benefit can be voided; cancel it first."
+            });
         }
 
         if (!_discountDao.VoidDiscount(playerId, discountId))

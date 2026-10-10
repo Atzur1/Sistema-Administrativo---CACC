@@ -213,6 +213,20 @@ html, body {
   100% { left: 130%; }
 }
 
+/* Un botón de acción con su ayuda "?" (app-help-hint) al lado, para que no se separen
+   cuando la fila de botones reparte el espacio o hace wrap. */
+.action-with-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Si el contenedor lo estira (footers de diálogo en columna, en pantallas chicas), el botón
+   ocupa el ancho y el "?" queda al costado. */
+.action-with-help > button {
+  flex: 1 1 auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
