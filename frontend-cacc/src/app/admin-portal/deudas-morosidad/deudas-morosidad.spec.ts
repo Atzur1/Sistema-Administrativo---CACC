@@ -139,6 +139,50 @@ describe('DeudasMorosidad - debtors list (HU-029)', () => {
   });
 });
 
+// HU-081: un jugador dado de baja puede seguir debiendo. Se lista con el estado "Dado de baja" (no con su
+// situación deportiva), se puede filtrar, y no cuenta como inhabilitado.
+describe('DeudasMorosidad - jugadores dados de baja (HU-081)', () => {
+  const baja = (id: number, nombre: string, cuotas: number, monto: number): PlayerAccountModel => ({
+    ...debtor(id, nombre, cuotas, monto),
+    leaveDate: '2026-09-15',
+  });
+
+  it('muestra al dado de baja con su fecha en lugar del estado deportivo', async () => {
+    const fixture = await create([baja(1, 'SANTIAGO', 3, 276000)]);
+
+    const pill = (fixture.nativeElement as HTMLElement).querySelector('.status-pill');
+    expect(pill?.textContent?.trim()).toBe('Dado de baja 15/09/2026');
+    expect(pill?.classList).toContain('status-left');
+  });
+
+  it('filtra activos y dados de baja', async () => {
+    const fixture = await create([debtor(1, 'ACTIVO', 1, 92000), baja(2, 'BAJA', 2, 184000)]);
+    const component: DeudasMorosidad = fixture.componentInstance;
+
+    component.selectedSituacion = 'Dados de baja';
+    component.onFiltrosChange();
+    fixture.detectChanges();
+    expect(tablePlayers(fixture)).toEqual(['PRUEBA, BAJA']);
+
+    component.selectedSituacion = 'Activos';
+    component.onFiltrosChange();
+    fixture.detectChanges();
+    expect(tablePlayers(fixture)).toEqual(['PRUEBA, ACTIVO']);
+  });
+
+  it('no cuenta al dado de baja como inhabilitado', async () => {
+    const fixture = await create([baja(1, 'BAJA', 4, 368000)]);
+    const component: DeudasMorosidad = fixture.componentInstance;
+
+    expect(component.topInhabilitados).toEqual([]);
+
+    component.selectedEstado = 'Inhabilitado';
+    component.onFiltrosChange();
+    fixture.detectChanges();
+    expect(tablePlayers(fixture)).toEqual([]);
+  });
+});
+
 // HU-020 (QA, 24/09): el combo de categorías tiene que listar las 13 categorías del
 // club (catálogo propio), no solo las que hoy tienen algún moroso; y el banner de
 // arriba tiene que mostrar el subtotal de la categoría elegida, no seguir mostrando

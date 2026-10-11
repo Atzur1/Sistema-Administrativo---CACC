@@ -39,8 +39,8 @@ namespace DaoLibrary
             // beneficio.
             string query = $@"
                 SELECT
-                    (SELECT COUNT(*) FROM JUGADORES) AS total_jugadores,
-                    (SELECT COUNT(DISTINCT FK_id_categoria) FROM JUGADORES) AS cantidad_categorias,
+                    (SELECT COUNT(*) FROM JUGADORES WHERE fecha_baja IS NULL) AS total_jugadores, -- solo activos: los dados de baja no cuentan
+                    (SELECT COUNT(DISTINCT FK_id_categoria) FROM JUGADORES WHERE fecha_baja IS NULL) AS cantidad_categorias,
                     (SELECT COUNT(*) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR({SqlReloj.Ahora}) AND MONTH(fecha_pago) = MONTH({SqlReloj.Ahora})) AS pagos_del_mes,
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR({SqlReloj.Ahora})) AS recaudado_anio,
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS
@@ -86,6 +86,7 @@ namespace DaoLibrary
                         {DescuentosSql.ApplyDescuentoActivo}
                         WHERE pg.estado = 0 AND pg.concepto = 'Cuota'
                     ) ca ON ca.FK_id_jugador = j.PK_id_jugador AND ca.saldo_ajustado > 0
+                    WHERE j.fecha_baja IS NULL -- estado del plantel: solo jugadores activos
                     GROUP BY j.PK_id_jugador
                 ) t";
 

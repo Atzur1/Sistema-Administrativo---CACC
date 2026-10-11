@@ -5,4 +5,6 @@ export interface PlayerSearchResultModel {
     lastName: string;
     dni: string;
     categoryName: string;
+    // "yyyy-MM-dd" when the player left the club, or null while active
+    leaveDate?: string | null;
 }

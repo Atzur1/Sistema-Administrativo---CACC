@@ -13,4 +13,7 @@ public class PlayerAccountResponseDTO
     // 0 when the player is up to date
     public decimal AmountOwed { get; set; }
     public int PendingInstallments { get; set; }
+
+    // "yyyy-MM-dd", or null while the player is active.
+    public string? LeaveDate { get; set; }
 }

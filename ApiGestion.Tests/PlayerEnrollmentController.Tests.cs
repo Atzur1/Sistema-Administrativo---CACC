@@ -273,7 +273,7 @@ public class PlayerEnrollmentControllerTests
 
         public JugadorResumen? ObtenerJugadorPorId(int idJugador) => Player;
         public IReadOnlyList<JugadorResumen> ListarJugadores() => throw new NotSupportedException();
-        public (BajaJugadorResultado Resultado, int CuotasEliminadas) DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
+        public ResultadoBajaJugador DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
         public bool Reactivar(int idJugador) => throw new NotSupportedException();
     }
 

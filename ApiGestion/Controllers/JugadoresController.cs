@@ -83,8 +83,8 @@ namespace ApiGestion.Controllers
 
             try
             {
-                var (resultado, cuotasEliminadas) = _jugadoresDao.DarDeBaja(id, fecha);
-                return resultado switch
+                var baja = _jugadoresDao.DarDeBaja(id, fecha);
+                return baja.Resultado switch
                 {
                     BajaJugadorResultado.NoEncontrado => NotFound(new { exito = false, mensaje = "Jugador no encontrado." }),
                     BajaJugadorResultado.YaDadoDeBaja => Conflict(new { exito = false, mensaje = "El jugador ya está dado de baja." }),
@@ -92,10 +92,9 @@ namespace ApiGestion.Controllers
                     _ => Ok(new
                     {
                         exito = true,
-                        cuotasEliminadas,
-                        mensaje = cuotasEliminadas > 0
-                            ? $"Jugador dado de baja. Se quitaron {cuotasEliminadas} cuota(s) sin pagos de meses posteriores a la baja."
-                            : "Jugador dado de baja. No se le emitirán más cuotas."
+                        cuotasEliminadas = baja.CuotasEliminadas,
+                        beneficiosCancelados = baja.BeneficiosCancelados,
+                        mensaje = MensajeBaja(baja)
                     })
                 };
             }
@@ -106,7 +105,18 @@ namespace ApiGestion.Controllers
             }
         }
 
+        internal static string MensajeBaja(ResultadoBajaJugador baja)
+        {
+            var partes = new List<string> { "Jugador dado de baja. No se le emitirán más cuotas." };
+            if (baja.CuotasEliminadas > 0)
+                partes.Add($"Se quitaron {baja.CuotasEliminadas} cuota(s) sin pagos de meses posteriores a la baja.");
+            if (baja.BeneficiosCancelados > 0)
+                partes.Add($"Se cancelaron {baja.BeneficiosCancelados} beca(s) o descuento(s) con la fecha de baja; lo ya pagado no cambia.");
+            return string.Join(" ", partes);
+        }
+
         // POST api/jugadores/{id}/reactivar -> vuelve a emitirle cuotas desde el mes en curso. Solo SuperAdmin.
+        // Las becas canceladas por la baja no se restauran: si corresponde, se asigna una nueva.
         [Authorize(Roles = "1")]
         [HttpPost("{id:int}/reactivar")]
         public IActionResult Reactivar(int id)

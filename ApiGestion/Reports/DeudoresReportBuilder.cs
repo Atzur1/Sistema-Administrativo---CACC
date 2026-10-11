@@ -11,6 +11,10 @@ namespace ApiGestion.Reports
     {
         private static readonly CultureInfo Ars = CultureInfo.GetCultureInfo("es-AR");
 
+        // Un jugador dado de baja puede seguir debiendo: el reporte lo incluye y lo marca.
+        private static string Estado(PendienteJugador d) =>
+            d.FechaBaja is { } baja ? $"Baja {baja:dd/MM/yyyy}" : "Activo";
+
         public static byte[] BuildCsv(IReadOnlyList<PendienteJugador> deudores, string categoriaLabel, string periodoLabel)
         {
             var totalAdeudado = deudores.Sum(d => d.MontoTotal);
@@ -25,13 +29,14 @@ namespace ApiGestion.Reports
                 new[] { "Total adeudado", totalAdeudado.ToString("C0", Ars) },
             };
 
-            var columns = new[] { "Nombre y Apellido", "DNI", "Categoría", "Meses Adeudados", "Total a Abonar Actualizado" };
+            var columns = new[] { "Nombre y Apellido", "DNI", "Categoría", "Estado", "Meses Adeudados", "Total a Abonar Actualizado" };
 
             var rows = deudores.Select(d => new[]
             {
                 d.NombreCompleto,
                 d.Dni,
                 d.Categoria,
+                Estado(d),
                 d.CantidadCuotas.ToString(),
                 d.MontoTotal.ToString("C0", Ars),
             });
@@ -51,13 +56,14 @@ namespace ApiGestion.Reports
                 new("Total adeudado", totalAdeudado.ToString("C0", Ars), Highlight: true),
             };
 
-            var columns = new[] { "Nombre y Apellido", "DNI", "Categoría", "Meses Adeudados", "Total a Abonar Actualizado" };
+            var columns = new[] { "Nombre y Apellido", "DNI", "Categoría", "Estado", "Meses Adeudados", "Total a Abonar Actualizado" };
 
             var rows = deudores.Select(d => new[]
             {
                 d.NombreCompleto,
                 d.Dni,
                 d.Categoria,
+                Estado(d),
                 d.CantidadCuotas.ToString(),
                 d.MontoTotal.ToString("C0", Ars),
             }).ToList();
@@ -69,7 +75,7 @@ namespace ApiGestion.Reports
                 columns: columns,
                 rows: rows,
                 emptyMessage: "No hay jugadores deudores para este filtro.",
-                rightAlignedColumns: new HashSet<int> { 3, 4 });
+                rightAlignedColumns: new HashSet<int> { 4, 5 });
         }
     }
 }

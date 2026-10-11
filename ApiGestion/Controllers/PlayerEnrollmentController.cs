@@ -75,6 +75,13 @@ public class PlayerEnrollmentController : ControllerBase
                 return BadRequest(new { mensaje = "La inscripción corresponde solo a la rama masculina: este jugador no tiene inscripción para cobrar." });
             }
 
+            // A un jugador dado de baja no se le genera una inscripción nueva. Si ya tenía una pendiente, se cobra
+            // por el camino de abajo como cualquier deuda.
+            if (player.FechaBaja != null)
+            {
+                return BadRequest(new { mensaje = $"El jugador está dado de baja desde el {player.FechaBaja:dd/MM/yyyy}: no se le genera una inscripción nueva." });
+            }
+
             EnrollmentFee? currentFee = _enrollmentFeeDAO.GetCurrentEnrollmentFee();
             if (currentFee == null)
             {

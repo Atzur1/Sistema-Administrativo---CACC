@@ -83,14 +83,23 @@
                   <span class="suggestion-meta"
                     >DNI {{ player.document }} · {{ player.category }}</span
                   >
+                  @if (player.leaveDate) {
+                    <span class="tag-baja">Baja</span>
+                  }
                 </button>
               </li>
             }
           </ul>
         }
+        @if (selectedPlayer?.leaveDate) {
+          <span class="field-hint field-hint-error">
+            Este jugador está dado de baja desde el {{ selectedPlayer!.leaveDate! | date: 'dd/MM/yyyy' : 'UTC' }}: no se
+            le pueden asignar becas ni descuentos.
+          </span>
+        }
       </div>
 
-      <button type="submit" class="submit-button" [disabled]="selectedPlayer === null">
+      <button type="submit" class="submit-button" [disabled]="selectedPlayer === null || !!selectedPlayer.leaveDate">
         Asignar Bonificación
       </button>
     </form>
@@ -405,9 +414,11 @@
           }
           <!-- Possible since HU-012: what the API refuses is an overlapping
                period, not a second benefit -->
-          <button type="button" class="button-ghost" (click)="startNewBenefit()">
-            Asignar otro período
-          </button>
+          @if (!dialogPlayer()?.leaveDate) {
+            <button type="button" class="button-ghost" (click)="startNewBenefit()">
+              Asignar otro período
+            </button>
+          }
           @if (esEditable(discount)) {
             <span class="action-with-help">
               <button type="button" class="button-primary" (click)="startEditing()">

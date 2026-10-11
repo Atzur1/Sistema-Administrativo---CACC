@@ -166,6 +166,21 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Modo "solo migrar" para los despliegues de producción: aplica las migraciones con la cuenta ADMINISTRADORA de
+// la base y termina, sin levantar la API. En producción la API trabaja con el usuario cacc_api, que no puede
+// cambiar la estructura (ver database/produccion). Uso:
+//   dotnet ApiGestion.dll --DatabaseMigrations:SoloMigrar=true --ConnectionStrings:ConexionMigraciones="<cadena con la cuenta administradora>"
+if (app.Configuration.GetValue<bool>("DatabaseMigrations:SoloMigrar"))
+{
+    var conexionMigraciones = app.Configuration.GetConnectionString("ConexionMigraciones")
+        ?? app.Configuration.GetConnectionString("ConexionSQL");
+    if (string.IsNullOrWhiteSpace(conexionMigraciones))
+        throw new InvalidOperationException("Falta ConnectionStrings:ConexionMigraciones (cuenta administradora) para aplicar las migraciones.");
+    await ApiGestion.Database.EjecutorMigraciones.EjecutarAsync(conexionMigraciones, app.Logger, CancellationToken.None);
+    app.Logger.LogInformation("Migraciones aplicadas. Ejecutá database/produccion/03_permisos_usuario_api.sql y 04_verificar_permisos.sql.");
+    return;
+}
+
 // En desarrollo se aplican los cambios antes de aceptar peticiones.
 // Fuera de Development se requiere habilitación explícita.
 if (app.Configuration.GetValue<bool?>("DatabaseMigrations:Enabled") ?? app.Environment.IsDevelopment())
@@ -175,6 +190,28 @@ if (app.Configuration.GetValue<bool?>("DatabaseMigrations:Enabled") ?? app.Envir
         throw new InvalidOperationException("Falta ConnectionStrings:ConexionSQL para ejecutar las migraciones.");
     await ApiGestion.Database.EjecutorMigraciones.EjecutarAsync(
         conexion, app.Logger, app.Lifetime.ApplicationStopping);
+}
+
+// Fuera de desarrollo, avisa si la API se conecta con más permisos de los que necesita: con sysadmin o db_owner,
+// la auditoría se puede borrar sin dejar rastro (un DENY no los alcanza). No bloquea el arranque.
+if (!app.Environment.IsDevelopment())
+{
+    try
+    {
+        using var conexion = DaoLibrary.SqlConnectionFactory.Open(conexionSql);
+        using var comando = new Microsoft.Data.SqlClient.SqlCommand(
+            "SELECT IS_SRVROLEMEMBER('sysadmin'), IS_ROLEMEMBER('db_owner'), HAS_PERMS_BY_NAME('dbo.AUDITORIA_CAMBIOS', 'OBJECT', 'DELETE')",
+            conexion);
+        using var lector = comando.ExecuteReader();
+        if (lector.Read() && (lector.GetValue(0) is 1 || lector.GetValue(1) is 1 || lector.GetValue(2) is 1))
+            app.Logger.LogWarning(
+                "La API está conectada a SQL Server con un usuario que puede borrar la auditoría (sysadmin, db_owner o permiso DELETE). " +
+                "Usá el usuario cacc_api: ver database/produccion/README.md.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "No se pudieron verificar los permisos del usuario de base de datos.");
+    }
 }
 
 if (usarCabecerasDeProxy)

@@ -63,7 +63,7 @@ public class PlayerDAO
 
         // Exact DNI or last names that start with the term go first.
         string query = $@"
-            SELECT TOP (@maxResults) j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria
+            SELECT TOP (@maxResults) j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja
             FROM JUGADORES j
             JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
             JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
@@ -96,7 +96,8 @@ public class PlayerDAO
                 FirstName = reader["nombre"].ToString()?.Trim() ?? "",
                 LastName = reader["apellido"].ToString()?.Trim() ?? "",
                 Dni = reader["Dni"].ToString()?.Trim() ?? "",
-                CategoryName = reader["nombre_categoria"].ToString()?.Trim() ?? ""
+                CategoryName = reader["nombre_categoria"].ToString()?.Trim() ?? "",
+                LeaveDate = reader["fecha_baja"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_baja"])
             });
         }
 

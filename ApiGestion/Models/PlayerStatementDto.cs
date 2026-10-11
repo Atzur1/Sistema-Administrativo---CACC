@@ -30,4 +30,7 @@ public class FeeItemDto
     public string? PaymentMethod { get; set; }
     public bool CoveredByBenefit { get; set; }
     public string? BenefitReason { get; set; }
+
+    // Quedó saldo y el beneficio de ese período se canceló al dar de baja al jugador ("beca cancelada por baja").
+    public bool BenefitCancelledByLeave { get; set; }
 }

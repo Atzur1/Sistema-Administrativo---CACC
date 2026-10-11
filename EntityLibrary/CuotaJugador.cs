@@ -14,6 +14,8 @@ namespace EntityLibrary
         public DateTime? FechaPago { get; set; }
         public string? MetodoPago { get; set; }
         public string? MotivoBeneficio { get; set; }
+        // El beneficio que aplica a este período se canceló al dar de baja al jugador (JUGADORES_DESCUENTOS.cancelada_por_baja).
+        public bool BeneficioCanceladoPorBaja { get; set; }
     }
 
     // HU-025: una cuota mensual del jugador en la tabla de la ficha financiera. Estado es
@@ -29,6 +31,9 @@ namespace EntityLibrary
         public string Estado { get; set; } = string.Empty;
         public bool CubiertaPorBeneficio { get; set; }
         public string? MotivoBeneficio { get; set; }
+        // Quedó saldo pendiente y el beneficio de ese período se canceló al dar de baja al jugador: se muestra
+        // "beca cancelada por baja" para explicar por qué hay deuda en un mes que tenía beca.
+        public bool BeneficioCanceladoPorBaja { get; set; }
         public string? MetodoPago { get; set; } // Del último cobro del período
         public DateTime? FechaPago { get; set; } // Del último cobro del período
     }

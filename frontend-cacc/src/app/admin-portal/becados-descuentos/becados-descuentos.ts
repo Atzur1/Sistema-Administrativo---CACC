@@ -40,6 +40,8 @@ interface PlayerModel {
   fullName: string;
   document: string;
   category: string;
+  // "yyyy-MM-dd" si está dado de baja: no se le asignan becas ni descuentos.
+  leaveDate: string | null;
 }
 
 function toPlayerModel(jugador: JugadorResumen): PlayerModel {
@@ -48,6 +50,7 @@ function toPlayerModel(jugador: JugadorResumen): PlayerModel {
     fullName: jugador.nombreCompleto,
     document: jugador.dni,
     category: jugador.categoria,
+    leaveDate: jugador.fechaBaja ?? null,
   };
 }
 
@@ -379,6 +382,7 @@ export class BecadosDescuentos implements OnInit {
         fullName: row.playerName,
         document: '',
         category: row.category,
+        leaveDate: null, // si estuviera de baja, el servidor rechaza cualquier cambio
       },
       row.id,
     );

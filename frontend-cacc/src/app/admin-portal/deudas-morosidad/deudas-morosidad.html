@@ -100,6 +100,12 @@
                                 (ngModelChange)="onFiltrosChange()"></app-custom-select>
           </div>
 
+          <div class="filter-control">
+            <app-custom-select [options]="situacionOptions" placeholder="Activos y dados de baja"
+                                [(ngModel)]="selectedSituacion"
+                                (ngModelChange)="onFiltrosChange()"></app-custom-select>
+          </div>
+
           @if (hayFiltrosActivos) {
             <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">Limpiar filtros</button>
           }
@@ -155,7 +161,7 @@
           </table>
         </div>
         <p class="table-legend">
-          Solo entrenamientos: 1 cuota impaga, no puede jugar partidos oficiales · Inhabilitado: 2 o más cuotas, no puede entrenar ni jugar oficiales.
+          Solo entrenamientos: 1 cuota impaga, no puede jugar partidos oficiales · Inhabilitado: 2 o más cuotas, no puede entrenar ni jugar oficiales · Dado de baja: dejó el club y no genera cuotas nuevas, pero se le puede cobrar lo que debe.
         </p>
       }
     </article>

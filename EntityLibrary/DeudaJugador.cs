@@ -26,6 +26,8 @@ namespace EntityLibrary
         public string? TipoValorBeneficio { get; set; } // "%" o "$"
         public decimal? PorcentajeBeneficio { get; set; }
         public decimal? MontoFijoBeneficio { get; set; }
+        // El beneficio de este período se canceló al dar de baja al jugador ("beca cancelada por baja").
+        public bool BeneficioCanceladoPorBaja { get; set; }
 
         public List<AbonoDetalle> Abonos { get; set; } = new();
     }

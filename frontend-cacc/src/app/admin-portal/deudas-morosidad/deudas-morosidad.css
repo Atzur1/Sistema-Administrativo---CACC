@@ -750,3 +750,10 @@
         width: 100%;
     }
 }
+
+/* Jugador dado de baja: sigue debiendo, pero ya no tiene situación deportiva (no entrena ni juega). */
+.status-left {
+    background: var(--color-bg-hover);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+}

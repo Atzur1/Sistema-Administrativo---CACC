@@ -40,6 +40,8 @@ interface PendingRow {
   installments: string;
   // Crudo, para el filtro por cuotas (installments ya viene formateado como "2 cuotas").
   cuotasCount: number;
+  // Dado de baja: se sigue listando porque debe, con la etiqueta "Baja".
+  dadoDeBaja: boolean;
 }
 
 interface HeaderMetric {
@@ -675,6 +677,7 @@ function mapPendiente(p: PendienteJugador): PendingRow {
     amount: CURRENCY_FULL.format(p.montoTotal),
     installments: `${p.cantidadCuotas} ${p.cantidadCuotas === 1 ? 'cuota' : 'cuotas'}`,
     cuotasCount: p.cantidadCuotas,
+    dadoDeBaja: !!p.fechaBaja,
   };
 }
 

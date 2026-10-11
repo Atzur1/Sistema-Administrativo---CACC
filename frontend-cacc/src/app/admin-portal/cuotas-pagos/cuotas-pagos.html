@@ -356,7 +356,12 @@
                   <td class="col-rank">
                     <span class="rank-badge">{{ i + 1 }}</span>
                   </td>
-                  <td class="cell-player">{{ row.name }}</td>
+                  <td class="cell-player">
+                    {{ row.name }}
+                    @if (row.dadoDeBaja) {
+                      <span class="tag-baja" title="Dejó el club: no genera cuotas nuevas, pero se le cobra lo que debe">Baja</span>
+                    }
+                  </td>
                   <td class="cell-muted">{{ row.dni }}</td>
                   <td class="cell-muted">{{ row.category }}</td>
                   <td class="align-right cell-muted">{{ row.installments }}</td>

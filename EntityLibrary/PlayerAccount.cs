@@ -56,4 +56,7 @@ public class PlayerAccount
         get { return pendingInstallments; }
         set { pendingInstallments = value; }
     }
+
+    // null while the player is active. A player who left can still owe: they are listed with a "Baja" tag.
+    public DateTime? LeaveDate { get; set; }
 }
