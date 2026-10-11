@@ -138,5 +138,88 @@ public class PagosDaoAltaBajaYAnulacionIntegrationTests
         new DiscountDao(Conexion).GetAllDiscounts();
         new EnrollmentFeeDAO(Conexion).GetCurrentEnrollmentFee();
         Assert.NotNull(new JugadoresDao(Conexion).ListarJugadores());
+        // Consultas que ahora leen fecha_baja o cancelada_por_baja.
+        pagos.ObtenerPendientesAgrupados();
+        pagos.GetPlayerAccounts(onlyDebtors: false);
+    }
+
+    // Regla del club: al dar de baja, la beca se cancela sola. Lo que el jugador pagó con la beca vigente sigue
+    // PAGADO; lo que quedó pendiente conserva el descuento de esos meses y se marca "cancelada por baja"; y las
+    // cuotas sin pagos de meses posteriores a la baja se quitan.
+    [IntegracionFact]
+    public void DarDeBaja_CancelaLaBecaYRespetaLoYaPagado()
+    {
+        using var connection = new SqlConnection(Conexion);
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var dao = new PagosDao(Conexion);
+            int categoria = PrimeraCategoria(connection, transaction);
+            ArancelDeCategoria(connection, transaction, categoria, 10_000m, new DateTime(2098, 1, 1));
+            int jugador = CrearJugador(connection, transaction, alta: new DateTime(2098, 1, 1), baja: null, categoria);
+
+            // Beca del 50 % todo 2098.
+            int idBeca;
+            using (var beca = new SqlCommand(@"
+                DECLARE @nueva TABLE (id INT);
+                INSERT INTO JUGADORES_DESCUENTOS (FK_id_jugador, FK_id_descuento, tipo_valor, porcentaje, fecha_inicio, fecha_fin)
+                OUTPUT INSERTED.PK_id_jugador_descuento INTO @nueva (id)
+                VALUES (@j, (SELECT TOP (1) PK_id_descuento FROM TIPO_DESCUENTO ORDER BY PK_id_descuento), '%', 50, '2098-01-01', '2098-12-31');
+                SELECT id FROM @nueva;", connection, transaction))
+            {
+                beca.Parameters.AddWithValue("@j", jugador);
+                idBeca = Convert.ToInt32(beca.ExecuteScalar());
+            }
+
+            Assert.True(dao.EmitirCuotaDeJugador(connection, transaction, jugador, 1, 2098));
+            Assert.True(dao.EmitirCuotaDeJugador(connection, transaction, jugador, 2, 2098));
+            Assert.True(dao.EmitirCuotaDeJugador(connection, transaction, jugador, 3, 2098));
+
+            // Enero: pagado completo con la beca vigente (5.000), como lo deja PagosService.
+            var enero = dao.ObtenerPagoPendienteDeJugadorEnPeriodo(connection, transaction, jugador, 1, 2098)!;
+            dao.InsertarPago(connection, transaction, new Pago
+            {
+                IdJugador = jugador, MontoBase = 10_000m, MontoFinal = 5_000m, MetodoPago = "Efectivo", IdJugadorDescuento = idBeca,
+                FechaPago = new DateTime(2098, 1, 5), FechaVencimiento = new DateTime(2098, 1, 1), Estado = true
+            });
+            dao.EliminarPago(connection, transaction, enero.IdPago);
+
+            var baja = JugadoresDao.DarDeBajaCore(connection, transaction, jugador, new DateTime(2098, 2, 15));
+
+            Assert.Equal(BajaJugadorResultado.Ok, baja.Resultado);
+            Assert.Equal(1, baja.CuotasEliminadas);      // marzo: posterior a la baja y sin pagos
+            Assert.Equal(1, baja.BeneficiosCancelados);  // la beca
+
+            // Enero sigue pagado: sin fila pendiente y con su abono intacto.
+            Assert.Null(dao.ObtenerPagoPendienteDeJugadorEnPeriodo(connection, transaction, jugador, 1, 2098));
+            Assert.NotNull(dao.ObtenerPagoAbonadoDeJugadorEnPeriodo(connection, transaction, jugador, 1, 2098));
+            Assert.Null(dao.ObtenerPagoPendienteDeJugadorEnPeriodo(connection, transaction, jugador, 3, 2098));
+
+            // Febrero: pendiente, con el 50 % todavía aplicado y la marca de beca cancelada por baja.
+            var febrero = dao.ObtenerPagoPendienteDeJugadorEnPeriodo(connection, transaction, jugador, 2, 2098)!;
+            using var saldo = new SqlCommand($@"
+                SELECT ({DescuentosSql.SaldoAjustadoExpr}) AS saldo, d.cancelada_por_baja
+                FROM PAGOS pg {DescuentosSql.ApplyDescuentoActivo}
+                WHERE pg.PK_id_pago = @id", connection, transaction);
+            saldo.Parameters.AddWithValue("@id", febrero.IdPago);
+            using (var reader = saldo.ExecuteReader())
+            {
+                Assert.True(reader.Read());
+                Assert.Equal(5_000m, Convert.ToDecimal(reader["saldo"]));
+                Assert.True(Convert.ToBoolean(reader["cancelada_por_baja"]));
+            }
+
+            using var becaGuardada = new SqlCommand(
+                "SELECT estado_activo, cancelada_por_baja, fecha_cancelacion FROM JUGADORES_DESCUENTOS WHERE PK_id_jugador_descuento = @id",
+                connection, transaction);
+            becaGuardada.Parameters.AddWithValue("@id", idBeca);
+            using var b = becaGuardada.ExecuteReader();
+            Assert.True(b.Read());
+            Assert.False(b.GetBoolean(0));
+            Assert.True(b.GetBoolean(1));
+            Assert.Equal(new DateTime(2098, 2, 15), b.GetDateTime(2));
+        }
+        finally { transaction.Rollback(); }
     }
 }

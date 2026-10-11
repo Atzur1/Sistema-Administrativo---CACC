@@ -58,6 +58,7 @@ describe('PagosService - cobro de cuotas (HU-025)', () => {
       estado: 'Vencido',
       cubiertaPorBeneficio: false,
       motivoBeneficio: 'Descuento',
+      beneficioCanceladoPorBaja: false,
       metodoPago: null,
       fechaPago: null,
     });

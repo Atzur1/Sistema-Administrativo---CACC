@@ -184,7 +184,7 @@ public class JugadoresControllerTests
 
     private class FakeJugadoresDao : IJugadoresDao
     {
-public (BajaJugadorResultado Resultado, int CuotasEliminadas) DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
+        public ResultadoBajaJugador DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
         public bool Reactivar(int idJugador) => throw new NotSupportedException();
         public JugadorResumen? Player { get; init; }
         public Exception? LookupError { get; init; }

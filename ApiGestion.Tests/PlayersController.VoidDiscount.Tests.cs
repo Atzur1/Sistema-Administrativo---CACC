@@ -216,7 +216,7 @@ public class PlayersControllerVoidDiscountTests
 
     private class FakeJugadoresDao : IJugadoresDao
     {
-public (BajaJugadorResultado Resultado, int CuotasEliminadas) DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
+        public ResultadoBajaJugador DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
         public bool Reactivar(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<JugadorResumen> ListarJugadores() => new List<JugadorResumen>();
         public JugadorResumen? ObtenerJugadorPorId(int idJugador) => new JugadorResumen { IdJugador = idJugador };

@@ -514,7 +514,7 @@ namespace DaoLibrary
             // HU-033: monto_total suma cuotas e inscripción; cantidad_cuotas cuenta solo cuotas,
             // porque de ella sale el estado deportivo (Solo entrenamientos / Inhabilitado).
             string query = $@"
-                SELECT j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria,
+                SELECT j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja,
                        SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
                        COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 AND pg.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas
                 FROM PAGOS pg
@@ -524,7 +524,7 @@ namespace DaoLibrary
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE pg.estado = 0 AND pg.concepto = 'Cuota'
                   AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
-                GROUP BY j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria
+                GROUP BY j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja
                 HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
                 -- HU-021 (QA, 24/09): el reporte exportado tiene que salir en el mismo orden que la
                 -- grilla de Deudas y Morosidad (cantidad de cuotas primero, monto como desempate).
@@ -546,7 +546,8 @@ namespace DaoLibrary
                     IdCategoria = Convert.ToInt32(reader["FK_id_categoria"]),
                     Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? "",
                     MontoTotal = Convert.ToDecimal(reader["monto_total"]),
-                    CantidadCuotas = Convert.ToInt32(reader["cantidad_cuotas"])
+                    CantidadCuotas = Convert.ToInt32(reader["cantidad_cuotas"]),
+                    FechaBaja = reader["fecha_baja"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_baja"])
                 });
             }
 
@@ -572,7 +573,7 @@ namespace DaoLibrary
                 : "ORDER BY p.apellido, p.nombre";
 
             string query = $@"
-                SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria,
+                SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja,
                        ISNULL(d.monto_adeudado, 0) AS monto_adeudado,
                        ISNULL(d.cantidad_cuotas, 0) AS cantidad_cuotas
                 FROM JUGADORES j
@@ -607,7 +608,8 @@ namespace DaoLibrary
                     Dni = reader["Dni"].ToString()?.Trim() ?? "",
                     Category = reader["nombre_categoria"].ToString()?.Trim() ?? "",
                     AmountOwed = Convert.ToDecimal(reader["monto_adeudado"]),
-                    PendingInstallments = Convert.ToInt32(reader["cantidad_cuotas"])
+                    PendingInstallments = Convert.ToInt32(reader["cantidad_cuotas"]),
+                    LeaveDate = reader["fecha_baja"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_baja"])
                 });
             }
 
@@ -804,7 +806,7 @@ namespace DaoLibrary
             // la cuota se haya cargado antes de asignarle el beneficio, se resuelve acá al leer.
             string queryPendientes = $@"
                 SELECT pg.PK_id_pago, pg.monto_base, pg.monto_final, pg.fecha_vencimiento, pg.concepto,
-                       d.tipo_valor, d.porcentaje, d.monto_fijo, td.tipo_descuento AS motivo,
+                       d.tipo_valor, d.porcentaje, d.monto_fijo, td.tipo_descuento AS motivo, d.cancelada_por_baja,
                        ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
@@ -835,7 +837,8 @@ namespace DaoLibrary
                         MotivoBeneficio = tieneBeneficio ? reader["motivo"].ToString()?.Trim() : null,
                         TipoValorBeneficio = tieneBeneficio ? reader["tipo_valor"].ToString()?.Trim() : null,
                         PorcentajeBeneficio = reader["porcentaje"] != DBNull.Value ? Convert.ToDecimal(reader["porcentaje"]) : null,
-                        MontoFijoBeneficio = reader["monto_fijo"] != DBNull.Value ? Convert.ToDecimal(reader["monto_fijo"]) : null
+                        MontoFijoBeneficio = reader["monto_fijo"] != DBNull.Value ? Convert.ToDecimal(reader["monto_fijo"]) : null,
+                        BeneficioCanceladoPorBaja = reader["cancelada_por_baja"] != DBNull.Value && Convert.ToBoolean(reader["cancelada_por_baja"])
                     });
                 }
             }
@@ -930,7 +933,7 @@ namespace DaoLibrary
 
             string query = $@"
                 SELECT pg.PK_id_pago, pg.estado, pg.monto_base, pg.monto_final, pg.fecha_vencimiento,
-                       pg.fecha_pago, pg.metodo_pago, td.tipo_descuento AS motivo,
+                       pg.fecha_pago, pg.metodo_pago, td.tipo_descuento AS motivo, d.cancelada_por_baja,
                        ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
@@ -955,7 +958,8 @@ namespace DaoLibrary
                     FechaVencimiento = Convert.ToDateTime(reader["fecha_vencimiento"]),
                     FechaPago = reader["fecha_pago"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_pago"]),
                     MetodoPago = reader["metodo_pago"] == DBNull.Value ? null : reader["metodo_pago"].ToString()?.Trim(),
-                    MotivoBeneficio = reader["motivo"] == DBNull.Value ? null : reader["motivo"].ToString()?.Trim()
+                    MotivoBeneficio = reader["motivo"] == DBNull.Value ? null : reader["motivo"].ToString()?.Trim(),
+                    BeneficioCanceladoPorBaja = reader["cancelada_por_baja"] != DBNull.Value && Convert.ToBoolean(reader["cancelada_por_baja"])
                 });
             }
 

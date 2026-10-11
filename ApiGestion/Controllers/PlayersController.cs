@@ -161,7 +161,8 @@ public class PlayersController : ControllerBase
                 FirstName = player.FirstName,
                 LastName = player.LastName,
                 Dni = player.Dni,
-                CategoryName = player.CategoryName
+                CategoryName = player.CategoryName,
+                LeaveDate = player.LeaveDate?.ToString("yyyy-MM-dd")
             }).ToList());
         }
         catch (Exception ex)
@@ -468,9 +469,17 @@ public class PlayersController : ControllerBase
             return BadRequest("The player id must be greater than zero.");
         }
 
-        if (_jugadoresDao.ObtenerJugadorPorId((int)playerId) == null)
+        JugadorResumen? jugador = _jugadoresDao.ObtenerJugadorPorId((int)playerId);
+        if (jugador == null)
         {
             return BadRequest($"No player exists with id {playerId}.");
+        }
+
+        // Un jugador dado de baja ya no está en el club: no se le asignan ni editan becas o descuentos (las
+        // que tenía se cancelaron al darlo de baja).
+        if (jugador.FechaBaja != null)
+        {
+            return UnprocessableEntity(new { mensaje = $"El jugador está dado de baja desde el {jugador.FechaBaja:dd/MM/yyyy}: no se le pueden asignar ni editar becas o descuentos." });
         }
 
         reason = _discountDao.GetDiscountTypeByName(request.Reason.Trim());

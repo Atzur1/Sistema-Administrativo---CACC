@@ -5,6 +5,10 @@ namespace DaoLibrary
 {
     public enum BajaJugadorResultado { Ok, NoEncontrado, YaDadoDeBaja, FechaInvalida }
 
+    // Resultado de dar de baja: cuántas cuotas sin pagos de meses posteriores se quitaron y cuántas becas o
+    // descuentos vigentes o programados se cancelaron automáticamente.
+    public sealed record ResultadoBajaJugador(BajaJugadorResultado Resultado, int CuotasEliminadas = 0, int BeneficiosCancelados = 0);
+
     public class JugadoresDao : IJugadoresDao
     {
         private readonly string _cadenaConexion;
@@ -57,12 +61,20 @@ namespace DaoLibrary
         // siguiente. Las cuotas pendientes SIN pagos de meses posteriores al de la baja se borran (por
         // ejemplo, una baja que se carga tarde, o un mes futuro que se había emitido para pagar por
         // adelantado); las que ya tienen algún pago y las de meses anteriores quedan como deuda real.
-        public (BajaJugadorResultado Resultado, int CuotasEliminadas) DarDeBaja(int idJugador, DateTime fechaBaja)
+        public ResultadoBajaJugador DarDeBaja(int idJugador, DateTime fechaBaja)
         {
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using SqlTransaction transaccion = conexion.BeginTransaction(System.Data.IsolationLevel.Serializable);
             BloqueoEscrituraPagos.Tomar(conexion, transaccion);
 
+            var resultado = DarDeBajaCore(conexion, transaccion, idJugador, fechaBaja);
+            if (resultado.Resultado == BajaJugadorResultado.Ok) transaccion.Commit(); else transaccion.Rollback();
+            return resultado;
+        }
+
+        // internal (no private) para que la prueba de integración la corra dentro de una transacción que revierte.
+        internal static ResultadoBajaJugador DarDeBajaCore(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime fechaBaja)
+        {
             DateTime? fechaAlta;
             using (var buscar = new SqlCommand(
                 "SELECT fecha_alta, fecha_baja FROM JUGADORES WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_jugador = @id",
@@ -72,23 +84,18 @@ namespace DaoLibrary
                 using var reader = buscar.ExecuteReader();
                 if (!reader.Read())
                 {
-                    reader.Close();
-                    transaccion.Rollback();
-                    return (BajaJugadorResultado.NoEncontrado, 0);
+                    return new ResultadoBajaJugador(BajaJugadorResultado.NoEncontrado);
                 }
                 if (reader["fecha_baja"] != DBNull.Value)
                 {
-                    reader.Close();
-                    transaccion.Rollback();
-                    return (BajaJugadorResultado.YaDadoDeBaja, 0);
+                    return new ResultadoBajaJugador(BajaJugadorResultado.YaDadoDeBaja);
                 }
                 fechaAlta = reader["fecha_alta"] != DBNull.Value ? Convert.ToDateTime(reader["fecha_alta"]) : null;
             }
 
             if (fechaAlta.HasValue && fechaBaja.Date < fechaAlta.Value.Date)
             {
-                transaccion.Rollback();
-                return (BajaJugadorResultado.FechaInvalida, 0);
+                return new ResultadoBajaJugador(BajaJugadorResultado.FechaInvalida);
             }
 
             using (var baja = new SqlCommand("UPDATE JUGADORES SET fecha_baja = @fecha WHERE PK_id_jugador = @id", conexion, transaccion))
@@ -115,8 +122,24 @@ namespace DaoLibrary
                 eliminadas = limpiar.ExecuteNonQuery();
             }
 
-            transaccion.Commit();
-            return (BajaJugadorResultado.Ok, eliminadas);
+            // Becas y descuentos vigentes o programados: se cancelan con la fecha de baja, con el mismo criterio
+            // que una cancelación a mano (DiscountDao.DeactivateDiscount). Siguen aplicando a los meses que
+            // vencieron hasta esa fecha, así que lo que el jugador ya pagó con el beneficio sigue pagado y lo que
+            // quedó pendiente conserva el descuento de esos meses. cancelada_por_baja permite mostrarlo así.
+            int cancelados;
+            using (var cancelar = new SqlCommand(@"
+                UPDATE JUGADORES_DESCUENTOS
+                SET estado_activo = 0,
+                    cancelada_por_baja = 1,
+                    fecha_cancelacion = CASE WHEN @fecha < fecha_inicio THEN EOMONTH(fecha_inicio, -1) ELSE @fecha END
+                WHERE FK_id_jugador = @id AND estado_activo = 1 AND fecha_fin >= @fecha", conexion, transaccion))
+            {
+                cancelar.Parameters.Add("@fecha", System.Data.SqlDbType.Date).Value = fechaBaja.Date;
+                cancelar.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
+                cancelados = cancelar.ExecuteNonQuery();
+            }
+
+            return new ResultadoBajaJugador(BajaJugadorResultado.Ok, eliminadas, cancelados);
         }
 
         // Vuelve a dejar activo a un jugador dado de baja. Las cuotas de los meses en que estuvo afuera

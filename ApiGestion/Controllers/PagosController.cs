@@ -183,7 +183,8 @@ namespace ApiGestion.Controllers
                         PaidAt = cuota.FechaPago?.ToString("yyyy-MM-dd"),
                         PaymentMethod = cuota.MetodoPago,
                         CoveredByBenefit = cuota.CubiertaPorBeneficio,
-                        BenefitReason = cuota.MotivoBeneficio
+                        BenefitReason = cuota.MotivoBeneficio,
+                        BenefitCancelledByLeave = cuota.BeneficioCanceladoPorBaja
                     }).ToList()
                 });
             }
@@ -308,7 +309,8 @@ namespace ApiGestion.Controllers
                 Dni = account.Dni,
                 Category = account.Category,
                 AmountOwed = account.AmountOwed,
-                PendingInstallments = account.PendingInstallments
+                PendingInstallments = account.PendingInstallments,
+                LeaveDate = account.LeaveDate?.ToString("yyyy-MM-dd")
             };
         }
     }

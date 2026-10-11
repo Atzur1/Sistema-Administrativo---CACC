@@ -33,7 +33,7 @@ interface DebtorRow {
   category: string;
   instalments: string;
   debt: string;
-  status: 'suspended' | 'partial';
+  status: 'suspended' | 'partial' | 'left';
   statusLabel: string;
 }
 
@@ -45,6 +45,8 @@ interface AlumnoRow {
   categoria: string;
   cantidadCuotas: number;
   montoTotal: number;
+  // "yyyy-MM-dd" si el jugador está dado de baja (sigue debiendo), null si está activo
+  fechaBaja: string | null;
 }
 
 // One row in the "Inhabilitados" panel
@@ -118,6 +120,10 @@ const CUOTAS_PARA_INHABILITAR = 2;
 // opciones en vez de ser un texto que nunca se puede elegir.
 const TODAS_CATEGORIAS = 'Todas las categorías';
 
+// Filtro "Jugadores": activos o dados de baja (sin elegir, todos).
+const SITUACION_ACTIVOS = 'Activos';
+const SITUACION_BAJA = 'Dados de baja';
+
 @Component({
   selector: 'app-deudas-morosidad',
   standalone: true,
@@ -165,6 +171,9 @@ export class DeudasMorosidad implements OnInit {
   // cualquier filtro es instantáneo, sin ida y vuelta al servidor.
   categoriaOptions: string[] = [TODAS_CATEGORIAS];
   estadoOptions: string[] = ['Inhabilitado', 'Solo entrenamientos'];
+  // Un jugador dado de baja puede seguir debiendo: por defecto se listan todos, con el estado "Dado de baja".
+  situacionOptions: string[] = [SITUACION_ACTIVOS, SITUACION_BAJA];
+  selectedSituacion: string | null = null;
   selectedCategoria: string | null = null;
   selectedEstado: string | null = null;
   busqueda = '';
@@ -317,7 +326,7 @@ export class DeudasMorosidad implements OnInit {
   }
 
   get hayFiltrosActivos(): boolean {
-    return !!this.categoriaActiva || !!this.selectedEstado || this.busqueda.trim().length > 0;
+    return !!this.categoriaActiva || !!this.selectedEstado || !!this.selectedSituacion || this.busqueda.trim().length > 0;
   }
 
   get totalJugadores(): number {
@@ -327,6 +336,7 @@ export class DeudasMorosidad implements OnInit {
   limpiarFiltros(): void {
     this.selectedCategoria = null;
     this.selectedEstado = null;
+    this.selectedSituacion = null;
     this.busqueda = '';
     this.aplicarFiltro();
   }
@@ -401,10 +411,18 @@ export class DeudasMorosidad implements OnInit {
       filtrados = filtrados.filter((p) => p.categoria === categoria);
     }
 
+    if (this.selectedSituacion === SITUACION_ACTIVOS) {
+      filtrados = filtrados.filter((p) => !p.fechaBaja);
+    } else if (this.selectedSituacion === SITUACION_BAJA) {
+      filtrados = filtrados.filter((p) => !!p.fechaBaja);
+    }
+
+    // El estado deportivo (inhabilitado / solo entrenamientos) es de los jugadores activos: un dado de baja
+    // ya no entrena ni juega, así que esos filtros y el panel de inhabilitados no lo incluyen.
     if (this.selectedEstado === 'Inhabilitado') {
-      filtrados = filtrados.filter((p) => p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR);
+      filtrados = filtrados.filter((p) => !p.fechaBaja && p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR);
     } else if (this.selectedEstado === 'Solo entrenamientos') {
-      filtrados = filtrados.filter((p) => p.cantidadCuotas === 1);
+      filtrados = filtrados.filter((p) => !p.fechaBaja && p.cantidadCuotas === 1);
     }
 
     const termino = this.busqueda.trim().toLowerCase();
@@ -416,7 +434,7 @@ export class DeudasMorosidad implements OnInit {
 
     this.debtors = filtrados.map(mapDebtorRow);
     this.topInhabilitados = filtrados
-      .filter((p) => p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR)
+      .filter((p) => !p.fechaBaja && p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR)
       .slice(0, 5)
       .map(mapHighlight);
     this.recalcularBanner();
@@ -434,7 +452,7 @@ export class DeudasMorosidad implements OnInit {
     if (categoria) {
       const filas = this.allRows.filter((p) => p.categoria === categoria);
       const montoTotal = filas.reduce((acc, p) => acc + p.montoTotal, 0);
-      const inhabilitados = filas.filter((p) => p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR).length;
+      const inhabilitados = filas.filter((p) => !p.fechaBaja && p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR).length;
       this.animateBannerMetrics([
         { label: 'Deuda total', raw: montoTotal, format: formatCompactCurrency },
         { label: 'Deudores', raw: filas.length, format: (n) => String(n) },
@@ -498,11 +516,19 @@ function mapAccountRow(a: PlayerAccountModel): AlumnoRow {
     categoria: a.category,
     cantidadCuotas: a.pendingInstallments,
     montoTotal: a.amountOwed,
+    fechaBaja: a.leaveDate ?? null,
   };
 }
 
 function mapDebtorRow(p: AlumnoRow, index: number): DebtorRow {
   const inhabilitado = p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR;
+  // Dado de baja: sigue debiendo, pero ya no tiene situación deportiva. Se muestra la fecha de la baja.
+  const [anio, mes, dia] = (p.fechaBaja ?? '').slice(0, 10).split('-');
+  const estado: Pick<DebtorRow, 'status' | 'statusLabel'> = p.fechaBaja
+    ? { status: 'left', statusLabel: `Dado de baja ${dia}/${mes}/${anio}` }
+    : inhabilitado
+      ? { status: 'suspended', statusLabel: 'Inhabilitado' }
+      : { status: 'partial', statusLabel: 'Solo entrenamientos' };
   return {
     rank: index + 1,
     idJugador: p.idJugador,
@@ -511,8 +537,7 @@ function mapDebtorRow(p: AlumnoRow, index: number): DebtorRow {
     category: p.categoria,
     instalments: `${p.cantidadCuotas} ${p.cantidadCuotas === 1 ? 'cuota' : 'cuotas'}`,
     debt: CURRENCY_FULL.format(p.montoTotal),
-    status: inhabilitado ? 'suspended' : 'partial',
-    statusLabel: inhabilitado ? 'Inhabilitado' : 'Solo entrenamientos',
+    ...estado,
   };
 }
 

@@ -14,6 +14,8 @@ namespace EntityLibrary
         public string Categoria { get; set; } = string.Empty;
         public decimal MontoTotal { get; set; }
         public int CantidadCuotas { get; set; }
+        // null = activo. Un jugador dado de baja puede seguir debiendo: se lista con la etiqueta "Baja".
+        public DateTime? FechaBaja { get; set; }
     }
 
     // Fila del panel "Deuda por categoría": deuda agrupada por categoría/división para un

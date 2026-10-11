@@ -8,4 +8,7 @@ public class PlayerSearchResultDto
     public string LastName { get; set; } = "";
     public string Dni { get; set; } = "";
     public string CategoryName { get; set; } = "";
+
+    // "yyyy-MM-dd", or null while the player is active
+    public string? LeaveDate { get; set; }
 }

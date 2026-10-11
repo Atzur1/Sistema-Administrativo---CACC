@@ -356,6 +356,9 @@ namespace ServiceLibrary
                     cuota.IdPago = pendiente.IdPago;
                     cuota.SaldoPendiente = Math.Max(0, pendiente.SaldoAjustado);
                     cuota.CubiertaPorBeneficio = cuota.SaldoPendiente <= 0;
+                    // Solo cuando queda algo por cobrar: una cuota pagada sigue pagada aunque después se cancele la
+                    // beca, y una cubierta al 100 % no tiene saldo que explicar.
+                    cuota.BeneficioCanceladoPorBaja = pendiente.BeneficioCanceladoPorBaja && cuota.SaldoPendiente > 0;
                     cuota.Estado = hoy.Date > ultimoDiaDelMes ? EstadosCuota.Vencido : EstadosCuota.Pendiente;
                     return cuota;
                 })

@@ -25,6 +25,8 @@ export interface PendienteJugador {
   categoria: string;
   montoTotal: number;
   cantidadCuotas: number;
+  // "yyyy-MM-dd" si el jugador está dado de baja (puede seguir debiendo), null si está activo.
+  fechaBaja?: string | null;
 }
 
 export interface CategoriaDeuda {
@@ -94,6 +96,8 @@ export interface CuotaPendienteDetalle {
   tipoValorBeneficio: string | null; // "%" o "$"
   porcentajeBeneficio: number | null;
   montoFijoBeneficio: number | null;
+  // El beneficio de este período se canceló al dar de baja al jugador: quedó saldo, se muestra "Beca cancelada por baja".
+  beneficioCanceladoPorBaja?: boolean;
   abonos: AbonoDetalle[];
 }
 
@@ -122,6 +126,8 @@ export interface FeeItem {
   paymentMethod: string | null;
   coveredByBenefit: boolean;
   benefitReason: string | null;
+  // Quedó saldo y el beneficio de ese período se canceló al dar de baja al jugador.
+  benefitCancelledByLeave?: boolean;
 }
 
 // La tabla de cobro de la ficha (HU-025) trabaja con CuotaJugador: el estado de cuenta se
@@ -137,6 +143,7 @@ export function feeToCuotaJugador(fee: FeeItem): CuotaJugador {
     estado: fee.status,
     cubiertaPorBeneficio: fee.coveredByBenefit,
     motivoBeneficio: fee.benefitReason,
+    beneficioCanceladoPorBaja: fee.benefitCancelledByLeave ?? false,
     metodoPago: fee.paymentMethod,
     fechaPago: fee.paidAt,
   };
@@ -152,6 +159,7 @@ export interface CuotaJugador {
   estado: EstadoCuotaJugador;
   cubiertaPorBeneficio: boolean;
   motivoBeneficio: string | null;
+  beneficioCanceladoPorBaja?: boolean;
   metodoPago: string | null;
   fechaPago: string | null;
 }

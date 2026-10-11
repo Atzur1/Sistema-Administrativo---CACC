@@ -53,7 +53,12 @@
               @for (player of list; track player.id) {
                 <tr (click)="select(player)">
                   <td>{{ player.firstName }}</td>
-                  <td class="cell-strong">{{ player.lastName }}</td>
+                  <td class="cell-strong">
+                    {{ player.lastName }}
+                    @if (player.leaveDate) {
+                      <span class="tag-baja" title="Dejó el club: no genera cuotas nuevas, pero se le cobra lo que debe">Baja</span>
+                    }
+                  </td>
                   <td class="cell-muted">{{ player.dni }}</td>
                   <td class="cell-muted">{{ player.categoryName }}</td>
                   <td class="cell-action">

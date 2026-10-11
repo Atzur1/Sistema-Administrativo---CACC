@@ -191,6 +191,10 @@ datos incluidos explícitamente en scripts, no los datos que carga cada uno.
 
 ## 7. Configuración y producción
 
+**Producción:** la API no migra sola ni se conecta con la cuenta administradora. Las migraciones se
+aplican en cada despliegue con `--DatabaseMigrations:SoloMigrar=true` y la cuenta administradora, y la API
+trabaja con el usuario técnico `cacc_api`. Pasos completos y scripts en `database/produccion/README.md`.
+
 `DatabaseMigrations:Enabled` (variable `DatabaseMigrations__Enabled`) permite forzar el
 comportamiento: `true` las habilita en cualquier entorno, `false` las desactiva. Sin
 configurar, solo corren en `Development`. Desactivarlas omite también la verificación del

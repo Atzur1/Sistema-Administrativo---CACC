@@ -27,6 +27,12 @@
         <div class="profile-info">
           <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
           <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
+          @if (jugador.fechaBaja) {
+            <span class="profile-baja"
+                  title="Dejó el club: no genera cuotas nuevas, pero se le puede cobrar lo que debe">
+              Dado de baja el {{ jugador.fechaBaja | date: 'dd/MM/yyyy' : 'UTC' }}
+            </span>
+          }
         </div>
       </div>
 
@@ -285,6 +291,12 @@
 
             @if (cuota.tieneBeneficio) {
               <span class="cuota-beneficio-badge">🎓 {{ beneficioTexto(cuota) }}</span>
+            }
+            @if (cuota.beneficioCanceladoPorBaja && cuota.saldoPendiente > 0) {
+              <span class="cuota-baja-badge"
+                    title="El jugador se dio de baja y su beca o descuento se canceló. Este saldo ya tiene aplicado el beneficio de este mes.">
+                Pendiente · beca cancelada por baja
+              </span>
             }
 
             @if (cuota.abonos.length > 0) {
