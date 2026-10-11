@@ -438,12 +438,112 @@
     color: var(--color-text-dark);
 }
 
+/* ===== COLUMNA DERECHA: KPIs arriba, desglose abajo ===== */
+.col-derecha {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+
+/* El desglose se come el alto que sobra, así el donut baja y no queda
+   un hueco blanco al costado de la tabla. */
+.col-derecha .panel-desglose {
+    flex: 1;
+}
+
+/* ===== TARJETAS KPI (HU-018) ===== */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.card {
+    /* En la columna derecha hay menos ancho que a lo largo de la pantalla:
+       ícono arriba y texto abajo entra mejor que ícono al costado. */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    /* Mismo degradé cristalino que las tarjetas de Resumen General */
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 247, 0.92) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 127, 62, 0.04);
+    animation: fadeSlideUp 0.4s ease both;
+    min-width: 0;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.06), 0 3px 8px rgba(0, 127, 62, 0.08);
+}
+
+.card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.card-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+/* Los dos subtotales repiten el color que usan en el donut y la barra, para que
+   la tarjeta y el gráfico se lean como el mismo dato. */
+.icon-total {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-darkest);
+}
+
+.icon-efectivo {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-light);
+}
+
+.icon-transferencia {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.card-value {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.4px;
+    color: var(--color-text-dark);
+    white-space: nowrap;
+}
+
+.card-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #4b5563;
+}
+
 /* ===== GRILLA PRINCIPAL ===== */
 .main-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     gap: 16px;
-    align-items: start;
+    /* stretch (no "start") para que el panel del desglose llegue hasta abajo y
+       no quede un hueco al costado de la tabla, que siempre es más alta. */
+    align-items: stretch;
 }
 
 /* ===== TABLA DE PAGOS ===== */
@@ -552,6 +652,10 @@
     align-items: center;
     gap: 20px;
     flex-wrap: wrap;
+    /* El panel se estira a la altura de la tabla: que el contenido ocupe ese
+       alto y quede centrado, en vez de amontonarse arriba. */
+    flex: 1;
+    align-content: center;
 }
 
 .donut {
@@ -750,6 +854,12 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1100px) {
     .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .cards {
         grid-template-columns: 1fr;
     }
 }
