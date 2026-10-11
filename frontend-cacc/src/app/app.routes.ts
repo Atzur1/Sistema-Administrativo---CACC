@@ -13,6 +13,7 @@ import { JugadorPerfil } from './admin-portal/jugador-perfil/jugador-perfil';
 import { ActualizacionAranceles } from './admin-portal/actualizacion-aranceles/actualizacion-aranceles';
 import { DeudaJugador } from './admin-portal/deuda-jugador/deuda-jugador';
 import { BecadosDescuentos } from './admin-portal/becados-descuentos/becados-descuentos';
+import { RecaudacionMensual } from './admin-portal/recaudacion-mensual/recaudacion-mensual';
 import { AccountAccess } from './account-access/account-access';
 import { Auditoria } from './admin-portal/auditoria/auditoria';
 
@@ -47,6 +48,9 @@ export const routes: Routes = [
       { path: 'reportes', component: Reportes, canActivate: [superAdminGuard] },
       { path: 'actualizacion-aranceles', component: ActualizacionAranceles, canActivate: [superAdminGuard] },
       { path: 'becados-descuentos', component: BecadosDescuentos },
+      // HU-018: panel de recaudación. superAdminGuard para que coincida con el
+      // @if (isSuperAdmin) del ítem en el sidebar, y no se pueda entrar por URL.
+      { path: 'recaudacion-mensual', component: RecaudacionMensual, canActivate: [superAdminGuard] },
     ],
   },
 
