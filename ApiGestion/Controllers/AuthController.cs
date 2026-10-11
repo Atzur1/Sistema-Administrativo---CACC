@@ -36,7 +36,7 @@ namespace ApiGestion.Controllers
 
         [HttpPost("password-reset/request")]
         [EnableRateLimiting("account-email")]
-        public async Task<IActionResult> SolicitarRestablecimiento([FromBody] RecuperacionRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> SolicitarRestablecimiento([FromBody] PasswordRecoveryRequestDTO request, CancellationToken cancellationToken)
         {
             const string response = "Si los datos corresponden a una cuenta activa, el enlace llegará al correo registrado en esa cuenta.";
             var (token, tokenHash) = TokenAccesoCuenta.Generar();
@@ -74,7 +74,7 @@ namespace ApiGestion.Controllers
         // resuelve el propio token, no hace falta que el cliente lo indique.
         [HttpPost("account-access/complete")]
         [EnableRateLimiting("account-email")]
-        public IActionResult CompletarAcceso([FromBody] CompleteAccountAccessRequest request)
+        public IActionResult CompletarAcceso([FromBody] CompleteAccountAccessRequestDTO request)
         {
             var tokenHash = TokenAccesoCuenta.Hash(request.Token);
             var titular = _accountAccessDao.ObtenerTitularDelToken(tokenHash);

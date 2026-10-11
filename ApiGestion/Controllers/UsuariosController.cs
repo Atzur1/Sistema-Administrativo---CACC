@@ -33,20 +33,29 @@ namespace ApiGestion.Controllers
         // GET api/usuarios/candidatos -> personas cargadas por el otro equipo con
         // FK_id_rol de SuperAdmin/Administrador que todavía no tienen acceso.
         [HttpGet("candidatos")]
-        public IActionResult ListarCandidatos() => Ok(_usuariosDao.ListarCandidatos());
+        public IActionResult ListarCandidatos()
+        {
+            return Ok(_usuariosDao.ListarCandidatos().Select(PortalUserCandidateResponseDTO.FromEntity).ToList());
+        }
 
         // GET api/usuarios/habilitados -> tabla principal de la pantalla.
         [HttpGet("habilitados")]
-        public IActionResult ListarHabilitados() => Ok(_usuariosDao.ListarHabilitados());
+        public IActionResult ListarHabilitados()
+        {
+            return Ok(_usuariosDao.ListarHabilitados().Select(PortalUserResponseDTO.FromEntity).ToList());
+        }
 
         // GET api/usuarios/deshabilitados -> gente que ya tuvo acceso y se le revocó.
         [HttpGet("deshabilitados")]
-        public IActionResult ListarDeshabilitados() => Ok(_usuariosDao.ListarDeshabilitados());
+        public IActionResult ListarDeshabilitados()
+        {
+            return Ok(_usuariosDao.ListarDeshabilitados().Select(PortalUserResponseDTO.FromEntity).ToList());
+        }
 
         // PUT api/usuarios/5 -> corrige nombre/apellido/DNI de un candidato antes
         // de habilitarlo, por si hubo un error de carga. El mail no se modifica (ver IUsuariosPortalDao).
         [HttpPut("{id}")]
-        public IActionResult EditarCandidato(int id, [FromBody] EditarCandidatoRequest request)
+        public IActionResult EditarCandidato(int id, [FromBody] EditCandidateRequestDTO request)
         {
             var resultado = _usuariosDao.EditarDatosCandidato(id, request.Nombre, request.Apellido, request.Dni);
             if (resultado == EditarCandidatoResultado.NoEncontrado)
@@ -67,7 +76,7 @@ namespace ApiGestion.Controllers
         // POST api/usuarios/5/habilitar -> otorga acceso_portal=1 + rol_portal y
         // dispara el mail de activación.
         [HttpPost("{id}/habilitar")]
-        public async Task<IActionResult> Habilitar(int id, [FromBody] HabilitarUsuarioRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Habilitar(int id, [FromBody] EnableUserRequestDTO request, CancellationToken cancellationToken)
         {
             var (resultado, email) = _usuariosDao.Habilitar(id, request.Email, request.RolPortal);
             if (resultado == HabilitarResultado.NoEncontrado)
@@ -143,7 +152,7 @@ namespace ApiGestion.Controllers
 
         // PUT api/usuarios/5/rol -> cambia el rol de alguien ya habilitado.
         [HttpPut("{id}/rol")]
-        public IActionResult CambiarRol(int id, [FromBody] CambiarRolRequest request)
+        public IActionResult CambiarRol(int id, [FromBody] ChangeRoleRequestDTO request)
         {
             if (!_usuariosDao.CambiarRol(id, request.RolPortal))
                 return Conflict(new { mensaje = "No se pudo cambiar el rol: verificá que la cuenta esté habilitada y que quede al menos un SuperAdmin." });
@@ -162,7 +171,7 @@ namespace ApiGestion.Controllers
         // POST api/usuarios/5/reactivar { "rolPortal": 2 } -> le devuelve el acceso a alguien ya deshabilitado,
         // con el rol que elige el SuperAdmin (la pantalla propone el que tenía) y la misma contraseña. Sin mail.
         [HttpPost("{id}/reactivar")]
-        public IActionResult Reactivar(int id, [FromBody] CambiarRolRequest request)
+        public IActionResult Reactivar(int id, [FromBody] ChangeRoleRequestDTO request)
         {
             if (!_usuariosDao.Reactivar(id, request.RolPortal))
                 return BadRequest(new { mensaje = "No se pudo reactivar: verificá que la persona esté entre las deshabilitadas y que su DNI no lo use otra cuenta con acceso." });

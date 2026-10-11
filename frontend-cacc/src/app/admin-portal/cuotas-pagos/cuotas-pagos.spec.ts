@@ -4,16 +4,18 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { NEVER, Observable, from, throwError } from 'rxjs';
 
 import { CuotasPagos } from './cuotas-pagos';
-import { PagosService, ResumenPagos } from '../../services/pagos';
-import { ArancelesService, ArancelResumen } from '../../services/aranceles';
+import { PagosService } from '../../services/pagos';
+import { ArancelesService } from '../../services/aranceles';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { FINANCIAL_ACCESS_DENIED } from '../../services/auth';
+import { PaymentSummaryModel } from '../../models/PaymentModel';
+import { TariffSummaryModel } from '../../models/TariffModel';
 
 // HU-019: "Deuda Global Total" — un único indicador destacado (no dos métricas
 // separadas) con el monto adeudado y la cantidad de jugadores morosos juntos, en el
 // formato exacto que pide el criterio de aceptación: "$1.480.000 (32 jugadores morosos)".
 
-const EMPTY_ARANCEL_RESUMEN: ArancelResumen = {
+const EMPTY_ARANCEL_RESUMEN: TariffSummaryModel = {
   arancelMasculinoVigente: null,
   arancelFemeninoVigente: null,
   proximoCambioFecha: null,
@@ -22,7 +24,7 @@ const EMPTY_ARANCEL_RESUMEN: ArancelResumen = {
 // Responses arrive asynchronously, as in the real app.
 const response = <T>(value: T) => from(Promise.resolve(value));
 
-async function create(resumen: ResumenPagos): Promise<ComponentFixture<CuotasPagos>> {
+async function create(resumen: PaymentSummaryModel): Promise<ComponentFixture<CuotasPagos>> {
   const pagosService = {
     getJugadores: vi.fn(() => response([])),
     getPendientes: vi.fn(() => response([])),
@@ -86,7 +88,7 @@ describe('CuotasPagos - Deuda Global Total (HU-019)', () => {
 
 // HU-022: estados de carga y error del panel de Cuotas.
 describe('CuotasPagos - carga y errores (HU-022)', () => {
-  const RESUMEN: ResumenPagos = {
+  const RESUMEN: PaymentSummaryModel = {
     recaudadoAnioActual: 0,
     pagosDelMes: 0,
     cantidadPendientes: 0,

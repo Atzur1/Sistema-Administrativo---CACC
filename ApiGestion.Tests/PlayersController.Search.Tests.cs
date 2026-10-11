@@ -37,7 +37,7 @@ public class PlayersControllerSearchTests
         IActionResult result = controller.SearchPlayers("bazan");
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        PlayerSearchResultDto dto = Assert.Single(Assert.IsAssignableFrom<IEnumerable<PlayerSearchResultDto>>(ok.Value));
+        PlayerSearchResultDTO dto = Assert.Single(Assert.IsAssignableFrom<IEnumerable<PlayerSearchResultDTO>>(ok.Value));
         Assert.Equal(10, dto.Id);
         Assert.Equal("NICOLÁS", dto.FirstName);
         Assert.Equal("BAZÁN", dto.LastName);
@@ -52,7 +52,7 @@ public class PlayersControllerSearchTests
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(controller.SearchPlayers("inexistente"));
 
-        Assert.Empty(Assert.IsAssignableFrom<IEnumerable<PlayerSearchResultDto>>(ok.Value));
+        Assert.Empty(Assert.IsAssignableFrom<IEnumerable<PlayerSearchResultDTO>>(ok.Value));
     }
 
     [Fact]

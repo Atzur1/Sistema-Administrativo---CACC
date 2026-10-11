@@ -144,9 +144,11 @@ public class AuditoriaControllerTests
         IActionResult result = controller.BuscarCambios();
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        AuditSearchResponseDto response = Assert.IsType<AuditSearchResponseDto>(ok.Value);
+        AuditSearchResponseDTO response = Assert.IsType<AuditSearchResponseDTO>(ok.Value);
         Assert.Equal(2, response.Total);
         Assert.Equal(2, response.Items.Count);
+        Assert.Equal(new long[] { 1, 2 }, response.Items.Select(e => e.Id));
+        Assert.All(response.Items, e => Assert.Equal("PAGOS", e.Entity));
     }
 
     [Fact]
@@ -157,7 +159,7 @@ public class AuditoriaControllerTests
         IActionResult result = controller.BuscarCambios();
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        AuditSearchResponseDto response = Assert.IsType<AuditSearchResponseDto>(ok.Value);
+        AuditSearchResponseDTO response = Assert.IsType<AuditSearchResponseDTO>(ok.Value);
         Assert.Equal(0, response.Total);
         Assert.Empty(response.Items);
     }
@@ -192,7 +194,7 @@ public class AuditoriaControllerTests
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(controller.BuscarCambios(pagina: 2, tamanoPagina: 10));
 
-        AuditSearchResponseDto response = Assert.IsType<AuditSearchResponseDto>(ok.Value);
+        AuditSearchResponseDTO response = Assert.IsType<AuditSearchResponseDTO>(ok.Value);
         Assert.Equal(2, response.Page);
         Assert.Equal(10, response.PageSize);
     }

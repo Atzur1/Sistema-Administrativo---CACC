@@ -14,7 +14,7 @@ using ServiceLibrary;
 
 // Reglas de PagosController.ObtenerResumen (HU-019): el endpoint es un passthrough de
 // IPagosService.ObtenerResumen, así que lo único que le corresponde a esta capa es exponer
-// tal cual lo que devuelve la capa de negocio (incluidos los campos nuevos de deuda global) y
+// como DTO lo que devuelve la capa de negocio (incluidos los campos nuevos de deuda global) y
 // exigir autenticación. La fórmula de deuda_global_total / jugadores_morosos vive en SQL
 // (PagosDao.ObtenerResumen) y se validó aparte contra datos reales, no acá.
 public class PagosControllerTests
@@ -40,7 +40,7 @@ public class PagosControllerTests
     }
 
     [Fact]
-    public void GetResumen_ReturnsOkWithTheServiceResultUnchanged()
+    public void GetResumen_ReturnsOkWithEveryMetricOfTheService()
     {
         (PagosController controller, FakePagosService pagosService) = CreateController();
         pagosService.ResumenResult = new ResumenPagos
@@ -55,7 +55,10 @@ public class PagosControllerTests
         IActionResult result = controller.ObtenerResumen();
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Same(pagosService.ResumenResult, ok.Value);
+        PaymentSummaryResponseDTO resumen = Assert.IsType<PaymentSummaryResponseDTO>(ok.Value);
+        Assert.Equal(1_200_000m, resumen.RecaudadoAnioActual);
+        Assert.Equal(8, resumen.PagosDelMes);
+        Assert.Equal(5, resumen.CantidadPendientes);
     }
 
     [Fact]
@@ -67,7 +70,7 @@ public class PagosControllerTests
         IActionResult result = controller.ObtenerResumen();
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        ResumenPagos resumen = Assert.IsType<ResumenPagos>(ok.Value);
+        PaymentSummaryResponseDTO resumen = Assert.IsType<PaymentSummaryResponseDTO>(ok.Value);
         Assert.Equal(255_000m, resumen.DeudaGlobalTotal);
         Assert.Equal(3, resumen.JugadoresMorosos);
     }
@@ -123,7 +126,7 @@ public class PagosControllerTests
     }
 
     [Fact]
-    public void GetPendientes_ReturnsOkWithTheServiceResultUnchanged()
+    public void GetPendientes_ReturnsOkWithEveryDebtorAsADto()
     {
         (PagosController controller, FakePagosService pagosService) = CreateController();
         pagosService.PendientesResult = new List<PendienteJugador>
@@ -134,7 +137,12 @@ public class PagosControllerTests
         IActionResult result = controller.ObtenerPendientes(idCategoria: 1);
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Same(pagosService.PendientesResult, ok.Value);
+        PendingDebtorResponseDTO deudor = Assert.Single(Assert.IsType<List<PendingDebtorResponseDTO>>(ok.Value));
+        Assert.Equal(1, deudor.IdJugador);
+        Assert.Equal("PRUEBA, SANTIAGO", deudor.NombreCompleto);
+        Assert.Equal("99000001", deudor.Dni);
+        Assert.Equal(92_000m, deudor.MontoTotal);
+        Assert.Equal(1, deudor.CantidadCuotas);
     }
 
     [Fact]
@@ -276,7 +284,7 @@ public class PagosControllerTests
         };
     }
 
-    private static RegistrarCobroRequestDto CobroBody() => new()
+    private static CollectFeesRequestDTO CobroBody() => new()
     {
         IdJugador = 12,
         IdsPago = new List<int> { 10, 11 },
@@ -368,7 +376,9 @@ public class PagosControllerTests
         Assert.Equal("Transferencia", Valor("metodoPago"));
         Assert.Equal(registro, Valor("fechaHoraRegistro"));
         Assert.Equal("Pagado", Valor("estado"));
-        Assert.Same(pagosService.CobroResult.Cuotas, Valor("cuotas"));
+        List<CollectedFeeDTO> cuotas = Assert.IsType<List<CollectedFeeDTO>>(Valor("cuotas"));
+        Assert.Equal(new[] { 10, 11 }, cuotas.Select(c => c.IdPago));
+        Assert.Equal(new[] { "Marzo 2026", "Abril 2026" }, cuotas.Select(c => c.Periodo));
     }
 
     [Fact]
@@ -380,7 +390,10 @@ public class PagosControllerTests
         IActionResult result = controller.ObtenerCuotasJugador(12);
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Same(pagosService.CuotasResult, ok.Value);
+        PlayerFeeResponseDTO cuota = Assert.Single(Assert.IsType<List<PlayerFeeResponseDTO>>(ok.Value));
+        Assert.Equal(10, cuota.IdPago);
+        Assert.Equal("Marzo 2026", cuota.Periodo);
+        Assert.Equal("Vencido", cuota.Estado);
         Assert.Equal(new[] { 12 }, pagosService.CuotasCalls);
     }
 
@@ -419,7 +432,7 @@ public class PagosControllerTests
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(controller.GetPlayerStatement(12));
 
-        PlayerStatementDto dto = Assert.IsType<PlayerStatementDto>(ok.Value);
+        PlayerStatementResponseDTO dto = Assert.IsType<PlayerStatementResponseDTO>(ok.Value);
         Assert.Equal(new[] { 12 }, pagosService.StatementCalls);
         Assert.Equal(12, dto.PlayerId);
         Assert.Equal("BAZÁN, NICOLÁS", dto.PlayerFullName);
@@ -427,7 +440,7 @@ public class PagosControllerTests
         Assert.Equal(85_000m, dto.TotalDebtAmount);
         Assert.Equal(new[] { "Febrero 2026", "Marzo 2026" }, dto.Fees.Select(f => f.PeriodName));
 
-        FeeItemDto febrero = dto.Fees[0];
+        FeeItemDTO febrero = dto.Fees[0];
         Assert.Equal(9, febrero.Id);
         Assert.Equal(70_000m, febrero.Amount);
         Assert.Equal(0m, febrero.AmountDue);
@@ -435,7 +448,7 @@ public class PagosControllerTests
         Assert.Equal("2026-02-05", febrero.PaidAt);
         Assert.Equal("Efectivo", febrero.PaymentMethod);
 
-        FeeItemDto marzo = dto.Fees[1];
+        FeeItemDTO marzo = dto.Fees[1];
         Assert.Equal(85_000m, marzo.AmountDue);
         Assert.Equal("Vencido", marzo.Status);
         Assert.Null(marzo.PaidAt);
@@ -456,7 +469,7 @@ public class PagosControllerTests
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(controller.GetPlayerStatement(1));
 
-        Assert.Equal(esperado, Assert.IsType<PlayerStatementDto>(ok.Value).Fees.Single().DueDate);
+        Assert.Equal(esperado, Assert.IsType<PlayerStatementResponseDTO>(ok.Value).Fees.Single().DueDate);
     }
 
     [Fact]

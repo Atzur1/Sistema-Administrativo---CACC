@@ -10,19 +10,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import {
-  Categoria,
-  CategoriaDeuda,
-  PagosService,
-  PendienteJugador,
-  ResumenPagos,
-} from '../../services/pagos';
+import { PagosService } from '../../services/pagos';
 import { PlayerAccountModel } from '../../models/PlayerAccountModel';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { ReportesService } from '../../services/reportes';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { triggerBlobDownload } from '../../shared/download-file';
+import { CategoryDebtModel, PaymentSummaryModel, PendingDebtorModel } from '../../models/PaymentModel';
 
 // One row in the debtors ranking table
 interface DebtorRow {
@@ -195,10 +190,10 @@ export class DeudasMorosidad implements OnInit {
   // del que más cuotas debe al que menos (a igual cantidad, el de mayor monto primero).
   // allPendientes sigue cargándose aparte: alimenta el banner y el idCategoria del export.
   private allRows: AlumnoRow[] = [];
-  private allPendientes: PendienteJugador[] = [];
+  private allPendientes: PendingDebtorModel[] = [];
   // Guardado para poder recalcular el banner cuando cambia la categoría
   // elegida, sin pedirlo de nuevo al servidor cada vez (HU-020, QA 24/09).
-  private resumenGlobal: ResumenPagos | null = null;
+  private resumenGlobal: PaymentSummaryModel | null = null;
 
   constructor(
     private pagosService: PagosService,
@@ -561,7 +556,7 @@ function mapHighlight(p: AlumnoRow): DebtorHighlight {
 // El backend ya devuelve las categorías ordenadas por deuda descendente; acá solo
 // se calcula el ancho de la barra (relativo a la categoría con más deuda) y se
 // formatea el monto.
-function buildCategoriaRows(filas: CategoriaDeuda[]): CategoriaDeudaRow[] {
+function buildCategoriaRows(filas: CategoryDebtModel[]): CategoriaDeudaRow[] {
   const maxTotal = filas[0]?.montoTotal || 1;
   return filas.map((f) => ({
     categoria: f.categoria,
@@ -572,8 +567,8 @@ function buildCategoriaRows(filas: CategoriaDeuda[]): CategoriaDeudaRow[] {
 }
 
 function buildBannerTargets(
-  resumen: ResumenPagos,
-  pendientes: PendienteJugador[],
+  resumen: PaymentSummaryModel,
+  pendientes: PendingDebtorModel[],
 ): BannerMetricTarget[] {
   const inhabilitados = pendientes.filter(
     (p) => !p.fechaBaja && p.cantidadVencidas >= VENCIDAS_PARA_INHABILITAR,

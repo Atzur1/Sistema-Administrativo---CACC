@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using ApiGestion.Controllers;
+using ApiGestion.Models;
 using DaoLibrary;
 using EntityLibrary;
 
@@ -64,7 +65,10 @@ public class JugadoresControllerTests
         IActionResult result = controller.ObtenerHistorialPagos(KnownPlayerId);
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Same(pagosDao.HistoryResult, ok.Value);
+        PaymentHistoryResponseDTO history = Assert.IsType<PaymentHistoryResponseDTO>(ok.Value);
+        Assert.Equal(pagosDao.HistoryResult.Total, history.Total);
+        Assert.Equal(pagosDao.HistoryResult.Page, history.Page);
+        Assert.Equal(pagosDao.HistoryResult.PageSize, history.PageSize);
     }
 
     [Fact]

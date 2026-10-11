@@ -26,13 +26,14 @@ import {
   statusLabel,
   statusToneClass,
 } from '../../models/DiscountModel';
-import { PagosService, JugadorResumen } from '../../services/pagos';
+import { PagosService } from '../../services/pagos';
 import { AuthService } from '../../services/auth';
 import { normalizeText } from '../../shared/normalize-text';
+import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 
 // Player shape this screen was originally built against (repo de Atzur1).
 // Se mantiene local en vez de traer PlayerModel/PlayerService: Laura ya tiene
-// su propio JugadoresService/JugadorResumen, así que solo se mapea una vez acá
+// su propio JugadoresService/PlayerSummaryModel, así que solo se mapea una vez acá
 // y el resto del archivo (y el HTML) sigue usando los mismos nombres de
 // siempre (fullName, document, category, id) sin tocar nada más.
 interface PlayerModel {
@@ -44,7 +45,7 @@ interface PlayerModel {
   leaveDate: string | null;
 }
 
-function toPlayerModel(jugador: JugadorResumen): PlayerModel {
+function toPlayerModel(jugador: PlayerSummaryModel): PlayerModel {
   return {
     id: jugador.idJugador,
     fullName: jugador.nombreCompleto,

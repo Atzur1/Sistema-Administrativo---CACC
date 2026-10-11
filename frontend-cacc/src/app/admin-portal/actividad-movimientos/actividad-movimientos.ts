@@ -16,7 +16,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { animateCountUp } from '../../shared/count-up';
 import { formatElapsedPrecise } from '../../shared/format-elapsed';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
-import { PagoReciente, PagosService } from '../../services/pagos';
+import { PagosService } from '../../services/pagos';
+import { RecentPaymentModel } from '../../models/PaymentModel';
 
 // One row in the "Pagos registrados" table
 interface PaymentRow {
@@ -297,7 +298,7 @@ export class ActividadMovimientos implements OnInit {
     }
 }
 
-function toPaymentRow(p: PagoReciente): PaymentRow {
+function toPaymentRow(p: RecentPaymentModel): PaymentRow {
     return {
         id: p.idPago,
         idJugador: p.idJugador,
@@ -312,7 +313,7 @@ function toPaymentRow(p: PagoReciente): PaymentRow {
     };
 }
 
-function toActivityEvent(p: PagoReciente): ActivityEvent {
+function toActivityEvent(p: RecentPaymentModel): ActivityEvent {
     const esParcial = p.estado === 'Parcial';
     return {
         type: esParcial ? 'partial' : 'payment',

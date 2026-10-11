@@ -95,7 +95,7 @@ public class PlayersController : ControllerBase
             IReadOnlyList<PlayerSearchResult> players = _playerDAO.SearchPlayersForFeeManagement(trimmed, MaxSearchResults);
             _logger.LogInformation("Player search returned {Count} matches", players.Count);
 
-            return Ok(players.Select(player => new PlayerSearchResultDto
+            return Ok(players.Select(player => new PlayerSearchResultDTO
             {
                 Id = player.Id,
                 FirstName = player.FirstName,

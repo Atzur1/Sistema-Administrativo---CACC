@@ -2,7 +2,7 @@ namespace ApiGestion.Models
 {
     // HU-025: cobro de una o varias cuotas pendientes/vencidas de un jugador. El operador NO
     // viaja en el body: el controller lo toma del claim idUsuario del JWT.
-    public class RegistrarCobroRequestDto
+    public class CollectFeesRequestDTO
     {
         public int IdJugador { get; set; }
 

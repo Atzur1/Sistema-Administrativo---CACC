@@ -36,7 +36,7 @@ namespace ApiGestion.Controllers
         {
             try
             {
-                return Ok(_jugadoresDao.ListarJugadores());
+                return Ok(_jugadoresDao.ListarJugadores().Select(PlayerSummaryResponseDTO.FromEntity).ToList());
             }
             catch (Exception ex)
             {
@@ -59,7 +59,7 @@ namespace ApiGestion.Controllers
                     return NotFound(new { exito = false, mensaje = "Jugador no encontrado." });
                 }
 
-                return Ok(jugador);
+                return Ok(PlayerSummaryResponseDTO.FromEntity(jugador));
             }
             catch (Exception ex)
             {
@@ -72,7 +72,7 @@ namespace ApiGestion.Controllers
         // El jugador deja de recibir cuotas desde el mes siguiente al de la baja. Solo SuperAdmin.
         [Authorize(Roles = "1")]
         [HttpPost("{id:int}/baja")]
-        public IActionResult DarDeBaja(int id, [FromBody] BajaJugadorRequestDto? request)
+        public IActionResult DarDeBaja(int id, [FromBody] PlayerLeaveRequestDTO? request)
         {
             DateTime hoy = EntityLibrary.RelojNegocio.Hoy;
             DateTime fecha = request?.Fecha?.Date ?? hoy;
@@ -158,7 +158,7 @@ namespace ApiGestion.Controllers
                 page = page < 1 ? 1 : page;
                 pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
 
-                return Ok(_pagosDao.ObtenerHistorialPagos(id, page, pageSize));
+                return Ok(PaymentHistoryResponseDTO.FromEntity(_pagosDao.ObtenerHistorialPagos(id, page, pageSize)));
             }
             catch (Exception ex)
             {

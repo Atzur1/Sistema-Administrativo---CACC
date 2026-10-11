@@ -2,7 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
-import { HistorialPagosResultado, JugadoresService } from './jugadores';
+import { JugadoresService } from './jugadores';
+import { PaymentHistoryModel } from '../models/PaymentHistoryModel';
 
 // HU-017: el servicio del perfil de jugador solo consulta (GET), nunca modifica pagos.
 describe('JugadoresService', () => {
@@ -26,7 +27,7 @@ describe('JugadoresService', () => {
   });
 
   it('devuelve el historial tal como lo entrega la API', () => {
-    const respuesta: HistorialPagosResultado = {
+    const respuesta: PaymentHistoryModel = {
       items: [
         {
           periodo: 'Septiembre 2026',
@@ -45,7 +46,7 @@ describe('JugadoresService', () => {
       page: 1,
       pageSize: 10,
     };
-    let recibido: HistorialPagosResultado | undefined;
+    let recibido: PaymentHistoryModel | undefined;
 
     servicio.getHistorialPagos(3, 1, 10).subscribe((resultado) => (recibido = resultado));
     http.expectOne(() => true).flush(respuesta);
