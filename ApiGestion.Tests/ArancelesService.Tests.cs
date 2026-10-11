@@ -3,7 +3,6 @@ namespace ApiGestion.Tests;
 using DaoLibrary;
 using DaoLibrary.Exceptions;
 using EntityLibrary;
-using Microsoft.Data.SqlClient;
 using ServiceLibrary;
 
 // Reglas de ArancelesService: el arancel es por género O por categoría, hay uno solo por mes y destino,
@@ -17,7 +16,7 @@ public class ArancelesServiceTests
     {
         var aranceles = new FakeArancelesDao();
         var cuotas = new FakeCuotasDao();
-        var service = new ArancelesService(aranceles, cuotas, new FakeRunner(), new FakeCategoriasDao(), () => hoy ?? Hoy);
+        var service = new ArancelesService(aranceles, new FakeTariffTransactionDao(aranceles, cuotas), new FakeCategoriasDao(), () => hoy ?? Hoy);
         return (service, aranceles, cuotas);
     }
 
@@ -266,10 +265,39 @@ public class ArancelesServiceTests
 
     // ===== Fakes =====
 
-    // Ejecuta la operación enseguida: los fakes no usan la conexión ni la transacción.
-    private class FakeRunner : ISqlTransactionRunner
+    // Ejecuta la operación enseguida y reparte cada llamada al fake que guarda su estado.
+    private class FakeTariffTransactionDao : ITariffTransactionDao, ITariffTransaction
     {
-        public T EjecutarEnTransaccion<T>(Func<SqlConnection, SqlTransaction, T> operacion) => operacion(null!, null!);
+        private readonly FakeArancelesDao _aranceles;
+        private readonly FakeCuotasDao _cuotas;
+
+        public FakeTariffTransactionDao(FakeArancelesDao aranceles, FakeCuotasDao cuotas)
+        {
+            _aranceles = aranceles;
+            _cuotas = cuotas;
+        }
+
+        public T ExecuteInTransaction<T>(Func<ITariffTransaction, T> operation) => operation(this);
+
+        public void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
+            => _aranceles.Programados.Add((genero, idCategoria, monto, vigenteDesde));
+
+        public Arancel? ObtenerPorId(int idArancel) => _aranceles.ObtenerPorId(idArancel);
+
+        public DateTime? ObtenerVigenteDesdeEnMes(string? genero, int? idCategoria, int anio, int mes) => _aranceles.ExistenteEnMes;
+
+        public DateTime? ObtenerSiguienteVigenteDesde(string? genero, int? idCategoria, DateTime desde) => _aranceles.Siguiente;
+
+        public void EliminarArancel(int idArancel) => _aranceles.Eliminados.Add(idArancel);
+
+        public void GenerarCuotasPendientesDelMes(string? genero, int? idCategoria, int mes, int anio)
+            => _cuotas.GenerarCuotasPendientesDelMes(genero, idCategoria, mes, anio);
+
+        public int ContarCuotasConPagos(string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+            => _cuotas.ContarCuotasConPagos(genero, idCategoria, desde, hasta, montoBase);
+
+        public int EliminarCuotasPendientesSinPagos(string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+            => _cuotas.EliminarCuotasPendientesSinPagos(genero, idCategoria, desde, hasta, montoBase);
     }
 
     private class FakeCategoriasDao : ICategoriasDao
@@ -292,19 +320,8 @@ public class ArancelesServiceTests
 
         public void Agregar(Arancel arancel) => _porId[arancel.IdArancel] = arancel;
 
-        public Arancel? ObtenerPorId(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
+        public Arancel? ObtenerPorId(int idArancel)
             => _porId.TryGetValue(idArancel, out var arancel) ? arancel : null;
-
-        public DateTime? ObtenerVigenteDesdeEnMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int anio, int mes)
-            => ExistenteEnMes;
-
-        public DateTime? ObtenerSiguienteVigenteDesde(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde)
-            => Siguiente;
-
-        public void EliminarArancel(SqlConnection conexion, SqlTransaction transaccion, int idArancel) => Eliminados.Add(idArancel);
-
-        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
-            => Programados.Add((genero, idCategoria, monto, vigenteDesde));
 
         public decimal? ObtenerMontoVigente(string genero, DateTime fecha) => throw new NotSupportedException();
         public decimal? ObtenerMontoVigente(string genero, int idCategoria, DateTime fecha) => throw new NotSupportedException();
@@ -313,7 +330,7 @@ public class ArancelesServiceTests
         public void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde) => throw new NotSupportedException();
     }
 
-    private class FakeCuotasDao : ICuotasPorArancelDao
+    private class FakeCuotasDao
     {
         public record Llamada(string Operacion, string? Genero, int? IdCategoria, DateTime Desde, DateTime? Hasta, decimal? MontoBase, int Mes);
 
@@ -321,19 +338,19 @@ public class ArancelesServiceTests
         public int Pendientes { get; set; }
         public List<Llamada> Llamadas { get; } = new();
 
-        public int ContarCuotasConPagos(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+        public int ContarCuotasConPagos(string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
         {
             Llamadas.Add(new Llamada("contar", genero, idCategoria, desde, hasta, montoBase, 0));
             return ConPagos;
         }
 
-        public int EliminarCuotasPendientesSinPagos(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+        public int EliminarCuotasPendientesSinPagos(string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
         {
             Llamadas.Add(new Llamada("eliminar", genero, idCategoria, desde, hasta, montoBase, 0));
             return Pendientes;
         }
 
-        public void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int mes, int anio)
+        public void GenerarCuotasPendientesDelMes(string? genero, int? idCategoria, int mes, int anio)
             => Llamadas.Add(new Llamada("generar", genero, idCategoria, new DateTime(anio, mes, 1), null, null, mes));
     }
 }

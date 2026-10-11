@@ -86,9 +86,6 @@ builder.Services.AddScoped<DaoLibrary.IPagosDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.IPaymentTransactionDao>(provider =>
     new DaoLibrary.PaymentTransactionDao(conexionSql));
 builder.Services.AddScoped<ServiceLibrary.IPagosService, ServiceLibrary.PagosService>();
-// Todavía lo usa ArancelesService, que recibe la conexión y la transacción de SQL.
-builder.Services.AddScoped<DaoLibrary.ISqlTransactionRunner>(provider =>
-    new DaoLibrary.SqlTransactionRunner(conexionSql));
 
 builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
     new DaoLibrary.JugadoresDao(conexionSql));
@@ -100,16 +97,14 @@ builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
     new DaoLibrary.CategoriasDao(conexionSql));
 
-// Aranceles: DAO + servicio de negocio
+// Aranceles: DAO + transacción de aranceles (también DAO) + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
     new DaoLibrary.ArancelesDao(conexionSql));
-// Cuotas por arancel (programar / cancelar un arancel): las operaciones de PAGOS que necesita ArancelesService.
-builder.Services.AddScoped<DaoLibrary.ICuotasPorArancelDao>(provider =>
-    new DaoLibrary.PagosDao(conexionSql));
+builder.Services.AddScoped<DaoLibrary.ITariffTransactionDao>(provider =>
+    new DaoLibrary.TariffTransactionDao(conexionSql));
 builder.Services.AddScoped<ServiceLibrary.IArancelesService>(provider => new ServiceLibrary.ArancelesService(
     provider.GetRequiredService<DaoLibrary.IArancelesDao>(),
-    provider.GetRequiredService<DaoLibrary.ICuotasPorArancelDao>(),
-    provider.GetRequiredService<DaoLibrary.ISqlTransactionRunner>(),
+    provider.GetRequiredService<DaoLibrary.ITariffTransactionDao>(),
     provider.GetRequiredService<DaoLibrary.ICategoriasDao>()));
 
 // Aviso de meses que quedaron con cuotas sin generar (Resumen General, solo SuperAdmin).

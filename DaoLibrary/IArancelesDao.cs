@@ -1,8 +1,9 @@
 using EntityLibrary;
-using Microsoft.Data.SqlClient;
 
 namespace DaoLibrary
 {
+    // Lecturas y alta de ARANCELES que no necesitan una transacción del llamador. Programar y cancelar un
+    // arancel junto con sus cuotas se hace con ITariffTransactionDao, que abre la transacción en esta capa.
     public interface IArancelesDao
     {
         // Monto del arancel por género vigente a una fecha dada (el de vigente_desde más
@@ -20,19 +21,5 @@ namespace DaoLibrary
 
         // Un arancel es por género O por categoría: se pasa exactamente uno de los dos.
         void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde);
-        void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde);
-
-        // ===== Programar y cancelar (corren dentro de la transacción de ArancelesService) =====
-
-        Arancel? ObtenerPorId(SqlConnection conexion, SqlTransaction transaccion, int idArancel);
-
-        // vigente_desde del arancel que el mismo destino (género o categoría) ya tiene en ese mes, o null.
-        // Se permite un solo arancel por mes y destino.
-        DateTime? ObtenerVigenteDesdeEnMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int anio, int mes);
-
-        // vigente_desde del primer arancel del mismo destino posterior a "desde", o null si no hay.
-        DateTime? ObtenerSiguienteVigenteDesde(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde);
-
-        void EliminarArancel(SqlConnection conexion, SqlTransaction transaccion, int idArancel);
     }
 }
