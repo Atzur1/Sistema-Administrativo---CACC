@@ -175,7 +175,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.paymentForm = this.fb.group({
       player: ['', [Validators.required, this.knownPlayerValidator]],
       period: ['', [Validators.required]],
-      year: [new Date().getFullYear(), [Validators.required]],
+      year: ['', [Validators.required]],
       amount: ['', [Validators.required, Validators.min(1)]],
       method: ['', [Validators.required]],
     });
@@ -581,16 +581,18 @@ export class CuotasPagos implements OnInit, OnDestroy {
   }
 
   get showAmount(): boolean {
-    return this.showPeriodYear && !!this.paymentForm.get('period')?.value;
+    return this.showPeriodYear
+      && !!this.paymentForm.get('period')?.value
+      && !!this.paymentForm.get('year')?.value;
   }
 
   get showMethod(): boolean {
-    return this.showAmount && Number(this.paymentForm.get('amount')?.value) > 0;
+    return this.showAmount;
   }
 
   onPlayerSearch(term: string) {
     if (this.selectedPlayer !== null) {
-      this.paymentForm.patchValue({ period: '', amount: '', method: '' });
+      this.paymentForm.patchValue({ period: '', year: '', amount: '', method: '' });
       this.montoDisplay = '';
     }
     this.selectedPlayer = null;
@@ -617,12 +619,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
   // mes todavía no se generó) se imputa a este mes, no al anterior. Si paga otro mes, el operador lo cambia.
   selectPlayer(jugador: JugadorResumen) {
     this.selectedPlayer = jugador;
-    const hoy = new Date();
-    this.paymentForm.patchValue({
-      player: jugador.nombreCompleto,
-      period: this.paymentForm.get('period')?.value || this.periods[hoy.getMonth()],
-      year: this.paymentForm.get('year')?.value || hoy.getFullYear(),
-    });
+    this.paymentForm.patchValue({ player: jugador.nombreCompleto });
     this.matchingPlayers = [];
     this.showSuggestions = false;
   }
@@ -645,7 +642,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.pagosService.registrarPago(jugador.idJugador, period, Number(year), Number(amount), method).subscribe({
       next: () => {
         this.enviando = false;
-        this.paymentForm.reset({ player: '', period: '', year: new Date().getFullYear(), amount: '', method: '' });
+        this.paymentForm.reset({ player: '', period: '', year: '', amount: '', method: '' });
         this.montoDisplay = '';
         this.selectedPlayer = null;
         this.matchingPlayers = [];

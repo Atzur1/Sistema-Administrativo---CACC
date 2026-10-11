@@ -73,17 +73,22 @@ builder.Services.AddScoped<DaoLibrary.AccountAccessDao>(provider =>
     new DaoLibrary.AccountAccessDao(conexionSql));
 builder.Services.AddScoped<DaoLibrary.IUsuariosPortalDao>(provider =>
     new DaoLibrary.UsuariosPortalDao(conexionSql));
+// Solo lo usa el arranque: avisa si el usuario de la base puede borrar la auditoría.
+builder.Services.AddSingleton(new DaoLibrary.DatabasePermissionsDao(conexionSql));
 builder.Services.AddSingleton<ApiGestion.Services.EmailLinkSender>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<DaoLibrary.IIntentosLoginStore>(_ => new DaoLibrary.IntentosLoginDao(conexionSql));
 builder.Services.AddSingleton<ApiGestion.Services.LoginThrottle>();
 
-// Cuotas y pagos: DAO + runner transaccional + servicio de negocio
+// Cuotas y pagos: DAO + transacción de pagos (también DAO) + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IPagosDao>(provider =>
     new DaoLibrary.PagosDao(conexionSql));
+builder.Services.AddScoped<DaoLibrary.IPaymentTransactionDao>(provider =>
+    new DaoLibrary.PaymentTransactionDao(conexionSql));
+builder.Services.AddScoped<ServiceLibrary.IPagosService, ServiceLibrary.PagosService>();
+// Todavía lo usa ArancelesService, que recibe la conexión y la transacción de SQL.
 builder.Services.AddScoped<DaoLibrary.ISqlTransactionRunner>(provider =>
     new DaoLibrary.SqlTransactionRunner(conexionSql));
-builder.Services.AddScoped<ServiceLibrary.IPagosService, ServiceLibrary.PagosService>();
 
 builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
     new DaoLibrary.JugadoresDao(conexionSql));
@@ -217,12 +222,8 @@ if (!app.Environment.IsDevelopment())
 {
     try
     {
-        using var conexion = DaoLibrary.SqlConnectionFactory.Open(conexionSql);
-        using var comando = new Microsoft.Data.SqlClient.SqlCommand(
-            "SELECT IS_SRVROLEMEMBER('sysadmin'), IS_ROLEMEMBER('db_owner'), HAS_PERMS_BY_NAME('dbo.AUDITORIA_CAMBIOS', 'OBJECT', 'DELETE')",
-            conexion);
-        using var lector = comando.ExecuteReader();
-        if (lector.Read() && (lector.GetValue(0) is 1 || lector.GetValue(1) is 1 || lector.GetValue(2) is 1))
+        var databasePermissionsDao = app.Services.GetRequiredService<DaoLibrary.DatabasePermissionsDao>();
+        if (databasePermissionsDao.CanDeleteAudit())
             app.Logger.LogWarning(
                 "La API está conectada a SQL Server con un usuario que puede borrar la auditoría (sysadmin, db_owner o permiso DELETE). " +
                 "Usá el usuario cacc_api: ver database/produccion/README.md.");

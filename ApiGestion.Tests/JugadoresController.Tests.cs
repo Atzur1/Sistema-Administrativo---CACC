@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using ApiGestion.Controllers;
 using DaoLibrary;
 using EntityLibrary;
-using Microsoft.Data.SqlClient;
 
 // Rules of JugadoresController.ObtenerHistorialPagos (HU-017): player lookup, page and
 // page-size normalization, error handling and the read-only contract of the endpoint.
@@ -204,10 +203,6 @@ public class JugadoresControllerTests
 
     private class FakePagosDao : IPagosDao
     {
-public bool EmitirCuotaDeJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio) => throw new NotSupportedException();
-        public Pago? ObtenerPagoParaAnular(SqlConnection conexion, SqlTransaction transaccion, int idPago) => throw new NotSupportedException();
-        public IReadOnlyList<Pago> ObtenerFilasDeLaMismaDeuda(SqlConnection conexion, SqlTransaction transaccion, Pago pago) => throw new NotSupportedException();
-        public void RegistrarAnulacionYEliminarAbono(SqlConnection conexion, SqlTransaction transaccion, Pago abono, string motivo, int idUsuarioAnulacion) => throw new NotSupportedException();
         public List<HistoryCall> HistoryCalls { get; } = new();
         public Exception? HistoryError { get; init; }
         public HistorialPagosResultado HistoryResult { get; } = new() { Total = 1, Page = 1, PageSize = 10 };
@@ -225,18 +220,8 @@ public bool EmitirCuotaDeJugador(SqlConnection conexion, SqlTransaction transacc
         }
 
         // The controller under test only reads the history, so nothing else may be called.
-        public Pago? ObtenerPagoAbonadoDeJugadorEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio) => throw new NotSupportedException();
-        public Pago? ObtenerPagoPendienteDeJugadorEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio) => throw new NotSupportedException();
-        public DescuentoAplicable? ObtenerDescuentoAplicableEnPeriodo(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime fechaVencimiento) => throw new NotSupportedException();
-        public void ActualizarSaldoPendiente(SqlConnection conexion, SqlTransaction transaccion, int idPago, decimal nuevoMonto) => throw new NotSupportedException();
-        public void EliminarPago(SqlConnection conexion, SqlTransaction transaccion, int idPago) => throw new NotSupportedException();
-        public int InsertarPago(SqlConnection conexion, SqlTransaction transaccion, Pago pago) => throw new NotSupportedException();
-        public IReadOnlyList<Pago> ObtenerPagosPorId(SqlConnection conexion, SqlTransaction transaccion, IEnumerable<int> idsPago) => throw new NotSupportedException();
-        public DateTime MarcarPagosComoAbonados(SqlConnection conexion, SqlTransaction transaccion, int idJugador, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago, int idUsuarioRegistro) => throw new NotSupportedException();
-        public bool ExisteJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador) => throw new NotSupportedException();
         public PlayerStatementAccount? GetPlayerStatementAccount(int playerId) => throw new NotSupportedException();
-        public void ActualizarMontoCobroConDescuento(SqlConnection conexion, SqlTransaction transaccion, int idPago, int idDescuento, decimal montoFinal) => throw new NotSupportedException();
         public IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null) => throw new NotSupportedException();
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors) => throw new NotSupportedException();
         public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null) => throw new NotSupportedException();
@@ -246,6 +231,5 @@ public bool EmitirCuotaDeJugador(SqlConnection conexion, SqlTransaction transacc
         public ResumenPagosHoy ObtenerResumenHoy() => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public void GenerarCuotasPendientesDelMes(string? genero, int? idCategoria, int mes, int anio) => throw new NotSupportedException();
-        public void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int mes, int anio) => throw new NotSupportedException();
     }
 }
