@@ -2,6 +2,10 @@ namespace EntityLibrary;
 
 public class Discount
 {
+    // The two value types a benefit can have: a percentage of the fee or a fixed amount off it.
+    public const string PercentageValueType = "%";
+    public const string FixedAmountValueType = "$";
+
     private long id = 0;
     private long playerId = 0;
     private string playerName = "";

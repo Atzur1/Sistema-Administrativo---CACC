@@ -14,6 +14,8 @@ namespace EntityLibrary
         public string Categoria { get; set; } = string.Empty;
         public decimal MontoTotal { get; set; }
         public int CantidadCuotas { get; set; }
+        // Las que ya vencieron (desde el día 10 del mes siguiente): de acá sale el estado deportivo.
+        public int CantidadVencidas { get; set; }
         // null = activo. Un jugador dado de baja puede seguir debiendo: se lista con la etiqueta "Baja".
         public DateTime? FechaBaja { get; set; }
     }
@@ -49,6 +51,29 @@ namespace EntityLibrary
         public DateTime? FechaHoraRegistro { get; set; }
         public string? ResponsableNombre { get; set; }
         public string? ResponsableApellido { get; set; }
+    }
+
+    // Filtros y página de la tabla "Pagos registrados" (Actividad y Movimientos). Se resuelven en la base: la
+    // tabla ya no baja todos los pagos para filtrarlos en el navegador.
+    public class FiltroPagosRegistrados
+    {
+        public int Pagina { get; set; } = 1;
+        public int TamanioPagina { get; set; } = 10;
+        // Parte del apellido o nombre del jugador (sin distinguir mayúsculas ni acentos).
+        public string? Busqueda { get; set; }
+        // "Pagado" o "Parcial"; null trae los dos.
+        public string? Estado { get; set; }
+    }
+
+    public class PagosRegistradosPagina
+    {
+        public List<PagoReciente> Items { get; set; } = new();
+        // Cuántos pagos cumplen los filtros (para el paginador).
+        public int Total { get; set; }
+        // Cuántos pagos hay en total, sin filtros (para "N en total" y el estado vacío).
+        public int TotalSinFiltros { get; set; }
+        public int Pagina { get; set; }
+        public int TamanioPagina { get; set; }
     }
 
     // Métricas del banner de "Actividad y Movimientos": a diferencia de ResumenPagos (año/mes),

@@ -1,5 +1,6 @@
 namespace ApiGestion.Tests;
 
+using ServiceLibrary;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,12 +21,9 @@ public class PlayersControllerSearchTests
 
         PlayersController controller = new PlayersController(
             NullLogger<PlayersController>.Instance,
-            new FakeJugadoresDao(),
-            new DiscountDao(""),
-            players,
-            new EnrollmentFeeDAO(""),
-            new FakeArancelesDao(),
-            new FakeCategoriasDao());
+            new JugadoresAltaService(players, new FakeCategoriasDao(), new EnrollmentFeeDAO(""), new FakeArancelesDao()),
+            new BeneficiosService(new DiscountDao(""), new FakeJugadoresDao()),
+            players);
 
         return (controller, players);
     }

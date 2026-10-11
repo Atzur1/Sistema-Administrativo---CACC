@@ -757,3 +757,9 @@
     color: var(--color-text-muted);
     border: 1px solid var(--color-border);
 }
+
+/* Debe la cuota del mes pero todavía no venció (vence el 10 del mes siguiente): sigue habilitado. */
+.status-current {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}

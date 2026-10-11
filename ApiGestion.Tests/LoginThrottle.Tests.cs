@@ -1,6 +1,7 @@
 namespace ApiGestion.Tests;
 
 using ApiGestion.Services;
+using DaoLibrary;
 
 // Límite de contraseñas equivocadas por cuenta, además del límite por IP del login.
 public class LoginThrottleTests
@@ -20,7 +21,7 @@ public class LoginThrottleTests
     [Fact]
     public void LaCuentaSeBloqueaAlLlegarAlMaximoDeFallos()
     {
-        var throttle = new LoginThrottle(new RelojDePrueba());
+        var throttle = new LoginThrottle(new RelojDePrueba(), new IntentosEnMemoria());
 
         FallarVeces(throttle, "30111222", LoginThrottle.MaximoFallos - 1);
         Assert.False(throttle.Bloqueado("30111222"));
@@ -32,7 +33,7 @@ public class LoginThrottleTests
     [Fact]
     public void BloquearUnaCuentaNoAfectaALasDemas()
     {
-        var throttle = new LoginThrottle(new RelojDePrueba());
+        var throttle = new LoginThrottle(new RelojDePrueba(), new IntentosEnMemoria());
 
         FallarVeces(throttle, "30111222", LoginThrottle.MaximoFallos);
 
@@ -43,7 +44,7 @@ public class LoginThrottleTests
     public void PasadaLaVentanaLaCuentaVuelveAPoderIntentar()
     {
         var reloj = new RelojDePrueba();
-        var throttle = new LoginThrottle(reloj);
+        var throttle = new LoginThrottle(reloj, new IntentosEnMemoria());
         FallarVeces(throttle, "30111222", LoginThrottle.MaximoFallos);
 
         reloj.Avanzar(LoginThrottle.Ventana - TimeSpan.FromSeconds(1));
@@ -56,7 +57,7 @@ public class LoginThrottleTests
     [Fact]
     public void UnIngresoCorrectoReiniciaLaCuenta()
     {
-        var throttle = new LoginThrottle(new RelojDePrueba());
+        var throttle = new LoginThrottle(new RelojDePrueba(), new IntentosEnMemoria());
         FallarVeces(throttle, "30111222", LoginThrottle.MaximoFallos - 1);
 
         throttle.Limpiar("30111222");
@@ -69,12 +70,74 @@ public class LoginThrottleTests
     public void LosFallosViejosNoSeAcumulanConLosNuevos()
     {
         var reloj = new RelojDePrueba();
-        var throttle = new LoginThrottle(reloj);
+        var throttle = new LoginThrottle(reloj, new IntentosEnMemoria());
         FallarVeces(throttle, "30111222", LoginThrottle.MaximoFallos - 1);
 
         reloj.Avanzar(LoginThrottle.Ventana);
         throttle.RegistrarFallo("30111222");
 
         Assert.False(throttle.Bloqueado("30111222"));
+    }
+
+    [Fact]
+    public void NoGuardaElIdentificadorEnClaro()
+    {
+        var store = new IntentosEnMemoria();
+        new LoginThrottle(new RelojDePrueba(), store).RegistrarFallo("30111222");
+
+        var clave = Assert.Single(store.Claves);
+        Assert.DoesNotContain("30111222", clave);
+        Assert.Equal(64, clave.Length);
+    }
+
+    // Mismo comportamiento que IntentosLoginDao, en memoria, para probar las reglas sin base.
+    private sealed class IntentosEnMemoria : IIntentosLoginStore
+    {
+        private readonly Dictionary<string, (int Fallos, DateTimeOffset Desde)> _fallos = new();
+
+        public IEnumerable<string> Claves => _fallos.Keys;
+
+        public (int Fallos, DateTimeOffset Desde)? Obtener(string clave) => _fallos.TryGetValue(clave, out var e) ? e : null;
+
+        public void RegistrarFallo(string clave, DateTimeOffset ahora, TimeSpan ventana) =>
+            _fallos[clave] = _fallos.TryGetValue(clave, out var e) && ahora - e.Desde < ventana ? (e.Fallos + 1, e.Desde) : (1, ahora);
+
+        public void Limpiar(string clave) => _fallos.Remove(clave);
+    }
+}
+
+// La tabla INTENTOS_LOGIN contra una base real: los fallos sobreviven a una instancia nueva del límite
+// (como un reinicio de la API) y vencen con la ventana.
+[Collection(BaseDeDatosCollection.Nombre)]
+public class IntentosLoginDaoIntegrationTests
+{
+    private sealed class RelojFijo(DateTimeOffset ahora) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => ahora;
+    }
+
+    [IntegracionFact]
+    public void LosFallosSobrevivenAUnReinicioYVencenConLaVentana()
+    {
+        var dao = new IntentosLoginDao(Environment.GetEnvironmentVariable(IntegracionFactAttribute.Variable)!);
+        string identificador = "prueba-" + Guid.NewGuid();
+        var ahora = new DateTimeOffset(2026, 10, 11, 12, 0, 0, TimeSpan.Zero);
+        try
+        {
+            var antes = new LoginThrottle(new RelojFijo(ahora), dao);
+            for (var i = 0; i < LoginThrottle.MaximoFallos; i++) antes.RegistrarFallo(identificador);
+
+            // Una instancia nueva (la API reiniciada) ve el bloqueo.
+            Assert.True(new LoginThrottle(new RelojFijo(ahora.AddMinutes(1)), dao).Bloqueado(identificador));
+            Assert.False(new LoginThrottle(new RelojFijo(ahora + LoginThrottle.Ventana), dao).Bloqueado(identificador));
+
+            // Un fallo después de la ventana vuelve a contar desde 1.
+            new LoginThrottle(new RelojFijo(ahora + LoginThrottle.Ventana), dao).RegistrarFallo(identificador);
+            Assert.Equal(1, dao.Obtener(LoginThrottle.Clave(identificador))!.Value.Fallos);
+        }
+        finally
+        {
+            dao.Limpiar(LoginThrottle.Clave(identificador));
+        }
     }
 }

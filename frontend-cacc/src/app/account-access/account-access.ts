@@ -8,9 +8,11 @@ import { AuthService } from '../services/auth';
 // botón para ir enseguida, así que nadie queda esperando.
 export const LECTURA_MENSAJE_EXITO_MS = 2600;
 
-// El servidor exige entre 8 y 128 caracteres (CompleteAccountAccessRequest): es lo único que bloquea.
-// El resto de los criterios de abajo son recomendaciones que solo se muestran.
-const PASSWORD_MIN_LENGTH = 8;
+// Política de contraseñas nuevas (PoliticaContrasenia en la API): entre 10 y 128 caracteres, con letras y
+// números. Eso se controla acá mientras se escribe. Que no contenga el DNI, el nombre ni el correo y que no sea
+// una contraseña común lo controla el servidor (acá no se conocen los datos de la cuenta) y, si falla, se
+// muestra su motivo. Mayúsculas/minúsculas y símbolos son recomendaciones.
+const PASSWORD_MIN_LENGTH = 10;
 const PASSWORD_MAX_LENGTH = 128;
 
 // Dos pantallas con el mismo mecanismo (token de un solo uso) pero situaciones distintas:
@@ -53,7 +55,7 @@ export const TEXTOS_POR_MODO: Record<ModoAcceso, TextosModo> = {
 };
 
 export interface Requisito {
-  id: 'largo' | 'mayusculasMinusculas' | 'numero' | 'simbolo';
+  id: 'largo' | 'letrasYNumeros' | 'mayusculasMinusculas' | 'simbolo';
   texto: string;
   cumplido: boolean;
   // Los obligatorios bloquean el envío; los demás son recomendaciones.
@@ -69,10 +71,19 @@ export interface Fortaleza {
 export function evaluarRequisitos(password: string): Requisito[] {
   return [
     { id: 'largo', texto: `Al menos ${PASSWORD_MIN_LENGTH} caracteres`, cumplido: password.length >= PASSWORD_MIN_LENGTH, obligatorio: true },
+    { id: 'letrasYNumeros', texto: 'Letras y números', cumplido: tieneLetrasYNumeros(password), obligatorio: true },
     { id: 'mayusculasMinusculas', texto: 'Mayúsculas y minúsculas', cumplido: /[a-záéíóúñ]/.test(password) && /[A-ZÁÉÍÓÚÑ]/.test(password), obligatorio: false },
-    { id: 'numero', texto: 'Al menos un número', cumplido: /\d/.test(password), obligatorio: false },
     { id: 'simbolo', texto: 'Un símbolo (por ejemplo ! ? # $)', cumplido: /[^A-Za-z0-9áéíóúñÁÉÍÓÚÑ\s]/.test(password), obligatorio: false },
   ];
+}
+
+function tieneLetrasYNumeros(password: string): boolean {
+  return /\p{L}/u.test(password) && /\d/.test(password);
+}
+
+function letrasYNumeros(control: AbstractControl): ValidationErrors | null {
+  const valor = control.value ?? '';
+  return !valor || tieneLetrasYNumeros(valor) ? null : { letrasYNumeros: true };
 }
 
 export function calcularFortaleza(password: string): Fortaleza {
@@ -126,7 +137,7 @@ export class AccountAccess implements OnInit, OnDestroy {
 
   readonly form = this.fb.group(
     {
-      password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH), Validators.maxLength(PASSWORD_MAX_LENGTH)]],
+      password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH), Validators.maxLength(PASSWORD_MAX_LENGTH), letrasYNumeros]],
       confirmacion: ['', [Validators.required]],
     },
     { validators: coincidenContrasenas },
@@ -212,7 +223,12 @@ export class AccountAccess implements OnInit, OnDestroy {
       error: (error) => {
         this.ngZone.run(() => {
           this.submitting = false;
-          if (error.status === 400) {
+          const problemas: string[] | undefined = error.error?.problemas;
+          if (error.status === 400 && problemas?.length) {
+            // El enlace sirve pero la contraseña no cumple la política (por ejemplo, contiene el DNI): se
+            // explica por qué y se deja elegir otra.
+            this.mensajeError = `Elegí otra contraseña: ${problemas.join(' ')}`;
+          } else if (error.status === 400) {
             // El token no sirve (vencido, ya usado o inexistente): no tiene sentido seguir escribiendo.
             this.estado = 'enlaceInvalido';
           } else {

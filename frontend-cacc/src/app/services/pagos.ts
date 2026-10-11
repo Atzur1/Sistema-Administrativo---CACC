@@ -25,6 +25,8 @@ export interface PendienteJugador {
   categoria: string;
   montoTotal: number;
   cantidadCuotas: number;
+  // Las que ya vencieron (el 10 del mes siguiente): de acá sale el estado deportivo.
+  cantidadVencidas: number;
   // "yyyy-MM-dd" si el jugador está dado de baja (puede seguir debiendo), null si está activo.
   fechaBaja?: string | null;
 }
@@ -59,6 +61,22 @@ export interface PagoReciente {
   fechaHoraRegistro: string | null;
   responsableNombre?: string | null;
   responsableApellido?: string | null;
+}
+
+// Filtros y página de "Pagos registrados" (los resuelve la API).
+export interface FiltroPagosRegistrados {
+  pagina: number;
+  tamanioPagina: number;
+  busqueda?: string | null;
+  estado?: 'Pagado' | 'Parcial' | null;
+}
+
+export interface PagosRegistradosPagina {
+  items: PagoReciente[];
+  total: number; // cuántos cumplen los filtros
+  totalSinFiltros: number;
+  pagina: number;
+  tamanioPagina: number;
 }
 
 export interface ResumenPagosHoy {
@@ -120,7 +138,7 @@ export interface FeeItem {
   amount: number; // Monto congelado con que se emitió la cuota
   amountDue: number; // Lo que se cobra hoy (0 si está pagada o cubierta)
   amountPaid: number;
-  dueDate: string; // "2026-03-31": último día del mes que cubre
+  dueDate: string; // "2026-04-10": la cuota de marzo vence (y queda vencida) el 10 de abril
   status: EstadoCuotaJugador;
   paidAt: string | null;
   paymentMethod: string | null;
@@ -152,7 +170,7 @@ export function feeToCuotaJugador(fee: FeeItem): CuotaJugador {
 export interface CuotaJugador {
   idPago: number; // Pendiente/Vencido: la cuota a cobrar. Pagado: el último cobro del período.
   periodo: string; // "Marzo 2026"
-  fechaVencimiento: string; // Primer día del mes que cubre
+  fechaVencimiento: string; // Estado de cuenta: el día en que vence (el 10 del mes siguiente al que cubre)
   montoCuota: number; // Importe histórico con que se emitió
   saldoPendiente: number; // Lo que se cobra hoy (ya con beneficio y abonos parciales)
   montoAbonado: number;
@@ -236,10 +254,12 @@ export class PagosService {
     return this.http.get<PagoReciente[]>(`${this.apiUrl}/pagos/recientes?top=${top}`);
   }
 
-  // Todos los pagos, sin límite: para la tabla "Pagos registrados" de Actividad y
-  // Movimientos, que filtra y pagina del lado del cliente sobre la lista entera.
-  getPagosRegistrados(): Observable<PagoReciente[]> {
-    return this.http.get<PagoReciente[]>(`${this.apiUrl}/pagos/registrados`);
+  // Tabla "Pagos registrados" de Actividad y Movimientos: la API filtra y pagina (solo baja la página pedida).
+  getPagosRegistrados(filtro: FiltroPagosRegistrados): Observable<PagosRegistradosPagina> {
+    const params: Record<string, string | number> = { page: filtro.pagina, pageSize: filtro.tamanioPagina };
+    if (filtro.busqueda?.trim()) params['busqueda'] = filtro.busqueda.trim();
+    if (filtro.estado) params['estado'] = filtro.estado;
+    return this.http.get<PagosRegistradosPagina>(`${this.apiUrl}/pagos/registrados`, { params });
   }
 
   getResumen(): Observable<ResumenPagos> {

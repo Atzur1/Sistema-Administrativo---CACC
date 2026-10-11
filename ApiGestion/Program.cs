@@ -75,6 +75,7 @@ builder.Services.AddScoped<DaoLibrary.IUsuariosPortalDao>(provider =>
     new DaoLibrary.UsuariosPortalDao(conexionSql));
 builder.Services.AddSingleton<ApiGestion.Services.EmailLinkSender>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<DaoLibrary.IIntentosLoginStore>(_ => new DaoLibrary.IntentosLoginDao(conexionSql));
 builder.Services.AddSingleton<ApiGestion.Services.LoginThrottle>();
 
 // Cuotas y pagos: DAO + runner transaccional + servicio de negocio
@@ -106,6 +107,12 @@ builder.Services.AddScoped<ServiceLibrary.IArancelesService>(provider => new Ser
     provider.GetRequiredService<DaoLibrary.ISqlTransactionRunner>(),
     provider.GetRequiredService<DaoLibrary.ICategoriasDao>()));
 
+// Aviso de meses que quedaron con cuotas sin generar (Resumen General, solo SuperAdmin).
+builder.Services.AddScoped<DaoLibrary.ICuotasFaltantesDao>(provider =>
+    new DaoLibrary.CuotasFaltantesDao(conexionSql));
+builder.Services.AddScoped<ServiceLibrary.ICuotasFaltantesService>(provider =>
+    new ServiceLibrary.CuotasFaltantesService(provider.GetRequiredService<DaoLibrary.ICuotasFaltantesDao>()));
+
 // Cuotas mensuales automáticas: repite el arancel vigente de cada jugador mes a mes.
 // Se puede apagar con GeneracionCuotas:Habilitada=false.
 if (builder.Configuration.GetValue<bool?>("GeneracionCuotas:Habilitada") ?? true)
@@ -118,10 +125,22 @@ builder.Services.AddScoped<DaoLibrary.PlayerDAO>(provider =>
     new DaoLibrary.PlayerDAO(conexionSql));
 builder.Services.AddScoped<DaoLibrary.EnrollmentDAO>(provider =>
     new DaoLibrary.EnrollmentDAO(conexionSql));
+builder.Services.AddScoped<ServiceLibrary.IInscripcionesService>(provider => new ServiceLibrary.InscripcionesService(
+    provider.GetRequiredService<DaoLibrary.EnrollmentDAO>(),
+    provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
+    provider.GetRequiredService<DaoLibrary.IJugadoresDao>()));
+builder.Services.AddScoped<ServiceLibrary.IJugadoresAltaService>(provider => new ServiceLibrary.JugadoresAltaService(
+    provider.GetRequiredService<DaoLibrary.PlayerDAO>(),
+    provider.GetRequiredService<DaoLibrary.ICategoriasDao>(),
+    provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
+    provider.GetRequiredService<DaoLibrary.IArancelesDao>()));
 
 // Becados y descuentos
 builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
     new DaoLibrary.DiscountDao(conexionSql));
+builder.Services.AddScoped<ServiceLibrary.IBeneficiosService>(provider => new ServiceLibrary.BeneficiosService(
+    provider.GetRequiredService<DaoLibrary.DiscountDao>(),
+    provider.GetRequiredService<DaoLibrary.IJugadoresDao>()));
 
 // 4. NUEVO: Configuración de autenticación JWT
 var jwtKey = builder.Configuration["Jwt:Key"];

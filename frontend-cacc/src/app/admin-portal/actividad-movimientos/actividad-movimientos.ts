@@ -11,10 +11,10 @@ import {
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { timeout } from 'rxjs';
+import { Subscription, debounceTime, timeout } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { animateCountUp } from '../../shared/count-up';
 import { formatElapsedPrecise } from '../../shared/format-elapsed';
-import { normalizeText } from '../../shared/normalize-text';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { PagoReciente, PagosService } from '../../services/pagos';
 
@@ -99,9 +99,10 @@ export class ActividadMovimientos implements OnInit {
         { target: 0, prefix: '$', suffix: '', label: 'Recaudado hoy', display: signal('$0') },
     ];
 
-    // Todos los pagos registrados, sin límite — filtrados/paginados del lado del cliente
-    // (mismo criterio que Becados y Descuentos).
-    private allPayments: PaymentRow[] = [];
+    // Solo la página visible: la API filtra y pagina (antes bajaba hasta 1000 pagos y se filtraba acá).
+    pagedPayments: PaymentRow[] = [];
+    totalFiltrados = 0;
+    totalPagos = 0;
     paymentsLoaded = false;
     paymentsLoadError = false;
 
@@ -140,8 +141,14 @@ export class ActividadMovimientos implements OnInit {
             estado: [null as PaymentRow['status'] | null],
         });
 
-        // Cualquier cambio de filtro vuelve a la página 1, igual que en Becados y Descuentos.
-        this.filterForm.valueChanges.subscribe(() => (this.page = 1));
+        // Cualquier cambio de filtro vuelve a la página 1 y vuelve a consultar. La búsqueda espera a que se
+        // termine de escribir, para no pedir una página por cada tecla.
+        this.filterForm.valueChanges
+            .pipe(debounceTime(ActividadMovimientos.BUSQUEDA_DEBOUNCE_MS), takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+                this.page = 1;
+                this.loadPagosRegistrados();
+            });
     }
 
     ngOnInit() {
@@ -162,32 +169,8 @@ export class ActividadMovimientos implements OnInit {
 
     // ===== FILTROS Y PAGINACIÓN (mismo patrón que Becados y Descuentos) =====
 
-    get allPaymentsCount(): number {
-        return this.allPayments.length;
-    }
-
-    get filteredPayments(): PaymentRow[] {
-        const { busqueda, estado } = this.filterForm.value;
-        const term = normalizeText((busqueda ?? '').trim());
-
-        return this.allPayments.filter((row) => {
-            if (estado && row.status !== estado) {
-                return false;
-            }
-            if (term && !normalizeText(row.player).includes(term)) {
-                return false;
-            }
-            return true;
-        });
-    }
-
     get totalPaginas(): number {
-        return Math.max(1, Math.ceil(this.filteredPayments.length / this.pageSize));
-    }
-
-    get pagedPayments(): PaymentRow[] {
-        const start = (this.page - 1) * this.pageSize;
-        return this.filteredPayments.slice(start, start + this.pageSize);
+        return Math.max(1, Math.ceil(this.totalFiltrados / this.pageSize));
     }
 
     get hayFiltrosActivos(): boolean {
@@ -204,6 +187,7 @@ export class ActividadMovimientos implements OnInit {
             return;
         }
         this.page = nuevaPagina;
+        this.loadPagosRegistrados();
     }
 
     // ===== DATA LOADING =====
@@ -248,6 +232,8 @@ export class ActividadMovimientos implements OnInit {
     // (ej. una transacción de cobro a mitad de camino), la pantalla se queda en blanco para
     // siempre en vez de mostrar el estado de error con "Reintentar".
     private static readonly LOAD_TIMEOUT_MS = 15000;
+    private static readonly BUSQUEDA_DEBOUNCE_MS = 300;
+    private pedidoPagos?: Subscription;
 
     private loadActivity() {
         this.activityLoadError = false;
@@ -271,21 +257,31 @@ export class ActividadMovimientos implements OnInit {
         this.loadActivity();
     }
 
+    // Si llega la respuesta de un pedido viejo (el usuario siguió escribiendo o cambió de página), se descarta:
+    // solo cuenta la del último pedido.
     private loadPagosRegistrados() {
         this.paymentsLoadError = false;
-        this.pagosService.getPagosRegistrados().pipe(timeout(ActividadMovimientos.LOAD_TIMEOUT_MS)).subscribe({
-            next: (pagos) => {
-                this.allPayments = pagos.map(toPaymentRow);
-                this.paymentsLoaded = true;
-                this.refrescarVista();
-            },
-            error: () => {
-                this.allPayments = [];
-                this.paymentsLoaded = true;
-                this.paymentsLoadError = true;
-                this.refrescarVista();
-            },
-        });
+        this.pedidoPagos?.unsubscribe();
+        const { busqueda, estado } = this.filterForm.value;
+        this.pedidoPagos = this.pagosService
+            .getPagosRegistrados({ pagina: this.page, tamanioPagina: this.pageSize, busqueda, estado })
+            .pipe(timeout(ActividadMovimientos.LOAD_TIMEOUT_MS))
+            .subscribe({
+                next: (resultado) => {
+                    this.pagedPayments = resultado.items.map(toPaymentRow);
+                    this.totalFiltrados = resultado.total;
+                    this.totalPagos = resultado.totalSinFiltros;
+                    this.paymentsLoaded = true;
+                    this.refrescarVista();
+                },
+                error: () => {
+                    this.pagedPayments = [];
+                    this.totalFiltrados = 0;
+                    this.paymentsLoaded = true;
+                    this.paymentsLoadError = true;
+                    this.refrescarVista();
+                },
+            });
     }
 
     reintentarPagos() {

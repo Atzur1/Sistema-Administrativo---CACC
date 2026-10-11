@@ -352,6 +352,14 @@
   color: #9aa1a9;
 }
 
+/* Lo que controla el servidor (no se conocen acá los datos de la cuenta): se avisa antes de enviar. */
+.requirements-note {
+  margin: 8px 2px 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
 /* ===== ALERTAS ===== */
 .alert-banner {
   display: flex;

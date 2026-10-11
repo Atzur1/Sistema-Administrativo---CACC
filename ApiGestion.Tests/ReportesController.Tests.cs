@@ -144,7 +144,7 @@ public AnularPagoResultado AnularPago(AnularPagoRequest request) => throw new No
         public IReadOnlyList<CuotaJugador> ObtenerCuotasJugador(int idJugador) => throw new NotSupportedException();
         public PlayerStatement? GetPlayerStatement(int playerId) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => throw new NotSupportedException();
-        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => throw new NotSupportedException();
+        public PagosRegistradosPagina ObtenerPagosRegistrados(FiltroPagosRegistrados filtro) => throw new NotSupportedException();
         public ResumenPagos ObtenerResumen() => throw new NotSupportedException();
         public ResumenPagosHoy ObtenerResumenHoy() => throw new NotSupportedException();
     }

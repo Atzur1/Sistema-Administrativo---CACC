@@ -81,12 +81,30 @@ namespace ApiGestion.Controllers
             return Ok(_pagosService.ObtenerResumenHoy());
         }
 
-        // GET api/pagos/registrados -> tabla "Pagos registrados" de Actividad y Movimientos:
-        // límite defensivo de 1000 resultados.
+        // GET api/pagos/registrados?page=1&pageSize=10&busqueda=perez&estado=Parcial -> tabla "Pagos registrados"
+        // de Actividad y Movimientos, paginada en la base (antes bajaba hasta 1000 pagos y filtraba en el navegador).
+        // 200: { items: [...], total, totalSinFiltros, pagina, tamanioPagina }
         [HttpGet("registrados")]
-        public IActionResult ObtenerTodosLosPagos()
+        public IActionResult ObtenerPagosRegistrados(
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+            [FromQuery] string? busqueda = null, [FromQuery] string? estado = null)
         {
-            return Ok(_pagosService.ObtenerUltimosPagos(1000));
+            if (estado != null && estado != "Pagado" && estado != "Parcial")
+            {
+                return BadRequest(new { exito = false, mensaje = "Estado inválido: debe ser Pagado o Parcial." });
+            }
+            if (busqueda?.Length > 100)
+            {
+                return BadRequest(new { exito = false, mensaje = "La búsqueda no puede superar los 100 caracteres." });
+            }
+
+            return Ok(_pagosService.ObtenerPagosRegistrados(new FiltroPagosRegistrados
+            {
+                Pagina = Math.Max(1, page),
+                TamanioPagina = Math.Clamp(pageSize, 1, 100),
+                Busqueda = busqueda,
+                Estado = estado
+            }));
         }
 
         // GET api/pagos/deuda/5 -> detalle de deuda de un jugador (cuotas pendientes + abonos parciales)
@@ -178,7 +196,7 @@ namespace ApiGestion.Controllers
                         Amount = cuota.MontoCuota,
                         AmountDue = cuota.Estado == EstadosCuota.Pagado ? 0 : cuota.SaldoPendiente,
                         AmountPaid = cuota.MontoAbonado,
-                        DueDate = cuota.FechaVencimiento.AddMonths(1).AddDays(-1).ToString("yyyy-MM-dd"),
+                        DueDate = CalendarioCuotas.FechaVencimiento(cuota.FechaVencimiento).ToString("yyyy-MM-dd"),
                         Status = cuota.Estado,
                         PaidAt = cuota.FechaPago?.ToString("yyyy-MM-dd"),
                         PaymentMethod = cuota.MetodoPago,
@@ -310,6 +328,7 @@ namespace ApiGestion.Controllers
                 Category = account.Category,
                 AmountOwed = account.AmountOwed,
                 PendingInstallments = account.PendingInstallments,
+                OverdueInstallments = account.OverdueInstallments,
                 LeaveDate = account.LeaveDate?.ToString("yyyy-MM-dd")
             };
         }

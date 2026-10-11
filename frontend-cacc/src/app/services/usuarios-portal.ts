@@ -5,6 +5,7 @@ import {
   CambiarRolRequest,
   EditarCandidatoRequest,
   HabilitarUsuarioRequest,
+  RolPortal,
   UsuarioCandidato,
   UsuarioPortal,
 } from '../models/UsuarioPortalModel';
@@ -30,8 +31,9 @@ export class UsuariosPortalService {
     return this.http.get<UsuarioPortal[]>(`${this.API_URL}/deshabilitados`);
   }
 
-  reactivar(idUsuario: number): Observable<{ mensaje: string }> {
-    return this.http.post<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/reactivar`, {});
+  // El SuperAdmin elige el rol con el que vuelve (la pantalla propone el que tenía).
+  reactivar(idUsuario: number, rolPortal: RolPortal): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/reactivar`, { rolPortal });
   }
 
   editarCandidato(idUsuario: number, request: EditarCandidatoRequest): Observable<{ mensaje: string }> {

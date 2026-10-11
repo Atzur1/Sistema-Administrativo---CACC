@@ -6,12 +6,6 @@ namespace DaoLibrary
 {
     public class PagosDao : IPagosDao, ICuotasPorArancelDao
     {
-        private static readonly string[] MesesCompletos =
-        {
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        };
-
         private readonly string _cadenaConexion;
 
         public PagosDao(string cadenaConexion)
@@ -220,65 +214,13 @@ namespace DaoLibrary
         }
 
         public void GenerarCuotasPendientesDelMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int mes, int anio)
-            => GenerarCuotas(conexion, transaccion, genero, idCategoria, null, mes, anio);
+            => SqlCuotaMensual.Generar(conexion, transaccion, genero, idCategoria, null, mes, anio);
 
         // La cuota de UN jugador para un período, con el arancel que le corresponde, si todavía no tiene
         // ninguna fila de cuota en ese mes. Devuelve false si no se emitió: el jugador no existe, ya la
         // tiene, no estaba en el club ese mes (antes del alta o después de la baja) o no hay arancel.
         public bool EmitirCuotaDeJugador(SqlConnection conexion, SqlTransaction transaccion, int idJugador, int mes, int anio)
-            => GenerarCuotas(conexion, transaccion, null, null, idJugador, mes, anio) > 0;
-
-        // Un jugador recibe la cuota de un mes solo si estuvo en el club algún día de ese mes: dado de alta
-        // antes de que termine (fecha_alta) y sin baja anterior a que empiece (fecha_baja). Sin esto, un
-        // arancel cargado para un mes pasado le generaba deuda a quien todavía no había entrado al club, y
-        // quien se fue seguía acumulando cuotas para siempre.
-        private int GenerarCuotas(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int? idJugador, int mes, int anio)
-        {
-            // A propósito NO se aplica ningún beneficio de Becados y Descuentos acá: monto_base
-            // y monto_final quedan siempre con el arancel CRUDO. El beneficio (si tiene uno,
-            // vigente o asignado después) se resuelve dinámicamente cada vez que se lee/cobra
-            // la cuota (ver DescuentosSql + PagosDao.ObtenerDeudaDetalle/ObtenerDescuentoAplicableEnPeriodo).
-            // Aplicarlo acá también terminaba duplicándolo: una cuota generada con un % ya vigente
-            // quedaba con monto_final pre-descontado, y el ajuste dinámico de lectura lo volvía
-            // a descontar encima.
-            const string query = @"
-                -- PK_id_pago sale de la secuencia (default de la columna), uno por fila.
-                INSERT INTO PAGOS (FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado)
-                SELECT j.PK_id_jugador,
-                    arancel.monto, NULL, arancel.monto, NULL, NULL, @primerDiaMes, 0
-                FROM JUGADORES j
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
-                CROSS APPLY (
-                    -- Un arancel cargado el 5 de enero cubre igual TODO enero, no solo desde el
-                    -- día 5: por eso se compara contra el último día del mes (EOMONTH), no el día 1.
-                    -- Primero el arancel de la categoría del jugador; si no tiene, el de su género.
-                    SELECT TOP (1) a.monto FROM ARANCELES a
-                    WHERE a.vigente_desde <= EOMONTH(@primerDiaMes)
-                      AND (a.FK_id_categoria = j.FK_id_categoria
-                           OR (a.FK_id_categoria IS NULL AND a.genero = LTRIM(RTRIM(p.genero))))
-                    ORDER BY CASE WHEN a.FK_id_categoria IS NULL THEN 1 ELSE 0 END, a.vigente_desde DESC
-                ) AS arancel
-                WHERE (@genero IS NULL OR LTRIM(RTRIM(p.genero)) = @genero)
-                  AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
-                  AND (@idJugador IS NULL OR j.PK_id_jugador = @idJugador)
-                  AND (j.fecha_alta IS NULL OR j.fecha_alta <= EOMONTH(@primerDiaMes))
-                  AND (j.fecha_baja IS NULL OR j.fecha_baja >= @primerDiaMes)
-                  -- Solo cuotas (HU-033): una inscripción en ese mes no reemplaza la cuota.
-                  AND NOT EXISTS (
-                    SELECT 1 FROM PAGOS p2 WITH (UPDLOCK, HOLDLOCK)
-                    WHERE p2.FK_id_jugador = j.PK_id_jugador AND p2.concepto = 'Cuota'
-                      AND p2.fecha_vencimiento IS NOT NULL
-                      AND MONTH(p2.fecha_vencimiento) = @mes AND YEAR(p2.fecha_vencimiento) = @anio
-                );";
-            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
-            comando.Parameters.Add("@genero", System.Data.SqlDbType.VarChar, 20).Value = (object?)genero ?? DBNull.Value;
-            comando.Parameters.Add("@idCategoria", System.Data.SqlDbType.Int).Value = (object?)idCategoria ?? DBNull.Value;
-            comando.Parameters.Add("@idJugador", System.Data.SqlDbType.Int).Value = (object?)idJugador ?? DBNull.Value;
-            comando.Parameters.Add("@primerDiaMes", System.Data.SqlDbType.Date).Value = new DateTime(anio, mes, 1);
-            comando.Parameters.AddWithValue("@mes", mes);
-            comando.Parameters.AddWithValue("@anio", anio);
-            return comando.ExecuteNonQuery();
-        }
+            => SqlCuotaMensual.Generar(conexion, transaccion, null, null, idJugador, mes, anio) > 0;
 
         // El id sale de la secuencia dbo.SEQ_PAGOS (migración V20261011_04): único aunque dos cobros
         // corran a la vez, sin bloquear la tabla. Se pide antes del INSERT para poder devolverlo.
@@ -511,12 +453,15 @@ namespace DaoLibrary
             // asignarle el beneficio. Un jugador cuyo beneficio le deja todo en $0 desaparece de
             // este panel (HAVING > 0): no tiene nada pendiente de cobro de verdad.
             //
-            // HU-033: monto_total suma cuotas e inscripción; cantidad_cuotas cuenta solo cuotas,
-            // porque de ella sale el estado deportivo (Solo entrenamientos / Inhabilitado).
+            // HU-033: monto_total suma cuotas e inscripción; cantidad_cuotas cuenta solo cuotas.
+            // cantidad_vencidas cuenta las que ya vencieron (día 10 del mes siguiente): de ella sale el
+            // estado deportivo (Solo entrenamientos / Inhabilitado).
             string query = $@"
                 SELECT j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja,
                        SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
-                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 AND pg.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas
+                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 AND pg.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas,
+                       COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 AND pg.concepto = 'Cuota'
+                                   AND {SqlCalendarioCuotas.EstaVencida("pg")} THEN 1 END) AS cantidad_vencidas
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
                 JOIN JUGADORES j ON pg.FK_id_jugador = j.PK_id_jugador
@@ -547,6 +492,7 @@ namespace DaoLibrary
                     Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? "",
                     MontoTotal = Convert.ToDecimal(reader["monto_total"]),
                     CantidadCuotas = Convert.ToInt32(reader["cantidad_cuotas"]),
+                    CantidadVencidas = Convert.ToInt32(reader["cantidad_vencidas"]),
                     FechaBaja = reader["fecha_baja"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_baja"])
                 });
             }
@@ -575,16 +521,19 @@ namespace DaoLibrary
             string query = $@"
                 SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja,
                        ISNULL(d.monto_adeudado, 0) AS monto_adeudado,
-                       ISNULL(d.cantidad_cuotas, 0) AS cantidad_cuotas
+                       ISNULL(d.cantidad_cuotas, 0) AS cantidad_cuotas,
+                       ISNULL(d.cantidad_vencidas, 0) AS cantidad_vencidas
                 FROM JUGADORES j
                 JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 LEFT JOIN (
                     SELECT t.FK_id_jugador,
                            SUM(t.saldo) AS monto_adeudado,
-                           COUNT(CASE WHEN t.saldo > 0 AND t.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas
+                           COUNT(CASE WHEN t.saldo > 0 AND t.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas,
+                           COUNT(CASE WHEN t.saldo > 0 AND t.concepto = 'Cuota' AND t.vencida = 1 THEN 1 END) AS cantidad_vencidas
                     FROM (
-                        SELECT pg.FK_id_jugador, pg.concepto, ({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS saldo
+                        SELECT pg.FK_id_jugador, pg.concepto, ({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS saldo,
+                               CASE WHEN {SqlCalendarioCuotas.EstaVencida("pg")} THEN 1 ELSE 0 END AS vencida
                         FROM PAGOS pg
                         {DescuentosSql.ApplyDescuentoActivo}
                         WHERE pg.estado = 0
@@ -609,6 +558,7 @@ namespace DaoLibrary
                     Category = reader["nombre_categoria"].ToString()?.Trim() ?? "",
                     AmountOwed = Convert.ToDecimal(reader["monto_adeudado"]),
                     PendingInstallments = Convert.ToInt32(reader["cantidad_cuotas"]),
+                    OverdueInstallments = Convert.ToInt32(reader["cantidad_vencidas"]),
                     LeaveDate = reader["fecha_baja"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_baja"])
                 });
             }
@@ -659,12 +609,12 @@ namespace DaoLibrary
             return resultado;
         }
 
-        public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => ObtenerPagosAgrupados($"TOP ({Math.Clamp(top, 1, 1000)})");
+        // Panel "Últimos pagos" y reportes: los más recientes, sin filtros.
+        public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top)
+            => ObtenerPagosRegistrados(new FiltroPagosRegistrados { Pagina = 1, TamanioPagina = Math.Clamp(top, 1, 1000) }).Items;
 
-        // Sin límite: la tabla "Pagos registrados" de Actividad y Movimientos trae todo y
-        // filtra/pagina del lado del cliente, mismo criterio que Becados y Descuentos.
-        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => ObtenerPagosAgrupados("TOP (1000)");
-
+        // Tabla "Pagos registrados" de Actividad y Movimientos: filtros y página resueltos en la base.
+        //
         // Si una cuota se terminó de pagar (o se viene pagando) en VARIOS abonos (ej. $20.000 +
         // $50.000), acá tiene que verse como UN solo renglón de $70.000 — no dos líneas
         // separadas. Por eso se agrupa por jugador+período: se suman los montos, se toma la
@@ -673,19 +623,26 @@ namespace DaoLibrary
         // es_parcial distingue las dos situaciones sin filtrar ninguna: si todavía queda una
         // cuota pendiente (estado = 0) de ese mismo jugador+período, lo abonado hasta ahora es
         // un abono PARCIAL (la cuota sigue abierta); si no queda ninguna, ese grupo terminó de
-        // cubrir el total y es un pago COMPLETO. Antes esta consulta solo traía los completos.
-        //
-        // topClause: "TOP (n)" (el n ya viene validado como int por el controller, no hace
-        // falta parametrizarlo) o null para traer todos.
-        private IReadOnlyList<PagoReciente> ObtenerPagosAgrupados(string? topClause)
+        // cubrir el total y es un pago COMPLETO.
+        public PagosRegistradosPagina ObtenerPagosRegistrados(FiltroPagosRegistrados filtro)
         {
-            var resultado = new List<PagoReciente>();
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            return ObtenerPagosRegistradosCore(conexion, null, filtro);
+        }
+
+        internal static PagosRegistradosPagina ObtenerPagosRegistradosCore(SqlConnection conexion, SqlTransaction? transaccion, FiltroPagosRegistrados filtro)
+        {
+            int tamanio = Math.Clamp(filtro.TamanioPagina, 1, 1000);
+            int pagina = Math.Max(1, filtro.Pagina);
+            string? busqueda = string.IsNullOrWhiteSpace(filtro.Busqueda) ? null : filtro.Busqueda.Trim();
+            bool? parcial = filtro.Estado switch { "Parcial" => true, "Pagado" => false, _ => null };
 
             // HU-033: el grupo es jugador + período + concepto. Una inscripción pendiente del mes
             // del alta no esconde la cuota ya pagada ni suma abonos juntos.
             // Cuotas: solo aparecen cuando están totalmente pagas (sin fila pendiente del mismo
             // período+concepto). Inscripciones: aparecen siempre, incluso con saldo pendiente.
-            string query = $@"
+            // La búsqueda no distingue mayúsculas ni acentos (COLLATE ..._CI_AI), por nombre o DNI.
+            const string ctes = @"
                 ;WITH Grupos AS (
                     SELECT pg.PK_id_pago, pg.FK_id_jugador, pg.metodo_pago, pg.fecha_vencimiento, pg.concepto,
                         SUM(pg.monto_final) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento, pg.concepto) AS monto_grupo,
@@ -715,17 +672,42 @@ namespace DaoLibrary
                               AND YEAR(pendiente.fecha_vencimiento) = YEAR(pg.fecha_vencimiento)
                         )
                       )
+                ),
+                Registrados AS (
+                    SELECT g.*, p.nombre, p.apellido, c.nombre_categoria,
+                        CASE WHEN (@parcial IS NULL OR g.es_parcial = @parcial)
+                              AND (@patron IS NULL
+                                   OR (LTRIM(RTRIM(p.apellido)) + ', ' + LTRIM(RTRIM(p.nombre))) COLLATE Latin1_General_CI_AI LIKE @patron
+                                   OR LTRIM(RTRIM(p.Dni)) LIKE @patron)
+                             THEN 1 ELSE 0 END AS cumple_filtros
+                    FROM Grupos g
+                    JOIN JUGADORES j ON g.FK_id_jugador = j.PK_id_jugador
+                    JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                    JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
+                    WHERE g.rn = 1
+                )";
+
+            // Dos resultados: los totales (con y sin filtros) y la página pedida. El responsable (auditoría)
+            // se busca solo para las filas de la página.
+            const string query = ctes + @"
+                SELECT COUNT(*) AS total_sin_filtros, ISNULL(SUM(cumple_filtros), 0) AS total
+                FROM Registrados;
+                " + ctes + @",
+                Pagina AS (
+                    SELECT * FROM Registrados WHERE cumple_filtros = 1
+                    ORDER BY fecha_hora_grupo DESC, fecha_grupo DESC, PK_id_pago DESC
+                    OFFSET @saltar ROWS FETCH NEXT @tomar ROWS ONLY
                 )
-                SELECT {(topClause != null ? topClause + " " : "")}g.PK_id_pago, g.FK_id_jugador, p.nombre, p.apellido, c.nombre_categoria,
-                    g.metodo_pago, g.monto_grupo AS monto_final, g.fecha_grupo AS fecha_pago,
-                    g.fecha_hora_grupo AS fecha_hora_registro, g.es_parcial, g.fecha_vencimiento, g.concepto,
+                SELECT r.PK_id_pago, r.FK_id_jugador, r.nombre, r.apellido, r.nombre_categoria,
+                    r.metodo_pago, r.monto_grupo AS monto_final, r.fecha_grupo AS fecha_pago,
+                    r.fecha_hora_grupo AS fecha_hora_registro, r.es_parcial, r.fecha_vencimiento, r.concepto,
                     responsable.nombre AS responsable_nombre, responsable.apellido AS responsable_apellido,
                     responsable.fecha_utc AS responsable_fecha_utc
-                FROM Grupos g
+                FROM Pagina r
                 OUTER APPLY (
                     SELECT TOP (1) ac.nombre_usuario AS nombre, ac.apellido_usuario AS apellido, ac.fecha_utc
                     FROM dbo.AUDITORIA_CAMBIOS ac
-                    WHERE ac.entidad = N'PAGOS' AND ac.id_entidad = CONVERT(NVARCHAR(128), g.PK_id_pago)
+                    WHERE ac.entidad = N'PAGOS' AND ac.id_entidad = CONVERT(NVARCHAR(128), r.PK_id_pago)
                       AND (
                           (ac.accion = 'INSERT' AND LOWER(JSON_VALUE(ac.datos_despues, '$.estado')) IN ('1', 'true'))
                           OR (ac.accion = 'UPDATE'
@@ -734,29 +716,37 @@ namespace DaoLibrary
                       )
                     ORDER BY CASE WHEN ac.accion = 'UPDATE' THEN 0 ELSE 1 END, ac.fecha_utc, ac.PK_id_evento
                 ) responsable
-                JOIN JUGADORES j ON g.FK_id_jugador = j.PK_id_jugador
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
-                JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
-                WHERE g.rn = 1
-                ORDER BY g.fecha_hora_grupo DESC, g.fecha_grupo DESC, g.PK_id_pago DESC";
+                ORDER BY r.fecha_hora_grupo DESC, r.fecha_grupo DESC, r.PK_id_pago DESC";
 
-            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            var resultado = new PagosRegistradosPagina { Pagina = pagina, TamanioPagina = tamanio };
 
-            using SqlCommand comando = new SqlCommand(query, conexion);
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            comando.Parameters.Add("@parcial", System.Data.SqlDbType.Bit).Value = (object?)parcial ?? DBNull.Value;
+            comando.Parameters.Add("@patron", System.Data.SqlDbType.NVarChar, 120).Value =
+                busqueda == null ? DBNull.Value : $"%{EscaparLike(busqueda)}%";
+            comando.Parameters.Add("@saltar", System.Data.SqlDbType.Int).Value = (pagina - 1) * tamanio;
+            comando.Parameters.Add("@tomar", System.Data.SqlDbType.Int).Value = tamanio;
 
             using SqlDataReader reader = comando.ExecuteReader();
+            if (reader.Read())
+            {
+                resultado.TotalSinFiltros = Convert.ToInt32(reader["total_sin_filtros"]);
+                resultado.Total = Convert.ToInt32(reader["total"]);
+            }
+
+            reader.NextResult();
             while (reader.Read())
             {
                 var periodo = Convert.ToDateTime(reader["fecha_vencimiento"]);
                 var esParcial = Convert.ToInt32(reader["es_parcial"]) == 1;
 
-                resultado.Add(new PagoReciente
+                resultado.Items.Add(new PagoReciente
                 {
                     IdPago = Convert.ToInt32(reader["PK_id_pago"]),
                     IdJugador = Convert.ToInt32(reader["FK_id_jugador"]),
                     NombreCompleto = $"{reader["apellido"].ToString()?.Trim()}, {reader["nombre"].ToString()?.Trim()}",
                     Categoria = reader["nombre_categoria"].ToString()?.Trim() ?? "",
-                    Periodo = $"{MesesCompletos[periodo.Month - 1]} {periodo.Year}",
+                    Periodo = CalendarioCuotas.NombreDelPeriodo(periodo),
                     MetodoPago = reader["metodo_pago"].ToString()?.Trim() ?? "",
                     Monto = Convert.ToDecimal(reader["monto_final"]),
                     Estado = esParcial ? "Parcial" : "Pagado",
@@ -772,6 +762,10 @@ namespace DaoLibrary
 
             return resultado;
         }
+
+        // Lo que escribe el usuario se busca tal cual: %, _ y [ no funcionan como comodines.
+        private static string EscaparLike(string texto)
+            => texto.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
 
         // Métricas del banner de "Actividad y Movimientos": puntuales de HOY, a diferencia de
         // ObtenerResumen (año/mes).
@@ -829,7 +823,7 @@ namespace DaoLibrary
                     pendientes.Add(new CuotaPendienteDetalle
                     {
                         IdPago = Convert.ToInt32(reader["PK_id_pago"]),
-                        Periodo = $"{MesesCompletos[periodoBase.Month - 1]} {periodoBase.Year}",
+                        Periodo = CalendarioCuotas.NombreDelPeriodo(periodoBase),
                         Concepto = reader["concepto"].ToString()?.Trim() ?? "",
                         MontoOriginal = Convert.ToDecimal(reader["monto_base"]),
                         SaldoPendiente = saldoAjustado < 0 ? 0 : saldoAjustado,
@@ -867,7 +861,7 @@ namespace DaoLibrary
                     var concepto = reader["concepto"].ToString()?.Trim() ?? "";
                     var cuota = pendientes.FirstOrDefault(c =>
                         c.Concepto == concepto
-                        && c.Periodo == $"{MesesCompletos[fechaVencimiento.Month - 1]} {fechaVencimiento.Year}");
+                        && c.Periodo == CalendarioCuotas.NombreDelPeriodo(fechaVencimiento));
 
                     cuota?.Abonos.Add(new AbonoDetalle
                     {
@@ -1082,7 +1076,7 @@ namespace DaoLibrary
 
                     var item = new PagoHistorialItem
                     {
-                        Periodo = $"{MesesCompletos[periodoBase.Month - 1]} {periodoBase.Year}",
+                        Periodo = CalendarioCuotas.NombreDelPeriodo(periodoBase),
                         Concepto = concepto,
                         MontoTotal = Convert.ToDecimal(reader["monto_grupo"]),
                         MontoOriginal = Convert.ToDecimal(reader["monto_base_grupo"]),

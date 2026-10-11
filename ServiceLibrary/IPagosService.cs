@@ -98,7 +98,8 @@ namespace ServiceLibrary
 
         IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top);
 
-        IReadOnlyList<PagoReciente> ObtenerTodosLosPagos();
+        // Tabla "Pagos registrados": filtros y página resueltos en la base.
+        PagosRegistradosPagina ObtenerPagosRegistrados(FiltroPagosRegistrados filtro);
 
         ResumenPagos ObtenerResumen();
 

@@ -1,5 +1,6 @@
 namespace ApiGestion.Tests;
 
+using ServiceLibrary;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
@@ -19,7 +20,10 @@ public class PlayersControllerCreatePlayerTests
     private const decimal MonthlyFee = 92000;
     private const decimal EnrollmentFeeAmount = 50000;
 
-    private static (PlayersController controller, FakePlayerDAO players, FakeEnrollmentFeeDAO enrollment, FakeArancelesDao aranceles) CreateController()
+    // Día del alta simulado: desde el 10, cuando la cuota del mes ya se genera.
+    private static readonly DateTime Today = new(2026, 10, 15);
+
+    private static (PlayersController controller, FakePlayerDAO players, FakeEnrollmentFeeDAO enrollment, FakeArancelesDao aranceles) CreateController(DateTime? today = null)
     {
         FakePlayerDAO players = new FakePlayerDAO();
         FakeEnrollmentFeeDAO enrollment = new FakeEnrollmentFeeDAO();
@@ -28,12 +32,9 @@ public class PlayersControllerCreatePlayerTests
 
         PlayersController controller = new PlayersController(
             NullLogger<PlayersController>.Instance,
-            new FakeJugadoresDao(),
-            new DiscountDao(""),
-            players,
-            enrollment,
-            aranceles,
-            categorias);
+            new JugadoresAltaService(players, categorias, enrollment, aranceles, () => today ?? Today),
+            new BeneficiosService(new DiscountDao(""), new FakeJugadoresDao()),
+            players);
 
         return (controller, players, enrollment, aranceles);
     }
@@ -68,7 +69,25 @@ public class PlayersControllerCreatePlayerTests
         Assert.Equal(MonthlyFee, players.LastMonthlyFee);
         Assert.Equal(EnrollmentFeeAmount, players.LastEnrollmentFee);
         Assert.Equal("Juan", players.Created!.FirstName);
-        Assert.Equal(DateTime.Now.Date, players.Created.JoinDate);
+        Assert.Equal(Today, players.Created.JoinDate);
+    }
+
+    // Antes del 10 la cuota del mes todavía no se generó para nadie: el alta no la cobra (la crea el generador
+    // el 10, o se paga por adelantado). La inscripción del plantel masculino se cobra igual.
+    [Fact]
+    public void CreatePlayer_BeforeThe10th_DoesNotChargeTheMonthlyFeeButStillTheEnrollmentFee()
+    {
+        var (controller, players, enrollment, aranceles) = CreateController(new DateTime(2026, 10, 9));
+        enrollment.Current = new EnrollmentFee { Id = 1, Amount = EnrollmentFeeAmount, Status = EnrollmentFeeStatus.Current };
+        aranceles.Amounts["Masculino"] = MonthlyFee;
+
+        PlayerResponseDTO player = Assert.IsType<PlayerResponseDTO>(
+            Assert.IsType<CreatedResult>(controller.CreatePlayer(ValidRequest("Masculino"))).Value);
+
+        Assert.Null(player.MonthlyFeeAmount);
+        Assert.Null(players.LastMonthlyFee);
+        Assert.Equal(EnrollmentFeeAmount, players.LastEnrollmentFee);
+        Assert.Equal(new DateTime(2026, 10, 9), players.Created!.JoinDate);
     }
 
     [Fact]
@@ -133,7 +152,7 @@ public class PlayersControllerCreatePlayerTests
 
         controller.CreatePlayer(ValidRequest("Femenino"));
 
-        DateTime today = DateTime.Now.Date;
+        DateTime today = Today;
         Assert.Equal(new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month)), aranceles.LastDate);
     }
 

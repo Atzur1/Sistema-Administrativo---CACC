@@ -56,8 +56,8 @@ namespace DaoLibrary
         // no puede deshabilitar al último SuperAdmin habilitado.
         bool Deshabilitar(int idUsuario);
 
-        // Le devuelve acceso_portal a alguien de ListarDeshabilitados, con el mismo
-        // rol_portal y la misma contraseña que ya tenía — sin token ni mail nuevo.
-        bool Reactivar(int idUsuario);
+        // Le devuelve acceso_portal a alguien de ListarDeshabilitados, con el rol que elige el SuperAdmin (en
+        // pantalla viene elegido el que tenía) y la misma contraseña que ya tenía — sin token ni mail nuevo.
+        bool Reactivar(int idUsuario, int rolPortal);
     }
 }

@@ -6,29 +6,29 @@ using EntityLibrary;
 // Inbound contract of the player registration form (HU-033)
 public class PlayerRequestDTO : IValidatableObject
 {
-    public const string MaleGender = "Masculino";
-    public const string FemaleGender = "Femenino";
+    public const string MaleGender = Generos.Masculino;
+    public const string FemaleGender = Generos.Femenino;
 
-    [Required(ErrorMessage = "The first name is required.")]
-    [StringLength(100, ErrorMessage = "The first name cannot be longer than 100 characters.")]
+    [Required(ErrorMessage = "Indicá el nombre.")]
+    [StringLength(100, ErrorMessage = "El nombre no puede superar los 100 caracteres.")]
     public string FirstName { get; set; } = "";
 
-    [Required(ErrorMessage = "The last name is required.")]
-    [StringLength(100, ErrorMessage = "The last name cannot be longer than 100 characters.")]
+    [Required(ErrorMessage = "Indicá el apellido.")]
+    [StringLength(100, ErrorMessage = "El apellido no puede superar los 100 caracteres.")]
     public string LastName { get; set; } = "";
 
-    [Required(ErrorMessage = "The DNI is required.")]
-    [RegularExpression(@"^\s*\d{7,8}\s*$", ErrorMessage = "The DNI must have 7 or 8 digits, without dots.")]
+    [Required(ErrorMessage = "Indicá el DNI.")]
+    [RegularExpression(@"^\s*\d{7,8}\s*$", ErrorMessage = "El DNI debe tener 7 u 8 dígitos, sin puntos.")]
     public string Dni { get; set; } = "";
 
-    [Required(ErrorMessage = "The birth date is required.")]
+    [Required(ErrorMessage = "Indicá la fecha de nacimiento.")]
     public DateTime? BirthDate { get; set; }
 
-    [Required(ErrorMessage = "The gender is required.")]
+    [Required(ErrorMessage = "Indicá el género.")]
     public string Gender { get; set; } = "";
 
-    [Required(ErrorMessage = "The category is required.")]
-    [Range(1, long.MaxValue, ErrorMessage = "The category is required.")]
+    [Required(ErrorMessage = "Indicá la categoría.")]
+    [Range(1, long.MaxValue, ErrorMessage = "Indicá la categoría.")]
     public long? CategoryId { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -36,14 +36,14 @@ public class PlayerRequestDTO : IValidatableObject
         if (!string.IsNullOrWhiteSpace(Gender) && Gender != MaleGender && Gender != FemaleGender)
         {
             yield return new ValidationResult(
-                $"The gender must be '{MaleGender}' or '{FemaleGender}'.",
+                $"El género debe ser '{MaleGender}' o '{FemaleGender}'.",
                 new[] { nameof(Gender) });
         }
 
         if (BirthDate != null && BirthDate.Value.Date >= RelojNegocio.Hoy)
         {
             yield return new ValidationResult(
-                "The birth date must be in the past.",
+                "La fecha de nacimiento debe ser anterior a hoy.",
                 new[] { nameof(BirthDate) });
         }
     }

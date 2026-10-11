@@ -1,6 +1,7 @@
 namespace ApiGestion.Models;
 
 using System.ComponentModel.DataAnnotations;
+using EntityLibrary;
 
 // Inbound contract to assign or edit a player's benefit (HU-011).
 //
@@ -13,16 +14,16 @@ using System.ComponentModel.DataAnnotations;
 // the engine for anything that bypasses the API.
 public class DiscountRequestDTO : IValidatableObject
 {
-    public const string PercentageValue = "%";
-    public const string FixedAmountValue = "$";
+    public const string PercentageValue = Discount.PercentageValueType;
+    public const string FixedAmountValue = Discount.FixedAmountValueType;
 
     public const decimal MinPercentage = 0m;
     public const decimal MaxPercentage = 100m;
 
-    [Required(ErrorMessage = "The benefit reason is required.")]
+    [Required(ErrorMessage = "Indicá el motivo de la bonificación.")]
     public string Reason { get; set; } = "";
 
-    [Required(ErrorMessage = "The value type is required.")]
+    [Required(ErrorMessage = "Indicá si la bonificación es un porcentaje o un monto fijo.")]
     public string ValueType { get; set; } = "";
 
     public decimal? Percentage { get; set; }
@@ -32,10 +33,10 @@ public class DiscountRequestDTO : IValidatableObject
     // Mandatory since HU-012: a benefit runs for an authorised period and stops
     // on its own when that period ends, so neither end of the range can be left
     // open. Both travel as yyyy-MM-dd, the same shape the API hands back.
-    [Required(ErrorMessage = "The start date is required.")]
+    [Required(ErrorMessage = "Indicá la fecha de inicio.")]
     public string? StartDate { get; set; }
 
-    [Required(ErrorMessage = "The end date is required.")]
+    [Required(ErrorMessage = "Indicá la fecha de fin.")]
     public string? EndDate { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -45,7 +46,7 @@ public class DiscountRequestDTO : IValidatableObject
         if (valueType != PercentageValue && valueType != FixedAmountValue)
         {
             yield return new ValidationResult(
-                $"The value type must be '{PercentageValue}' or '{FixedAmountValue}'.",
+                $"El tipo de valor debe ser '{PercentageValue}' o '{FixedAmountValue}'.",
                 new[] { nameof(ValueType) });
             yield break;
         }
@@ -61,14 +62,14 @@ public class DiscountRequestDTO : IValidatableObject
             else if (Percentage <= MinPercentage || Percentage > MaxPercentage)
             {
                 yield return new ValidationResult(
-                    $"The percentage must be greater than {MinPercentage} and at most {MaxPercentage}.",
+                    $"El porcentaje debe ser mayor a {MinPercentage} y como máximo {MaxPercentage}.",
                     new[] { nameof(Percentage) });
             }
 
             if (FixedAmount != null)
             {
                 yield return new ValidationResult(
-                    "A percentage benefit cannot carry a fixed amount.",
+                    "Una bonificación por porcentaje no puede tener además un monto fijo.",
                     new[] { nameof(FixedAmount) });
             }
         }
@@ -83,14 +84,14 @@ public class DiscountRequestDTO : IValidatableObject
             else if (FixedAmount <= 0)
             {
                 yield return new ValidationResult(
-                    "The fixed amount must be greater than zero.",
+                    "El monto fijo debe ser mayor a cero.",
                     new[] { nameof(FixedAmount) });
             }
 
             if (Percentage != null)
             {
                 yield return new ValidationResult(
-                    "A fixed amount benefit cannot carry a percentage.",
+                    "Una bonificación por monto fijo no puede tener además un porcentaje.",
                     new[] { nameof(Percentage) });
             }
         }
@@ -105,14 +106,14 @@ public class DiscountRequestDTO : IValidatableObject
         if (!string.IsNullOrWhiteSpace(StartDate) && start == null)
         {
             yield return new ValidationResult(
-                "The start date must be a valid date in yyyy-MM-dd format.",
+                "La fecha de inicio no es válida (formato aaaa-mm-dd).",
                 new[] { nameof(StartDate) });
         }
 
         if (!string.IsNullOrWhiteSpace(EndDate) && end == null)
         {
             yield return new ValidationResult(
-                "The end date must be a valid date in yyyy-MM-dd format.",
+                "La fecha de fin no es válida (formato aaaa-mm-dd).",
                 new[] { nameof(EndDate) });
         }
 
@@ -121,7 +122,7 @@ public class DiscountRequestDTO : IValidatableObject
         if (start != null && end != null && end <= start)
         {
             yield return new ValidationResult(
-                "The end date must be later than the start date.",
+                "La fecha de fin debe ser posterior a la de inicio.",
                 new[] { nameof(EndDate) });
         }
     }

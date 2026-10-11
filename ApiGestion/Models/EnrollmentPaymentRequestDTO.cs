@@ -6,12 +6,12 @@ using EntityLibrary;
 // Inbound contract to pay, fully or partially, a player's enrollment fee (HU-033)
 public class EnrollmentPaymentRequestDTO : IValidatableObject
 {
-    [Required(ErrorMessage = "The amount is required.")]
+    [Required(ErrorMessage = "Indicá el monto.")]
     [Range(typeof(decimal), "0.01", "99999999", ParseLimitsInInvariantCulture = true,
-        ErrorMessage = "The amount must be greater than zero.")]
+        ErrorMessage = "El monto debe ser mayor a cero.")]
     public decimal? Amount { get; set; }
 
-    [Required(ErrorMessage = "The payment method is required.")]
+    [Required(ErrorMessage = "Indicá el método de pago.")]
     public string PaymentMethod { get; set; } = "";
 
     // Same payment methods monthly fees accept
@@ -20,7 +20,7 @@ public class EnrollmentPaymentRequestDTO : IValidatableObject
         if (!string.IsNullOrWhiteSpace(PaymentMethod) && !MetodosPago.EsValido(PaymentMethod.Trim()))
         {
             yield return new ValidationResult(
-                $"The payment method must be one of: {string.Join(", ", MetodosPago.Validos)}.",
+                $"El método de pago debe ser uno de estos: {string.Join(", ", MetodosPago.Validos)}.",
                 new[] { nameof(PaymentMethod) });
         }
     }

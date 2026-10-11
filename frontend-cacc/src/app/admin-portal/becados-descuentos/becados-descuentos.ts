@@ -849,10 +849,10 @@ export class BecadosDescuentos implements OnInit {
     };
   }
 
-  // Turns an API failure into something the administrator can act on. The
-  // server answers in English; what reaches the screen is always in Spanish.
+  // Turns an API failure into something the administrator can act on. The API answers { mensaje } in
+  // Spanish (including which benefit is in the way and its period); the texts below are only the fallback
+  // when there is no message (for example, the server could not be reached).
   private messageFor(error: HttpErrorResponse, action: string): string {
-    // Las reglas de edición (bonificación cerrada, en curso, programada) responden { mensaje } en español.
     const mensajeApi = typeof error.error === 'object' ? error.error?.mensaje : null;
     if (typeof mensajeApi === 'string' && mensajeApi) {
       return mensajeApi;
@@ -863,13 +863,7 @@ export class BecadosDescuentos implements OnInit {
       if (action === 'anular') {
         return 'Esta bonificación ya no se puede anular: solo se anulan las canceladas que todavía no fueron anuladas. Actualizá la pantalla.';
       }
-      // The API names the benefit in the way and its period, which is what
-      // the administrator needs to fix the dates. It answers in English,
-      // so only the period is lifted out of it.
-      const period = this.periodFromConflict(error);
-      return period
-        ? `El jugador ya tiene una bonificación para ese período (${period}). Ajustá las fechas o cancelá la existente.`
-        : 'El jugador ya tiene una bonificación que se superpone con ese período. Ajustá las fechas o cancelá la existente.';
+      return 'El jugador ya tiene una bonificación que se superpone con ese período. Ajustá las fechas o cancelá la existente.';
     }
     if (error.status === 400) {
       return 'Los datos de la bonificación no son válidos. Revisá el motivo, el valor y las fechas de vigencia.';
@@ -885,18 +879,6 @@ export class BecadosDescuentos implements OnInit {
     }
 
     return `No se pudo ${action} la bonificación. Intentá nuevamente.`;
-  }
-
-  // Pulls the two ISO dates out of the conflict message and reads them the way
-  // the screen does. If the wording ever changes, this returns empty and the
-  // caller falls back to the generic message instead of showing garbage.
-  private periodFromConflict(error: HttpErrorResponse): string {
-    const body = typeof error.error === 'string' ? error.error : '';
-    const dates = body.match(/\d{4}-\d{2}-\d{2}/g);
-
-    return dates && dates.length >= 2
-      ? `${formatIsoDate(dates[0])} - ${formatIsoDate(dates[1])}`
-      : '';
   }
 
   // ===== TABLE RENDERING =====

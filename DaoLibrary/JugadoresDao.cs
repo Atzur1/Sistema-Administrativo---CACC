@@ -142,15 +142,47 @@ namespace DaoLibrary
             return new ResultadoBajaJugador(BajaJugadorResultado.Ok, eliminadas, cancelados);
         }
 
-        // Vuelve a dejar activo a un jugador dado de baja. Las cuotas de los meses en que estuvo afuera
-        // no se generan (el generador solo emite el mes en curso).
+        // Vuelve a dejar activo a un jugador dado de baja. Se toma como un reingreso: la fecha de alta pasa a ser
+        // hoy (la anterior queda en Auditoría), así los meses en que estuvo afuera nunca cuentan como cuotas
+        // faltantes. Si ya pasó el día 10, se le emite la cuota del mes en curso en el momento; si no, se la
+        // genera el generador mensual el 10, como a todos.
         public bool Reactivar(int idJugador)
         {
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
-            using SqlCommand comando = new SqlCommand(
-                "UPDATE JUGADORES SET fecha_baja = NULL WHERE PK_id_jugador = @id AND fecha_baja IS NOT NULL", conexion);
-            comando.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
-            return comando.ExecuteNonQuery() == 1;
+            using SqlTransaction transaccion = conexion.BeginTransaction();
+            BloqueoEscrituraPagos.Tomar(conexion, transaccion);
+            try
+            {
+                bool reactivado = ReactivarCore(conexion, transaccion, idJugador, RelojNegocio.Hoy);
+                transaccion.Commit();
+                return reactivado;
+            }
+            catch
+            {
+                transaccion.Rollback();
+                throw;
+            }
+        }
+
+        internal static bool ReactivarCore(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime hoy)
+        {
+            using (SqlCommand comando = new SqlCommand(
+                "UPDATE JUGADORES SET fecha_baja = NULL, fecha_alta = @hoy WHERE PK_id_jugador = @id AND fecha_baja IS NOT NULL",
+                conexion, transaccion))
+            {
+                comando.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
+                comando.Parameters.Add("@hoy", System.Data.SqlDbType.Date).Value = hoy.Date;
+                if (comando.ExecuteNonQuery() != 1)
+                {
+                    return false;
+                }
+            }
+
+            if (CalendarioCuotas.YaSeGeneraElMesEnCurso(hoy))
+            {
+                SqlCuotaMensual.Generar(conexion, transaccion, null, null, idJugador, hoy.Month, hoy.Year);
+            }
+            return true;
         }
 
         private static JugadorResumen LeerJugador(SqlDataReader reader) => new()
