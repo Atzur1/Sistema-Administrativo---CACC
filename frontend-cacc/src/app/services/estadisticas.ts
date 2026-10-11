@@ -34,11 +34,11 @@ export interface ResumenGeneralInfo {
 
 @Injectable({ providedIn: 'root' })
 export class EstadisticasService {
-  private apiUrl = `${API_BASE_URL}/estadisticas`;
+  private readonly API_URL = `${API_BASE_URL}/estadisticas`;
 
   constructor(private http: HttpClient) {}
 
   getResumenGeneral(): Observable<ResumenGeneralInfo> {
-    return this.http.get<ResumenGeneralInfo>(`${this.apiUrl}/resumen-general`);
+    return this.http.get<ResumenGeneralInfo>(`${this.API_URL}/resumen-general`);
   }
 }

@@ -49,17 +49,16 @@ namespace ApiGestion.Controllers
         public IActionResult EditarCandidato(int id, [FromBody] EditarCandidatoRequest request)
         {
             var resultado = _usuariosDao.EditarDatosCandidato(id, request.Nombre, request.Apellido, request.Dni);
-            if (resultado == EditarCandidatoResultado.Ok) return Ok(new { mensaje = "Datos corregidos." });
-
-            var mensaje = resultado switch
+            if (resultado == EditarCandidatoResultado.NoEncontrado)
             {
-                EditarCandidatoResultado.DniInvalido => MensajeDniInvalido,
-                EditarCandidatoResultado.DniEnUso => MensajeDniEnUso,
-                _ => "No se encontró a ese candidato sin acceso todavía."
-            };
-            return resultado == EditarCandidatoResultado.NoEncontrado
-                ? BadRequest(new { mensaje })
-                : UnprocessableEntity(new { mensaje });
+                return NotFound(new { mensaje = "No se encontró a ese candidato sin acceso todavía." });
+            }
+            if (resultado != EditarCandidatoResultado.Ok)
+            {
+                var mensaje = resultado == EditarCandidatoResultado.DniInvalido ? MensajeDniInvalido : MensajeDniEnUso;
+                return BadRequest(new { mensaje });
+            }
+            return Ok(new { mensaje = "Datos corregidos." });
         }
 
         private const string MensajeDniInvalido = "El DNI no es válido: tiene que tener entre 6 y 9 números.";
@@ -71,12 +70,15 @@ namespace ApiGestion.Controllers
         public async Task<IActionResult> Habilitar(int id, [FromBody] HabilitarUsuarioRequest request, CancellationToken cancellationToken)
         {
             var (resultado, email) = _usuariosDao.Habilitar(id, request.Email, request.RolPortal);
+            if (resultado == HabilitarResultado.NoEncontrado)
+            {
+                return NotFound(new { mensaje = "No se encontró a esa persona sin acceso todavía, o ya está habilitada." });
+            }
             if (resultado != HabilitarResultado.Ok || email is null)
             {
                 var mensaje = resultado switch
                 {
                     HabilitarResultado.EmailNoCoincide => "El mail no coincide con el que tiene cargado esa persona.",
-                    HabilitarResultado.NoEncontrado => "No se encontró a esa persona sin acceso todavía, o ya está habilitada.",
                     HabilitarResultado.DniInvalido => "Antes de habilitarla hay que cargar un DNI válido (con el lápiz): es el usuario con el que va a ingresar.",
                     HabilitarResultado.DniEnUso => MensajeDniEnUso,
                     _ => "No se pudo habilitar el acceso."

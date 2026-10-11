@@ -36,7 +36,7 @@ function accesoDenegadoDe(root: ActivatedRouteSnapshot): string | null {
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = `${API_BASE_URL}/auth/login`;
+  private readonly API_URL = `${API_BASE_URL}/auth/login`;
   private usuario: UsuarioLogueado | null = null;
 
   constructor(private http: HttpClient) {
@@ -44,7 +44,7 @@ export class AuthService {
   }
 
   login(usuario: string, contrasena: string): Observable<UsuarioLogueado> {
-    return this.http.post<UsuarioLogueado>(this.apiUrl, { usuario, contrasena }).pipe(
+    return this.http.post<UsuarioLogueado>(this.API_URL, { usuario, contrasena }).pipe(
       tap((respuesta) => {
         this.usuario = respuesta;
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(respuesta));

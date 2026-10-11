@@ -403,10 +403,13 @@ export class ActualizacionAranceles implements OnInit {
 
         this.cancelando = true;
         this.arancelesService.cancelar(row.id).subscribe({
-            next: (respuesta) => {
+            next: () => {
                 this.cancelando = false;
                 this.cancelTarget = null;
-                this.notifications.notify(respuesta.mensaje || 'Arancel cancelado.', 'success');
+                this.notifications.notify(
+                    'Arancel cancelado. Se quitaron sus cuotas pendientes sin pagos; se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.',
+                    'success',
+                );
                 this.cargarDatos();
                 this.cdr.detectChanges();
             },

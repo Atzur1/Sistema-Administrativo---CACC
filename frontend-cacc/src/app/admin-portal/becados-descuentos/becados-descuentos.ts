@@ -780,14 +780,15 @@ export class BecadosDescuentos implements OnInit {
 
   confirmCancelBenefit() {
     const player = this.dialogPlayer();
-    if (player === null || this.saving()) {
+    const target = this.currentDiscount();
+    if (player === null || target === null || this.saving()) {
       return;
     }
 
     this.saving.set(true);
     this.dialogError.set('');
 
-    this.discountService.cancelDiscount(player.id, this.currentDiscount()?.id).subscribe({
+    this.discountService.cancelDiscount(player.id, target.id).subscribe({
       next: () => {
         this.saving.set(false);
         this.closeDialog();

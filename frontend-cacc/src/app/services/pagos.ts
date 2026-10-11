@@ -215,43 +215,43 @@ export interface RegistrarPagoResponse {
 
 @Injectable({ providedIn: 'root' })
 export class PagosService {
-  private apiUrl = API_BASE_URL;
+  private readonly API_URL = API_BASE_URL;
 
   constructor(private http: HttpClient) {}
 
   getJugadores(): Observable<JugadorResumen[]> {
-    return this.http.get<JugadorResumen[]>(`${this.apiUrl}/jugadores`);
+    return this.http.get<JugadorResumen[]>(`${this.API_URL}/jugadores`);
   }
 
   // idCategoria: HU-020, acota el padrón a esa categoría/división del lado del servidor.
   getPendientes(idCategoria?: number | null): Observable<PendienteJugador[]> {
     const url =
       idCategoria != null
-        ? `${this.apiUrl}/pagos/pendientes?idCategoria=${idCategoria}`
-        : `${this.apiUrl}/pagos/pendientes`;
+        ? `${this.API_URL}/pagos/pendientes?idCategoria=${idCategoria}`
+        : `${this.API_URL}/pagos/pendientes`;
     return this.http.get<PendienteJugador[]>(url);
   }
 
   // HU-029: con onlyDebtors la propia API devuelve solo a los jugadores que deben algo
   getPlayerAccounts(onlyDebtors: boolean): Observable<PlayerAccountModel[]> {
     return this.http.get<PlayerAccountModel[]>(
-      `${this.apiUrl}/pagos/player-accounts?onlyDebtors=${onlyDebtors}`,
+      `${this.API_URL}/pagos/player-accounts?onlyDebtors=${onlyDebtors}`,
     );
   }
 
   // mes: si se omite, trae la deuda del año completo en vez de un mes puntual.
   getDeudaPorCategoria(anio: number, mes?: number | null): Observable<CategoriaDeuda[]> {
     const params = mes != null ? `anio=${anio}&mes=${mes}` : `anio=${anio}`;
-    return this.http.get<CategoriaDeuda[]>(`${this.apiUrl}/pagos/deuda-por-categoria?${params}`);
+    return this.http.get<CategoriaDeuda[]>(`${this.API_URL}/pagos/deuda-por-categoria?${params}`);
   }
 
   // HU-020: las 13 categorías del club, tengan o no jugadores morosos hoy.
   getCategorias(): Observable<Categoria[]> {
-    return this.http.get<Categoria[]>(`${this.apiUrl}/categorias`);
+    return this.http.get<Categoria[]>(`${this.API_URL}/categorias`);
   }
 
   getRecientes(top: number = 10): Observable<PagoReciente[]> {
-    return this.http.get<PagoReciente[]>(`${this.apiUrl}/pagos/recientes?top=${top}`);
+    return this.http.get<PagoReciente[]>(`${this.API_URL}/pagos/recientes?top=${top}`);
   }
 
   // Tabla "Pagos registrados" de Actividad y Movimientos: la API filtra y pagina (solo baja la página pedida).
@@ -259,35 +259,35 @@ export class PagosService {
     const params: Record<string, string | number> = { page: filtro.pagina, pageSize: filtro.tamanioPagina };
     if (filtro.busqueda?.trim()) params['busqueda'] = filtro.busqueda.trim();
     if (filtro.estado) params['estado'] = filtro.estado;
-    return this.http.get<PagosRegistradosPagina>(`${this.apiUrl}/pagos/registrados`, { params });
+    return this.http.get<PagosRegistradosPagina>(`${this.API_URL}/pagos/registrados`, { params });
   }
 
   getResumen(): Observable<ResumenPagos> {
-    return this.http.get<ResumenPagos>(`${this.apiUrl}/pagos/resumen`);
+    return this.http.get<ResumenPagos>(`${this.API_URL}/pagos/resumen`);
   }
 
   getResumenHoy(): Observable<ResumenPagosHoy> {
-    return this.http.get<ResumenPagosHoy>(`${this.apiUrl}/pagos/resumen-hoy`);
+    return this.http.get<ResumenPagosHoy>(`${this.API_URL}/pagos/resumen-hoy`);
   }
 
   getDeuda(idJugador: number): Observable<CuotaPendienteDetalle[]> {
-    return this.http.get<CuotaPendienteDetalle[]>(`${this.apiUrl}/pagos/deuda/${idJugador}`);
+    return this.http.get<CuotaPendienteDetalle[]>(`${this.API_URL}/pagos/deuda/${idJugador}`);
   }
 
   // HU-025: cuotas del jugador (pendientes, vencidas y pagadas) para la tabla de cobro.
   getCuotas(idJugador: number): Observable<CuotaJugador[]> {
-    return this.http.get<CuotaJugador[]>(`${this.apiUrl}/pagos/cuotas/${idJugador}`);
+    return this.http.get<CuotaJugador[]>(`${this.API_URL}/pagos/cuotas/${idJugador}`);
   }
 
   // HU-024: estado de cuenta del jugador (encabezado, total a abonar y cuotas con su estado).
   getEstadoDeCuenta(idJugador: number): Observable<PlayerStatement> {
-    return this.http.get<PlayerStatement>(`${this.apiUrl}/pagos/jugador/${idJugador}/estado-de-cuenta`);
+    return this.http.get<PlayerStatement>(`${this.API_URL}/pagos/jugador/${idJugador}/estado-de-cuenta`);
   }
 
   // HU-025: cobro atómico de las cuotas seleccionadas. El operador no viaja en el body: la API
   // lo toma del token de la sesión.
   cobrarCuotas(idJugador: number, idsPago: number[], metodoPago: string): Observable<CobrarCuotasResponse> {
-    return this.http.post<CobrarCuotasResponse>(`${this.apiUrl}/pagos/cobro`, {
+    return this.http.post<CobrarCuotasResponse>(`${this.API_URL}/pagos/cobro`, {
       idJugador,
       idsPago,
       metodoPago,
@@ -301,7 +301,7 @@ export class PagosService {
     monto: number,
     metodoPago: string,
   ): Observable<RegistrarPagoResponse> {
-    return this.http.post<RegistrarPagoResponse>(`${this.apiUrl}/pagos/registrar`, {
+    return this.http.post<RegistrarPagoResponse>(`${this.API_URL}/pagos/registrar`, {
       idJugador,
       periodo,
       anio,

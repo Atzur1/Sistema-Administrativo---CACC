@@ -22,19 +22,19 @@ export interface CuotaFaltante {
 // Aviso de cuotas faltantes del Resumen General (solo SuperAdmin). Nada se genera solo.
 @Injectable({ providedIn: 'root' })
 export class CuotasFaltantesService {
-  private apiUrl = `${API_BASE_URL}/cuotas-faltantes`;
+  private readonly API_URL = `${API_BASE_URL}/cuotas-faltantes`;
 
   constructor(private http: HttpClient) {}
 
   getMeses(): Observable<MesConCuotasFaltantes[]> {
-    return this.http.get<MesConCuotasFaltantes[]>(this.apiUrl);
+    return this.http.get<MesConCuotasFaltantes[]>(this.API_URL);
   }
 
   getDetalle(anio: number, mes: number): Observable<CuotaFaltante[]> {
-    return this.http.get<CuotaFaltante[]>(`${this.apiUrl}/${anio}/${mes}`);
+    return this.http.get<CuotaFaltante[]>(`${this.API_URL}/${anio}/${mes}`);
   }
 
   generar(anio: number, mes: number): Observable<{ mensaje: string; creadas: number }> {
-    return this.http.post<{ mensaje: string; creadas: number }>(`${this.apiUrl}/${anio}/${mes}/generar`, null);
+    return this.http.post<{ mensaje: string; creadas: number }>(`${this.API_URL}/${anio}/${mes}/generar`, null);
   }
 }

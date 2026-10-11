@@ -201,10 +201,16 @@ public class PlayersController : ControllerBase
 
     // Cancels a benefit before its time. The row is kept as history and only flipped to inactive: PAGOS may still
     // point at it, and the administration table has to keep showing what was granted.
+    // discountId is required: without it the API would have to guess which benefit to cancel.
     [Authorize(Roles = "1,2")]
     [HttpDelete("{playerId}/discount")]
-    public IActionResult CancelDiscount(long playerId, long discountId = 0)
+    public IActionResult CancelDiscount(long playerId, long discountId)
     {
+        if (discountId <= 0)
+        {
+            return BadRequest(new { mensaje = "Indicá una bonificación válida." });
+        }
+
         return this.Responder(_beneficiosService.Cancelar(playerId, discountId), cancelado =>
         {
             _logger.LogInformation("Benefit {DiscountId} cancelled for player {PlayerId}", cancelado, playerId);
@@ -214,8 +220,9 @@ public class PlayersController : ControllerBase
 
     // Anula un beneficio asignado por error: deja de contar para todas sus cuotas, como si nunca se hubiera
     // otorgado (lo ya cobrado se mantiene). Solo uno cancelado (ver BeneficiosService.Anular).
+    // POST y no DELETE: anular es una acción sobre el beneficio, la fila no se borra.
     [Authorize(Roles = "1,2")]
-    [HttpDelete("{playerId}/discount/void")]
+    [HttpPost("{playerId}/discount/{discountId}/void")]
     public IActionResult VoidDiscount(long playerId, long discountId)
     {
         return this.Responder(_beneficiosService.Anular(playerId, discountId), anulado =>

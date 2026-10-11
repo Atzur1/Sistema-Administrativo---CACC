@@ -33,22 +33,23 @@ export interface ProgramarArancelResponse {
 
 @Injectable({ providedIn: 'root' })
 export class ArancelesService {
-  private apiUrl = `${API_BASE_URL}/aranceles`;
+  private readonly API_URL = `${API_BASE_URL}/aranceles`;
 
   constructor(private http: HttpClient) {}
 
   getHistorial(): Observable<ArancelHistorialItem[]> {
-    return this.http.get<ArancelHistorialItem[]>(`${this.apiUrl}/historial`);
+    return this.http.get<ArancelHistorialItem[]>(`${this.API_URL}/historial`);
   }
 
   getResumen(): Observable<ArancelResumen> {
-    return this.http.get<ArancelResumen>(`${this.apiUrl}/resumen`);
+    return this.http.get<ArancelResumen>(`${this.API_URL}/resumen`);
   }
 
-  // Quita el arancel y las cuotas pendientes sin pagos emitidas con él. El backend lo rechaza (400, con
-  // el motivo en "mensaje") si alguna de esas cuotas ya tiene pagos o si el arancel es de un mes anterior.
-  cancelar(idArancel: number): Observable<ProgramarArancelResponse> {
-    return this.http.delete<ProgramarArancelResponse>(`${this.apiUrl}/${idArancel}`);
+  // Quita el arancel y las cuotas pendientes sin pagos emitidas con él. Responde 204 sin cuerpo. El backend
+  // lo rechaza (400, con el motivo en "mensaje") si alguna de esas cuotas ya tiene pagos o si el arancel es
+  // de un mes anterior.
+  cancelar(idArancel: number): Observable<void> {
+    return this.http.delete<void>(`${this.API_URL}/${idArancel}`);
   }
 
   // destino: un género ('Masculino' | 'Femenino') o una categoría ({ idCategoria }), uno solo.
@@ -57,7 +58,7 @@ export class ArancelesService {
     monto: number,
     vigenteDesde: string,
   ): Observable<ProgramarArancelResponse> {
-    return this.http.post<ProgramarArancelResponse>(`${this.apiUrl}/programar`, {
+    return this.http.post<ProgramarArancelResponse>(`${this.API_URL}/programar`, {
       ...destino,
       monto,
       vigenteDesde,

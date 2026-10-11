@@ -36,21 +36,21 @@ export interface HistorialPagosResultado {
 
 @Injectable({ providedIn: 'root' })
 export class JugadoresService {
-  private apiUrl = `${API_BASE_URL}/jugadores`;
+  private readonly API_URL = `${API_BASE_URL}/jugadores`;
 
   constructor(private http: HttpClient) {}
 
   getJugador(id: number): Observable<JugadorResumen> {
-    return this.http.get<JugadorResumen>(`${this.apiUrl}/${id}`);
+    return this.http.get<JugadorResumen>(`${this.API_URL}/${id}`);
   }
 
   // Baja del jugador (deja de generar cuotas desde el mes siguiente). Sin fecha, el servidor toma hoy.
   darDeBaja(id: number, fecha?: string): Observable<{ mensaje: string }> {
-    return this.http.post<{ mensaje: string }>(`${this.apiUrl}/${id}/baja`, fecha ? { fecha } : {});
+    return this.http.post<{ mensaje: string }>(`${this.API_URL}/${id}/baja`, fecha ? { fecha } : {});
   }
 
   reactivar(id: number): Observable<{ mensaje: string }> {
-    return this.http.post<{ mensaje: string }>(`${this.apiUrl}/${id}/reactivar`, null);
+    return this.http.post<{ mensaje: string }>(`${this.API_URL}/${id}/reactivar`, null);
   }
 
   // Anula un abono del historial cargado por error (solo SuperAdmin). Su monto vuelve al saldo pendiente.
@@ -59,6 +59,6 @@ export class JugadoresService {
   }
 
   getHistorialPagos(id: number, page: number, pageSize: number): Observable<HistorialPagosResultado> {
-    return this.http.get<HistorialPagosResultado>(`${this.apiUrl}/${id}/historial-pagos?page=${page}&pageSize=${pageSize}`);
+    return this.http.get<HistorialPagosResultado>(`${this.API_URL}/${id}/historial-pagos?page=${page}&pageSize=${pageSize}`);
   }
 }

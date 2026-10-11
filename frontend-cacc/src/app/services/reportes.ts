@@ -5,7 +5,7 @@ import { API_BASE_URL } from './api-url';
 
 @Injectable({ providedIn: 'root' })
 export class ReportesService {
-    private apiUrl = `${API_BASE_URL}/reportes`;
+    private readonly API_URL = `${API_BASE_URL}/reportes`;
 
     constructor(private http: HttpClient) {}
 
@@ -46,7 +46,7 @@ export class ReportesService {
         const query = Object.entries(params)
             .map(([key, value]) => `${key}=${value}`)
             .join('&');
-        const url = query ? `${this.apiUrl}/${path}?${query}` : `${this.apiUrl}/${path}`;
+        const url = query ? `${this.API_URL}/${path}?${query}` : `${this.API_URL}/${path}`;
         return this.http.get(url, { responseType: 'blob', observe: 'response' });
     }
 }

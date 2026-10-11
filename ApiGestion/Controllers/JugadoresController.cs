@@ -124,9 +124,14 @@ namespace ApiGestion.Controllers
         {
             try
             {
+                if (_jugadoresDao.ObtenerJugadorPorId(id) == null)
+                {
+                    return NotFound(new { exito = false, mensaje = "Jugador no encontrado." });
+                }
+
                 if (!_jugadoresDao.Reactivar(id))
                 {
-                    return BadRequest(new { exito = false, mensaje = "No se pudo reactivar: el jugador no existe o no estaba dado de baja." });
+                    return BadRequest(new { exito = false, mensaje = "No se pudo reactivar: el jugador no estaba dado de baja." });
                 }
 
                 return Ok(new { exito = true, mensaje = "Jugador reactivado." });
