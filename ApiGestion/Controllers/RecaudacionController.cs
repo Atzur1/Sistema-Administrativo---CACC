@@ -1,5 +1,6 @@
 using ApiGestion.Models;
 using DaoLibrary;
+using EntityLibrary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,10 +18,12 @@ namespace ApiGestion.Controllers
     public class RecaudacionController : ControllerBase
     {
         private readonly IRecaudacionDao _recaudacionDao;
+        private readonly ILogger<RecaudacionController> _logger;
 
-        public RecaudacionController(IRecaudacionDao recaudacionDao)
+        public RecaudacionController(IRecaudacionDao recaudacionDao, ILogger<RecaudacionController> logger)
         {
             _recaudacionDao = recaudacionDao;
+            _logger = logger;
         }
 
         // GET api/recaudacion?anio=2026&mes=10
@@ -42,26 +45,16 @@ namespace ApiGestion.Controllers
                 return BadRequest(new { exito = false, mensaje = "El año no es válido." });
             }
 
-            var periodo = _recaudacionDao.ObtenerDelPeriodo(anio, mes, idCategoria);
-
-            return Ok(new RecaudacionResponseDTO
+            try
             {
-                Total = periodo.Total,
-                Efectivo = periodo.Efectivo,
-                Transferencia = periodo.Transferencia,
-                Pagos = periodo.Pagos,
-                PagosEfectivo = periodo.PagosEfectivo,
-                PagosTransferencia = periodo.PagosTransferencia,
-                Detalle = periodo.Detalle.Select(p => new PagoDelPeriodoDTO
-                {
-                    IdPago = p.IdPago,
-                    Jugador = p.Jugador,
-                    Dni = p.Dni,
-                    Categoria = p.Categoria,
-                    Monto = p.Monto,
-                    MedioPago = p.MedioPago,
-                }).ToList(),
-            });
+                RecaudacionPeriodo periodo = _recaudacionDao.ObtenerDelPeriodo(anio, mes, idCategoria);
+                return Ok(RecaudacionResponseDTO.FromEntity(periodo));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error interno al obtener la recaudación de {Mes:00}/{Anio}", mes, anio);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener la recaudación." });
+            }
         }
     }
 }

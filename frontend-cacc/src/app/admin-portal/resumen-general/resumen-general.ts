@@ -2,16 +2,12 @@ import { ChangeDetectorRef, Component, DestroyRef, NgZone, OnInit, WritableSigna
 import { CommonModule } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
-import {
-  EstadisticasService,
-  PuntoCoberturaMensual,
-  PuntoRecaudacionMensual,
-  ResumenGeneralInfo,
-} from '../../services/estadisticas';
+import { EstadisticasService } from '../../services/estadisticas';
 import { AuthService } from '../../services/auth';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { animateCountUp } from '../../shared/count-up';
 import { AvisoCuotasFaltantes } from './aviso-cuotas-faltantes/aviso-cuotas-faltantes';
+import { GeneralSummaryModel, MonthlyCollectionPointModel, MonthlyCoveragePointModel } from '../../models/GeneralSummaryModel';
 
 Chart.register(...registerables);
 
@@ -151,7 +147,7 @@ export class ResumenGeneral implements OnInit {
     // El nombre de la cuenta, igual que la barra superior. El usuario del correo queda solo para una
     // cuenta sin nombre cargado: saludar a "alexandermonelli50" no reconoce a nadie.
     const usuario = this.authService.getUsuario();
-    const nombre = usuario?.nombre?.trim() || usuario?.email?.split('@')[0] || 'Admin';
+    const nombre = usuario?.firstName?.trim() || usuario?.email?.split('@')[0] || 'Admin';
     return `${momento}, ${nombre}`;
   }
 
@@ -169,7 +165,7 @@ export class ResumenGeneral implements OnInit {
     });
   }
 
-  private aplicarResumen(r: ResumenGeneralInfo) {
+  private aplicarResumen(r: GeneralSummaryModel) {
     const jugadoresConRestricciones = r.jugadoresConUnaImpaga + r.jugadoresConDosOMasImpagas;
     const porcentajeHabilitados = r.totalJugadores > 0 ? Math.round((r.jugadoresSinDeuda / r.totalJugadores) * 100) : 0;
     const cambioMensual =
@@ -261,7 +257,7 @@ export class ResumenGeneral implements OnInit {
     }));
   }
 
-  private mapMonthlyRevenue(puntos: PuntoRecaudacionMensual[]): MonthlyBar[] {
+  private mapMonthlyRevenue(puntos: MonthlyCollectionPointModel[]): MonthlyBar[] {
     const max = Math.max(1, ...puntos.map((p) => p.monto));
     return puntos.map((p, i) => ({
       month: p.mes,
@@ -271,7 +267,7 @@ export class ResumenGeneral implements OnInit {
     }));
   }
 
-  private mapTrend(puntos: PuntoCoberturaMensual[]): ChartConfiguration<'line'>['data'] {
+  private mapTrend(puntos: MonthlyCoveragePointModel[]): ChartConfiguration<'line'>['data'] {
     const n = puntos.length;
     const primero = puntos[0]?.porcentaje ?? 0;
     const ultimo = puntos[n - 1]?.porcentaje ?? 0;

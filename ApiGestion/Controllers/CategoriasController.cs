@@ -1,3 +1,4 @@
+using ApiGestion.Models;
 using DaoLibrary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,7 @@ namespace ApiGestion.Controllers
         [HttpGet]
         public IActionResult ObtenerTodas()
         {
-            return Ok(_categoriasDao.ObtenerTodas());
+            return Ok(_categoriasDao.ObtenerTodas().Select(CategoryResponseDTO.FromEntity).ToList());
         }
     }
 }

@@ -1,15 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import {
-  CambiarRolRequest,
-  EditarCandidatoRequest,
-  HabilitarUsuarioRequest,
-  RolPortal,
-  UsuarioCandidato,
-  UsuarioPortal,
-} from '../models/UsuarioPortalModel';
 import { API_BASE_URL } from './api-url';
+import { ChangeRoleRequestModel, EditCandidateRequestModel, EnableUserRequestModel, PortalUserCandidateModel, PortalUserModel, RolPortal } from '../models/PortalUserModel';
 
 @Injectable({
   providedIn: 'root',
@@ -19,16 +12,16 @@ export class UsuariosPortalService {
 
   constructor(private http: HttpClient) {}
 
-  getCandidatos(): Observable<UsuarioCandidato[]> {
-    return this.http.get<UsuarioCandidato[]>(`${this.API_URL}/candidatos`);
+  getCandidatos(): Observable<PortalUserCandidateModel[]> {
+    return this.http.get<PortalUserCandidateModel[]>(`${this.API_URL}/candidatos`);
   }
 
-  getHabilitados(): Observable<UsuarioPortal[]> {
-    return this.http.get<UsuarioPortal[]>(`${this.API_URL}/habilitados`);
+  getHabilitados(): Observable<PortalUserModel[]> {
+    return this.http.get<PortalUserModel[]>(`${this.API_URL}/habilitados`);
   }
 
-  getDeshabilitados(): Observable<UsuarioPortal[]> {
-    return this.http.get<UsuarioPortal[]>(`${this.API_URL}/deshabilitados`);
+  getDeshabilitados(): Observable<PortalUserModel[]> {
+    return this.http.get<PortalUserModel[]>(`${this.API_URL}/deshabilitados`);
   }
 
   // El SuperAdmin elige el rol con el que vuelve (la pantalla propone el que tenía).
@@ -36,15 +29,15 @@ export class UsuariosPortalService {
     return this.http.post<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/reactivar`, { rolPortal });
   }
 
-  editarCandidato(idUsuario: number, request: EditarCandidatoRequest): Observable<{ mensaje: string }> {
+  editarCandidato(idUsuario: number, request: EditCandidateRequestModel): Observable<{ mensaje: string }> {
     return this.http.put<{ mensaje: string }>(`${this.API_URL}/${idUsuario}`, request);
   }
 
-  habilitar(idUsuario: number, request: HabilitarUsuarioRequest): Observable<{ mensaje: string }> {
+  habilitar(idUsuario: number, request: EnableUserRequestModel): Observable<{ mensaje: string }> {
     return this.http.post<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/habilitar`, request);
   }
 
-  cambiarRol(idUsuario: number, request: CambiarRolRequest): Observable<{ mensaje: string }> {
+  cambiarRol(idUsuario: number, request: ChangeRoleRequestModel): Observable<{ mensaje: string }> {
     return this.http.put<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/rol`, request);
   }
 

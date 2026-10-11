@@ -25,7 +25,7 @@ describe('DtAdminChat', () => {
           provide: AuthService,
           useValue: {
             isSuperAdmin: () => auth.rol === 1,
-            getUsuario: () => ({ email: auth.email, rol: auth.rol }),
+            getUsuario: () => ({ email: auth.email, role: auth.rol }),
           },
         },
       ],

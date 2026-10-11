@@ -1,7 +1,7 @@
 namespace ApiGestion.Models
 {
     // Backea el form "Programar nuevo arancel" del frontend: género O categoría (uno solo) + monto + vigencia.
-    public class ProgramarArancelRequestDto
+    public class ScheduleTariffRequestDTO
     {
         public string? Genero { get; set; }
         public int? IdCategoria { get; set; }

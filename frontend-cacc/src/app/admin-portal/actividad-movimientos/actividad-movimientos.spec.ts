@@ -3,17 +3,18 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { ActividadMovimientos } from './actividad-movimientos';
-import { FiltroPagosRegistrados, PagoReciente, PagosService } from '../../services/pagos';
+import { PagosService } from '../../services/pagos';
+import { RecentPaymentModel, RegisteredPaymentsFilterModel } from '../../models/PaymentModel';
 
 // "Pagos registrados" se pagina en la API: la pantalla pide solo la página visible con los filtros aplicados.
-const PAGO: PagoReciente = {
+const PAGO: RecentPaymentModel = {
   idPago: 1, idJugador: 3, nombreCompleto: 'Pérez, Juan', categoria: 'Sub 17', periodo: 'Octubre 2026',
   metodoPago: 'Efectivo', monto: 92000, estado: 'Pagado', fechaPago: '2026-10-05', concepto: 'Cuota',
   fechaHoraRegistro: null,
-} as PagoReciente;
+} as RecentPaymentModel;
 
 async function create() {
-  const getPagosRegistrados = vi.fn((_: FiltroPagosRegistrados) =>
+  const getPagosRegistrados = vi.fn((_: RegisteredPaymentsFilterModel) =>
     of({ items: [PAGO], total: 25, totalSinFiltros: 40, pagina: 1, tamanioPagina: 10 }),
   );
   await TestBed.configureTestingModule({

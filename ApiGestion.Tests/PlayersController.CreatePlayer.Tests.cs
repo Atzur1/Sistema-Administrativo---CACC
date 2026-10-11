@@ -5,7 +5,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging.Abstractions;
 using ApiGestion.Controllers;
 using ApiGestion.Models;
@@ -320,18 +319,6 @@ public class PlayersControllerCreatePlayerTests
         public void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
         {
         }
-
-        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
-            => throw new NotSupportedException();
-
-        public Arancel? ObtenerPorId(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
-            => throw new NotSupportedException();
-        public DateTime? ObtenerVigenteDesdeEnMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int anio, int mes)
-            => throw new NotSupportedException();
-        public DateTime? ObtenerSiguienteVigenteDesde(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde)
-            => throw new NotSupportedException();
-        public void EliminarArancel(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
-            => throw new NotSupportedException();
     }
 
     private class FakeCategoriasDao : ICategoriasDao

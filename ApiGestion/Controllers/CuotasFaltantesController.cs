@@ -1,3 +1,4 @@
+using ApiGestion.Models;
 using DaoLibrary.Exceptions;
 using EntityLibrary;
 using Microsoft.AspNetCore.Authorization;
@@ -40,7 +41,7 @@ namespace ApiGestion.Controllers
         {
             try
             {
-                return Ok(_service.ObtenerFaltantesDelMes(anio, mes));
+                return Ok(_service.ObtenerFaltantesDelMes(anio, mes).Select(MissingFeeResponseDTO.FromEntity).ToList());
             }
             catch (CuotasFaltantesInvalidasException ex)
             {

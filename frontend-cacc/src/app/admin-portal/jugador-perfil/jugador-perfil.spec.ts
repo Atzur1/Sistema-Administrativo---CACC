@@ -3,19 +3,16 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angul
 import { from } from 'rxjs';
 
 import { JugadorPerfil } from './jugador-perfil';
-import {
-  HistorialPagosResultado,
-  JugadoresService,
-  PagoHistorialItem,
-} from '../../services/jugadores';
-import { JugadorResumen } from '../../services/pagos';
+import { JugadoresService } from '../../services/jugadores';
+import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
+import { PaymentHistoryItemModel, PaymentHistoryModel } from '../../models/PaymentHistoryModel';
 
 // HU-017: historial de pagos dentro del perfil del jugador. El servicio HTTP se reemplaza por un
 // doble de prueba, así que estas pruebas no necesitan la API ni la base. La consulta real (agrupado
 // por período y orden del pago más reciente al más antiguo) se cubre en la colección de Postman
 // "HU-017 - Historial de Pagos por Jugador".
 
-const JUGADOR: JugadorResumen = {
+const JUGADOR: PlayerSummaryModel = {
   idJugador: 3,
   nombre: 'MATIAS',
   apellido: 'PRUEBA',
@@ -28,8 +25,8 @@ const JUGADOR: JugadorResumen = {
 function periodo(
   nombre: string,
   monto: number,
-  extra: Partial<PagoHistorialItem> = {},
-): PagoHistorialItem {
+  extra: Partial<PaymentHistoryItemModel> = {},
+): PaymentHistoryItemModel {
   return {
     periodo: nombre,
     concepto: 'Cuota',
@@ -46,10 +43,10 @@ function periodo(
 }
 
 function historial(
-  items: PagoHistorialItem[],
+  items: PaymentHistoryItemModel[],
   total = items.length,
   page = 1,
-): HistorialPagosResultado {
+): PaymentHistoryModel {
   return { items, total, page, pageSize: 10 };
 }
 
@@ -70,8 +67,8 @@ const DIEZ_PERIODOS = MESES.map((mes) => periodo(`${mes} 2026`, 85000));
 
 interface Opciones {
   id?: string | null;
-  jugador?: JugadorResumen | 'error';
-  historialPorPagina?: (page: number) => HistorialPagosResultado | 'error';
+  jugador?: PlayerSummaryModel | 'error';
+  historialPorPagina?: (page: number) => PaymentHistoryModel | 'error';
 }
 
 // Las respuestas llegan de forma asíncrona (como en la app real): el componente llama a

@@ -6,12 +6,7 @@ import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
 import { HelpHint } from '../../shared/help-hint/help-hint';
-import {
-  ROL_PORTAL_LABELS,
-  RolPortal,
-  UsuarioCandidato,
-  UsuarioPortal,
-} from '../../models/UsuarioPortalModel';
+import { PortalUserCandidateModel, PortalUserModel, ROL_PORTAL_LABELS, RolPortal } from '../../models/PortalUserModel';
 
 const ROL_OPTIONS: CustomSelectOption[] = [
   { value: 1, label: 'SuperAdmin' },
@@ -31,9 +26,9 @@ export class Usuarios implements OnInit {
 
   loading = signal(true);
   loadError = signal<string | null>(null);
-  habilitados = signal<UsuarioPortal[]>([]);
-  candidatos = signal<UsuarioCandidato[]>([]);
-  deshabilitados = signal<UsuarioPortal[]>([]);
+  habilitados = signal<PortalUserModel[]>([]);
+  candidatos = signal<PortalUserCandidateModel[]>([]);
+  deshabilitados = signal<PortalUserModel[]>([]);
 
   // Fila de "Candidatos" cuyo desplegable de rol el SuperAdmin ya tocó, para
   // no perder la elección si el habilitar tarda un toque en confirmarse.
@@ -41,7 +36,7 @@ export class Usuarios implements OnInit {
 
   // "Editar candidato": corrige nombre/apellido/DNI (no el mail) antes de habilitar, por
   // si hubo un error de carga. El DNI es el usuario con el que va a ingresar.
-  dialogEditar = signal<UsuarioCandidato | null>(null);
+  dialogEditar = signal<PortalUserCandidateModel | null>(null);
   editarNombre = '';
   editarApellido = '';
   editarDni = '';
@@ -51,25 +46,25 @@ export class Usuarios implements OnInit {
   // "Habilitar": popup de confirmación (muestra el mail antes de disparar el
   // correo de activación, así un error de carga del otro equipo no termina
   // mandándole acceso de administrador a un desconocido).
-  dialogCandidato = signal<UsuarioCandidato | null>(null);
+  dialogCandidato = signal<PortalUserCandidateModel | null>(null);
   dialogSubmitting = signal(false);
   dialogError = signal<string | null>(null);
 
   // "Deshabilitar": confirmación aparte, es la acción más destructiva de la
   // pantalla (corta la sesión de la persona en la siguiente request).
-  confirmarBaja = signal<UsuarioPortal | null>(null);
+  confirmarBaja = signal<PortalUserModel | null>(null);
   bajaSubmitting = signal(false);
 
   // "Reactivar": le devuelve el acceso a alguien ya deshabilitado, con su misma contraseña y el rol que
   // elija el SuperAdmin (arranca en el que tenía) — sin token ni mail nuevo.
-  confirmarReactivar = signal<UsuarioPortal | null>(null);
+  confirmarReactivar = signal<PortalUserModel | null>(null);
   reactivarSubmitting = signal(false);
   rolReactivar = signal<RolPortal>(2);
 
   // "Resetear contraseña": el SuperAdmin le manda a la cuenta el enlace para elegir una nueva. Va siempre al
   // correo de la propia cuenta: el SuperAdmin no ve ni fija la contraseña de nadie. Si la cuenta todavía no
   // había creado su contraseña, la misma acción reenvía el correo de "Crea tu contraseña".
-  confirmarEnlace = signal<UsuarioPortal | null>(null);
+  confirmarEnlace = signal<PortalUserModel | null>(null);
   enlaceSubmitting = signal(false);
 
   constructor(
@@ -116,11 +111,11 @@ export class Usuarios implements OnInit {
     return this.habilitados().filter((u) => u.rolPortal === 2).length;
   }
 
-  rolParaCandidato(candidato: UsuarioCandidato): RolPortal {
+  rolParaCandidato(candidato: PortalUserCandidateModel): RolPortal {
     return this.rolElegido.get(candidato.idUsuario) ?? candidato.fkIdRolSugerido;
   }
 
-  onRolCandidatoChange(candidato: UsuarioCandidato, valor: string | number | null): void {
+  onRolCandidatoChange(candidato: PortalUserCandidateModel, valor: string | number | null): void {
     if (valor === 1 || valor === 2) {
       this.rolElegido.set(candidato.idUsuario, valor);
     }
@@ -128,7 +123,7 @@ export class Usuarios implements OnInit {
 
   // ===== Editar candidato (nombre / apellido / DNI; el mail se muestra pero no se modifica) =====
 
-  abrirEditar(candidato: UsuarioCandidato): void {
+  abrirEditar(candidato: PortalUserCandidateModel): void {
     this.editarNombre = candidato.nombre;
     this.editarApellido = candidato.apellido;
     this.editarDni = candidato.dni;
@@ -175,7 +170,7 @@ export class Usuarios implements OnInit {
 
   // ===== Habilitar =====
 
-  abrirHabilitar(candidato: UsuarioCandidato): void {
+  abrirHabilitar(candidato: PortalUserCandidateModel): void {
     this.dialogError.set(null);
     this.dialogCandidato.set(candidato);
   }
@@ -211,7 +206,7 @@ export class Usuarios implements OnInit {
 
   // ===== Cambiar rol de alguien ya habilitado =====
 
-  onRolHabilitadoChange(usuario: UsuarioPortal, valor: string | number | null): void {
+  onRolHabilitadoChange(usuario: PortalUserModel, valor: string | number | null): void {
     if (valor !== 1 && valor !== 2) return;
     if (valor === usuario.rolPortal) return;
 
@@ -232,7 +227,7 @@ export class Usuarios implements OnInit {
 
   // ===== Deshabilitar =====
 
-  pedirBaja(usuario: UsuarioPortal): void {
+  pedirBaja(usuario: PortalUserModel): void {
     this.confirmarBaja.set(usuario);
   }
 
@@ -267,11 +262,11 @@ export class Usuarios implements OnInit {
 
   // ===== Resetear contraseña =====
 
-  textoAccionEnlace(usuario: UsuarioPortal): string {
+  textoAccionEnlace(usuario: PortalUserModel): string {
     return usuario.activacionPendiente ? 'Reenviar activación' : 'Resetear contraseña';
   }
 
-  pedirEnlace(usuario: UsuarioPortal): void {
+  pedirEnlace(usuario: PortalUserModel): void {
     this.confirmarEnlace.set(usuario);
   }
 
@@ -305,7 +300,7 @@ export class Usuarios implements OnInit {
 
   // ===== Reactivar =====
 
-  pedirReactivar(usuario: UsuarioPortal): void {
+  pedirReactivar(usuario: PortalUserModel): void {
     this.rolReactivar.set(usuario.rolPortal);
     this.confirmarReactivar.set(usuario);
   }

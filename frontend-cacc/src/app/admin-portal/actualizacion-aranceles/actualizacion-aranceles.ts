@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
-import { ArancelesService, ArancelHistorialItem } from '../../services/aranceles';
+import { ArancelesService } from '../../services/aranceles';
 import { PagosService } from '../../services/pagos';
 import { EnrollmentFeeService } from '../../services/enrollment-fees';
 import {
@@ -16,6 +16,7 @@ import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/cus
 import { HelpHint } from '../../shared/help-hint/help-hint';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { NotificationService } from '../../shared/notifications/notification.service';
+import { TariffHistoryItemModel } from '../../models/TariffModel';
 
 Chart.register(...registerables);
 
@@ -403,10 +404,13 @@ export class ActualizacionAranceles implements OnInit {
 
         this.cancelando = true;
         this.arancelesService.cancelar(row.id).subscribe({
-            next: (respuesta) => {
+            next: () => {
                 this.cancelando = false;
                 this.cancelTarget = null;
-                this.notifications.notify(respuesta.mensaje || 'Arancel cancelado.', 'success');
+                this.notifications.notify(
+                    'Arancel cancelado. Se quitaron sus cuotas pendientes sin pagos; se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.',
+                    'success',
+                );
                 this.cargarDatos();
                 this.cdr.detectChanges();
             },
@@ -480,7 +484,7 @@ export class ActualizacionAranceles implements OnInit {
     }
 }
 
-function mapHistorialItem(item: ArancelHistorialItem): FeeRow {
+function mapHistorialItem(item: TariffHistoryItemModel): FeeRow {
     // Un arancel es por categoría (genero null) o por género
     const porCategoria = item.genero == null;
     return {

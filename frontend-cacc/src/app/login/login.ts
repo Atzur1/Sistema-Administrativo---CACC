@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
+import { LoginModel } from '../models/LoginModel';
 
 // Key used to persist the remembered username across visits, independent
 // from the 'usuario' key AuthService uses to store the active session
@@ -53,8 +54,8 @@ export class Login implements OnInit {
     private cdr: ChangeDetectorRef,
   ) {
     this.loginForm = this.fb.group({
-      usuario: ['', [Validators.required]],
-      contrasena: ['', [Validators.required]],
+      username: ['', [Validators.required]],
+      password: ['', [Validators.required]],
       recordarme: [false],
     });
 
@@ -71,7 +72,7 @@ export class Login implements OnInit {
     // Pre-fill the username and tick the checkbox if a previous login left one saved
     const rememberedUser = localStorage.getItem(REMEMBERED_USER_KEY);
     if (rememberedUser) {
-      this.loginForm.patchValue({ usuario: rememberedUser, recordarme: true });
+      this.loginForm.patchValue({ username: rememberedUser, recordarme: true });
     }
   }
 
@@ -91,12 +92,13 @@ export class Login implements OnInit {
       return;
     }
 
-    const { usuario, contrasena, recordarme } = this.loginForm.value;
+    const { username, password, recordarme } = this.loginForm.value;
+    const credentials: LoginModel = { username, password };
     this.isSubmitting = true;
     this.mostrarOverlay = true;
     this.mensajeError = '';
 
-    this.authService.login(usuario, contrasena).subscribe({
+    this.authService.login(credentials).subscribe({
       // ngZone.run() + cdr.detectChanges(): la respuesta de
       // authService.login() (HttpClient) no está disparando change
       // detection en este proyecto — confirmado inspeccionando el
@@ -110,7 +112,7 @@ export class Login implements OnInit {
           // Only persisted on a successful login, so a wrong attempt never
           // saves a username that turned out not to exist
           if (recordarme) {
-            localStorage.setItem(REMEMBERED_USER_KEY, usuario);
+            localStorage.setItem(REMEMBERED_USER_KEY, username);
           } else {
             localStorage.removeItem(REMEMBERED_USER_KEY);
           }

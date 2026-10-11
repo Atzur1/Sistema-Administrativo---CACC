@@ -1,7 +1,7 @@
 namespace ApiGestion.Models
 {
     // Backea el form "Registrar pago" del frontend (jugador + período + monto + método).
-    public class RegistrarPagoRequestDto
+    public class RegisterPaymentRequestDTO
     {
         public int IdJugador { get; set; }
         public string Periodo { get; set; } = string.Empty;

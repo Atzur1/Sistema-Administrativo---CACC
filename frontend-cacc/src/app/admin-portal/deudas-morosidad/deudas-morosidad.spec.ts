@@ -3,16 +3,18 @@ import { provideRouter } from '@angular/router';
 import { from } from 'rxjs';
 
 import { DeudasMorosidad } from './deudas-morosidad';
-import { Categoria, PagosService, ResumenPagos } from '../../services/pagos';
+import { PagosService } from '../../services/pagos';
 import { ReportesService } from '../../services/reportes';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { PlayerAccountModel } from '../../models/PlayerAccountModel';
+import { CategoryModel } from '../../models/CategoryModel';
+import { PaymentSummaryModel } from '../../models/PaymentModel';
 
 // HU-029: the debtors list in Deudas y Morosidad. The HTTP services are replaced by test
 // doubles, so these tests need neither the API nor the database. The real query (balance
 // greater than zero only) is covered by the Postman collection "HU-029 - Filtro de Jugadores Deudores".
 
-const EMPTY_SUMMARY: ResumenPagos = {
+const EMPTY_SUMMARY: PaymentSummaryModel = {
   recaudadoAnioActual: 0,
   pagosDelMes: 0,
   cantidadPendientes: 0,
@@ -46,8 +48,8 @@ const response = <T>(value: T) => from(Promise.resolve(value));
 
 async function create(
   debtors: PlayerAccountModel[],
-  categorias: Categoria[] = [],
-  resumen: ResumenPagos = EMPTY_SUMMARY,
+  categorias: CategoryModel[] = [],
+  resumen: PaymentSummaryModel = EMPTY_SUMMARY,
 ): Promise<ComponentFixture<DeudasMorosidad>> {
   const pagosService = {
     getPendientes: vi.fn(() => response([])),
@@ -230,7 +232,7 @@ describe('DeudasMorosidad - filtro por categoría (HU-020)', () => {
   });
 
   it('lists a category with zero debtors today in the selector', async () => {
-    const categorias: Categoria[] = [
+    const categorias: CategoryModel[] = [
       { idCategoria: 1, nombre: 'AFA 20067' },
       { idCategoria: 2, nombre: 'AFA 20112' },
     ];
@@ -241,11 +243,11 @@ describe('DeudasMorosidad - filtro por categoría (HU-020)', () => {
   });
 
   it('recalculates the banner to the selected category subtotal, not the club-wide total', async () => {
-    const categorias: Categoria[] = [
+    const categorias: CategoryModel[] = [
       { idCategoria: 1, nombre: 'AFA 20067' },
       { idCategoria: 2, nombre: 'AFA 20112' },
     ];
-    const resumenGlobal: ResumenPagos = {
+    const resumenGlobal: PaymentSummaryModel = {
       recaudadoAnioActual: 0,
       pagosDelMes: 0,
       cantidadPendientes: 2,

@@ -28,8 +28,10 @@ describe('AuthService', () => {
 
   it('restores a valid session after the service is recreated', () => {
     const token = `header.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 600 }))}.signature`;
-    service.login('admin@cacc.com', 'test-password').subscribe();
-    http.expectOne('/api/auth/login').flush({ email: 'admin@cacc.com', rol: 1, token });
+    service.login({ username: 'admin@cacc.com', password: 'test-password' }).subscribe();
+    const request = http.expectOne('/api/auth/login');
+    expect(request.request.body).toEqual({ username: 'admin@cacc.com', password: 'test-password' });
+    request.flush({ email: 'admin@cacc.com', role: 1, token });
 
     const fresh = new AuthService(TestBed.inject(HttpClient));
     expect(fresh.isAuthenticated()).toBe(true);

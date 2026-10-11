@@ -3,7 +3,6 @@ namespace ApiGestion.Tests;
 using DaoLibrary;
 using DaoLibrary.Exceptions;
 using EntityLibrary;
-using Microsoft.Data.SqlClient;
 using ServiceLibrary;
 
 // Registro manual de pagos ("Registrar pago") y anulación de pagos cargados por error. Un DAO en
@@ -28,7 +27,7 @@ public class PagosServiceRegistrarYAnularTests
     private static (PagosService service, MemoryPagosDao dao) Crear()
     {
         var dao = new MemoryPagosDao();
-        return (new PagosService(dao, new InlineTransactionRunner()), dao);
+        return (new PagosService(dao, new InlineTransactionRunner(dao)), dao);
     }
 
     // ---- Registrar pago ----
@@ -172,12 +171,12 @@ public class PagosServiceRegistrarYAnularTests
 
     // ---- Dobles en memoria ----
 
-    private sealed class InlineTransactionRunner : ISqlTransactionRunner
+    private sealed class InlineTransactionRunner(IPaymentTransaction transaccion) : IPaymentTransactionDao
     {
-        public T EjecutarEnTransaccion<T>(Func<SqlConnection, SqlTransaction, T> operacion) => operacion(null!, null!);
+        public T ExecuteInTransaction<T>(Func<IPaymentTransaction, T> operacion) => operacion(transaccion);
     }
 
-    private sealed class MemoryPagosDao : IPagosDao
+    private sealed class MemoryPagosDao : IPagosDao, IPaymentTransaction
     {
         public List<Pago> Filas { get; } = new();
         public List<(int IdPago, string Motivo)> Anulaciones { get; } = new();
@@ -188,24 +187,24 @@ public class PagosServiceRegistrarYAnularTests
         private static bool MismoMes(Pago p, int mes, int anio) =>
             p.FechaVencimiento is { } f && f.Month == mes && f.Year == anio && (p.Concepto ?? "Cuota") == "Cuota";
 
-        public bool ExisteJugador(SqlConnection c, SqlTransaction t, int idJugador) => JugadorExiste;
+        public bool ExisteJugador(int idJugador) => JugadorExiste;
 
-        public Pago? ObtenerPagoPendienteDeJugadorEnPeriodo(SqlConnection c, SqlTransaction t, int idJugador, int mes, int anio) =>
+        public Pago? ObtenerPagoPendienteDeJugadorEnPeriodo(int idJugador, int mes, int anio) =>
             Filas.FirstOrDefault(p => p.IdJugador == idJugador && !p.Estado && MismoMes(p, mes, anio));
 
-        public Pago? ObtenerPagoAbonadoDeJugadorEnPeriodo(SqlConnection c, SqlTransaction t, int idJugador, int mes, int anio) =>
+        public Pago? ObtenerPagoAbonadoDeJugadorEnPeriodo(int idJugador, int mes, int anio) =>
             Filas.FirstOrDefault(p => p.IdJugador == idJugador && p.Estado && MismoMes(p, mes, anio));
 
-        public bool EmitirCuotaDeJugador(SqlConnection c, SqlTransaction t, int idJugador, int mes, int anio)
+        public bool EmitirCuotaDeJugador(int idJugador, int mes, int anio)
         {
             if (!JugadorExiste || !HayArancel || Filas.Any(p => p.IdJugador == idJugador && MismoMes(p, mes, anio))) return false;
             Filas.Add(new Pago { IdPago = ++_ultimoId, IdJugador = idJugador, MontoBase = Arancel, MontoFinal = Arancel, FechaVencimiento = new DateTime(anio, mes, 1), Concepto = "Cuota" });
             return true;
         }
 
-        public DescuentoAplicable? ObtenerDescuentoAplicableEnPeriodo(SqlConnection c, SqlTransaction t, int idJugador, DateTime fechaVencimiento) => null;
+        public DescuentoAplicable? ObtenerDescuentoAplicableEnPeriodo(int idJugador, DateTime fechaVencimiento) => null;
 
-        public int InsertarPago(SqlConnection c, SqlTransaction t, Pago pago)
+        public int InsertarPago(Pago pago)
         {
             pago.IdPago = ++_ultimoId;
             pago.Concepto ??= "Cuota";
@@ -213,26 +212,26 @@ public class PagosServiceRegistrarYAnularTests
             return pago.IdPago;
         }
 
-        public void ActualizarSaldoPendiente(SqlConnection c, SqlTransaction t, int idPago, decimal nuevoMonto) =>
+        public void ActualizarSaldoPendiente(int idPago, decimal nuevoMonto) =>
             Filas.Single(p => p.IdPago == idPago && !p.Estado).MontoFinal = nuevoMonto;
 
-        public void EliminarPago(SqlConnection c, SqlTransaction t, int idPago) => Filas.RemoveAll(p => p.IdPago == idPago && !p.Estado);
+        public void EliminarPago(int idPago) => Filas.RemoveAll(p => p.IdPago == idPago && !p.Estado);
 
-        public Pago? ObtenerPagoParaAnular(SqlConnection c, SqlTransaction t, int idPago) => Filas.FirstOrDefault(p => p.IdPago == idPago);
+        public Pago? ObtenerPagoParaAnular(int idPago) => Filas.FirstOrDefault(p => p.IdPago == idPago);
 
-        public IReadOnlyList<Pago> ObtenerFilasDeLaMismaDeuda(SqlConnection c, SqlTransaction t, Pago pago) =>
+        public IReadOnlyList<Pago> ObtenerFilasDeLaMismaDeuda(Pago pago) =>
             Filas.Where(p => p.IdJugador == pago.IdJugador && MismoMes(p, pago.FechaVencimiento!.Value.Month, pago.FechaVencimiento.Value.Year)).ToList();
 
-        public void RegistrarAnulacionYEliminarAbono(SqlConnection c, SqlTransaction t, Pago abono, string motivo, int idUsuarioAnulacion)
+        public void RegistrarAnulacionYEliminarAbono(Pago abono, string motivo, int idUsuarioAnulacion)
         {
             Anulaciones.Add((abono.IdPago, motivo));
             Filas.RemoveAll(p => p.IdPago == abono.IdPago && p.Estado);
         }
 
         // No intervienen en estos flujos.
-        public IReadOnlyList<Pago> ObtenerPagosPorId(SqlConnection c, SqlTransaction t, IEnumerable<int> idsPago) => throw new NotSupportedException();
-        public DateTime MarcarPagosComoAbonados(SqlConnection c, SqlTransaction t, int idJugador, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago, int idUsuarioRegistro) => throw new NotSupportedException();
-        public void ActualizarMontoCobroConDescuento(SqlConnection c, SqlTransaction t, int idPago, int idDescuento, decimal montoFinal) => throw new NotSupportedException();
+        public IReadOnlyList<Pago> ObtenerPagosPorId(IEnumerable<int> idsPago) => throw new NotSupportedException();
+        public DateTime MarcarPagosComoAbonados(int idJugador, IEnumerable<int> idsPago, DateTime fechaPago, string metodoPago, int idUsuarioRegistro) => throw new NotSupportedException();
+        public void ActualizarMontoCobroConDescuento(int idPago, int idDescuento, decimal montoFinal) => throw new NotSupportedException();
         public IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null) => throw new NotSupportedException();
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors) => throw new NotSupportedException();
         public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null) => throw new NotSupportedException();
@@ -245,6 +244,5 @@ public class PagosServiceRegistrarYAnularTests
         public IReadOnlyList<CuotaMovimiento> ObtenerMovimientosCuotas(int idJugador) => throw new NotSupportedException();
         public PlayerStatementAccount? GetPlayerStatementAccount(int playerId) => throw new NotSupportedException();
         public void GenerarCuotasPendientesDelMes(string? genero, int? idCategoria, int mes, int anio) => throw new NotSupportedException();
-        public void GenerarCuotasPendientesDelMes(SqlConnection c, SqlTransaction t, string? genero, int? idCategoria, int mes, int anio) => throw new NotSupportedException();
     }
 }

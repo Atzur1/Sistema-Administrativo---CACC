@@ -5,7 +5,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
-import { RecaudacionService, RecaudacionPeriodo, PagoDelPeriodo } from '../../services/recaudacion';
+import { RecaudacionService } from '../../services/recaudacion';
+import { CollectionPeriodModel, PeriodPaymentModel } from '../../models/CollectionPeriodModel';
 import { PagosService } from '../../services/pagos';
 import { triggerBlobDownload } from '../../shared/download-file';
 import { animateCountUp } from '../../shared/count-up';
@@ -81,12 +82,12 @@ export class RecaudacionMensual {
     categoriaBorrador: string = '';
     private categoriaAplicada: string = '';
 
-    datos: RecaudacionPeriodo | null = null;
+    datos: CollectionPeriodModel | null = null;
     cargando = false;
     huboError = false;
 
     // Tabla
-    filas: PagoDelPeriodo[] = [];
+    filas: PeriodPaymentModel[] = [];
 
     // Desglose por medio de pago
     desglose: DesgloseItem[] = [];

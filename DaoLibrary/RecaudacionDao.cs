@@ -3,11 +3,6 @@ using EntityLibrary;
 
 namespace DaoLibrary;
 
-public interface IRecaudacionDao
-{
-    RecaudacionPeriodo ObtenerDelPeriodo(int anio, int mes, int? idCategoria);
-}
-
 // HU-018: recaudación de un mes, agrupada por medio de pago.
 //
 // Qué cuenta como cobro y con qué criterio, alineado con el resto del sistema:

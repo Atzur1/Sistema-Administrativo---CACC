@@ -73,16 +73,18 @@ builder.Services.AddScoped<DaoLibrary.AccountAccessDao>(provider =>
     new DaoLibrary.AccountAccessDao(conexionSql));
 builder.Services.AddScoped<DaoLibrary.IUsuariosPortalDao>(provider =>
     new DaoLibrary.UsuariosPortalDao(conexionSql));
+// Solo lo usa el arranque: avisa si el usuario de la base puede borrar la auditoría.
+builder.Services.AddSingleton(new DaoLibrary.DatabasePermissionsDao(conexionSql));
 builder.Services.AddSingleton<ApiGestion.Services.EmailLinkSender>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<DaoLibrary.IIntentosLoginStore>(_ => new DaoLibrary.IntentosLoginDao(conexionSql));
 builder.Services.AddSingleton<ApiGestion.Services.LoginThrottle>();
 
-// Cuotas y pagos: DAO + runner transaccional + servicio de negocio
+// Cuotas y pagos: DAO + transacción de pagos (también DAO) + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IPagosDao>(provider =>
     new DaoLibrary.PagosDao(conexionSql));
-builder.Services.AddScoped<DaoLibrary.ISqlTransactionRunner>(provider =>
-    new DaoLibrary.SqlTransactionRunner(conexionSql));
+builder.Services.AddScoped<DaoLibrary.IPaymentTransactionDao>(provider =>
+    new DaoLibrary.PaymentTransactionDao(conexionSql));
 builder.Services.AddScoped<ServiceLibrary.IPagosService, ServiceLibrary.PagosService>();
 
 builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
@@ -99,16 +101,14 @@ builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.IRecaudacionDao>(provider =>
     new DaoLibrary.RecaudacionDao(conexionSql));
 
-// Aranceles: DAO + servicio de negocio
+// Aranceles: DAO + transacción de aranceles (también DAO) + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
     new DaoLibrary.ArancelesDao(conexionSql));
-// Cuotas por arancel (programar / cancelar un arancel): las operaciones de PAGOS que necesita ArancelesService.
-builder.Services.AddScoped<DaoLibrary.ICuotasPorArancelDao>(provider =>
-    new DaoLibrary.PagosDao(conexionSql));
+builder.Services.AddScoped<DaoLibrary.ITariffTransactionDao>(provider =>
+    new DaoLibrary.TariffTransactionDao(conexionSql));
 builder.Services.AddScoped<ServiceLibrary.IArancelesService>(provider => new ServiceLibrary.ArancelesService(
     provider.GetRequiredService<DaoLibrary.IArancelesDao>(),
-    provider.GetRequiredService<DaoLibrary.ICuotasPorArancelDao>(),
-    provider.GetRequiredService<DaoLibrary.ISqlTransactionRunner>(),
+    provider.GetRequiredService<DaoLibrary.ITariffTransactionDao>(),
     provider.GetRequiredService<DaoLibrary.ICategoriasDao>()));
 
 // Aviso de meses que quedaron con cuotas sin generar (Resumen General, solo SuperAdmin).
@@ -221,12 +221,8 @@ if (!app.Environment.IsDevelopment())
 {
     try
     {
-        using var conexion = DaoLibrary.SqlConnectionFactory.Open(conexionSql);
-        using var comando = new Microsoft.Data.SqlClient.SqlCommand(
-            "SELECT IS_SRVROLEMEMBER('sysadmin'), IS_ROLEMEMBER('db_owner'), HAS_PERMS_BY_NAME('dbo.AUDITORIA_CAMBIOS', 'OBJECT', 'DELETE')",
-            conexion);
-        using var lector = comando.ExecuteReader();
-        if (lector.Read() && (lector.GetValue(0) is 1 || lector.GetValue(1) is 1 || lector.GetValue(2) is 1))
+        var databasePermissionsDao = app.Services.GetRequiredService<DaoLibrary.DatabasePermissionsDao>();
+        if (databasePermissionsDao.CanDeleteAudit())
             app.Logger.LogWarning(
                 "La API está conectada a SQL Server con un usuario que puede borrar la auditoría (sysadmin, db_owner o permiso DELETE). " +
                 "Usá el usuario cacc_api: ver database/produccion/README.md.");

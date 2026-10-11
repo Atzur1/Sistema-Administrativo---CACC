@@ -39,12 +39,12 @@ public sealed class AuditoriaController(IAuditDao auditDao) : ControllerBase
         {
             var (items, total) = auditDao.Search(
                 desdeUtc, hastaUtc, idUsuario, emailUsuario, entidad, accionNormalizada, pagina, tamanoPagina);
-            return Ok(new AuditSearchResponseDto
+            return Ok(new AuditSearchResponseDTO
             {
                 Page = pagina,
                 PageSize = tamanoPagina,
                 Total = total,
-                Items = items
+                Items = items.Select(AuditEventDTO.FromEntity).ToList()
             });
         }
         catch (Exception)

@@ -1,12 +1,9 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-  CuotaFaltante,
-  CuotasFaltantesService,
-  MesConCuotasFaltantes,
-} from '../../../services/cuotas-faltantes';
+import { CuotasFaltantesService } from '../../../services/cuotas-faltantes';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { estaVencida, vencimientoDelPeriodo } from '../../../shared/calendario-cuotas';
+import { MissingFeeModel, MonthWithMissingFeesModel } from '../../../models/MissingFeeModel';
 
 const NOMBRES_MES = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -29,11 +26,11 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   styleUrl: './aviso-cuotas-faltantes.css',
 })
 export class AvisoCuotasFaltantes implements OnInit {
-  meses: MesConCuotasFaltantes[] = [];
+  meses: MonthWithMissingFeesModel[] = [];
 
   // Mes abierto en el popup de confirmación, con su detalle.
-  mesElegido: MesConCuotasFaltantes | null = null;
-  detalle: CuotaFaltante[] = [];
+  mesElegido: MonthWithMissingFeesModel | null = null;
+  detalle: MissingFeeModel[] = [];
   cargandoDetalle = false;
   generando = false;
   errorDialogo: string | null = null;
@@ -48,7 +45,7 @@ export class AvisoCuotasFaltantes implements OnInit {
     this.cargarMeses();
   }
 
-  nombreMes(mes: MesConCuotasFaltantes): string {
+  nombreMes(mes: MonthWithMissingFeesModel): string {
     const [anio, numero] = this.partes(mes);
     return `${NOMBRES_MES[numero - 1]} ${anio}`;
   }
@@ -59,7 +56,7 @@ export class AvisoCuotasFaltantes implements OnInit {
 
   // Día en que vencen las cuotas de ese mes (el 10 del mes siguiente) y si ya pasó: en ese caso quedan
   // vencidas en el momento de generarlas y cuentan para el estado deportivo.
-  vencimiento(mes: MesConCuotasFaltantes): string {
+  vencimiento(mes: MonthWithMissingFeesModel): string {
     const [anio, numero] = this.partes(mes);
     return vencimientoDelPeriodo(anio, numero - 1).toLocaleDateString('es-AR', {
       day: '2-digit',
@@ -68,12 +65,12 @@ export class AvisoCuotasFaltantes implements OnInit {
     });
   }
 
-  quedanVencidas(mes: MesConCuotasFaltantes): boolean {
+  quedanVencidas(mes: MonthWithMissingFeesModel): boolean {
     const [anio, numero] = this.partes(mes);
     return estaVencida(vencimientoDelPeriodo(anio, numero - 1));
   }
 
-  abrir(mes: MesConCuotasFaltantes): void {
+  abrir(mes: MonthWithMissingFeesModel): void {
     const [anio, numero] = this.partes(mes);
     this.mesElegido = mes;
     this.detalle = [];
@@ -135,7 +132,7 @@ export class AvisoCuotasFaltantes implements OnInit {
     });
   }
 
-  private partes(mes: MesConCuotasFaltantes): [number, number] {
+  private partes(mes: MonthWithMissingFeesModel): [number, number] {
     const [anio, numero] = mes.periodo.slice(0, 7).split('-').map(Number);
     return [anio, numero];
   }

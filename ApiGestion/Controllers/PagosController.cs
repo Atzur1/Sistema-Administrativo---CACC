@@ -26,7 +26,7 @@ namespace ApiGestion.Controllers
         [HttpGet("resumen")]
         public IActionResult ObtenerResumen()
         {
-            return Ok(_pagosService.ObtenerResumen());
+            return Ok(PaymentSummaryResponseDTO.FromEntity(_pagosService.ObtenerResumen()));
         }
 
         // GET api/pagos/pendientes -> panel "Pendientes de cobro"
@@ -34,7 +34,7 @@ namespace ApiGestion.Controllers
         [HttpGet("pendientes")]
         public IActionResult ObtenerPendientes([FromQuery] int? idCategoria = null)
         {
-            return Ok(_pagosService.ObtenerPendientes(idCategoria));
+            return Ok(_pagosService.ObtenerPendientes(idCategoria).Select(PendingDebtorResponseDTO.FromEntity).ToList());
         }
 
         // GET api/pagos/player-accounts?onlyDebtors=true -> pantalla "Ver todos los deudores" (HU-029).
@@ -64,21 +64,25 @@ namespace ApiGestion.Controllers
         [HttpGet("deuda-por-categoria")]
         public IActionResult ObtenerDeudaPorCategoria([FromQuery] int? anio = null, [FromQuery] int? mes = null)
         {
-            return Ok(_pagosService.ObtenerDeudaPorCategoria(anio ?? RelojNegocio.Ahora.Year, mes));
+            return Ok(_pagosService.ObtenerDeudaPorCategoria(anio ?? RelojNegocio.Ahora.Year, mes)
+                .Select(CategoryDebtResponseDTO.FromEntity)
+                .ToList());
         }
 
         // GET api/pagos/recientes?top=10 -> panel "Últimos pagos"
         [HttpGet("recientes")]
         public IActionResult ObtenerUltimosPagos([FromQuery] int top = 10)
         {
-            return Ok(_pagosService.ObtenerUltimosPagos(Math.Clamp(top, 1, 1000)));
+            return Ok(_pagosService.ObtenerUltimosPagos(Math.Clamp(top, 1, 1000))
+                .Select(RecentPaymentResponseDTO.FromEntity)
+                .ToList());
         }
 
         // GET api/pagos/resumen-hoy -> banner de "Actividad y Movimientos" (pagos y recaudado de HOY)
         [HttpGet("resumen-hoy")]
         public IActionResult ObtenerResumenHoy()
         {
-            return Ok(_pagosService.ObtenerResumenHoy());
+            return Ok(TodayPaymentSummaryResponseDTO.FromEntity(_pagosService.ObtenerResumenHoy()));
         }
 
         // GET api/pagos/registrados?page=1&pageSize=10&busqueda=perez&estado=Parcial -> tabla "Pagos registrados"
@@ -98,20 +102,21 @@ namespace ApiGestion.Controllers
                 return BadRequest(new { exito = false, mensaje = "La búsqueda no puede superar los 100 caracteres." });
             }
 
-            return Ok(_pagosService.ObtenerPagosRegistrados(new FiltroPagosRegistrados
+            PagosRegistradosPagina pagina = _pagosService.ObtenerPagosRegistrados(new FiltroPagosRegistrados
             {
                 Pagina = Math.Max(1, page),
                 TamanioPagina = Math.Clamp(pageSize, 1, 100),
                 Busqueda = busqueda,
                 Estado = estado
-            }));
+            });
+            return Ok(RegisteredPaymentsPageResponseDTO.FromEntity(pagina));
         }
 
         // GET api/pagos/deuda/5 -> detalle de deuda de un jugador (cuotas pendientes + abonos parciales)
         [HttpGet("deuda/{idJugador}")]
         public IActionResult ObtenerDeudaDetalle(int idJugador)
         {
-            return Ok(_pagosService.ObtenerDeudaDetalle(idJugador));
+            return Ok(_pagosService.ObtenerDeudaDetalle(idJugador).Select(PendingFeeDetailResponseDTO.FromEntity).ToList());
         }
 
         // POST api/pagos/registrar -> form "Registrar pago" (jugador + período + año + monto + método)
@@ -119,7 +124,7 @@ namespace ApiGestion.Controllers
         // 200:   { exito, idPago, idJugador, periodo, monto, metodoPago, fechaPago, mensaje }
         // 400:   jugador/período/año/monto/método inválido, o ya existe un pago de ese jugador en ese período
         [HttpPost("registrar")]
-        public IActionResult RegistrarPago([FromBody] RegistrarPagoRequestDto request)
+        public IActionResult RegistrarPago([FromBody] RegisterPaymentRequestDTO request)
         {
             if (IdUsuarioAutenticado() == null)
             {
@@ -166,7 +171,7 @@ namespace ApiGestion.Controllers
         [HttpGet("cuotas/{idJugador}")]
         public IActionResult ObtenerCuotasJugador(int idJugador)
         {
-            return Ok(_pagosService.ObtenerCuotasJugador(idJugador));
+            return Ok(_pagosService.ObtenerCuotasJugador(idJugador).Select(PlayerFeeResponseDTO.FromEntity).ToList());
         }
 
         // GET api/pagos/jugador/5/estado-de-cuenta -> HU-024: estado de cuenta del jugador con sus
@@ -183,13 +188,13 @@ namespace ApiGestion.Controllers
                     return NotFound(new { exito = false, mensaje = "Jugador no encontrado." });
                 }
 
-                return Ok(new PlayerStatementDto
+                return Ok(new PlayerStatementResponseDTO
                 {
                     PlayerId = estado.PlayerId,
                     PlayerFullName = $"{estado.LastName}, {estado.FirstName}",
                     Dni = estado.Dni,
                     TotalDebtAmount = estado.TotalDebtAmount,
-                    Fees = estado.Fees.Select(cuota => new FeeItemDto
+                    Fees = estado.Fees.Select(cuota => new FeeItemDTO
                     {
                         Id = cuota.IdPago,
                         PeriodName = cuota.Periodo,
@@ -221,7 +226,7 @@ namespace ApiGestion.Controllers
         // 400:   jugador inexistente, cuota inexistente/ajena/ya abonada/repetida, o método inválido
         // 401:   el token no identifica al operador
         [HttpPost("cobro")]
-        public IActionResult CobrarPagosPendientes([FromBody] RegistrarCobroRequestDto request)
+        public IActionResult CobrarPagosPendientes([FromBody] CollectFeesRequestDTO request)
         {
             int? idUsuario = IdUsuarioAutenticado();
             if (idUsuario == null)
@@ -247,7 +252,7 @@ namespace ApiGestion.Controllers
                     exito = true,
                     idJugador = resultado.IdJugador,
                     pagosAbonados = resultado.PagosAbonados,
-                    cuotas = resultado.Cuotas,
+                    cuotas = resultado.Cuotas.Select(CollectedFeeDTO.FromEntity).ToList(),
                     montoTotal = resultado.MontoTotal,
                     metodoPago = resultado.MetodoPago,
                     fechaPago = resultado.FechaPago,
@@ -273,7 +278,7 @@ namespace ApiGestion.Controllers
         // 400:   pago inexistente, ya anulado, es una deuda (no un pago) o motivo inválido
         [Authorize(Roles = "1")]
         [HttpPost("{idPago:int}/anular")]
-        public IActionResult AnularPago(int idPago, [FromBody] AnularPagoRequestDto request)
+        public IActionResult AnularPago(int idPago, [FromBody] VoidPaymentRequestDTO request)
         {
             int? idUsuario = IdUsuarioAutenticado();
             if (idUsuario == null)
