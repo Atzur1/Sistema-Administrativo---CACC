@@ -97,6 +97,10 @@ builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
     new DaoLibrary.CategoriasDao(conexionSql));
 
+// Recaudación mensual por medio de pago (HU-018)
+builder.Services.AddScoped<DaoLibrary.IRecaudacionDao>(provider =>
+    new DaoLibrary.RecaudacionDao(conexionSql));
+
 // Aranceles: DAO + transacción de aranceles (también DAO) + servicio de negocio
 builder.Services.AddScoped<DaoLibrary.IArancelesDao>(provider =>
     new DaoLibrary.ArancelesDao(conexionSql));

@@ -24,17 +24,20 @@ namespace ApiGestion.Controllers
         private readonly IArancelesService _arancelesService;
         private readonly DiscountDao _discountDao;
         private readonly ICategoriasDao _categoriasDao;
+        private readonly IRecaudacionDao _recaudacionDao;
 
         public ReportesController(
             IPagosService pagosService,
             IArancelesService arancelesService,
             DiscountDao discountDao,
-            ICategoriasDao categoriasDao)
+            ICategoriasDao categoriasDao,
+            IRecaudacionDao recaudacionDao)
         {
             _pagosService = pagosService;
             _arancelesService = arancelesService;
             _discountDao = discountDao;
             _categoriasDao = categoriasDao;
+            _recaudacionDao = recaudacionDao;
         }
 
         // GET api/reportes/deudores/pdf?idCategoria=5 -> HU-021: planilla imprimible
@@ -112,6 +115,65 @@ namespace ApiGestion.Controllers
             var historial = _arancelesService.ObtenerHistorial();
             byte[] pdf = ArancelesReportBuilder.BuildPdf(historial);
             return File(pdf, "application/pdf", $"reporte-aranceles_{Timestamp()}.pdf");
+        }
+
+        // GET api/reportes/recaudacion/pdf?anio=2026&mes=9&idCategoria=5 -> HU-018
+        // Solo rol 1, igual que el panel de Recaudación Mensual que lo origina.
+        [Authorize(Roles = "1")]
+        [HttpGet("recaudacion/pdf")]
+        public IActionResult ExportarRecaudacionPdf(
+            [FromQuery] int anio, [FromQuery] int mes, [FromQuery] int? idCategoria = null)
+        {
+            if (!PeriodoValido(anio, mes, out string? error))
+            {
+                return BadRequest(new { exito = false, mensaje = error });
+            }
+
+            var datos = _recaudacionDao.ObtenerDelPeriodo(anio, mes, idCategoria);
+            byte[] pdf = RecaudacionReportBuilder.BuildPdf(
+                datos, PeriodoMesLabel(anio, mes), CategoriaLabel(idCategoria));
+            return File(pdf, "application/pdf", $"reporte-recaudacion_{Timestamp()}.pdf");
+        }
+
+        // GET api/reportes/recaudacion/csv?anio=2026&mes=9&idCategoria=5 -> misma planilla en CSV
+        [Authorize(Roles = "1")]
+        [HttpGet("recaudacion/csv")]
+        public IActionResult ExportarRecaudacionCsv(
+            [FromQuery] int anio, [FromQuery] int mes, [FromQuery] int? idCategoria = null)
+        {
+            if (!PeriodoValido(anio, mes, out string? error))
+            {
+                return BadRequest(new { exito = false, mensaje = error });
+            }
+
+            var datos = _recaudacionDao.ObtenerDelPeriodo(anio, mes, idCategoria);
+            byte[] csv = RecaudacionReportBuilder.BuildCsv(
+                datos, PeriodoMesLabel(anio, mes), CategoriaLabel(idCategoria));
+            return File(csv, "text/csv", $"reporte-recaudacion_{Timestamp()}.csv");
+        }
+
+        private static bool PeriodoValido(int anio, int mes, out string? error)
+        {
+            if (mes < 1 || mes > 12)
+            {
+                error = "El mes debe estar entre 1 y 12.";
+                return false;
+            }
+            if (anio < 2000 || anio > 2100)
+            {
+                error = "El año no es válido.";
+                return false;
+            }
+            error = null;
+            return true;
+        }
+
+        // "Septiembre 2026", con el nombre del mes en es-AR y la inicial en mayúscula.
+        private static string PeriodoMesLabel(int anio, int mes)
+        {
+            var cultura = System.Globalization.CultureInfo.GetCultureInfo("es-AR");
+            string nombre = cultura.DateTimeFormat.GetMonthName(mes);
+            return $"{char.ToUpper(nombre[0], cultura)}{nombre[1..]} {anio}";
         }
 
         private static string Timestamp() => RelojNegocio.Ahora.ToString("yyyyMMdd_HHmm");

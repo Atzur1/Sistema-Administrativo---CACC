@@ -1,0 +1,904 @@
+/* Recaudación Mensual (HU-018).
+   Usa el mismo lenguaje visual que el resto del portal: banner con degradé y
+   destello, tarjetas de vidrio (--glass-*) y la animación fadeSlideUp global. */
+
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    min-height: 100%;
+    box-sizing: border-box;
+    background: var(--color-bg-page);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--color-text);
+    /* Never scroll sideways, no matter how narrow the viewport gets */
+    overflow-x: hidden;
+}
+
+/* ===== BANNER ===== */
+.banner {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 20px;
+    padding: 24px 28px;
+    border-radius: 18px;
+    /* Degradé continuo del sistema, igual que Resumen General. Va con
+       --color-brand-deep directo: --primary-green no es global, cada componente
+       que lo usa lo define primero en su propio :host. */
+    background: linear-gradient(135deg, var(--color-brand-deep) 0%, #0d4223 45%, #051a0e 100%);
+    color: var(--color-bg-card);
+    box-shadow: 0 16px 36px rgba(0, 79, 39, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+/* Mismo destello que recorre los banners de Resumen General y Deudas y Morosidad
+   (keyframe global en styles.css). Se apaga solo con prefers-reduced-motion. */
+.banner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -30%;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: bannerShimmerCycle 6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.banner-intro {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.banner-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--color-bg-card);
+    flex-shrink: 0;
+}
+
+.banner-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.banner-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--color-bg-card);
+}
+
+.banner-subtitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.banner-metrics {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.banner-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0 24px;
+}
+
+.banner-metric + .banner-metric {
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.banner-metric-value {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-bg-card);
+}
+
+.banner-metric-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #a3e8c1;
+    white-space: nowrap;
+}
+
+/* ===== PANELES (tarjeta de vidrio del sistema) ===== */
+.panel {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: var(--glass-shadow);
+    min-width: 0;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+.panel-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 12px;
+}
+
+.panel-head-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+
+.panel-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+    flex-shrink: 0;
+}
+
+.panel-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.panel-subtitle {
+    display: block;
+    font-size: 12px;
+    color: var(--color-text-subtle);
+}
+
+/* ===== EXPORTAR (mismo patrón que Deudas y Morosidad) ===== */
+.export-wrap {
+    position: relative;
+    flex-shrink: 0;
+    /* Empuja el botón al extremo derecho del encabezado del panel */
+    margin-left: auto;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 14px;
+    background: linear-gradient(135deg, var(--color-brand), var(--color-brand-deep));
+    border: none;
+    border-radius: 9px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.export-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 127, 62, 0.4);
+}
+
+.export-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.export-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.export-chevron {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    margin-left: -2px;
+}
+
+.export-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 30;
+    margin: 0;
+    padding: 6px;
+    width: 200px;
+    list-style: none;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16), 0 4px 10px rgba(15, 23, 42, 0.06);
+    animation: fadeIn 0.12s ease both;
+}
+
+.export-menu button {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.export-menu button:hover {
+    background: var(--color-brand-tint);
+}
+
+.export-menu-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.export-menu-hint {
+    font-size: 10.5px;
+    color: var(--color-text-muted);
+}
+
+/* ===== BARRA DE FILTROS ===== */
+.panel-filtros {
+    display: flex;
+    /* .panel es column: acá hay que volver a fila o los filtros se apilan y se
+       estiran a lo alto del panel. */
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 16px;
+    padding: 16px 20px;
+    /* Hilo verde arriba: marca que este panel es el que controla la pantalla */
+    border-top: 3px solid var(--color-brand);
+}
+
+.filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 200px;
+}
+
+/* El período es el eje de la pantalla, así que se lleva más ancho */
+.filtro-periodo {
+    flex: 1 1 320px;
+    padding-right: 20px;
+    border-right: 1px solid var(--color-border);
+}
+
+.filtro-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.filtro-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+    flex-shrink: 0;
+}
+
+.filtro-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.filtro-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.filtro-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.filtro-hint {
+    font-size: 11px;
+    color: var(--color-text-subtle);
+}
+
+.filtro-campos {
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.field-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.filtro-acciones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.btn-aplicar,
+.btn-limpiar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.btn-aplicar svg,
+.btn-limpiar svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.btn-aplicar {
+    background: var(--color-brand);
+    border: none;
+    color: var(--color-bg-card);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.btn-aplicar:hover {
+    background: var(--color-brand-hover);
+    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-aplicar:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 127, 62, 0.2);
+}
+
+/* Late suave mientras haya un filtro elegido pero todavía sin aplicar */
+.btn-aplicar.is-pendiente {
+    animation: numberPulse 1.6s ease-in-out infinite;
+}
+
+.btn-limpiar {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.btn-limpiar:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-dark);
+}
+
+/* ===== COLUMNA DERECHA: KPIs arriba, desglose abajo ===== */
+.col-derecha {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+
+/* El desglose se come el alto que sobra, así el donut baja y no queda
+   un hueco blanco al costado de la tabla. */
+.col-derecha .panel-desglose {
+    flex: 1;
+}
+
+/* ===== TARJETAS KPI (HU-018) ===== */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.card {
+    /* En la columna derecha hay menos ancho que a lo largo de la pantalla:
+       ícono arriba y texto abajo entra mejor que ícono al costado. */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    /* Mismo degradé cristalino que las tarjetas de Resumen General */
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 247, 0.92) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 127, 62, 0.04);
+    animation: fadeSlideUp 0.4s ease both;
+    min-width: 0;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.06), 0 3px 8px rgba(0, 127, 62, 0.08);
+}
+
+.card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.card-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+/* Los dos subtotales repiten el color que usan en el donut y la barra, para que
+   la tarjeta y el gráfico se lean como el mismo dato. */
+.icon-total {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-darkest);
+}
+
+.icon-efectivo {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-light);
+}
+
+.icon-transferencia {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.card-value {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.4px;
+    color: var(--color-text-dark);
+    white-space: nowrap;
+}
+
+.card-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #4b5563;
+}
+
+/* ===== GRILLA PRINCIPAL ===== */
+.main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 16px;
+    /* stretch (no "start") para que el panel del desglose llegue hasta abajo y
+       no quede un hueco al costado de la tabla, que siempre es más alta. */
+    align-items: stretch;
+}
+
+/* ===== TABLA DE PAGOS ===== */
+.tabla-conteo {
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: var(--color-text-subtle);
+}
+
+.tabla-vacia {
+    margin: 0;
+    padding: 28px 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-text-subtle);
+}
+
+.tabla-scroll {
+    max-height: 340px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.tabla thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 8px 10px;
+    background: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.tabla tbody td {
+    padding: 10px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-dark);
+    white-space: nowrap;
+}
+
+.tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.tabla tbody tr:hover td {
+    background: var(--color-bg-hover);
+}
+
+.col-num {
+    width: 40px;
+    text-align: center;
+}
+
+.fila-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.celda-jugador {
+    font-weight: 600;
+}
+
+/* El importe arranca donde arranca el encabezado "Monto", alineado a la
+   izquierda como el resto de las columnas. En negrita porque es el dato que
+   se busca al escanear la fila. */
+.celda-monto {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.chip-medio {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--color-brand-tint);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-brand-deep);
+}
+
+/* ===== DESGLOSE ===== */
+.desglose-body {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    /* El panel se estira a la altura de la tabla: que el contenido ocupe ese
+       alto y quede centrado, en vez de amontonarse arriba. */
+    flex: 1;
+    align-content: center;
+}
+
+.donut {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
+}
+
+.donut svg {
+    width: 100%;
+    height: 100%;
+    /* Arranca el arco arriba en vez de a las 3 en punto */
+    transform: rotate(-90deg);
+}
+
+.donut-ring,
+.donut-arc {
+    fill: none;
+    stroke-width: 16;
+}
+
+.donut-ring {
+    stroke: var(--color-brand-tint);
+}
+
+.donut-arc {
+    stroke: var(--color-brand-deep);
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s ease;
+}
+
+.donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    pointer-events: none;
+}
+
+.donut-value {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-text-dark);
+}
+
+.donut-label {
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--color-text-subtle);
+}
+
+.desglose-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    flex: 1 1 180px;
+    min-width: 0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dot-transferencia {
+    background: var(--color-brand-deep);
+}
+
+.dot-efectivo {
+    background: var(--color-brand-light);
+}
+
+.legend-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.legend-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-dark);
+}
+
+.legend-meta {
+    font-size: 11px;
+    color: var(--color-text-subtle);
+}
+
+.legend-figures {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.legend-percent {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.legend-amount {
+    font-size: 11px;
+    color: var(--color-text-subtle);
+}
+
+.desglose-bar {
+    display: flex;
+    margin-top: 18px;
+    height: 28px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.bar-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-bg-card);
+    transition: width 0.6s ease;
+    animation: growWidth 0.6s ease both;
+}
+
+.segment-transferencia {
+    background: var(--color-brand-deep);
+}
+
+.segment-efectivo {
+    background: var(--color-brand-light);
+}
+
+/* ===== VACÍO ===== */
+.desglose-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 40px 16px;
+    text-align: center;
+}
+
+.empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+.empty-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.empty-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.empty-text {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-subtle);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 860px) {
+    .banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .banner-metrics {
+        align-self: stretch;
+        justify-content: space-around;
+    }
+
+    .banner-metric:first-child {
+        padding-left: 0;
+    }
+
+    .filtro-periodo {
+        padding-right: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 16px;
+    }
+
+    .filtro-acciones {
+        flex-direction: row;
+        align-self: stretch;
+    }
+
+    .btn-aplicar,
+    .btn-limpiar {
+        flex: 1 1 0;
+    }
+}
