@@ -1,0 +1,281 @@
+<!-- Recaudación Mensual: filtros, pagos del período y desglose por medio de pago (HU-018) -->
+<div class="dashboard">
+
+  <!-- ===== BANNER ===== -->
+  <section class="banner">
+    <div class="banner-intro">
+      <span class="banner-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+          <circle cx="12" cy="12" r="2.5"></circle>
+          <path d="M6 12h.01"></path>
+          <path d="M18 12h.01"></path>
+        </svg>
+      </span>
+
+      <div class="banner-text">
+        <h1 class="banner-title">Recaudación Mensual</h1>
+        <span class="banner-subtitle">
+          Consultá la recaudación del club por mes y año, y el detalle por medio de pago
+        </span>
+      </div>
+    </div>
+
+    <div class="banner-metrics">
+      <div class="banner-metric">
+        <span class="banner-metric-value">{{ totalCompacto }}</span>
+        <span class="banner-metric-label">Total del período</span>
+      </div>
+      <div class="banner-metric">
+        <span class="banner-metric-value">{{ datos ? datos.pagos : '—' }}</span>
+        <span class="banner-metric-label">Pagos procesados</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BARRA DE FILTROS ===== -->
+  <article class="panel panel-filtros">
+
+    <div class="filtro filtro-periodo">
+      <div class="filtro-head">
+        <span class="filtro-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </span>
+        <div class="filtro-head-text">
+          <h2 class="filtro-title">Período</h2>
+          <span class="filtro-hint">Elegí el mes y el año a consultar</span>
+        </div>
+      </div>
+
+      <div class="filtro-campos">
+        <div class="field">
+          <label class="field-label" for="mes">Mes</label>
+          <app-custom-select id="mes" [options]="meses" placeholder="Seleccionar mes"
+                             [ngModel]="mesSeleccionado"
+                             (ngModelChange)="onMesChange($event)"></app-custom-select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="anio">Año</label>
+          <app-custom-select id="anio" [options]="anios"
+                             [ngModel]="anioSeleccionado"
+                             (ngModelChange)="onAnioChange($event)"></app-custom-select>
+        </div>
+      </div>
+    </div>
+
+    <div class="filtro">
+      <div class="filtro-head">
+        <span class="filtro-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M3 9h18M9 3v18"></path>
+          </svg>
+        </span>
+        <div class="filtro-head-text">
+          <h2 class="filtro-title">Categoría</h2>
+          <span class="filtro-hint">Filtrá por categoría (opcional)</span>
+        </div>
+      </div>
+
+      <div class="filtro-campos">
+        <app-custom-select [options]="categorias" [ngModel]="categoriaBorrador"
+                           (ngModelChange)="onCategoriaChange($event)"></app-custom-select>
+      </div>
+    </div>
+
+    <div class="filtro-acciones">
+      <button type="button" class="btn-aplicar" [class.is-pendiente]="hayCambiosSinAplicar"
+              (click)="aplicarFiltros()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        Aplicar filtros
+      </button>
+
+      <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+          <polyline points="3 4 3 9 8 9"></polyline>
+        </svg>
+        Limpiar filtros
+      </button>
+    </div>
+  </article>
+
+  <!-- ===== PAGOS + DESGLOSE ===== -->
+  <section class="main-grid">
+
+    <article class="panel panel-pagos">
+      <header class="panel-head panel-head-row">
+        <span class="panel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          </svg>
+        </span>
+        <div>
+          <h2 class="panel-title">Pagos del período</h2>
+          <span class="panel-subtitle">Jugadores y el medio con el que pagaron</span>
+        </div>
+
+        <!-- Maqueta: mismo botón que Deudas y Morosidad. Todavía no descarga
+             nada — falta el endpoint que arme el reporte en el servidor. -->
+        <div class="export-wrap">
+          <button type="button" class="export-btn" (click)="toggleExportMenu()"
+                  [attr.aria-expanded]="exportMenuOpen">
+            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Exportar Reporte
+            <svg class="export-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          @if (exportMenuOpen) {
+            <ul class="export-menu">
+              <li>
+                <button type="button" (click)="exportarRecaudacion('pdf')">
+                  <span class="export-menu-label">PDF</span>
+                  <span class="export-menu-hint">Planilla imprimible</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" (click)="exportarRecaudacion('csv')">
+                  <span class="export-menu-label">CSV</span>
+                  <span class="export-menu-hint">Se abre en Excel</span>
+                </button>
+              </li>
+            </ul>
+          }
+        </div>
+      </header>
+
+      <span class="tabla-conteo">
+        Mostrando {{ filas.length }} de {{ totalJugadores }} jugadores
+      </span>
+
+      @if (filas.length === 0) {
+        <p class="tabla-vacia">Ningún jugador coincide con los filtros aplicados.</p>
+      } @else {
+        <div class="tabla-scroll">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th>Jugador</th>
+                <th>DNI</th>
+                <th>Categoría</th>
+                <th>Monto</th>
+                <th>Tipo de pago</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of filas; track fila.dni; let i = $index) {
+                <tr>
+                  <td class="col-num"><span class="fila-num">{{ i + 1 }}</span></td>
+                  <td class="celda-jugador">{{ fila.jugador }}</td>
+                  <td>{{ fila.dni }}</td>
+                  <td>{{ fila.categoria }}</td>
+                  <td class="celda-monto">{{ formatMonto(fila.monto) }}</td>
+                  <td>
+                    <!-- El puntito repite el color del donut, para que la tabla y el
+                         gráfico se lean como la misma información -->
+                    <span class="chip-medio">
+                      <span class="legend-dot"
+                            [ngClass]="fila.medioPago === 'Efectivo' ? 'dot-efectivo' : 'dot-transferencia'"></span>
+                      {{ fila.medioPago }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </article>
+
+    <article class="panel panel-desglose">
+      <header class="panel-head">
+        <h2 class="panel-title">Desglose por medio de pago</h2>
+        <span class="panel-subtitle">Distribución de los pagos de {{ periodoLabel }}</span>
+      </header>
+
+      @if (datos) {
+        <div class="desglose-body">
+          <!-- El arco se dibuja encima del anillo de fondo: dos círculos alcanzan
+               para una distribución de dos categorías -->
+          <div class="donut">
+            <svg viewBox="0 0 140 140" aria-hidden="true">
+              <circle class="donut-ring" cx="70" cy="70" [attr.r]="donutRadio"></circle>
+              <circle class="donut-arc" cx="70" cy="70" [attr.r]="donutRadio"
+                      [attr.stroke-dasharray]="arcoDonut + ' ' + donutCircunferencia"></circle>
+            </svg>
+            <div class="donut-center">
+              <span class="donut-value">{{ pagosDisplay() }}</span>
+              <span class="donut-label">pagos</span>
+            </div>
+          </div>
+
+          <ul class="desglose-legend">
+            @for (item of desglose; track item.nombre) {
+              <li class="legend-item">
+                <span class="legend-dot" [ngClass]="'dot-' + item.tono"></span>
+                <div class="legend-text">
+                  <span class="legend-name">{{ item.nombre }}</span>
+                  <span class="legend-meta">{{ item.pagos }} pagos</span>
+                </div>
+                <div class="legend-figures">
+                  <span class="legend-percent">{{ item.porcentaje }}%</span>
+                  <span class="legend-amount">{{ formatMonto(item.monto) }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Una sola barra partida: se lee de un vistazo qué medio pesa más -->
+        <div class="desglose-bar">
+          @for (item of desglose; track item.nombre) {
+            <span class="bar-segment" [ngClass]="'segment-' + item.tono"
+                  [style.width.%]="item.porcentaje">
+              {{ item.porcentaje }}%
+            </span>
+          }
+        </div>
+      } @else {
+        <div class="desglose-vacio">
+          <span class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7v5l3 2"></path>
+            </svg>
+          </span>
+          <p class="empty-title">Sin recaudación para {{ periodoLabel }}</p>
+          <p class="empty-text">Es un período que aún no transcurrió.</p>
+        </div>
+      }
+    </article>
+
+  </section>
+
+</div>
