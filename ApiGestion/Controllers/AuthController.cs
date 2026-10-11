@@ -87,27 +87,27 @@ namespace ApiGestion.Controllers
             if (problemas.Count > 0)
                 return BadRequest(new { mensaje = "La contraseña no cumple los requisitos: " + string.Join(" ", problemas), problemas });
 
-            if (!_accountAccessDao.CompleteAccountAccess(tokenHash, PasswordHasher.Hash(request.Password)))
+            if (!_accountAccessDao.CompleteAccountAccess(tokenHash, PasswordHasher.HashPassword(request.Password)))
                 return BadRequest(new { mensaje = "El enlace no es válido o venció." });
             return Ok(new { mensaje = "La contraseña se actualizó. Ya puede iniciar sesión." });
         }
 
         [HttpPost("login")]
         [EnableRateLimiting("login")]
-        public IActionResult Login([FromBody] LoginRequest request)
+        public IActionResult Login([FromBody] LoginDTO request)
         {
             try
             {
                 // Límite por cuenta (además del de IP). Cuenta los fallos de cualquier identificador, exista o no,
                 // para que bloquearse no revele qué DNI o correos están registrados.
-                var identificador = IdentificadorCuenta.Interpretar(request.Usuario);
+                var identificador = IdentificadorCuenta.Interpretar(request.Username);
                 var clave = identificador?.Valor;
                 if (clave is not null && _loginThrottle.Bloqueado(clave))
                     return StatusCode(StatusCodes.Status429TooManyRequests,
                         new { mensaje = "Demasiados intentos fallidos. Esperá unos minutos antes de volver a intentar." });
 
                 // Consultamos directamente a la base de datos usando nuestra capa DAO
-                var usuarioEncontrado = _authDao.ValidarLogin(request.Usuario, request.Contrasena);
+                var usuarioEncontrado = _authDao.ValidarLogin(request.Username, request.Password);
 
                 if (usuarioEncontrado != null)
                 {
@@ -116,14 +116,15 @@ namespace ApiGestion.Controllers
                     // Generamos el token JWT con el rol adentro
                     string token = GenerarToken(usuarioEncontrado.IdUsuario, usuarioEncontrado.Email, usuarioEncontrado.IdRol, usuarioEncontrado.TokenVersion);
 
-                    return Ok(new {
-                        mensaje = "¡Bienvenido al Portal Administrativo del CACC!",
-                        email = usuarioEncontrado.Email,
-                        nombre = usuarioEncontrado.Nombre,
-                        apellido = usuarioEncontrado.Apellido,
-                        dni = usuarioEncontrado.Dni,
-                        rol = usuarioEncontrado.IdRol,
-                        token = token
+                    return Ok(new LoginResponseDTO
+                    {
+                        Message = "¡Bienvenido al Portal Administrativo del CACC!",
+                        Email = usuarioEncontrado.Email,
+                        FirstName = usuarioEncontrado.Nombre,
+                        LastName = usuarioEncontrado.Apellido,
+                        Dni = usuarioEncontrado.Dni,
+                        Role = usuarioEncontrado.IdRol,
+                        Token = token
                     });
                 }
 

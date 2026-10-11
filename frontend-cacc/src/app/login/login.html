@@ -31,14 +31,14 @@
             type="text"
             class="form-control"
             id="TituloUsuario"
-            formControlName="usuario"
+            formControlName="username"
             placeholder="Ingresá tu DNI"
             autocomplete="username"
             inputmode="text"
           />
         </div>
         <small
-          *ngIf="loginForm.get('usuario')?.invalid && loginForm.get('usuario')?.touched"
+          *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
           class="field-error"
         >
           <svg
@@ -81,7 +81,7 @@
             [type]="mostrarPassword ? 'text' : 'password'"
             class="form-control"
             id="TituloContraseña"
-            formControlName="contrasena"
+            formControlName="password"
             placeholder="Ingresá tu contraseña"
           />
 
@@ -132,7 +132,7 @@
           </span>
         </div>
         <small
-          *ngIf="loginForm.get('contrasena')?.invalid && loginForm.get('contrasena')?.touched"
+          *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
           class="field-error"
         >
           <svg

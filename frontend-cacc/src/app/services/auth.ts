@@ -3,15 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router, CanActivateFn, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { API_BASE_URL } from './api-url';
-
-export interface UsuarioLogueado {
-  email: string;
-  nombre?: string;
-  apellido?: string;
-  dni?: string;
-  rol: number;
-  token: string;
-}
+import { LoginModel, LoginResponseModel } from '../models/LoginModel';
 
 const SESSION_KEY = 'cacc-session';
 
@@ -37,14 +29,14 @@ function accesoDenegadoDe(root: ActivatedRouteSnapshot): string | null {
 })
 export class AuthService {
   private readonly API_URL = `${API_BASE_URL}/auth/login`;
-  private usuario: UsuarioLogueado | null = null;
+  private usuario: LoginResponseModel | null = null;
 
   constructor(private http: HttpClient) {
     this.usuario = this.restoreSession();
   }
 
-  login(usuario: string, contrasena: string): Observable<UsuarioLogueado> {
-    return this.http.post<UsuarioLogueado>(this.API_URL, { usuario, contrasena }).pipe(
+  login(credentials: LoginModel): Observable<LoginResponseModel> {
+    return this.http.post<LoginResponseModel>(this.API_URL, credentials).pipe(
       tap((respuesta) => {
         this.usuario = respuesta;
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(respuesta));
@@ -63,12 +55,12 @@ export class AuthService {
     return this.http.post<{ mensaje: string }>(`${API_BASE_URL}/auth/account-access/complete`, { token, password });
   }
 
-  getUsuario(): UsuarioLogueado | null {
+  getUsuario(): LoginResponseModel | null {
     return this.usuario;
   }
 
   getRol(): number | null {
-    return this.getUsuario()?.rol ?? null;
+    return this.getUsuario()?.role ?? null;
   }
 
   getToken(): string | null {
@@ -115,13 +107,15 @@ export class AuthService {
     this.logout();
   }
 
-  private restoreSession(): UsuarioLogueado | null {
+  // A session saved with the previous shape (rol instead of role) fails the check and is discarded: the user
+  // just signs in again.
+  private restoreSession(): LoginResponseModel | null {
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     try {
-      const session = JSON.parse(raw) as UsuarioLogueado;
+      const session = JSON.parse(raw) as LoginResponseModel;
       const payload = session.token.split('.')[1];
-      if (!payload || !session.email || !session.token || !Number.isInteger(session.rol))
+      if (!payload || !session.email || !session.token || !Number.isInteger(session.role))
         throw new Error('Invalid session');
       const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
       const claims = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')));

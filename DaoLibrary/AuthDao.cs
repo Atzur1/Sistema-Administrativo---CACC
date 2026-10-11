@@ -38,7 +38,7 @@ public class AuthDao
         {
             // Mismo costo que verificar una contraseña real: sin esto, "ese DNI no existe" respondía
             // notablemente más rápido que "contraseña incorrecta" y delataba qué DNI tienen cuenta.
-            PasswordHasher.Verify(contrasenia, HashDeReferencia);
+            PasswordHasher.VerifyPassword(contrasenia, HashDeReferencia);
             return null;
         }
 
@@ -60,20 +60,49 @@ public class AuthDao
         usuario.IdRol = usuario.RolPortal!.Value;
         if (reader.Read()) return null; // identificador ambiguo
 
-        // Solo contraseñas con hash (PBKDF2). La columna contrasenia en texto plano ya no se lee: una cuenta
-        // sin password_hash no puede entrar hasta crear su contraseña con el enlace de activación o de
-        // "¿Olvidaste tu contraseña?". Se gasta igual el tiempo de una verificación para no delatarla.
+        // Solo contraseñas con hash (BCrypt, o PBKDF2 de antes del cambio). La columna contrasenia en texto plano ya
+        // no se lee: una cuenta sin password_hash no puede entrar hasta crear su contraseña con el enlace de
+        // activación o de "¿Olvidaste tu contraseña?". Se gasta igual el tiempo de una verificación para no delatarla.
         if (hash is null)
         {
-            PasswordHasher.Verify(contrasenia, HashDeReferencia);
+            PasswordHasher.VerifyPassword(contrasenia, HashDeReferencia);
             return null;
         }
 
-        return PasswordHasher.Verify(contrasenia, hash) ? usuario : null;
+        if (!PasswordHasher.VerifyPassword(contrasenia, hash))
+        {
+            return null;
+        }
+
+        // Migración progresiva: la contraseña recién se conoce en un login correcto, así que es el único momento
+        // en que un hash PBKDF2 se puede pasar a BCrypt.
+        if (PasswordHasher.NeedsRehash(hash))
+        {
+            UpdatePasswordHash(usuario.IdUsuario, hash, PasswordHasher.HashPassword(contrasenia));
+        }
+
+        return usuario;
     }
 
     // Hash válido de una contraseña al azar, solo para gastar el mismo tiempo que una verificación real.
-    private static readonly string HashDeReferencia = PasswordHasher.Hash(Guid.NewGuid().ToString("N"));
+    private static readonly string HashDeReferencia = PasswordHasher.HashPassword(Guid.NewGuid().ToString("N"));
+
+    // Only replaces the hash that was just verified: if a password reset changed it in between, that newer
+    // password wins. The account itself is recorded as the actor in AUDITORIA_CAMBIOS.
+    public bool UpdatePasswordHash(int userId, string currentHash, string newHash)
+    {
+        using (SqlAuditActorContext.Push(userId))
+        {
+            using var connection = SqlConnectionFactory.Open(_cadenaConexion);
+            using var command = new SqlCommand(
+                "UPDATE dbo.USUARIO SET password_hash = @newHash WHERE PK_id_usuario = @id AND password_hash = @currentHash",
+                connection);
+            command.Parameters.Add("@newHash", System.Data.SqlDbType.NVarChar, 512).Value = newHash;
+            command.Parameters.Add("@currentHash", System.Data.SqlDbType.NVarChar, 512).Value = currentHash;
+            command.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = userId;
+            return command.ExecuteNonQuery() == 1;
+        }
+    }
 
     // Cierre de sesión en el servidor: subir token_version invalida todos los JWT emitidos hasta ahora
     // para esa cuenta (OnTokenValidated los compara), en vez de esperar a que venzan solos.

@@ -4,7 +4,7 @@ url: "{{baseUrl}}/api/Auth/login"
 method: POST
 body:
   type: json
-  content: "{\n    \"Usuario\": \"{{adminUser}}\",\n    \"Contrasena\": \"{{adminPassword}}\"\n}"
+  content: "{\n    \"Username\": \"{{adminUser}}\",\n    \"Password\": \"{{adminPassword}}\"\n}"
 scripts:
   - type: afterResponse
     code: |-

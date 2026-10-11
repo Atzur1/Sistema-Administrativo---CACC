@@ -21,7 +21,7 @@ export class AdminPortal implements OnInit {
 currentPageTitle: string = '';
 get userName(): string {
     const user = this.authService.getUsuario();
-    return user ? [user.nombre, user.apellido].filter(Boolean).join(' ') || user.email.split('@')[0] : '';
+    return user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email.split('@')[0] : '';
 }
 get userEmail(): string { return this.authService.getUsuario()?.email ?? ''; }
 get userInitials(): string { return this.userName.slice(0, 2).toUpperCase(); }

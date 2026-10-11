@@ -151,7 +151,7 @@ export class ResumenGeneral implements OnInit {
     // El nombre de la cuenta, igual que la barra superior. El usuario del correo queda solo para una
     // cuenta sin nombre cargado: saludar a "alexandermonelli50" no reconoce a nadie.
     const usuario = this.authService.getUsuario();
-    const nombre = usuario?.nombre?.trim() || usuario?.email?.split('@')[0] || 'Admin';
+    const nombre = usuario?.firstName?.trim() || usuario?.email?.split('@')[0] || 'Admin';
     return `${momento}, ${nombre}`;
   }
 
