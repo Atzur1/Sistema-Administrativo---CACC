@@ -16,6 +16,7 @@ import {
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { financialLoadErrorMessage } from '../../shared/http-error-message';
+import { estaVencida, vencimientoDelPeriodo } from '../../shared/calendario-cuotas';
 
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -357,11 +358,10 @@ export class DeudaJugador implements OnInit, OnDestroy {
     }
   }
 
-  // "Vence" al cierre del mes que cubre la cuota: mismo criterio que usa la API para "Vencido".
+  // "Vence" el día que informa la API: el 10 del mes siguiente al que cubre la cuota.
   vencimientoCuota(cuota: CuotaJugador): string {
-    const [anio, mes] = cuota.fechaVencimiento.slice(0, 7).split('-').map(Number);
-    const ultimoDia = new Date(anio, mes, 0);
-    return ultimoDia.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const [anio, mes, dia] = cuota.fechaVencimiento.slice(0, 10).split('-').map(Number);
+    return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   estadoCuotaClase(cuota: CuotaJugador): string {
@@ -482,9 +482,8 @@ export class DeudaJugador implements OnInit, OnDestroy {
     return CURRENCY_FULL.format(valor);
   }
 
-  // La cuota no trae una fecha de vencimiento propia, solo "Agosto 2026" — se asume
-  // vencida al cierre del mes que nombra (mismo criterio que usa el club para cobrar:
-  // la cuota de un mes se paga durante ese mes).
+  // La cuota no trae una fecha de vencimiento propia, solo "Agosto 2026": vence el 10 del mes
+  // siguiente al que nombra (regla del club, la misma que aplica la API).
   private vencimientoDe(periodo: string): Date | null {
     const [nombreMes, anioTexto] = periodo.split(' ');
     const mesIndex = NOMBRES_MES.indexOf(nombreMes.toLowerCase());
@@ -492,15 +491,15 @@ export class DeudaJugador implements OnInit, OnDestroy {
     if (mesIndex === -1 || !anio) {
       return null;
     }
-    return new Date(anio, mesIndex + 1, 0); // día 0 del mes siguiente = último día de "mesIndex"
+    return vencimientoDelPeriodo(anio, mesIndex);
   }
 
-  // VENCIDA: ya pasó el cierre del mes y todavía tiene saldo. PARCIAL: no venció aún pero
+  // VENCIDA: ya llegó el día 10 del mes siguiente y todavía tiene saldo. PARCIAL: no venció aún pero
   // ya tiene algún abono cargado. PRÓXIMA: todavía no venció y no se abonó nada.
   // (Cubierta por beneficio se maneja aparte, en el template, con saldoPendiente <= 0.)
   estadoCuota(cuota: CuotaPendienteDetalle): EstadoCuota {
     const vencimiento = this.vencimientoDe(cuota.periodo);
-    if (vencimiento && new Date() > vencimiento) {
+    if (vencimiento && estaVencida(vencimiento)) {
       return 'vencida';
     }
     return cuota.abonos.length > 0 ? 'parcial' : 'proxima';

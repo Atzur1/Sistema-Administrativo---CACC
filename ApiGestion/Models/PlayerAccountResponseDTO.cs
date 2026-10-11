@@ -14,6 +14,9 @@ public class PlayerAccountResponseDTO
     public decimal AmountOwed { get; set; }
     public int PendingInstallments { get; set; }
 
+    // Overdue ones (from the 10th of the following month): 1 -> training only, 2+ -> suspended
+    public int OverdueInstallments { get; set; }
+
     // "yyyy-MM-dd", or null while the player is active.
     public string? LeaveDate { get; set; }
 }

@@ -1,0 +1,118 @@
+<!-- Aviso de meses con cuotas sin generar. No aparece si no falta ninguna. -->
+@if (meses.length > 0) {
+  <section class="aviso" role="status">
+    <div class="aviso-icono" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 9v4"></path>
+        <path d="M12 17h.01"></path>
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+      </svg>
+    </div>
+    <div class="aviso-cuerpo">
+      <h2 class="aviso-titulo">Hay meses con cuotas sin generar</h2>
+      <p class="aviso-texto">
+        El sistema genera la cuota de cada mes el día 10. Estos meses quedaron incompletos (por ejemplo, porque
+        el sistema estuvo apagado ese día). Revisá cada uno y generalo solo si corresponde.
+      </p>
+      <ul class="aviso-lista">
+        @for (mes of meses; track mes.periodo) {
+          <li class="aviso-item">
+            <span class="aviso-item-texto">
+              Faltan <strong>{{ mes.cantidad }} {{ mes.cantidad === 1 ? 'cuota' : 'cuotas' }}</strong> de
+              {{ nombreMes(mes) }} <span class="aviso-item-monto">· {{ formatMonto(mes.montoTotal) }}</span>
+            </span>
+            <button type="button" class="button-primary button-small" (click)="abrir(mes)">Generar</button>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+}
+
+<!-- Popup de confirmación: explica exactamente qué se va a hacer antes de grabar nada. -->
+@if (mesElegido; as mes) {
+  <div class="dialog-backdrop" (click)="cerrar()">
+    <div
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="faltantesDialogTitulo"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="dialog-head">
+        <div class="dialog-head-text">
+          <h2 class="dialog-title" id="faltantesDialogTitulo">Generar cuotas de {{ nombreMes(mes) }}</h2>
+          <span class="dialog-subtitle">
+            {{ mes.cantidad }} {{ mes.cantidad === 1 ? 'cuota' : 'cuotas' }} · total {{ formatMonto(mes.montoTotal) }}
+          </span>
+        </div>
+        <button type="button" class="dialog-close" (click)="cerrar()" aria-label="Cerrar" [disabled]="generando">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </header>
+
+      @if (errorDialogo) {
+        <p class="dialog-error" role="alert">{{ errorDialogo }}</p>
+      }
+
+      <p class="dialog-confirm">Al confirmar, el sistema va a hacer exactamente esto:</p>
+      <ul class="explicacion">
+        <li>
+          Crea <strong>una cuota de {{ nombreMes(mes) }}</strong> para cada uno de los
+          <strong>{{ mes.cantidad }}</strong> {{ mes.cantidad === 1 ? 'jugador' : 'jugadores' }} de la lista:
+          estaban en el club ese mes, tenían un arancel vigente y hoy no tienen esa cuota (ni pendiente ni pagada).
+        </li>
+        <li>
+          Cada cuota se emite con el <strong>arancel de {{ nombreMes(mes) }}</strong> que le corresponde al jugador
+          (el de su categoría o, si no tiene, el de su género). No se agregan recargos. Las becas y descuentos que
+          tenía en ese mes se descuentan al cobrar.
+        </li>
+        <li>
+          Vencen el <strong>{{ vencimiento(mes) }}</strong>.
+          @if (quedanVencidas(mes)) {
+            Como esa fecha ya pasó, <strong>quedan vencidas desde hoy</strong> y cuentan para el estado deportivo
+            (1 vencida: solo entrenamientos; 2 o más: inhabilitado).
+          } @else {
+            Hasta esa fecha quedan en término.
+          }
+        </li>
+        <li>A quien ya tiene la cuota de ese mes no se le modifica nada.</li>
+        <li>Cada cuota creada queda registrada en Auditoría a tu nombre. No se puede deshacer en bloque.</li>
+      </ul>
+
+      <div class="detalle">
+        <span class="detalle-titulo">Jugadores a los que se les genera la cuota</span>
+        @if (cargandoDetalle) {
+          <p class="detalle-vacio">Cargando la lista…</p>
+        } @else if (detalle.length === 0 && !errorDialogo) {
+          <p class="detalle-vacio">Ya no falta ninguna cuota en este mes.</p>
+        } @else {
+          <ul class="detalle-lista">
+            @for (cuota of detalle; track cuota.idJugador) {
+              <li class="detalle-fila">
+                <span class="detalle-nombre">{{ cuota.nombreCompleto }}</span>
+                <span class="detalle-meta">DNI {{ cuota.dni }} · {{ cuota.categoria }}</span>
+                <span class="detalle-monto">{{ formatMonto(cuota.monto) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <footer class="dialog-actions">
+        <button type="button" class="button-ghost" (click)="cerrar()" [disabled]="generando">Volver</button>
+        <button
+          type="button"
+          class="button-primary"
+          (click)="confirmar()"
+          [disabled]="generando || cargandoDetalle || detalle.length === 0"
+        >
+          {{ generando ? 'Generando…' : 'Sí, generar ' + detalle.length + (detalle.length === 1 ? ' cuota' : ' cuotas') }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}

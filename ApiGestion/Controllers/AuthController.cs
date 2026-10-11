@@ -7,6 +7,7 @@ using System.Security.Claims;
 using ApiGestion.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text;
+using ServiceLibrary;
 
 namespace ApiGestion.Controllers
 {
@@ -76,6 +77,16 @@ namespace ApiGestion.Controllers
         public IActionResult CompletarAcceso([FromBody] CompleteAccountAccessRequest request)
         {
             var tokenHash = TokenAccesoCuenta.Hash(request.Token);
+            var titular = _accountAccessDao.ObtenerTitularDelToken(tokenHash);
+            if (titular is null)
+                return BadRequest(new { mensaje = "El enlace no es válido o venció." });
+
+            // Política de contraseñas nuevas (las que ya existen siguen funcionando).
+            var problemas = PoliticaContrasenia.Validar(request.Password,
+                new DatosTitular(titular.Value.Nombre, titular.Value.Apellido, titular.Value.Dni, titular.Value.Email));
+            if (problemas.Count > 0)
+                return BadRequest(new { mensaje = "La contraseña no cumple los requisitos: " + string.Join(" ", problemas), problemas });
+
             if (!_accountAccessDao.CompleteAccountAccess(tokenHash, PasswordHasher.Hash(request.Password)))
                 return BadRequest(new { mensaje = "El enlace no es válido o venció." });
             return Ok(new { mensaje = "La contraseña se actualizó. Ya puede iniciar sesión." });

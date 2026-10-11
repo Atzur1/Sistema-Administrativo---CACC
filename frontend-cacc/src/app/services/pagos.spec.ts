@@ -36,7 +36,7 @@ describe('PagosService - player accounts', () => {
 
     it('returns the rows exactly as the API sends them', () => {
         const rows: PlayerAccountModel[] = [
-            { playerId: 2, firstName: 'BAUTISTA', lastName: 'SANCHEZ', dni: '99000002', category: 'AFA 20067', amountOwed: 255000, pendingInstallments: 3 },
+            { playerId: 2, firstName: 'BAUTISTA', lastName: 'SANCHEZ', dni: '99000002', category: 'AFA 20067', amountOwed: 255000, pendingInstallments: 3, overdueInstallments: 2 },
         ];
         let received: PlayerAccountModel[] | undefined;
 

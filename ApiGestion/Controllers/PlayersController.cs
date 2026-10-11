@@ -5,131 +5,71 @@ using Microsoft.AspNetCore.Mvc;
 using ApiGestion.Models;
 using DaoLibrary;
 using EntityLibrary;
+using ServiceLibrary;
 
-// Becados y Descuentos (HU-011 / HU-012). Traído del repo de Atzur1, adaptado
-// para reusar el IJugadoresDao que ya existe en este proyecto en vez de crear
-// un PlayerDao/PlayersController.GetPlayers paralelo — evita duplicar el
-// concepto de "jugador" que ya resuelve JugadoresController/JugadoresDao.
-// Sin [Authorize] a nivel de clase: se combinaría con AND contra el de cada
-// acción y dejaría afuera al rol que no está en ambos (ver ReportesController).
-// CreatePlayer es alta de jugador (fuera del alcance de Becados y Descuentos);
-// el resto de las acciones son el CRUD de beneficios que sí ve el rol 2.
+// Alta de jugadores (HU-033), búsqueda para Cuotas y Pagos (HU-023) y Becados y Descuentos (HU-011 / HU-012).
+// Las reglas viven en ServiceLibrary (JugadoresAltaService y BeneficiosService): acá solo se valida la forma del
+// pedido, se llama al servicio y se traduce el resultado a HTTP.
+//
+// Sin [Authorize] por rol a nivel de clase: se combinaría con AND contra el de cada acción y dejaría afuera al rol
+// que no está en ambos (ver ReportesController). CreatePlayer y editar beneficios son solo del SuperAdmin; el resto
+// de Becados y Descuentos también lo usa el rol 2.
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
 public class PlayersController : ControllerBase
 {
+    public const int MinSearchTermLength = 2;
+    public const int MaxSearchTermLength = 50;
+    public const int MaxSearchResults = 50;
+
     private readonly ILogger<PlayersController> _logger;
-    private readonly IJugadoresDao _jugadoresDao;
-    private readonly DiscountDao _discountDao;
+    private readonly IJugadoresAltaService _altaService;
+    private readonly IBeneficiosService _beneficiosService;
     private readonly PlayerDAO _playerDAO;
-    private readonly EnrollmentFeeDAO _enrollmentFeeDAO;
-    private readonly IArancelesDao _arancelesDao;
-    private readonly ICategoriasDao _categoriasDao;
 
     public PlayersController(
         ILogger<PlayersController> logger,
-        IJugadoresDao jugadoresDao,
-        DiscountDao discountDao,
-        PlayerDAO playerDAO,
-        EnrollmentFeeDAO enrollmentFeeDAO,
-        IArancelesDao arancelesDao,
-        ICategoriasDao categoriasDao)
+        IJugadoresAltaService altaService,
+        IBeneficiosService beneficiosService,
+        PlayerDAO playerDAO)
     {
         _logger = logger;
-        _jugadoresDao = jugadoresDao;
-        _discountDao = discountDao;
+        _altaService = altaService;
+        _beneficiosService = beneficiosService;
         _playerDAO = playerDAO;
-        _enrollmentFeeDAO = enrollmentFeeDAO;
-        _arancelesDao = arancelesDao;
-        _categoriasDao = categoriasDao;
     }
 
-    // Registers a new player (HU-033). The registration charges the monthly fee of
-    // the current month and, for the men's squad only, the one-time enrollment fee
-    // in force today. Both stay as separate pending charges.
-    //
-    // No monthly fee in force for the gender means no fee is charged yet, the same
-    // as PagosDao.GenerarCuotasPendientesDelMes: it appears when that fee is set.
-    // The enrollment fee instead is mandatory for the men's squad, so without one
-    // in force the registration is refused.
+    // Registers a new player (HU-033) with the charges the club applies: the monthly fee from the 10th on and,
+    // for the men's squad only, the enrollment fee in force (see JugadoresAltaService).
     [Authorize(Roles = "1")]
     [HttpPost]
     public IActionResult CreatePlayer(PlayerRequestDTO request)
     {
-        string dni = request.Dni.Trim();
-        long categoryId = request.CategoryId!.Value;
+        var resultado = _altaService.Registrar(new SolicitudAltaJugador(
+            request.FirstName, request.LastName, request.Dni, request.BirthDate!.Value, request.Gender, request.CategoryId!.Value));
 
-        if (_playerDAO.ExistsPersonByDni(dni))
+        return this.Responder(resultado, alta =>
         {
-            return BadRequest($"A person with DNI {dni} is already registered.");
-        }
+            Player created = alta.Jugador;
+            _logger.LogInformation("Player {PlayerId} registered (monthly fee: {MonthlyFee}, enrollment fee: {EnrollmentFee})",
+                created.Id, alta.MontoCuota, alta.MontoInscripcion);
 
-        if (!_categoriasDao.ObtenerTodas().Any(c => c.IdCategoria == categoryId))
-        {
-            return BadRequest($"No category exists with id {categoryId}.");
-        }
-
-        decimal? enrollmentFeeAmount = null;
-        if (request.Gender == PlayerRequestDTO.MaleGender)
-        {
-            EnrollmentFee? enrollmentFee = _enrollmentFeeDAO.GetCurrentEnrollmentFee();
-            if (enrollmentFee == null)
+            return Created($"/api/players/{created.Id}", new PlayerResponseDTO
             {
-                return BadRequest("There is no enrollment fee in force. Set one in Actualización de aranceles before registering a player of the men's squad.");
-            }
-
-            enrollmentFeeAmount = enrollmentFee.Amount;
-        }
-
-        // A monthly fee set on the 5th covers the whole month, so it is looked up
-        // against the last day of the month, as PagosDao does.
-        DateTime joinDate = RelojNegocio.Hoy;
-        DateTime lastDayOfMonth = new DateTime(joinDate.Year, joinDate.Month, DateTime.DaysInMonth(joinDate.Year, joinDate.Month));
-        // The player's category fee wins when it has one in force; otherwise the gender fee.
-        decimal? monthlyFeeAmount = _arancelesDao.ObtenerMontoVigente(request.Gender, (int)categoryId, lastDayOfMonth);
-
-        Player created;
-        try
-        {
-            created = _playerDAO.CreatePlayer(new Player
-            {
-                FirstName = request.FirstName.Trim(),
-                LastName = request.LastName.Trim(),
-                Dni = dni,
-                BirthDate = request.BirthDate!.Value.Date,
-                Gender = request.Gender,
-                CategoryId = categoryId,
-                JoinDate = joinDate
-            }, monthlyFeeAmount, enrollmentFeeAmount);
-        }
-        catch (DaoLibrary.Exceptions.DniDuplicadoException)
-        {
-            // Otra alta con el mismo DNI ganó la carrera entre la verificación de arriba y la transacción.
-            return BadRequest($"A person with DNI {dni} is already registered.");
-        }
-
-        _logger.LogInformation("Player {PlayerId} registered (monthly fee: {MonthlyFee}, enrollment fee: {EnrollmentFee})",
-            created.Id, monthlyFeeAmount, enrollmentFeeAmount);
-
-        return Created($"/api/players/{created.Id}", new PlayerResponseDTO
-        {
-            Id = created.Id,
-            FirstName = created.FirstName,
-            LastName = created.LastName,
-            Dni = created.Dni,
-            BirthDate = created.BirthDate.ToString("yyyy-MM-dd"),
-            Gender = created.Gender,
-            CategoryId = created.CategoryId,
-            JoinDate = created.JoinDate.ToString("yyyy-MM-dd"),
-            MonthlyFeeAmount = monthlyFeeAmount,
-            EnrollmentFeeAmount = enrollmentFeeAmount
+                Id = created.Id,
+                FirstName = created.FirstName,
+                LastName = created.LastName,
+                Dni = created.Dni,
+                BirthDate = created.BirthDate.ToString("yyyy-MM-dd"),
+                Gender = created.Gender,
+                CategoryId = created.CategoryId,
+                JoinDate = created.JoinDate.ToString("yyyy-MM-dd"),
+                MonthlyFeeAmount = alta.MontoCuota,
+                EnrollmentFeeAmount = alta.MontoInscripcion
+            });
         });
     }
-
-    public const int MinSearchTermLength = 2;
-    public const int MaxSearchTermLength = 50;
-    public const int MaxSearchResults = 50;
 
     // Player search on the Cuotas panel (HU-023): by DNI or last name, so the
     // operator can open that player's fees and debt. Both administrative roles
@@ -176,38 +116,20 @@ public class PlayersController : ControllerBase
     // discount and the front end matches them by PlayerId.
     [Authorize(Roles = "1,2")]
     [HttpGet("discounts")]
-    public IActionResult GetDiscounts()
-    {
-        List<Discount> discounts = _discountDao.GetActiveDiscounts();
-        _logger.LogInformation("Active discounts found: {Count}", discounts.Count);
-
-        return Ok(discounts.Select(MapToDto).ToList());
-    }
+    public IActionResult GetDiscounts() => Ok(_beneficiosService.ObtenerVigentes().Select(MapToDto).ToList());
 
     // Feeds the administration table on Becados y Descuentos, which lists current
     // and expired assignments alike
     [Authorize(Roles = "1,2")]
     [HttpGet("discounts/all")]
-    public IActionResult GetAllDiscounts()
-    {
-        List<Discount> discounts = _discountDao.GetAllDiscounts();
-        _logger.LogInformation("Discount assignments returned: {Count}", discounts.Count);
-
-        return Ok(discounts.Select(MapToDto).ToList());
-    }
+    public IActionResult GetAllDiscounts() => Ok(_beneficiosService.ObtenerTodos().Select(MapToDto).ToList());
 
     // Feeds the reason dropdown on the assignment form. The list comes from the
     // catalogue table so the front end and the API can never disagree on what a
     // valid reason is.
     [Authorize(Roles = "1,2")]
     [HttpGet("discounts/types")]
-    public IActionResult GetDiscountTypes()
-    {
-        List<DiscountType> types = _discountDao.GetDiscountTypes();
-        _logger.LogInformation("Discount types returned: {Count}", types.Count);
-
-        return Ok(types.Select(type => type.Name).ToList());
-    }
+    public IActionResult GetDiscountTypes() => Ok(_beneficiosService.ObtenerMotivos());
 
     // Feeds the badge on the player profile header and the assignment form.
     //
@@ -225,10 +147,10 @@ public class PlayersController : ControllerBase
     {
         if (playerId <= 0)
         {
-            return BadRequest("The player id must be greater than zero.");
+            return BadRequest(new { mensaje = "Indicá un jugador válido." });
         }
 
-        Discount? discount = _discountDao.GetAssignedDiscountByPlayer(playerId);
+        Discount? discount = _beneficiosService.ObtenerAsignado(playerId);
         if (discount == null || (!includeExpired && !discount.IsActive))
         {
             return NotFound();
@@ -237,76 +159,31 @@ public class PlayersController : ControllerBase
         return Ok(MapToDto(discount));
     }
 
-    // Every benefit of a player that was not cancelled, oldest first (HU-012).
-    //
-    // Since a player can hold several over time, the financial card lists them
-    // all: what already expired, what runs today and what is scheduled. Each one
-    // carries its own state, resolved by the server.
+    // Every benefit of a player that was not cancelled, oldest first (HU-012): what already expired, what runs
+    // today and what is scheduled. Each one carries its own state, resolved by the server.
     [Authorize(Roles = "1,2")]
     [HttpGet("{playerId}/discounts")]
     public IActionResult GetDiscountsByPlayer(long playerId)
     {
         if (playerId <= 0)
         {
-            return BadRequest("The player id must be greater than zero.");
+            return BadRequest(new { mensaje = "Indicá un jugador válido." });
         }
 
-        List<Discount> discounts = _discountDao.GetDiscountsByPlayer(playerId);
-        _logger.LogInformation("Benefits returned for player {PlayerId}: {Count}", playerId, discounts.Count);
-
-        return Ok(discounts.Select(MapToDto).ToList());
+        return Ok(_beneficiosService.ObtenerDelJugador(playerId).Select(MapToDto).ToList());
     }
 
-    // Assigns a benefit to a player (HU-011 / HU-012).
-    //
-    // Since HU-012 a player can hold several benefits over time, so what is
-    // refused is not a second benefit but a range that overlaps another one of
-    // the same player: on any given date, only one benefit can apply. The check
-    // lives in the DAO, inside the transaction that inserts, so a direct call to
-    // the API and a race between two requests hit the same rule.
+    // Assigns a benefit to a player (HU-011 / HU-012). A player can hold several over time, never two on the same
+    // day; the overlap is checked again inside the insert's transaction, so a race between two requests also fails.
     [Authorize(Roles = "1,2")]
     [HttpPost("{playerId}/discount")]
     public IActionResult AssignDiscount(long playerId, DiscountRequestDTO request)
     {
-        IActionResult? rejection = ValidatePlayerAndReason(playerId, request, out DiscountType? reason);
-        if (rejection != null)
+        return this.Responder(_beneficiosService.Asignar(playerId, Solicitud(request)), creado =>
         {
-            return rejection;
-        }
-
-        Discount discount = BuildDiscount(playerId, request, reason!);
-
-        // Regla del club: nadie asigna becas ni descuentos con fecha pasada. Una bonificación que empieza antes
-        // de hoy le borra deuda ya vencida: eso es condonar, no becar.
-        if (discount.StartDate.Date < RelojNegocio.Hoy)
-        {
-            return UnprocessableEntity(new { mensaje = $"La bonificación no puede empezar antes de hoy ({RelojNegocio.Hoy:dd/MM/yyyy})." });
-        }
-
-        // Asked before writing only to name the offending benefit in the error;
-        // the write path checks again while holding the range.
-        Discount? clash = _discountDao.GetOverlappingDiscount(playerId, discount.StartDate, discount.EndDate);
-        if (clash != null)
-        {
-            return Conflict(OverlapMessage(playerId, clash));
-        }
-
-        Discount? created = _discountDao.CreateDiscount(discount);
-        if (created == null)
-        {
-            // Another request took the range between the check and the insert
-            _logger.LogWarning("Concurrent benefit assignment rejected for player {PlayerId}", playerId);
-            return Conflict($"Player {playerId} already has a benefit covering that period. Adjust the dates or cancel the existing one.");
-        }
-
-        _logger.LogInformation("Benefit {DiscountId} assigned to player {PlayerId}", created.Id, playerId);
-
-        // Read back the stored row: the insert alone does not know the player
-        // name, the category or the resolved state, and the client has to
-        // receive the same shape the GET returns.
-        Discount? stored = FindDiscount(playerId, created.Id);
-
-        return Created($"/api/players/{playerId}/discount", MapToDto(stored ?? created));
+            _logger.LogInformation("Benefit {DiscountId} assigned to player {PlayerId}", creado.Id, playerId);
+            return Created($"/api/players/{playerId}/discount", MapToDto(creado));
+        });
     }
 
     // Edita una bonificación del jugador. Solo SuperAdmin (el rol 2 asigna, cancela y anula, pero no
@@ -315,223 +192,49 @@ public class PlayersController : ControllerBase
     [HttpPut("{playerId}/discount")]
     public IActionResult UpdateDiscount(long playerId, DiscountRequestDTO request, long discountId = 0)
     {
-        IActionResult? rejection = ValidatePlayerAndReason(playerId, request, out DiscountType? reason);
-        if (rejection != null)
+        return this.Responder(_beneficiosService.Editar(playerId, discountId, Solicitud(request)), editado =>
         {
-            return rejection;
-        }
-
-        // Without an explicit id the one the popup is showing is edited
-        Discount? current = discountId > 0
-            ? FindDiscount(playerId, discountId)
-            : _discountDao.GetAssignedDiscountByPlayer(playerId);
-
-        if (current == null)
-        {
-            return NotFound($"Player {playerId} has no such benefit to edit.");
-        }
-
-        Discount discount = BuildDiscount(playerId, request, reason!);
-        discount.Id = current.Id;
-
-        var edicion = ServiceLibrary.ReglasEdicionBeneficio.Evaluar(current, discount, RelojNegocio.Hoy);
-        if (edicion != ServiceLibrary.ResultadoEdicionBeneficio.Permitida)
-        {
-            var mensaje = new { mensaje = ServiceLibrary.ReglasEdicionBeneficio.Mensaje(edicion) };
-            return edicion == ServiceLibrary.ResultadoEdicionBeneficio.Cerrada ? Conflict(mensaje) : UnprocessableEntity(mensaje);
-        }
-
-        Discount? clash = _discountDao.GetOverlappingDiscount(playerId, discount.StartDate, discount.EndDate, current.Id);
-        if (clash != null)
-        {
-            return Conflict(OverlapMessage(playerId, clash));
-        }
-
-        bool? updated = _discountDao.UpdateDiscount(discount);
-
-        if (updated == null)
-        {
-            _logger.LogWarning("Concurrent benefit edit rejected for player {PlayerId}", playerId);
-            return Conflict($"Player {playerId} already has a benefit covering that period. Adjust the dates or cancel the existing one.");
-        }
-
-        if (updated == false)
-        {
-            return NotFound($"Player {playerId} has no such benefit to edit.");
-        }
-
-        _logger.LogInformation("Benefit {DiscountId} updated for player {PlayerId}", discount.Id, playerId);
-
-        // Read back what was stored: the client renders persisted data, never the
-        // payload it just sent.
-        Discount? stored = FindDiscount(playerId, current.Id);
-        return Ok(MapToDto(stored ?? discount));
+            _logger.LogInformation("Benefit {DiscountId} updated for player {PlayerId}", editado.Id, playerId);
+            return Ok(MapToDto(editado));
+        });
     }
 
-    // Cancels a benefit of a player. The row is kept as history and only flipped
-    // to inactive: PAGOS may still point at it, and the administration table has
-    // to keep showing what was granted.
-    //
-    // Cancelling is for taking a benefit down before its time. A benefit that
-    // simply ran its course does not need this: it expires on its own the day
-    // after its end date, and frees the period for a new one.
+    // Cancels a benefit before its time. The row is kept as history and only flipped to inactive: PAGOS may still
+    // point at it, and the administration table has to keep showing what was granted.
     [Authorize(Roles = "1,2")]
     [HttpDelete("{playerId}/discount")]
     public IActionResult CancelDiscount(long playerId, long discountId = 0)
     {
-        if (playerId <= 0)
+        return this.Responder(_beneficiosService.Cancelar(playerId, discountId), cancelado =>
         {
-            return BadRequest("The player id must be greater than zero.");
-        }
-
-        // Without an explicit id the one the popup is showing is cancelled
-        long target = discountId;
-        if (target <= 0)
-        {
-            Discount? current = _discountDao.GetAssignedDiscountByPlayer(playerId);
-            if (current == null)
-            {
-                return NotFound($"Player {playerId} has no benefit to cancel.");
-            }
-            target = current.Id;
-        }
-
-        if (!_discountDao.DeactivateDiscount(playerId, target))
-        {
-            return NotFound($"Player {playerId} has no such benefit to cancel.");
-        }
-
-        _logger.LogInformation("Benefit {DiscountId} cancelled for player {PlayerId}", target, playerId);
-
-        return NoContent();
+            _logger.LogInformation("Benefit {DiscountId} cancelled for player {PlayerId}", cancelado, playerId);
+            return NoContent();
+        });
     }
 
-    // Anula un beneficio asignado por error. A diferencia de CancelDiscount, no respeta los
-    // meses entre su inicio y la cancelación: deja de contar para todas sus cuotas, como si
-    // nunca se hubiera otorgado. Lo ya cobrado se mantiene (ver DiscountDao.VoidDiscount).
-    // Pensado para corregir una asignación equivocada, no para dar de baja una que corrió bien
-    // un tiempo y se quiere terminar antes — para eso está Cancelar.
+    // Anula un beneficio asignado por error: deja de contar para todas sus cuotas, como si nunca se hubiera
+    // otorgado (lo ya cobrado se mantiene). Solo uno cancelado (ver BeneficiosService.Anular).
     [Authorize(Roles = "1,2")]
     [HttpDelete("{playerId}/discount/void")]
     public IActionResult VoidDiscount(long playerId, long discountId)
     {
-        if (playerId <= 0)
+        return this.Responder(_beneficiosService.Anular(playerId, discountId), anulado =>
         {
-            return BadRequest("The player id must be greater than zero.");
-        }
-        if (discountId <= 0)
-        {
-            return BadRequest("The discount id must be greater than zero.");
-        }
-
-        // Sólo uno que fue cortado antes de tiempo (Cancelled) puede anularse, la misma regla
-        // que aplica la pantalla. Uno vigente o programado se cancela primero. Uno que ya
-        // cumplió su fecha de cierre sin haber sido cancelado (Expired) es intocable: esos
-        // meses ya se dieron por saldados y anularlo generaría deuda sobre un período que el
-        // club ya considera cerrado.
-        Discount? current = FindDiscount(playerId, discountId);
-        if (current == null)
-        {
-            return NotFound($"Player {playerId} has no such benefit to void.");
-        }
-        if (current.Status != DiscountStatus.Cancelled)
-        {
-            return Conflict(current.Status switch
-            {
-                DiscountStatus.Expired => "This benefit already ran its full course; it cannot be voided.",
-                DiscountStatus.Voided => "This benefit is already voided.",
-                _ => "Only a cancelled benefit can be voided; cancel it first."
-            });
-        }
-
-        if (!_discountDao.VoidDiscount(playerId, discountId))
-        {
-            return NotFound($"Player {playerId} has no such benefit to void.");
-        }
-
-        _logger.LogInformation("Benefit {DiscountId} voided for player {PlayerId}", discountId, playerId);
-
-        return NoContent();
+            _logger.LogInformation("Benefit {DiscountId} voided for player {PlayerId}", anulado, playerId);
+            return NoContent();
+        });
     }
 
-    // The two checks every write shares: the player has to exist and the reason
-    // has to be one of the catalogue rows.
-    //
-    // Adaptado para usar IJugadoresDao.ObtenerJugadorPorId(int) en vez del
-    // PlayerDao del repo original, así este feature no duplica el stack de
-    // Jugadores que ya existe en este proyecto.
-    private IActionResult? ValidatePlayerAndReason(long playerId, DiscountRequestDTO request, out DiscountType? reason)
-    {
-        reason = null;
+    // The DTO already validated the shape (dates parse, value matches its type), so the dates are never null here.
+    private static SolicitudBeneficio Solicitud(DiscountRequestDTO request) => new(
+        request.Reason,
+        request.ValueType,
+        request.Percentage,
+        request.FixedAmount,
+        DiscountRequestDTO.ParseDate(request.StartDate)!.Value,
+        DiscountRequestDTO.ParseDate(request.EndDate)!.Value);
 
-        if (playerId <= 0)
-        {
-            return BadRequest("The player id must be greater than zero.");
-        }
-
-        JugadorResumen? jugador = _jugadoresDao.ObtenerJugadorPorId((int)playerId);
-        if (jugador == null)
-        {
-            return BadRequest($"No player exists with id {playerId}.");
-        }
-
-        // Un jugador dado de baja ya no está en el club: no se le asignan ni editan becas o descuentos (las
-        // que tenía se cancelaron al darlo de baja).
-        if (jugador.FechaBaja != null)
-        {
-            return UnprocessableEntity(new { mensaje = $"El jugador está dado de baja desde el {jugador.FechaBaja:dd/MM/yyyy}: no se le pueden asignar ni editar becas o descuentos." });
-        }
-
-        reason = _discountDao.GetDiscountTypeByName(request.Reason.Trim());
-        if (reason == null)
-        {
-            List<string> allowed = _discountDao.GetDiscountTypes().Select(type => type.Name).ToList();
-            return BadRequest($"The benefit reason must be one of: {string.Join(", ", allowed)}.");
-        }
-
-        return null;
-    }
-
-    // Maps the request onto the entity, keeping percentage and fixed amount
-    // exclusive: whichever does not match the value type is stored as null.
-    private static Discount BuildDiscount(long playerId, DiscountRequestDTO request, DiscountType reason)
-    {
-        bool isPercentage = request.ValueType.Trim() == DiscountRequestDTO.PercentageValue;
-
-        return new Discount
-        {
-            PlayerId = playerId,
-            TypeId = reason.Id,
-            Type = reason.Name,
-            ValueType = request.ValueType.Trim(),
-            Percentage = isPercentage ? request.Percentage : null,
-            FixedAmount = isPercentage ? null : request.FixedAmount,
-            // Both dates are mandatory and already validated by the DTO, so by
-            // the time this runs they parse. The state is not set here: the
-            // database resolves it when the row is read back.
-            StartDate = DiscountRequestDTO.ParseDate(request.StartDate)!.Value,
-            EndDate = DiscountRequestDTO.ParseDate(request.EndDate)!.Value
-        };
-    }
-
-    // One specific benefit of a player, by id. Cancelled ones are not reachable
-    // here, the same way they are not reachable anywhere else.
-    private Discount? FindDiscount(long playerId, long discountId)
-    {
-        return _discountDao.GetDiscountsByPlayer(playerId)
-            .FirstOrDefault(benefit => benefit.Id == discountId);
-    }
-
-    // Names the benefit standing in the way, with its period, so the message
-    // tells the administrator what to move instead of just saying "no".
-    private static string OverlapMessage(long playerId, Discount clash)
-    {
-        return $"Player {playerId} already has a benefit for that period: "
-             + $"{clash.Type} from {clash.StartDate:yyyy-MM-dd} to {clash.EndDate:yyyy-MM-dd}. "
-             + "Adjust the dates or cancel that one first.";
-    }
-
-    private DiscountResponseDTO MapToDto(Discount discount)
+    private static DiscountResponseDTO MapToDto(Discount discount)
     {
         return new DiscountResponseDTO
         {

@@ -147,6 +147,22 @@ public sealed class AccountAccessDao(string connectionString)
     // del usuario para cruzar acá (la pantalla solo pide la contraseña nueva). RECUPERACION vale para
     // cualquier rol con acceso y la contraseña ya creada; ACTIVACION vale para cualquier rol recién
     // habilitado y además limpia activacion_pendiente.
+    // Datos de la persona dueña de un enlace todavía válido (mismas condiciones que CompleteAccountAccessCore), para
+    // controlar que la contraseña nueva no los contenga. null si el enlace no sirve.
+    public (string? Nombre, string? Apellido, string? Dni, string? Email)? ObtenerTitularDelToken(string tokenHash)
+    {
+        using var connection = SqlConnectionFactory.Open(connectionString);
+        using var command = new SqlCommand(@"SELECT u.nombre, u.apellido, u.dni, u.email FROM dbo.TOKEN_ACCESO_CUENTA t
+            INNER JOIN dbo.USUARIO u ON u.PK_id_usuario = t.id_usuario
+            WHERE t.hash_token = @hash AND t.consumido_utc IS NULL AND t.vence_utc > SYSUTCDATETIME()
+              AND u.activo = 1 AND u.acceso_portal = 1
+              AND (t.tipo = 'ACTIVACION' OR (t.tipo = 'RECUPERACION' AND u.activacion_pendiente = 0))", connection);
+        command.Parameters.Add("@hash", SqlDbType.Char, 64).Value = tokenHash;
+        using var reader = command.ExecuteReader();
+        if (!reader.Read()) return null;
+        return (reader["nombre"] as string, reader["apellido"] as string, reader["dni"] as string, reader["email"] as string);
+    }
+
     public bool CompleteAccountAccess(string tokenHash, string passwordHash)
     {
         using var connection = SqlConnectionFactory.Open(connectionString);

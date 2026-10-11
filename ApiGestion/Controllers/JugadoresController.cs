@@ -115,7 +115,8 @@ namespace ApiGestion.Controllers
             return string.Join(" ", partes);
         }
 
-        // POST api/jugadores/{id}/reactivar -> vuelve a emitirle cuotas desde el mes en curso. Solo SuperAdmin.
+        // POST api/jugadores/{id}/reactivar -> reingreso: vuelve a emitirle cuotas desde el mes en curso (la de este
+        // mes en el momento si ya pasó el día 10; si no, el 10 con el resto). Solo SuperAdmin.
         // Las becas canceladas por la baja no se restauran: si corresponde, se asigna una nueva.
         [Authorize(Roles = "1")]
         [HttpPost("{id:int}/reactivar")]
@@ -128,9 +129,6 @@ namespace ApiGestion.Controllers
                     return BadRequest(new { exito = false, mensaje = "No se pudo reactivar: el jugador no existe o no estaba dado de baja." });
                 }
 
-                // La cuota del mes en curso se emite ahora, sin esperar al próximo turno del generador.
-                DateTime hoy = EntityLibrary.RelojNegocio.Hoy;
-                _pagosDao.GenerarCuotasPendientesDelMes(null, null, hoy.Month, hoy.Year);
                 return Ok(new { exito = true, mensaje = "Jugador reactivado." });
             }
             catch (Exception ex)

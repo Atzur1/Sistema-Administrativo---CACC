@@ -288,9 +288,17 @@ public class PagosServiceCobroTests
     }
 
     [Fact]
-    public void EstadoCuotas_PendienteDespuesDelCierreDelMes_EsVencido()
+    public void EstadoCuotas_PendienteHastaElDia9DelMesSiguiente_SigueEnTermino()
     {
-        var cuotas = PagosService.ConstruirEstadoDeCuotas(new[] { Movimiento(10, 3, false, 85_000m) }, new DateTime(2026, 4, 1));
+        var cuotas = PagosService.ConstruirEstadoDeCuotas(new[] { Movimiento(10, 3, false, 85_000m) }, new DateTime(2026, 4, 9));
+
+        Assert.Equal(EstadosCuota.Pendiente, Assert.Single(cuotas).Estado);
+    }
+
+    [Fact]
+    public void EstadoCuotas_PendienteElDia10DelMesSiguiente_EsVencido()
+    {
+        var cuotas = PagosService.ConstruirEstadoDeCuotas(new[] { Movimiento(10, 3, false, 85_000m) }, new DateTime(2026, 4, 10));
 
         Assert.Equal(EstadosCuota.Vencido, Assert.Single(cuotas).Estado);
     }
@@ -438,7 +446,7 @@ public bool EmitirCuotaDeJugador(SqlConnection conexion, SqlTransaction transacc
         public IReadOnlyList<PlayerAccount> GetPlayerAccounts(bool onlyDebtors) => throw new NotSupportedException();
         public IReadOnlyList<CategoriaDeuda> ObtenerDeudaPorCategoria(int anio, int? mes = null) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => throw new NotSupportedException();
-        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => throw new NotSupportedException();
+        public PagosRegistradosPagina ObtenerPagosRegistrados(FiltroPagosRegistrados filtro) => throw new NotSupportedException();
         public ResumenPagos ObtenerResumen() => throw new NotSupportedException();
         public ResumenPagosHoy ObtenerResumenHoy() => throw new NotSupportedException();
         public HistorialPagosResultado ObtenerHistorialPagos(int idJugador, int page, int pageSize) => throw new NotSupportedException();

@@ -57,6 +57,10 @@ namespace ApiGestion.Controllers
                 });
 
                 string mensaje = "Arancel programado correctamente.";
+                if (resultado.SeEmiteElDia is { } dia)
+                {
+                    mensaje += $" Las cuotas con este monto se generan el {dia:dd/MM/yyyy}.";
+                }
                 if (resultado.CuotasReemitidas > 0)
                 {
                     mensaje += $" Se volvieron a emitir {resultado.CuotasReemitidas} cuota{(resultado.CuotasReemitidas == 1 ? "" : "s")} pendiente{(resultado.CuotasReemitidas == 1 ? "" : "s")} del mes en curso con el monto nuevo.";

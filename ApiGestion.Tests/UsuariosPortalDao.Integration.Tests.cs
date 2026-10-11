@@ -147,4 +147,32 @@ public class UsuariosPortalDaoIntegrationTests
         }
         finally { transaction.Rollback(); connection.Dispose(); }
     }
+
+    // Reactivar: el SuperAdmin elige el rol (la pantalla propone el que tenía). Un rol inválido no reactiva.
+    [IntegracionFact]
+    public void Reactivar_UsaElRolElegido()
+    {
+        var (connection, transaction) = Abrir();
+        try
+        {
+            int id = InsertarUsuario(connection, transaction, "90333444", "reactivar-rol@cacc.test", conAcceso: true);
+            using (var deshabilitar = new SqlCommand(
+                "UPDATE dbo.USUARIO SET acceso_portal = 0, password_hash = N'hash-de-prueba' WHERE PK_id_usuario = @id", connection, transaction))
+            {
+                deshabilitar.Parameters.AddWithValue("@id", id);
+                deshabilitar.ExecuteNonQuery();
+            }
+
+            Assert.False(UsuariosPortalDao.ReactivarCore(connection, transaction, id, 3));
+            Assert.True(UsuariosPortalDao.ReactivarCore(connection, transaction, id, 1));
+
+            using var leer = new SqlCommand("SELECT acceso_portal, rol_portal FROM dbo.USUARIO WHERE PK_id_usuario = @id", connection, transaction);
+            leer.Parameters.AddWithValue("@id", id);
+            using var r = leer.ExecuteReader();
+            Assert.True(r.Read());
+            Assert.True(r.GetBoolean(0));
+            Assert.Equal(1, r.GetInt32(1));
+        }
+        finally { transaction.Rollback(); connection.Dispose(); }
+    }
 }

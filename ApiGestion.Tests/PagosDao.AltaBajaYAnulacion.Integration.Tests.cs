@@ -222,4 +222,106 @@ public class PagosDaoAltaBajaYAnulacionIntegrationTests
         }
         finally { transaction.Rollback(); }
     }
+
+    // Reactivar es un reingreso: la fecha de alta pasa a ser el día de la reactivación, así los meses en que
+    // estuvo afuera no aparecen como cuotas faltantes. La cuota del mes se emite solo si ya pasó el día 10.
+    [IntegracionFact]
+    public void Reactivar_EsUnReingresoYRespetaElDia10()
+    {
+        using var connection = new SqlConnection(Conexion);
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var dao = new PagosDao(Conexion);
+            int categoria = PrimeraCategoria(connection, transaction);
+            ArancelDeCategoria(connection, transaction, categoria, 12_345m, new DateTime(2098, 1, 1));
+            int antes = CrearJugador(connection, transaction, alta: new DateTime(2098, 1, 10), baja: new DateTime(2098, 3, 20), categoria);
+            int despues = CrearJugador(connection, transaction, alta: new DateTime(2098, 1, 10), baja: new DateTime(2098, 3, 20), categoria);
+
+            Assert.True(JugadoresDao.ReactivarCore(connection, transaction, antes, new DateTime(2098, 7, 9)));
+            Assert.True(JugadoresDao.ReactivarCore(connection, transaction, despues, new DateTime(2098, 7, 10)));
+            Assert.False(JugadoresDao.ReactivarCore(connection, transaction, despues, new DateTime(2098, 7, 10))); // ya estaba activo
+
+            Assert.Null(dao.ObtenerPagoPendienteDeJugadorEnPeriodo(connection, transaction, antes, 7, 2098));   // la genera el 10
+            Assert.NotNull(dao.ObtenerPagoPendienteDeJugadorEnPeriodo(connection, transaction, despues, 7, 2098));
+
+            // Abril a junio (estuvo afuera) no figuran como faltantes.
+            foreach (int mes in new[] { 4, 5, 6 })
+            {
+                Assert.DoesNotContain(CuotasFaltantesDao.ObtenerFaltantesDelMesCore(connection, transaction, new DateTime(2098, mes, 1)),
+                    c => c.IdJugador == antes || c.IdJugador == despues);
+            }
+
+            using var cmd = new SqlCommand("SELECT fecha_alta, fecha_baja FROM JUGADORES WHERE PK_id_jugador = @id", connection, transaction);
+            cmd.Parameters.AddWithValue("@id", antes);
+            using var r = cmd.ExecuteReader();
+            Assert.True(r.Read());
+            Assert.Equal(new DateTime(2098, 7, 9), r.GetDateTime(0));
+            Assert.True(r.IsDBNull(1));
+        }
+        finally { transaction.Rollback(); }
+    }
+
+    // "Pagos registrados" paginado en la base: busca por nombre sin acentos ni mayúsculas, filtra por estado
+    // y devuelve el total para el paginador.
+    [IntegracionFact]
+    public void PagosRegistrados_FiltraYPaginaEnLaBase()
+    {
+        using var connection = new SqlConnection(Conexion);
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var dao = new PagosDao(Conexion);
+            int categoria = PrimeraCategoria(connection, transaction);
+            string apellido = "Zúñiga" + Random.Shared.Next(1000, 9999);
+            var player = new Player
+            {
+                FirstName = "Prueba", LastName = apellido, Dni = "97" + Random.Shared.Next(100000, 999999),
+                BirthDate = new DateTime(2010, 1, 1), Gender = "Masculino", CategoryId = categoria, JoinDate = new DateTime(2096, 1, 1)
+            };
+            int jugador = PlayerDAO.InsertPlayer(connection, transaction, PlayerDAO.InsertPerson(connection, transaction, player), player);
+
+            // Tres cuotas pagas completas y una inscripción con un abono parcial (las cuotas solo se listan
+            // cuando están pagas completas; la inscripción, también con saldo pendiente).
+            foreach (int mes in new[] { 1, 2, 3 })
+            {
+                dao.InsertarPago(connection, transaction, new Pago
+                {
+                    IdJugador = jugador, MontoBase = 10_000m, MontoFinal = 10_000m, MetodoPago = "Efectivo",
+                    FechaPago = new DateTime(2096, mes, 5), FechaVencimiento = new DateTime(2096, mes, 1), Estado = true, Concepto = "Cuota"
+                });
+            }
+            dao.InsertarPago(connection, transaction, new Pago
+            {
+                IdJugador = jugador, MontoBase = 10_000m, MontoFinal = 4_000m, MetodoPago = "Efectivo", FechaPago = new DateTime(2096, 1, 6),
+                FechaVencimiento = new DateTime(2096, 1, 1), Estado = true, Concepto = "Inscripcion"
+            });
+            dao.InsertarPago(connection, transaction, new Pago
+            {
+                IdJugador = jugador, MontoBase = 10_000m, MontoFinal = 6_000m, FechaVencimiento = new DateTime(2096, 1, 1), Estado = false, Concepto = "Inscripcion"
+            });
+
+            // Sin acentos ni mayúsculas encuentra igual.
+            string busqueda = apellido.Replace("ú", "u").Replace("ñ", "n").ToUpperInvariant();
+            var primera = PagosDao.ObtenerPagosRegistradosCore(connection, transaction, new FiltroPagosRegistrados { Busqueda = busqueda, TamanioPagina = 3 });
+            Assert.Equal(4, primera.Total);
+            Assert.Equal(3, primera.Items.Count);
+            Assert.True(primera.TotalSinFiltros >= 4);
+
+            var segunda = PagosDao.ObtenerPagosRegistradosCore(connection, transaction, new FiltroPagosRegistrados { Busqueda = busqueda, TamanioPagina = 3, Pagina = 2 });
+            Assert.Single(segunda.Items);
+            Assert.Empty(primera.Items.Select(p => p.IdPago).Intersect(segunda.Items.Select(p => p.IdPago)));
+
+            var parciales = PagosDao.ObtenerPagosRegistradosCore(connection, transaction, new FiltroPagosRegistrados { Busqueda = busqueda, Estado = "Parcial" });
+            var parcial = Assert.Single(parciales.Items);
+            Assert.Equal("Inscripcion", parcial.Concepto);
+            Assert.Equal(4_000m, parcial.Monto);
+
+            // Los comodines de LIKE se buscan como texto.
+            Assert.Equal(0, PagosDao.ObtenerPagosRegistradosCore(connection, transaction, new FiltroPagosRegistrados { Busqueda = "%" + apellido }).Total);
+        }
+        finally { transaction.Rollback(); }
+    }
 }

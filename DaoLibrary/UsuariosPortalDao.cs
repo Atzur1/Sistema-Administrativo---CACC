@@ -110,15 +110,23 @@ namespace DaoLibrary
             return resultado;
         }
 
-        public bool Reactivar(int idUsuario)
+        public bool Reactivar(int idUsuario, int rolPortal)
         {
             using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            return ReactivarCore(conexion, null, idUsuario, rolPortal);
+        }
+
+        internal static bool ReactivarCore(SqlConnection conexion, SqlTransaction? transaccion, int idUsuario, int rolPortal)
+        {
+            if (rolPortal is not (1 or 2)) return false;
+
             using var comando = new SqlCommand(
-                @"UPDATE dbo.USUARIO SET acceso_portal = 1
+                @"UPDATE dbo.USUARIO SET acceso_portal = 1, rol_portal = @rol
                   WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0
                     AND password_hash IS NOT NULL AND rol_portal IS NOT NULL",
-                conexion);
+                conexion, transaccion);
             comando.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
+            comando.Parameters.Add("@rol", SqlDbType.Int).Value = rolPortal;
             try
             {
                 return comando.ExecuteNonQuery() == 1;

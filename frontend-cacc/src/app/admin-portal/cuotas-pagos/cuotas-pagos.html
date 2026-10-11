@@ -136,6 +136,10 @@
         </div>
       </div>
 
+      @if (avisoAdelanto) {
+        <p class="form-hint" role="note">{{ avisoAdelanto }}</p>
+      }
+
       <!-- Fila 2: monto, método y botón -->
       <div class="form-row form-row-action">
         <!-- Monto: aparece al seleccionar período -->

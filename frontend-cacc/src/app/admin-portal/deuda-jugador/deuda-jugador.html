@@ -255,10 +255,13 @@
 
               <div class="cuota-row-meta">
                 @if (cuota.saldoPendiente > 0 && estadoCuota(cuota) === 'vencida') {
-                  <span class="cuota-vencida-desde"
-                    >Vencida hace {{ diasVencida(cuota) }}
-                    {{ diasVencida(cuota) === 1 ? 'día' : 'días' }}</span
-                  >
+                  <span class="cuota-vencida-desde">
+                    @if (diasVencida(cuota) === 0) {
+                      Venció hoy
+                    } @else {
+                      Vencida hace {{ diasVencida(cuota) }} {{ diasVencida(cuota) === 1 ? 'día' : 'días' }}
+                    }
+                  </span>
                 }
               </div>
 

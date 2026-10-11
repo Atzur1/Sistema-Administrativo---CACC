@@ -1027,3 +1027,15 @@
     font-weight: 600;
     vertical-align: middle;
 }
+
+/* Aviso de pago por adelantado (antes del día 10, cuando la cuota del mes todavía no se generó). */
+.form-hint {
+    margin: 2px 0 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    background: var(--color-info-bg);
+    color: var(--color-text-muted);
+    border-left: 3px solid var(--color-info);
+}

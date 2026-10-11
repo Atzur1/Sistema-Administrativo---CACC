@@ -157,12 +157,12 @@ namespace ApiGestion.Controllers
             return Ok(new { mensaje = "Acceso revocado." });
         }
 
-        // POST api/usuarios/5/reactivar -> le devuelve el acceso a alguien ya
-        // deshabilitado, con el mismo rol y la misma contraseña. Sin mail.
+        // POST api/usuarios/5/reactivar { "rolPortal": 2 } -> le devuelve el acceso a alguien ya deshabilitado,
+        // con el rol que elige el SuperAdmin (la pantalla propone el que tenía) y la misma contraseña. Sin mail.
         [HttpPost("{id}/reactivar")]
-        public IActionResult Reactivar(int id)
+        public IActionResult Reactivar(int id, [FromBody] CambiarRolRequest request)
         {
-            if (!_usuariosDao.Reactivar(id))
+            if (!_usuariosDao.Reactivar(id, request.RolPortal))
                 return BadRequest(new { mensaje = "No se pudo reactivar: verificá que la persona esté entre las deshabilitadas y que su DNI no lo use otra cuenta con acceso." });
             return Ok(new { mensaje = "Acceso restablecido." });
         }

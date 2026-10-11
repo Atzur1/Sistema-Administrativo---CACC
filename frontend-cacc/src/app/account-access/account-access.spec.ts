@@ -80,7 +80,7 @@ describe('AccountAccess - formulario', () => {
   it('no deja enviar si las dos contraseñas no coinciden y lo avisa', async () => {
     const { fixture, element, complete, component } = await create('crear');
 
-    llenar(component, 'Abcdef1!x', 'otra-distinta');
+    llenar(component, 'Abcdef1!xy', 'otra-distinta');
     fixture.detectChanges();
 
     expect(texto(element)).toContain('Las contraseñas no coinciden.');
@@ -90,7 +90,7 @@ describe('AccountAccess - formulario', () => {
     expect(complete).not.toHaveBeenCalled();
   });
 
-  it('no deja enviar una contraseña de menos de 8 caracteres', async () => {
+  it('no deja enviar una contraseña de menos de 10 caracteres', async () => {
     const { fixture, element, complete, component } = await create('crear');
 
     llenar(component, 'corta', 'corta');
@@ -104,11 +104,11 @@ describe('AccountAccess - formulario', () => {
   it('envía el token del enlace y la contraseña, y muestra el éxito del modo', async () => {
     const { fixture, element, complete, component } = await create('crear');
 
-    llenar(component, 'Abcdef1!x', 'Abcdef1!x');
+    llenar(component, 'Abcdef1!xy', 'Abcdef1!xy');
     component.submit();
     fixture.detectChanges();
 
-    expect(complete).toHaveBeenCalledWith('token-de-prueba', 'Abcdef1!x');
+    expect(complete).toHaveBeenCalledWith('token-de-prueba', 'Abcdef1!xy');
     expect(texto(element)).toContain('¡Contraseña creada!');
     expect(texto(element)).toContain('Ir al inicio de sesión');
   });
@@ -116,7 +116,7 @@ describe('AccountAccess - formulario', () => {
   it('en la recuperación el éxito dice que la contraseña fue reestablecida', async () => {
     const { fixture, element, component } = await create('restablecer');
 
-    llenar(component, 'Abcdef1!x', 'Abcdef1!x');
+    llenar(component, 'Abcdef1!xy', 'Abcdef1!xy');
     component.submit();
     fixture.detectChanges();
 
@@ -129,7 +129,7 @@ describe('AccountAccess - formulario', () => {
       const { component, router } = await create('crear');
       const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
-      llenar(component, 'Abcdef1!x', 'Abcdef1!x');
+      llenar(component, 'Abcdef1!xy', 'Abcdef1!xy');
       component.submit();
 
       vi.advanceTimersByTime(LECTURA_MENSAJE_EXITO_MS - 1);
@@ -147,7 +147,7 @@ describe('AccountAccess - formulario', () => {
       const { fixture, element, component, router } = await create('crear');
       const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
-      llenar(component, 'Abcdef1!x', 'Abcdef1!x');
+      llenar(component, 'Abcdef1!xy', 'Abcdef1!xy');
       component.submit();
       fixture.detectChanges();
 
@@ -182,7 +182,7 @@ describe('AccountAccess - enlace inválido', () => {
     const complete = vi.fn(() => throwError(() => ({ status: 400 })));
     const { fixture, element, component } = await create('restablecer', { complete });
 
-    llenar(component, 'Abcdef1!x', 'Abcdef1!x');
+    llenar(component, 'Abcdef1!xy', 'Abcdef1!xy');
     component.submit();
     fixture.detectChanges();
 
@@ -194,7 +194,7 @@ describe('AccountAccess - enlace inválido', () => {
     const complete = vi.fn(() => throwError(() => ({ status: 500 })));
     const { fixture, element, component } = await create('crear', { complete });
 
-    llenar(component, 'Abcdef1!x', 'Abcdef1!x');
+    llenar(component, 'Abcdef1!xy', 'Abcdef1!xy');
     component.submit();
     fixture.detectChanges();
 
@@ -204,31 +204,52 @@ describe('AccountAccess - enlace inválido', () => {
 });
 
 describe('Fortaleza y requisitos de la contraseña', () => {
-  it('solo la longitud mínima es obligatoria; el resto son recomendaciones', () => {
+  it('la longitud mínima y letras+números son obligatorios; el resto son recomendaciones', () => {
     const requisitos = evaluarRequisitos('');
 
-    expect(requisitos.filter((r) => r.obligatorio).map((r) => r.id)).toEqual(['largo']);
-    expect(requisitos.filter((r) => !r.obligatorio).map((r) => r.id)).toEqual(['mayusculasMinusculas', 'numero', 'simbolo']);
+    expect(requisitos.filter((r) => r.obligatorio).map((r) => r.id)).toEqual(['largo', 'letrasYNumeros']);
+    expect(requisitos.filter((r) => !r.obligatorio).map((r) => r.id)).toEqual(['mayusculasMinusculas', 'simbolo']);
   });
 
   it('detecta cada requisito', () => {
     const cumplidos = (pw: string) => evaluarRequisitos(pw).filter((r) => r.cumplido).map((r) => r.id);
 
-    expect(cumplidos('abcdefgh')).toEqual(['largo']);
-    expect(cumplidos('Abcdefg1')).toEqual(['largo', 'mayusculasMinusculas', 'numero']);
-    expect(cumplidos('Abcdef1!')).toEqual(['largo', 'mayusculasMinusculas', 'numero', 'simbolo']);
-    expect(cumplidos('Ñandú123')).toContain('mayusculasMinusculas'); // contempla ñ y acentos
+    expect(cumplidos('abcdefghij')).toEqual(['largo']);
+    expect(cumplidos('Abcdefghi1')).toEqual(['largo', 'letrasYNumeros', 'mayusculasMinusculas']);
+    expect(cumplidos('Abcdefgh1!')).toEqual(['largo', 'letrasYNumeros', 'mayusculasMinusculas', 'simbolo']);
+    expect(cumplidos('Ñandú12345')).toContain('mayusculasMinusculas'); // contempla ñ y acentos
   });
 
   it('califica de vacía a fuerte', () => {
     expect(calcularFortaleza('')).toEqual({ nivel: 0, etiqueta: '' });
     expect(calcularFortaleza('abc')).toEqual({ nivel: 1, etiqueta: 'Muy corta' });
-    expect(calcularFortaleza('abcdefgh')).toEqual({ nivel: 2, etiqueta: 'Aceptable' });
-    expect(calcularFortaleza('Abcdefg1')).toEqual({ nivel: 3, etiqueta: 'Buena' });
-    expect(calcularFortaleza('Abcdef1!xyz')).toEqual({ nivel: 4, etiqueta: 'Fuerte' });
+    expect(calcularFortaleza('abcdefghi1')).toEqual({ nivel: 2, etiqueta: 'Aceptable' });
+    expect(calcularFortaleza('Abcdefghi1')).toEqual({ nivel: 2, etiqueta: 'Aceptable' });
+    expect(calcularFortaleza('Abcdefgh1!')).toEqual({ nivel: 3, etiqueta: 'Buena' });
+    expect(calcularFortaleza('Abcdef1!xyzw')).toEqual({ nivel: 4, etiqueta: 'Fuerte' }); // 12+ caracteres suma
   });
 
-  it('una contraseña larga solo en minúsculas es aceptable, no débil', () => {
-    expect(calcularFortaleza('abcdefghijkl').nivel).toBe(2);
+  it('sin números (o sin letras) no deja enviar', async () => {
+    const { component } = await create('crear');
+
+    llenar(component, 'solamenteletras', 'solamenteletras');
+    expect(component.form.invalid).toBe(true);
+
+    llenar(component, '12345678901', '12345678901');
+    expect(component.form.invalid).toBe(true);
+  });
+
+  it('si el servidor rechaza la contraseña por la política, explica el motivo y deja elegir otra', async () => {
+    const complete = vi.fn(() =>
+      throwError(() => ({ status: 400, error: { problemas: ['No puede contener tu DNI, tu nombre, tu apellido ni tu correo.'] } })),
+    );
+    const { fixture, element, component } = await create('crear', { complete });
+
+    llenar(component, 'Perez-2026-x', 'Perez-2026-x');
+    component.submit();
+    fixture.detectChanges();
+
+    expect(texto(element)).toContain('No puede contener tu DNI');
+    expect(element.querySelector('form')).not.toBeNull();
   });
 });

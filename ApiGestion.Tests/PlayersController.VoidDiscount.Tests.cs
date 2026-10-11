@@ -1,5 +1,6 @@
 namespace ApiGestion.Tests;
 
+using ServiceLibrary;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using ApiGestion.Controllers;
@@ -19,14 +20,12 @@ public class PlayersControllerVoidDiscountTests
         Discount? storedDiscount = null)
     {
         FakeDiscountDao discounts = new FakeDiscountDao(storedDiscount);
+        FakePlayerDAO players = new FakePlayerDAO();
         PlayersController controller = new PlayersController(
             NullLogger<PlayersController>.Instance,
-            new FakeJugadoresDao(),
-            discounts,
-            new FakePlayerDAO(),
-            new FakeEnrollmentFeeDAO(),
-            new FakeArancelesDao(),
-            new FakeCategoriasDao());
+            new JugadoresAltaService(players, new FakeCategoriasDao(), new FakeEnrollmentFeeDAO(), new FakeArancelesDao()),
+            new BeneficiosService(discounts, new FakeJugadoresDao()),
+            players);
 
         return (controller, discounts);
     }

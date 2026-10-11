@@ -67,7 +67,8 @@ namespace DaoLibrary
             info.DeudaAcumulada = Convert.ToDecimal(reader["deuda_acumulada"]);
         }
 
-        // Agrupa jugadores por cuántas cuotas con saldo real > 0 tienen: 0 / 1 / 2+. Una cuota
+        // Agrupa jugadores por cuántas cuotas VENCIDAS (desde el día 10 del mes siguiente) con saldo real > 0
+        // tienen: 0 / 1 / 2+ (habilitado / solo entrenamientos / inhabilitado). Una cuota
         // que un beneficio de Becados y Descuentos dejó en $0 no cuenta como deuda impaga.
         // La inscripción (HU-033) no es una cuota y no mueve al jugador de franja.
         private static void ObtenerBucketsDeDeuda(SqlConnection conexion, ResumenGeneralInfo info)
@@ -84,7 +85,7 @@ namespace DaoLibrary
                         SELECT pg.PK_id_pago, pg.FK_id_jugador, ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
                         FROM PAGOS pg
                         {DescuentosSql.ApplyDescuentoActivo}
-                        WHERE pg.estado = 0 AND pg.concepto = 'Cuota'
+                        WHERE pg.estado = 0 AND pg.concepto = 'Cuota' AND {SqlCalendarioCuotas.EstaVencida("pg")}
                     ) ca ON ca.FK_id_jugador = j.PK_id_jugador AND ca.saldo_ajustado > 0
                     WHERE j.fecha_baja IS NULL -- estado del plantel: solo jugadores activos
                     GROUP BY j.PK_id_jugador

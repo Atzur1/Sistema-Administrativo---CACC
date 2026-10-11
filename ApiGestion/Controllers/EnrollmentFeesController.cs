@@ -41,7 +41,7 @@ public class EnrollmentFeesController : ControllerBase
         EnrollmentFee? fee = _enrollmentFeeDAO.GetCurrentEnrollmentFee();
         if (fee == null)
         {
-            return NotFound("No enrollment fee is in force yet.");
+            return NotFound(new { mensaje = "Todavía no hay un arancel de inscripción vigente." });
         }
 
         return Ok(MapToDto(fee));

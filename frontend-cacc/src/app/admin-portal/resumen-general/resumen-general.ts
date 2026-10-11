@@ -11,6 +11,7 @@ import {
 import { AuthService } from '../../services/auth';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { animateCountUp } from '../../shared/count-up';
+import { AvisoCuotasFaltantes } from './aviso-cuotas-faltantes/aviso-cuotas-faltantes';
 
 Chart.register(...registerables);
 
@@ -66,7 +67,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-resumen-general',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective],
+  imports: [CommonModule, BaseChartDirective, AvisoCuotasFaltantes],
   templateUrl: './resumen-general.html',
   styleUrl: './resumen-general.css',
 })
@@ -245,9 +246,9 @@ export class ResumenGeneral implements OnInit {
     this.monthlyRevenue = this.mapMonthlyRevenue(r.recaudacionMensual);
 
     this.eligibility = [
-      { tone: 'success', title: `${r.jugadoresSinDeuda} habilitados`, description: 'Sin cuotas pendientes' },
-      { tone: 'warning', title: `${r.jugadoresConUnaImpaga} habilitación parcial`, description: '1 cuota pendiente' },
-      { tone: 'danger', title: `${r.jugadoresConDosOMasImpagas} inhabilitados`, description: '2 o más cuotas pendientes' },
+      { tone: 'success', title: `${r.jugadoresSinDeuda} habilitados`, description: 'Sin cuotas vencidas' },
+      { tone: 'warning', title: `${r.jugadoresConUnaImpaga} habilitación parcial`, description: '1 cuota vencida: solo entrena' },
+      { tone: 'danger', title: `${r.jugadoresConDosOMasImpagas} inhabilitados`, description: '2 o más cuotas vencidas' },
     ];
 
     this.trendData = this.mapTrend(r.coberturaPagoMensual);

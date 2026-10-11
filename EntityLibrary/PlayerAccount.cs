@@ -57,6 +57,9 @@ public class PlayerAccount
         set { pendingInstallments = value; }
     }
 
+    // Of those, the ones already overdue (from the 10th of the following month): the sport status comes from here
+    public int OverdueInstallments { get; set; }
+
     // null while the player is active. A player who left can still owe: they are listed with a "Baja" tag.
     public DateTime? LeaveDate { get; set; }
 }

@@ -4,7 +4,7 @@ import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   JugadorResumen,
   PagosService,
@@ -22,6 +22,7 @@ import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { PlayerSearch } from './player-search/player-search';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { financialLoadErrorMessage } from '../../shared/http-error-message';
+import { DIA_DE_CORTE } from '../../shared/calendario-cuotas';
 
 const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -58,7 +59,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-cuotas-pagos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, CustomSelect, PlayerSearch],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CustomSelect, PlayerSearch],
   templateUrl: './cuotas-pagos.html',
   styleUrl: './cuotas-pagos.css',
 })
@@ -565,6 +566,20 @@ export class CuotasPagos implements OnInit, OnDestroy {
     return this.selectedPlayer !== null;
   }
 
+  // Antes del día 10 la cuota del mes en curso todavía no existe: pagarla es un adelanto y queda imputado a
+  // ese mes (la API la emite en el momento con el arancel vigente; el 10 ya no se vuelve a generar).
+  get avisoAdelanto(): string | null {
+    const hoy = new Date();
+    const { period, year } = this.paymentForm.value;
+    if (!this.showPeriodYear || hoy.getDate() >= DIA_DE_CORTE) {
+      return null;
+    }
+    if (period !== this.periods[hoy.getMonth()] || Number(year) !== hoy.getFullYear()) {
+      return null;
+    }
+    return `La cuota de ${period.toLowerCase()} se genera el ${DIA_DE_CORTE}: este pago queda como adelanto de ${period.toLowerCase()} y ese día ya no se le vuelve a generar.`;
+  }
+
   get showAmount(): boolean {
     return this.showPeriodYear && !!this.paymentForm.get('period')?.value;
   }
@@ -598,9 +613,16 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.showSuggestions = this.matchingPlayers.length > 0;
   }
 
+  // El período arranca en el mes en curso: un pago hecho antes del 10 (por adelantado, cuando la cuota del
+  // mes todavía no se generó) se imputa a este mes, no al anterior. Si paga otro mes, el operador lo cambia.
   selectPlayer(jugador: JugadorResumen) {
     this.selectedPlayer = jugador;
-    this.paymentForm.patchValue({ player: jugador.nombreCompleto });
+    const hoy = new Date();
+    this.paymentForm.patchValue({
+      player: jugador.nombreCompleto,
+      period: this.paymentForm.get('period')?.value || this.periods[hoy.getMonth()],
+      year: this.paymentForm.get('year')?.value || hoy.getFullYear(),
+    });
     this.matchingPlayers = [];
     this.showSuggestions = false;
   }

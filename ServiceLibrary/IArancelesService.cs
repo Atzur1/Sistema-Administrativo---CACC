@@ -18,6 +18,9 @@ namespace ServiceLibrary
 
         // Cuotas del mes en curso que ya tenían algún pago y por eso se mantuvieron sin cambios.
         public int CuotasConPagosConservadas { get; set; }
+
+        // Si las cuotas con este monto todavía no se emitieron: el día 10 en que las genera el generador mensual.
+        public DateTime? SeEmiteElDia { get; set; }
     }
 
     public class CancelarArancelResultado

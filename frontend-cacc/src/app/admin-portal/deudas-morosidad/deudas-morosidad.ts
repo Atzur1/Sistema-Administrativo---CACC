@@ -33,7 +33,7 @@ interface DebtorRow {
   category: string;
   instalments: string;
   debt: string;
-  status: 'suspended' | 'partial' | 'left';
+  status: 'suspended' | 'partial' | 'current' | 'left';
   statusLabel: string;
 }
 
@@ -44,6 +44,8 @@ interface AlumnoRow {
   dni: string;
   categoria: string;
   cantidadCuotas: number;
+  // Las que ya vencieron (el 10 del mes siguiente): de acá sale el estado deportivo.
+  cantidadVencidas: number;
   montoTotal: number;
   // "yyyy-MM-dd" si el jugador está dado de baja (sigue debiendo), null si está activo
   fechaBaja: string | null;
@@ -108,12 +110,13 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 
 // Regla de negocio del club (la valida y aplica el acceso a la cancha otro equipo; acá solo
 // se calcula y se muestra como referencia):
-//   1 cuota impaga   -> puede entrenar, NO puede jugar partidos oficiales.
-//   2+ cuotas impagas -> inhabilitado por completo (ni entrenamientos ni oficiales).
+//   Solo cuentan las cuotas VENCIDAS (la de cada mes vence el 10 del mes siguiente):
+//   0 vencidas  -> habilitado aunque deba la cuota del mes ("En término").
+//   1 vencida   -> puede entrenar, NO puede jugar partidos oficiales.
+//   2+ vencidas -> inhabilitado por completo (ni entrenamientos ni oficiales).
 // No hay un campo propio en la base para esto ni un registro de CUÁNDO cruzó el umbral, así
-// que se deriva acá de la cantidad de cuotas pendientes que ya trae /api/pagos/pendientes
-// (estado actual, no histórico del mes).
-const CUOTAS_PARA_INHABILITAR = 2;
+// que se deriva acá de la cantidad de cuotas vencidas que ya trae la API (estado actual).
+const VENCIDAS_PARA_INHABILITAR = 2;
 
 // HU-020 (QA, 24/09): opción real y seleccionable del combo, no solo el
 // placeholder de fondo — así "Todas las categorías" aparece en la lista de
@@ -170,7 +173,7 @@ export class DeudasMorosidad implements OnInit {
   // se sigue aplicando en el cliente sobre la lista ya cargada: cambiar
   // cualquier filtro es instantáneo, sin ida y vuelta al servidor.
   categoriaOptions: string[] = [TODAS_CATEGORIAS];
-  estadoOptions: string[] = ['Inhabilitado', 'Solo entrenamientos'];
+  estadoOptions: string[] = ['Inhabilitado', 'Solo entrenamientos', 'En término'];
   // Un jugador dado de baja puede seguir debiendo: por defecto se listan todos, con el estado "Dado de baja".
   situacionOptions: string[] = [SITUACION_ACTIVOS, SITUACION_BAJA];
   selectedSituacion: string | null = null;
@@ -257,7 +260,7 @@ export class DeudasMorosidad implements OnInit {
       next: (accounts) => {
         this.allRows = accounts
           .map(mapAccountRow)
-          .sort((a, b) => b.cantidadCuotas - a.cantidadCuotas || b.montoTotal - a.montoTotal);
+          .sort((a, b) => b.cantidadVencidas - a.cantidadVencidas || b.cantidadCuotas - a.cantidadCuotas || b.montoTotal - a.montoTotal);
         if (this.categoriaOptions.length <= 1) {
           this.categoriaOptions = [
             TODAS_CATEGORIAS,
@@ -420,9 +423,11 @@ export class DeudasMorosidad implements OnInit {
     // El estado deportivo (inhabilitado / solo entrenamientos) es de los jugadores activos: un dado de baja
     // ya no entrena ni juega, así que esos filtros y el panel de inhabilitados no lo incluyen.
     if (this.selectedEstado === 'Inhabilitado') {
-      filtrados = filtrados.filter((p) => !p.fechaBaja && p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR);
+      filtrados = filtrados.filter((p) => !p.fechaBaja && p.cantidadVencidas >= VENCIDAS_PARA_INHABILITAR);
     } else if (this.selectedEstado === 'Solo entrenamientos') {
-      filtrados = filtrados.filter((p) => !p.fechaBaja && p.cantidadCuotas === 1);
+      filtrados = filtrados.filter((p) => !p.fechaBaja && p.cantidadVencidas === 1);
+    } else if (this.selectedEstado === 'En término') {
+      filtrados = filtrados.filter((p) => !p.fechaBaja && p.cantidadVencidas === 0);
     }
 
     const termino = this.busqueda.trim().toLowerCase();
@@ -434,7 +439,7 @@ export class DeudasMorosidad implements OnInit {
 
     this.debtors = filtrados.map(mapDebtorRow);
     this.topInhabilitados = filtrados
-      .filter((p) => !p.fechaBaja && p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR)
+      .filter((p) => !p.fechaBaja && p.cantidadVencidas >= VENCIDAS_PARA_INHABILITAR)
       .slice(0, 5)
       .map(mapHighlight);
     this.recalcularBanner();
@@ -452,7 +457,7 @@ export class DeudasMorosidad implements OnInit {
     if (categoria) {
       const filas = this.allRows.filter((p) => p.categoria === categoria);
       const montoTotal = filas.reduce((acc, p) => acc + p.montoTotal, 0);
-      const inhabilitados = filas.filter((p) => !p.fechaBaja && p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR).length;
+      const inhabilitados = filas.filter((p) => !p.fechaBaja && p.cantidadVencidas >= VENCIDAS_PARA_INHABILITAR).length;
       this.animateBannerMetrics([
         { label: 'Deuda total', raw: montoTotal, format: formatCompactCurrency },
         { label: 'Deudores', raw: filas.length, format: (n) => String(n) },
@@ -515,20 +520,22 @@ function mapAccountRow(a: PlayerAccountModel): AlumnoRow {
     dni: a.dni,
     categoria: a.category,
     cantidadCuotas: a.pendingInstallments,
+    cantidadVencidas: a.overdueInstallments ?? 0,
     montoTotal: a.amountOwed,
     fechaBaja: a.leaveDate ?? null,
   };
 }
 
 function mapDebtorRow(p: AlumnoRow, index: number): DebtorRow {
-  const inhabilitado = p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR;
   // Dado de baja: sigue debiendo, pero ya no tiene situación deportiva. Se muestra la fecha de la baja.
   const [anio, mes, dia] = (p.fechaBaja ?? '').slice(0, 10).split('-');
   const estado: Pick<DebtorRow, 'status' | 'statusLabel'> = p.fechaBaja
     ? { status: 'left', statusLabel: `Dado de baja ${dia}/${mes}/${anio}` }
-    : inhabilitado
+    : p.cantidadVencidas >= VENCIDAS_PARA_INHABILITAR
       ? { status: 'suspended', statusLabel: 'Inhabilitado' }
-      : { status: 'partial', statusLabel: 'Solo entrenamientos' };
+      : p.cantidadVencidas === 1
+        ? { status: 'partial', statusLabel: 'Solo entrenamientos' }
+        : { status: 'current', statusLabel: 'En término' };
   return {
     rank: index + 1,
     idJugador: p.idJugador,
@@ -546,7 +553,7 @@ function mapHighlight(p: AlumnoRow): DebtorHighlight {
     idJugador: p.idJugador,
     initials: initialsOf(p.nombreCompleto),
     player: p.nombreCompleto,
-    detail: `${p.categoria} · ${p.cantidadCuotas} cuotas`,
+    detail: `${p.categoria} · ${p.cantidadVencidas} cuotas vencidas`,
     amount: formatCompactCurrency(p.montoTotal),
   };
 }
@@ -569,7 +576,7 @@ function buildBannerTargets(
   pendientes: PendienteJugador[],
 ): BannerMetricTarget[] {
   const inhabilitados = pendientes.filter(
-    (p) => p.cantidadCuotas >= CUOTAS_PARA_INHABILITAR,
+    (p) => !p.fechaBaja && p.cantidadVencidas >= VENCIDAS_PARA_INHABILITAR,
   ).length;
   return [
     { label: 'Deuda total', raw: resumen.deudaGlobalTotal, format: formatCompactCurrency },

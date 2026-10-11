@@ -442,11 +442,11 @@ public class PagosControllerTests
     }
 
     [Theory]
-    [InlineData(2026, 2, "2026-02-28")]
-    [InlineData(2028, 2, "2028-02-29")]
-    [InlineData(2026, 3, "2026-03-31")]
-    [InlineData(2026, 12, "2026-12-31")]
-    public void GetPlayerStatement_DueDateIsTheLastDayOfTheMonthTheFeeCovers(int anio, int mes, string esperado)
+    [InlineData(2026, 2, "2026-03-10")]
+    [InlineData(2028, 2, "2028-03-10")]
+    [InlineData(2026, 3, "2026-04-10")]
+    [InlineData(2026, 12, "2027-01-10")]
+    public void GetPlayerStatement_DueDateIsThe10thOfTheFollowingMonth(int anio, int mes, string esperado)
     {
         (PagosController controller, FakePagosService pagosService) = CreateController();
         pagosService.StatementResult = new PlayerStatement
@@ -570,7 +570,7 @@ public AnularPagoResultado AnularPago(AnularPagoRequest request) => throw new No
         public RegistrarPagoResultado RegistrarPago(RegistrarPagoRequest request) => throw new NotSupportedException();
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => throw new NotSupportedException();
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => throw new NotSupportedException();
-        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => throw new NotSupportedException();
+        public PagosRegistradosPagina ObtenerPagosRegistrados(FiltroPagosRegistrados filtro) => throw new NotSupportedException();
         public ResumenPagosHoy ObtenerResumenHoy() => throw new NotSupportedException();
     }
 }

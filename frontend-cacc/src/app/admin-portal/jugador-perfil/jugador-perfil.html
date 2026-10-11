@@ -251,8 +251,9 @@
       <!-- ----- REACTIVAR ----- -->
       @if (dialogo === 'reactivar') {
         <p class="dialog-confirm">
-          ¿Confirmás que querés reactivar a <strong>{{ jugador?.nombreCompleto }}</strong>? Vuelve a generar
-          su cuota desde el mes en curso. Los meses en que estuvo dado de baja no se cobran.
+          ¿Confirmás que querés reactivar a <strong>{{ jugador?.nombreCompleto }}</strong>? Se toma como un
+          reingreso: su fecha de alta pasa a ser hoy y vuelve a generar su cuota desde el mes en curso (si ya pasó el
+          día 10, la de este mes se genera en el momento). Los meses en que estuvo dado de baja no se cobran.
         </p>
 
         <footer class="dialog-actions">

@@ -60,10 +60,11 @@ export class Usuarios implements OnInit {
   confirmarBaja = signal<UsuarioPortal | null>(null);
   bajaSubmitting = signal(false);
 
-  // "Reactivar": le devuelve el acceso a alguien ya deshabilitado, con su
-  // mismo rol y contraseña — sin token ni mail nuevo.
+  // "Reactivar": le devuelve el acceso a alguien ya deshabilitado, con su misma contraseña y el rol que
+  // elija el SuperAdmin (arranca en el que tenía) — sin token ni mail nuevo.
   confirmarReactivar = signal<UsuarioPortal | null>(null);
   reactivarSubmitting = signal(false);
+  rolReactivar = signal<RolPortal>(2);
 
   // "Resetear contraseña": el SuperAdmin le manda a la cuenta el enlace para elegir una nueva. Va siempre al
   // correo de la propia cuenta: el SuperAdmin no ve ni fija la contraseña de nadie. Si la cuenta todavía no
@@ -305,6 +306,7 @@ export class Usuarios implements OnInit {
   // ===== Reactivar =====
 
   pedirReactivar(usuario: UsuarioPortal): void {
+    this.rolReactivar.set(usuario.rolPortal);
     this.confirmarReactivar.set(usuario);
   }
 
@@ -319,7 +321,7 @@ export class Usuarios implements OnInit {
 
     this.reactivarSubmitting.set(true);
     this.usuariosService
-      .reactivar(usuario.idUsuario)
+      .reactivar(usuario.idUsuario, this.rolReactivar())
       .pipe(finalize(() => this.reactivarSubmitting.set(false)))
       .subscribe({
         next: (respuesta) => {

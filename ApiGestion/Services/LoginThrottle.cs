@@ -1,4 +1,6 @@
-using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
+using DaoLibrary;
 
 namespace ApiGestion.Services;
 
@@ -10,42 +12,26 @@ namespace ApiGestion.Services;
 // ventana. Se acepta porque el bloqueo dura minutos, no es permanente, y no revela si la cuenta existe: cuenta
 // los fallos de cualquier identificador, exista o no.
 //
-// Vive en memoria: se reinicia con la API. Alcanza para el despliegue de una sola instancia que tiene hoy.
-public sealed class LoginThrottle(TimeProvider clock)
+// Los fallos se guardan en la base (IntentosLoginDao): un reinicio de la API ya no los borra. El identificador
+// se guarda hasheado, nunca en claro.
+public sealed class LoginThrottle(TimeProvider clock, IIntentosLoginStore store)
 {
     public const int MaximoFallos = 10;
     public static readonly TimeSpan Ventana = TimeSpan.FromMinutes(15);
-    private const int LimiteDeClaves = 10_000;
 
-    private readonly ConcurrentDictionary<string, (int Fallos, DateTimeOffset Desde)> _fallos = new();
-
-    public bool Bloqueado(string clave)
+    public bool Bloqueado(string identificador)
     {
-        if (!_fallos.TryGetValue(clave, out var estado)) return false;
-        if (clock.GetUtcNow() - estado.Desde >= Ventana)
-        {
-            _fallos.TryRemove(clave, out _);
-            return false;
-        }
-        return estado.Fallos >= MaximoFallos;
+        var estado = store.Obtener(Clave(identificador));
+        if (estado is null) return false;
+        if (clock.GetUtcNow() - estado.Value.Desde >= Ventana) return false;
+        return estado.Value.Fallos >= MaximoFallos;
     }
 
-    public void RegistrarFallo(string clave)
-    {
-        var ahora = clock.GetUtcNow();
-        if (_fallos.Count >= LimiteDeClaves) Purgar(ahora);
+    public void RegistrarFallo(string identificador) => store.RegistrarFallo(Clave(identificador), clock.GetUtcNow(), Ventana);
 
-        _fallos.AddOrUpdate(clave,
-            _ => (1, ahora),
-            (_, actual) => ahora - actual.Desde >= Ventana ? (1, ahora) : (actual.Fallos + 1, actual.Desde));
-    }
+    public void Limpiar(string identificador) => store.Limpiar(Clave(identificador));
 
-    public void Limpiar(string clave) => _fallos.TryRemove(clave, out _);
-
-    // Evita que probar identificadores al azar llene la memoria: se descartan los que ya vencieron.
-    private void Purgar(DateTimeOffset ahora)
-    {
-        foreach (var (clave, estado) in _fallos)
-            if (ahora - estado.Desde >= Ventana) _fallos.TryRemove(clave, out _);
-    }
+    // SHA-256 en hexadecimal (64 caracteres): misma clave para el mismo identificador, sin guardarlo en claro.
+    internal static string Clave(string identificador)
+        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identificador.Trim().ToLowerInvariant())));
 }

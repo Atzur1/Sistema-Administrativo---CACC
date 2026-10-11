@@ -13,11 +13,11 @@ public class ArancelesServiceTests
 {
     private static readonly DateTime Hoy = new(2026, 10, 3);
 
-    private static (ArancelesService service, FakeArancelesDao aranceles, FakeCuotasDao cuotas) Create()
+    private static (ArancelesService service, FakeArancelesDao aranceles, FakeCuotasDao cuotas) Create(DateTime? hoy = null)
     {
         var aranceles = new FakeArancelesDao();
         var cuotas = new FakeCuotasDao();
-        var service = new ArancelesService(aranceles, cuotas, new FakeRunner(), new FakeCategoriasDao(), () => Hoy);
+        var service = new ArancelesService(aranceles, cuotas, new FakeRunner(), new FakeCategoriasDao(), () => hoy ?? Hoy);
         return (service, aranceles, cuotas);
     }
 
@@ -95,18 +95,20 @@ public class ArancelesServiceTests
 
     // ===== Qué pasa con las cuotas al programar =====
 
+    // Desde el día 10 la cuota del mes ya se generó: se vuelve a emitir con el monto nuevo.
     [Fact]
-    public void ProgramarArancel_ForTheCurrentMonth_ReissuesThePendingCuotasWithoutPaymentsAndKeepsThePaidOnes()
+    public void ProgramarArancel_ForTheCurrentMonthFromThe10th_ReissuesThePendingCuotasWithoutPaymentsAndKeepsThePaidOnes()
     {
-        var (service, aranceles, cuotas) = Create();
+        var (service, aranceles, cuotas) = Create(new DateTime(2026, 10, 10));
         cuotas.ConPagos = 2;
         cuotas.Pendientes = 6;
 
-        var resultado = service.ProgramarArancel(Request(null, 1, 100000, new DateTime(2026, 10, 3)));
+        var resultado = service.ProgramarArancel(Request(null, 1, 100000, new DateTime(2026, 10, 10)));
 
         Assert.Single(aranceles.Programados);
         Assert.Equal(6, resultado.CuotasReemitidas);
         Assert.Equal(2, resultado.CuotasConPagosConservadas);
+        Assert.Null(resultado.SeEmiteElDia);
         // Primero se cuentan las que tienen pagos, después se borran las pendientes y recién entonces se vuelve a emitir.
         Assert.Equal(new[] { "contar", "eliminar", "generar" }, cuotas.Llamadas.Select(l => l.Operacion));
         Assert.All(cuotas.Llamadas, l => Assert.Equal(1, l.IdCategoria));
@@ -114,6 +116,24 @@ public class ArancelesServiceTests
         Assert.Null(cuotas.Llamadas[1].MontoBase);
         Assert.Equal(new DateTime(2026, 10, 1), cuotas.Llamadas[1].Desde);
         Assert.Equal(new DateTime(2026, 11, 1), cuotas.Llamadas[1].Hasta);
+    }
+
+    // Antes del 10 la cuota del mes todavía no existe: no se emite nada, el generador la crea el 10 con el monto
+    // nuevo. Las ya pagadas por adelantado se conservan y las pendientes sin pagos se quitan (el 10 vuelven).
+    [Fact]
+    public void ProgramarArancel_ForTheCurrentMonthBeforeThe10th_EmitsNothingNowAndTellsWhenItWillBe()
+    {
+        var (service, aranceles, cuotas) = Create();
+        cuotas.ConPagos = 3;
+        cuotas.Pendientes = 1;
+
+        var resultado = service.ProgramarArancel(Request(null, 1, 100000, new DateTime(2026, 10, 3)));
+
+        Assert.Single(aranceles.Programados);
+        Assert.Equal(new[] { "contar", "eliminar" }, cuotas.Llamadas.Select(l => l.Operacion));
+        Assert.Equal(3, resultado.CuotasConPagosConservadas);
+        Assert.Equal(0, resultado.CuotasReemitidas);
+        Assert.Equal(new DateTime(2026, 10, 10), resultado.SeEmiteElDia);
     }
 
     [Fact]
@@ -124,8 +144,9 @@ public class ArancelesServiceTests
         var resultado = service.ProgramarArancel(Request("Femenino", null, 90000, new DateTime(2026, 11, 1)));
 
         Assert.Single(aranceles.Programados);
-        Assert.Empty(cuotas.Llamadas); // las cuotas de noviembre las crea el generador mensual cuando ese mes empiece
+        Assert.Empty(cuotas.Llamadas); // las cuotas de noviembre las crea el generador mensual el 10 de noviembre
         Assert.Equal(0, resultado.CuotasReemitidas);
+        Assert.Equal(new DateTime(2026, 11, 10), resultado.SeEmiteElDia);
     }
 
     // Regla del club: no se programan aranceles con fecha pasada, ni de un mes anterior ni de un día anterior

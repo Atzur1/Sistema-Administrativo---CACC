@@ -103,7 +103,7 @@ function estadoDeCuenta(cuotas: CuotaJugador[]): PlayerStatement {
       amount: c.montoCuota,
       amountDue: c.estado === 'Pagado' ? 0 : c.saldoPendiente,
       amountPaid: c.montoAbonado,
-      dueDate: c.fechaVencimiento,
+      dueDate: vencimientoComoLaApi(c.fechaVencimiento), // la API informa el 10 del mes siguiente
       status: c.estado,
       paidAt: c.fechaPago,
       paymentMethod: c.metodoPago,
@@ -210,7 +210,7 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
     expect(filas[0]).toContain('Efectivo');
     expect(filas[1]).toContain('Marzo 2026');
     expect(filas[1]).toContain('Vencido');
-    expect(filas[1]).toContain('31/03/2026');
+    expect(filas[1]).toContain('10/04/2026');
     expect(filas[2]).toContain('Pendiente');
   });
 
@@ -680,3 +680,10 @@ describe('DeudaJugador - estado de cuenta (HU-024)', () => {
     );
   });
 });
+
+// Como PagosController: la cuota de un mes vence el 10 del mes siguiente ("2026-03-01" -> "2026-04-10").
+function vencimientoComoLaApi(primerDiaDelMes: string): string {
+  const [anio, mes] = primerDiaDelMes.slice(0, 7).split('-').map(Number);
+  const siguiente = new Date(anio, mes, 10);
+  return `${siguiente.getFullYear()}-${String(siguiente.getMonth() + 1).padStart(2, '0')}-10`;
+}

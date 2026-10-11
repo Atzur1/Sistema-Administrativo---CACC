@@ -13,6 +13,9 @@ export interface PlayerAccountModel {
     // Installments that still have a real balance
     pendingInstallments: number;
 
+    // Of those, the ones already overdue (from the 10th of the following month)
+    overdueInstallments: number;
+
     // "yyyy-MM-dd" when the player left the club (they can still owe), or null while active
     leaveDate?: string | null;
 }

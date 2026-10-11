@@ -79,7 +79,7 @@
             </p>
           }
 
-          <!-- Fortaleza y recomendaciones en vivo. Solo la longitud mínima bloquea el envío. -->
+          <!-- Fortaleza y requisitos en vivo. La longitud y letras+números bloquean el envío; el resto se recomienda. -->
           <div id="password-ayuda">
             <div class="strength" [attr.data-nivel]="fortaleza.nivel" aria-live="polite">
               <div class="strength-bars" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
@@ -101,6 +101,7 @@
                 </li>
               }
             </ul>
+            <p class="requirements-note">Tampoco puede contener tu DNI, tu nombre ni tu correo, ni ser una contraseña muy común.</p>
           </div>
         </div>
 

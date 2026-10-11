@@ -57,9 +57,9 @@
 
       @if (paymentsLoaded) {
         <p class="filter-count">
-          Mostrando {{ pagedPayments.length }} de {{ filteredPayments.length }} pagos
-          @if (filteredPayments.length !== allPaymentsCount) {
-            ({{ allPaymentsCount }} en total)
+          Mostrando {{ pagedPayments.length }} de {{ totalFiltrados }} pagos
+          @if (totalFiltrados !== totalPagos) {
+            ({{ totalPagos }} en total)
           }
         </p>
       }
@@ -105,9 +105,9 @@
             <p>No se pudieron cargar los pagos. Puede ser una demora del servidor.</p>
             <button type="button" class="retry-btn" (click)="reintentarPagos()">Reintentar</button>
           </div>
-        } @else if (paymentsLoaded && allPaymentsCount === 0) {
+        } @else if (paymentsLoaded && totalPagos === 0) {
           <p class="panel-empty">No hay pagos registrados.</p>
-        } @else if (paymentsLoaded && filteredPayments.length === 0) {
+        } @else if (paymentsLoaded && totalFiltrados === 0) {
           <p class="panel-empty">Ningún pago coincide con la búsqueda o los filtros aplicados.</p>
         }
       </div>

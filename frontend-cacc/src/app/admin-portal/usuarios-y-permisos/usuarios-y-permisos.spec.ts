@@ -191,3 +191,47 @@ describe('Usuarios - Corregir el DNI de un candidato', () => {
     expect(element.querySelector('.panel-users')?.textContent).toContain('DNI 30111222');
   });
 });
+
+// Reactivar: el SuperAdmin elige el rol con el que vuelve la cuenta; arranca seleccionado el que tenía.
+describe('Usuarios - Reactivar con rol', () => {
+  async function crearConReactivar() {
+    const reactivar = vi.fn(() => of({ mensaje: 'Acceso restablecido.' }));
+    const notify = vi.fn();
+    await TestBed.configureTestingModule({
+      imports: [Usuarios],
+      providers: [
+        {
+          provide: UsuariosPortalService,
+          useValue: {
+            getCandidatos: () => of([]),
+            getHabilitados: () => of([]),
+            getDeshabilitados: () => of([INACTIVO]),
+            reactivar,
+          },
+        },
+        { provide: NotificationService, useValue: { notify } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Usuarios);
+    fixture.detectChanges();
+    return { component: fixture.componentInstance, reactivar };
+  }
+
+  it('propone el rol que tenía', async () => {
+    const { component } = await crearConReactivar();
+
+    component.pedirReactivar({ ...INACTIVO, rolPortal: 2 });
+
+    expect(component.rolReactivar()).toBe(2);
+  });
+
+  it('reactiva con el rol elegido', async () => {
+    const { component, reactivar } = await crearConReactivar();
+
+    component.pedirReactivar({ ...INACTIVO, rolPortal: 2 });
+    component.rolReactivar.set(1);
+    component.confirmarReactivarAccion();
+
+    expect(reactivar).toHaveBeenCalledWith(INACTIVO.idUsuario, 1);
+  });
+});

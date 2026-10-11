@@ -1,5 +1,6 @@
 namespace ApiGestion.Tests;
 
+using ServiceLibrary;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Security.Claims;
@@ -26,7 +27,8 @@ public class PlayerEnrollmentControllerTests
         FakeEnrollmentDAO dao = new FakeEnrollmentDAO();
         FakeEnrollmentFeeDAO feeDao = new FakeEnrollmentFeeDAO { Current = currentFee };
         FakeJugadoresDao jugadores = new FakeJugadoresDao { Player = playerExists ? new JugadorResumen { IdJugador = (int)PlayerId, Genero = gender } : null };
-        PlayerEnrollmentController controller = new PlayerEnrollmentController(NullLogger<PlayerEnrollmentController>.Instance, dao, feeDao, jugadores);
+        PlayerEnrollmentController controller = new PlayerEnrollmentController(
+            NullLogger<PlayerEnrollmentController>.Instance, new InscripcionesService(dao, feeDao, jugadores));
         ClaimsIdentity identity = authenticated ? new ClaimsIdentity(new[] { new Claim("idUsuario", OperatorId.ToString()) }, "test") : new ClaimsIdentity();
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) } };
         return (controller, dao);

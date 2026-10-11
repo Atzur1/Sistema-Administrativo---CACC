@@ -174,7 +174,7 @@
     </article>
 
     <!-- Cuentas deshabilitadas: ya tuvieron acceso, se les revocó. Reactivar les
-         devuelve el acceso con su mismo rol y contraseña, sin mail nuevo. -->
+         devuelve el acceso con su misma contraseña y el rol que elija el SuperAdmin, sin mail nuevo. -->
     <article class="panel panel-deshabilitados">
       <header class="panel-head">
         <h2 class="panel-title">Cuentas deshabilitadas</h2>
@@ -401,9 +401,18 @@
       </header>
 
       <p class="dialog-confirm">
-        Le devuelve el acceso como <strong>{{ rolLabels[usuario.rolPortal] }}</strong>, con la misma
-        contraseña que ya tenía. No se envía ningún correo.
+        Le devuelve el acceso con la misma contraseña que ya tenía. No se envía ningún correo. Elegí con qué rol
+        vuelve: está seleccionado el que tenía (<strong>{{ rolLabels[usuario.rolPortal] }}</strong>).
       </p>
+
+      <div class="field-group">
+        <label class="field-label">Rol con el que vuelve</label>
+        <app-custom-select
+          [options]="rolOptions"
+          [ngModel]="rolReactivar()"
+          (ngModelChange)="rolReactivar.set($event)"
+        ></app-custom-select>
+      </div>
 
       <footer class="dialog-actions">
         <button type="button" class="button-ghost" (click)="cancelarReactivar()" [disabled]="reactivarSubmitting()">

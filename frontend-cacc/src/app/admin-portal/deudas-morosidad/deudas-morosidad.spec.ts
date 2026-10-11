@@ -26,6 +26,8 @@ function debtor(
   installments: number,
   amount: number,
   category = 'AFA 20067',
+  // Por defecto todas vencidas (vencen el 10 del mes siguiente): así se prueba el estado deportivo.
+  overdue = installments,
 ): PlayerAccountModel {
   return {
     playerId: id,
@@ -35,6 +37,7 @@ function debtor(
     category,
     amountOwed: amount,
     pendingInstallments: installments,
+    overdueInstallments: overdue,
   };
 }
 
@@ -180,6 +183,29 @@ describe('DeudasMorosidad - jugadores dados de baja (HU-081)', () => {
     component.onFiltrosChange();
     fixture.detectChanges();
     expect(tablePlayers(fixture)).toEqual([]);
+  });
+});
+
+// Regla del día 10: la cuota de cada mes vence el 10 del mes siguiente, y el estado deportivo cuenta solo las
+// vencidas. Quien debe la cuota del mes pero todavía no venció sigue habilitado ("En término").
+describe('DeudasMorosidad - estado deportivo por cuotas vencidas', () => {
+  const pills = (fixture: Awaited<ReturnType<typeof create>>) =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.status-pill')).map((p) => p.textContent?.trim());
+
+  it('sin cuotas vencidas está en término; con 1 solo entrena; con 2 o más inhabilitado', async () => {
+    const fixture = await create([
+      debtor(1, 'TERMINO', 1, 92000, 'AFA 20067', 0),
+      debtor(2, 'PARCIAL', 2, 184000, 'AFA 20067', 1),
+      debtor(3, 'INHABILITADO', 2, 184000, 'AFA 20067', 2),
+    ]);
+
+    expect(pills(fixture)).toEqual(['Inhabilitado', 'Solo entrenamientos', 'En término']);
+  });
+
+  it('el panel de inhabilitados no incluye a quien solo debe cuotas en término', async () => {
+    const fixture = await create([debtor(1, 'TERMINO', 2, 184000, 'AFA 20067', 0)]);
+
+    expect(fixture.componentInstance.topInhabilitados).toEqual([]);
   });
 });
 

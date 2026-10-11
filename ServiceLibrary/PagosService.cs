@@ -7,17 +7,10 @@ namespace ServiceLibrary
 {
     public class PagosService : IPagosService
     {
-        private static readonly Dictionary<string, int> MesesPorNombre = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Enero"] = 1, ["Febrero"] = 2, ["Marzo"] = 3, ["Abril"] = 4, ["Mayo"] = 5, ["Junio"] = 6,
-            ["Julio"] = 7, ["Agosto"] = 8, ["Septiembre"] = 9, ["Octubre"] = 10, ["Noviembre"] = 11, ["Diciembre"] = 12
-        };
-
-        private static readonly string[] NombresMes =
-        {
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        };
+        // "Octubre" -> 10, sin distinguir mayúsculas: el período que manda el formulario de cobro.
+        private static readonly Dictionary<string, int> MesesPorNombre = CalendarioCuotas.NombresMes
+            .Select((nombre, indice) => (nombre, numero: indice + 1))
+            .ToDictionary(m => m.nombre, m => m.numero, StringComparer.OrdinalIgnoreCase);
 
         // Tope defensivo de cuotas por cobro (igual que el DTO).
         private const int MaximoCuotasPorCobro = 100;
@@ -320,8 +313,8 @@ namespace ServiceLibrary
 
         // Agrupa las filas de PAGOS de cada período en una sola cuota. Mientras exista la fila
         // pendiente (estado = 0), la cuota se puede cobrar por su saldo; si ya no existe (se cobró
-        // completa por /cobro o por abonos que la cubrieron), está pagada. Vencida = pasó el
-        // último día del mes que cubre, el mismo criterio que usa la ficha para "Vencida".
+        // completa por /cobro o por abonos que la cubrieron), está pagada. Vencida = llegó el día 10
+        // del mes siguiente al que cubre (CalendarioCuotas), el mismo criterio que usa la ficha.
         public static IReadOnlyList<CuotaJugador> ConstruirEstadoDeCuotas(IEnumerable<CuotaMovimiento> movimientos, DateTime hoy)
         {
             return movimientos
@@ -352,21 +345,20 @@ namespace ServiceLibrary
                         return cuota;
                     }
 
-                    var ultimoDiaDelMes = periodo.Key.AddMonths(1).AddDays(-1);
                     cuota.IdPago = pendiente.IdPago;
                     cuota.SaldoPendiente = Math.Max(0, pendiente.SaldoAjustado);
                     cuota.CubiertaPorBeneficio = cuota.SaldoPendiente <= 0;
                     // Solo cuando queda algo por cobrar: una cuota pagada sigue pagada aunque después se cancele la
                     // beca, y una cubierta al 100 % no tiene saldo que explicar.
                     cuota.BeneficioCanceladoPorBaja = pendiente.BeneficioCanceladoPorBaja && cuota.SaldoPendiente > 0;
-                    cuota.Estado = hoy.Date > ultimoDiaDelMes ? EstadosCuota.Vencido : EstadosCuota.Pendiente;
+                    cuota.Estado = CalendarioCuotas.EstaVencida(periodo.Key, hoy) ? EstadosCuota.Vencido : EstadosCuota.Pendiente;
                     return cuota;
                 })
                 .ToList();
         }
 
         private static string Periodo(DateTime? fechaVencimiento) =>
-            fechaVencimiento.HasValue ? $"{NombresMes[fechaVencimiento.Value.Month - 1]} {fechaVencimiento.Value.Year}" : "-";
+            fechaVencimiento.HasValue ? CalendarioCuotas.NombreDelPeriodo(fechaVencimiento.Value) : "-";
 
         // Las cuotas las crea GeneradorCuotasMensuales cada mes (repitiendo el arancel vigente) y
         // ArancelesService.ProgramarArancel al cargar un arancel. Acá no se genera nada: solo se lee.
@@ -381,7 +373,7 @@ namespace ServiceLibrary
 
         public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top) => _pagosDao.ObtenerUltimosPagos(top <= 0 ? 10 : top);
 
-        public IReadOnlyList<PagoReciente> ObtenerTodosLosPagos() => _pagosDao.ObtenerTodosLosPagos();
+        public PagosRegistradosPagina ObtenerPagosRegistrados(FiltroPagosRegistrados filtro) => _pagosDao.ObtenerPagosRegistrados(filtro);
 
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador) => _pagosDao.ObtenerDeudaDetalle(idJugador);
 
