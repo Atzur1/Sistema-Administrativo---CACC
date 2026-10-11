@@ -212,9 +212,14 @@
     transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-.export-btn:hover {
+.export-btn:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(0, 127, 62, 0.4);
+}
+
+.export-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 .export-icon {

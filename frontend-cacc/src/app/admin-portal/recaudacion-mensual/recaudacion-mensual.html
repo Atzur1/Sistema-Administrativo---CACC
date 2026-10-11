@@ -132,18 +132,18 @@
           <span class="panel-subtitle">Jugadores y el medio con el que pagaron</span>
         </div>
 
-        <!-- Maqueta: mismo botón que Deudas y Morosidad. Todavía no descarga
-             nada — falta el endpoint que arme el reporte en el servidor. -->
+        <!-- Mismo botón que Deudas y Morosidad: el archivo lo genera el servidor
+             con el período y la categoría que se están viendo. -->
         <div class="export-wrap">
           <button type="button" class="export-btn" (click)="toggleExportMenu()"
-                  [attr.aria-expanded]="exportMenuOpen">
+                  [disabled]="exportando" [attr.aria-expanded]="exportMenuOpen">
             <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            Exportar Reporte
+            {{ exportando ? 'Generando…' : 'Exportar Reporte' }}
             <svg class="export-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="6 9 12 15 18 9"></polyline>
@@ -170,11 +170,13 @@
       </header>
 
       <span class="tabla-conteo">
-        Mostrando {{ filas.length }} de {{ totalJugadores }} jugadores
+        @if (cargando) { Cargando… } @else { {{ filas.length }} cobros en {{ periodoLabel }} }
       </span>
 
-      @if (filas.length === 0) {
-        <p class="tabla-vacia">Ningún jugador coincide con los filtros aplicados.</p>
+      @if (huboError) {
+        <p class="tabla-vacia">No se pudo cargar la recaudación del período. Intentá de nuevo.</p>
+      } @else if (filas.length === 0) {
+        <p class="tabla-vacia">No hay cobros registrados en {{ periodoLabel }}.</p>
       } @else {
         <div class="tabla-scroll">
           <table class="tabla">
@@ -271,7 +273,7 @@
         <span class="panel-subtitle">Distribución de los pagos de {{ periodoLabel }}</span>
       </header>
 
-      @if (datos) {
+      @if (hayCobros) {
         <div class="desglose-body">
           <!-- El arco se dibuja encima del anillo de fondo: dos círculos alcanzan
                para una distribución de dos categorías -->
@@ -322,8 +324,8 @@
               <path d="M12 7v5l3 2"></path>
             </svg>
           </span>
-          <p class="empty-title">Sin recaudación para {{ periodoLabel }}</p>
-          <p class="empty-text">Es un período que aún no transcurrió.</p>
+          <p class="empty-title">Sin recaudación en {{ periodoLabel }}</p>
+          <p class="empty-text">No se registraron cobros en este período.</p>
         </div>
       }
     </article>
