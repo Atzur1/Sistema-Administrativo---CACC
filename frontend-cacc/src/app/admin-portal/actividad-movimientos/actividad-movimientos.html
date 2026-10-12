@@ -28,41 +28,33 @@
           <h2 class="panel-title">Pagos registrados</h2>
           <span class="panel-subtitle">Historial completo de pagos</span>
         </div>
+
+        <form class="filter-row" [formGroup]="filterForm">
+          <div class="search-control">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" placeholder="Buscar jugador…" formControlName="busqueda" />
+          </div>
+
+          <div class="filter-control">
+            <app-custom-select
+              [options]="estadoOptions"
+              placeholder="Todos los estados"
+              formControlName="estado"
+            ></app-custom-select>
+          </div>
+
+          @if (hayFiltrosActivos) {
+            <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          }
+        </form>
       </header>
 
-      <form class="filter-row" [formGroup]="filterForm">
-        <div class="search-control">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input type="text" placeholder="Buscar jugador…" formControlName="busqueda" />
-        </div>
-
-        <div class="filter-control">
-          <app-custom-select
-            [options]="estadoOptions"
-            placeholder="Todos los estados"
-            formControlName="estado"
-          ></app-custom-select>
-        </div>
-
-        @if (hayFiltrosActivos) {
-          <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">
-            Limpiar filtros
-          </button>
-        }
-      </form>
-
-      @if (paymentsLoaded) {
-        <p class="filter-count">
-          Mostrando {{ pagedPayments.length }} de {{ totalFiltrados }} pagos
-          @if (totalFiltrados !== totalPagos) {
-            ({{ totalPagos }} en total)
-          }
-        </p>
-      }
 
       <div class="table-wrapper">
         <table class="payments-table">
@@ -112,17 +104,6 @@
         }
       </div>
 
-      @if (totalPaginas > 1) {
-        <div class="pagination">
-          <button type="button" class="pagination-button" (click)="irAPagina(page - 1)" [disabled]="page <= 1">
-            ← Anterior
-          </button>
-          <span class="pagination-status">Página {{ page }} de {{ totalPaginas }}</span>
-          <button type="button" class="pagination-button" (click)="irAPagina(page + 1)" [disabled]="page >= totalPaginas">
-            Siguiente →
-          </button>
-        </div>
-      }
     </article>
 
     <!-- Right column: activity feed on top, shortcuts below -->
@@ -171,41 +152,6 @@
         }
       </article>
 
-      <!-- Quick access shortcuts -->
-      <article class="panel panel-quick">
-        <header class="panel-head">
-          <div class="panel-head-text">
-            <h2 class="panel-title">Accesos rápidos</h2>
-            <span class="panel-subtitle">Acciones frecuentes</span>
-          </div>
-        </header>
-
-        <div class="quick-list">
-          @for (action of quickActions; track action.label) {
-            <a class="quick-btn" [routerLink]="action.link">
-              <span class="quick-icon">
-                @if (action.icon === 'card') {
-                  <!-- Card -->
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                    <line x1="1" y1="10" x2="23" y2="10"></line>
-                  </svg>
-                } @else {
-                  <!-- Bar chart -->
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                  </svg>
-                }
-              </span>
-              <span class="quick-label">{{ action.label }}</span>
-            </a>
-          }
-        </div>
-      </article>
 
     </div>
   </section>

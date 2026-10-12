@@ -55,12 +55,6 @@ interface BannerMetric {
     display: WritableSignal<string>;
 }
 
-// One shortcut button in the quick access panel
-interface QuickAction {
-    label: string;
-    icon: 'card' | 'chart';
-    link: string;
-}
 
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -119,13 +113,8 @@ export class ActividadMovimientos implements OnInit {
     ];
 
     page = 1;
-    readonly pageSize = 10;
+    readonly pageSize = 8;
 
-    // Shortcuts to the related dashboards
-    quickActions: QuickAction[] = [
-        { label: 'Registrar pago', icon: 'card', link: '/admin/portal/cuotas-pagos' },
-        { label: 'Reportes', icon: 'chart', link: '/admin/portal/reportes' },
-    ];
 
     private monthNames = [
         'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -239,7 +228,7 @@ export class ActividadMovimientos implements OnInit {
     private loadActivity() {
         this.activityLoadError = false;
         // Solo los más recientes: el feed muestra un puñado de eventos, no la lista entera.
-        this.pagosService.getRecientes(9).pipe(timeout(ActividadMovimientos.LOAD_TIMEOUT_MS)).subscribe({
+        this.pagosService.getRecientes(8).pipe(timeout(ActividadMovimientos.LOAD_TIMEOUT_MS)).subscribe({
             next: (recientes) => {
                 this.activity = recientes.map(toActivityEvent);
                 this.activityLoaded = true;

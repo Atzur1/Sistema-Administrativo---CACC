@@ -183,12 +183,6 @@
     </button>
 
     <div class="topbar-breadcrumb">
-    @if (isSuperAdmin) {
-    <button type="button" class="breadcrumb-portal" (click)="cambiarPortal()">Portal administrativo</button>
-    } @else {
-    <span class="breadcrumb-portal">Portal administrativo</span>
-    }
-    <span class="breadcrumb-separator">·</span>
     <span class="breadcrumb-current">{{ currentPageTitle }}</span>
     </div>
     <div class="topbar-user">
