@@ -354,6 +354,9 @@
 /* ===== TABLA DE PAGOS ===== */
 .table-wrapper {
   overflow-x: auto;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .payments-table {

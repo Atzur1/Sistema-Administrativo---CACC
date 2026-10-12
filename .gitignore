@@ -26,6 +26,9 @@ ApiGestion/appsettings.Development.json
 node_modules/
 npm-debug.log*
 
+.claude/
+.serena/
+
 # Editores / SO
 .vscode/*
 !.vscode/settings.json
