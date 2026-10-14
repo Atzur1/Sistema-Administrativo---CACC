@@ -5,12 +5,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import {
-  JugadorResumen,
-  PagosService,
-  PendienteJugador,
-  ResumenPagos,
-} from '../../services/pagos';
+import { PagosService } from '../../services/pagos';
 import { ArancelesService } from '../../services/aranceles';
 import { EnrollmentFeeService } from '../../services/enrollment-fees';
 import { findCurrentEnrollmentFee } from '../../models/EnrollmentFeeModel';
@@ -23,6 +18,8 @@ import { PlayerSearch } from './player-search/player-search';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { financialLoadErrorMessage } from '../../shared/http-error-message';
 import { DIA_DE_CORTE } from '../../shared/calendario-cuotas';
+import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
+import { PaymentSummaryModel, PendingDebtorModel } from '../../models/PaymentModel';
 
 const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -91,14 +88,14 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   methods = ['Transferencia', 'Efectivo'];
 
-  private jugadores: JugadorResumen[] = [];
+  private jugadores: PlayerSummaryModel[] = [];
 
   // Jugador realmente seleccionado desde las sugerencias. El control del form solo guarda el
   // texto visible; esto es lo único que se manda al backend, así dos jugadores con el mismo
   // nombre nunca se confunden (con 577 jugadores reales, un match por string no alcanza).
-  private selectedPlayer: JugadorResumen | null = null;
+  private selectedPlayer: PlayerSummaryModel | null = null;
 
-  matchingPlayers: JugadorResumen[] = [];
+  matchingPlayers: PlayerSummaryModel[] = [];
   showSuggestions = false;
 
   enviando = false;
@@ -153,9 +150,9 @@ export class CuotasPagos implements OnInit, OnDestroy {
   // ===== INSCRIPCIÓN TAB STATE =====
   inscripcionForm: FormGroup;
   inscripcionMontoDisplay = '';
-  inscripcionMatchingPlayers: JugadorResumen[] = [];
+  inscripcionMatchingPlayers: PlayerSummaryModel[] = [];
   inscripcionShowSuggestions = false;
-  private selectedInscripcionPlayer: JugadorResumen | null = null;
+  private selectedInscripcionPlayer: PlayerSummaryModel | null = null;
   enrollmentData: EnrollmentModel | null = null;
   enviandoInscripcion = false;
   readonly cargandoEnrollment = signal(false);
@@ -175,7 +172,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.paymentForm = this.fb.group({
       player: ['', [Validators.required, this.knownPlayerValidator]],
       period: ['', [Validators.required]],
-      year: [new Date().getFullYear(), [Validators.required]],
+      year: ['', [Validators.required]],
       amount: ['', [Validators.required, Validators.min(1)]],
       method: ['', [Validators.required]],
     });
@@ -320,7 +317,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.inscripcionShowSuggestions = this.inscripcionMatchingPlayers.length > 0;
   }
 
-  selectInscripcionPlayer(jugador: JugadorResumen) {
+  selectInscripcionPlayer(jugador: PlayerSummaryModel) {
     this.selectedInscripcionPlayer = jugador;
     this.inscripcionMatchingPlayers = [];
     this.inscripcionShowSuggestions = false;
@@ -581,16 +578,18 @@ export class CuotasPagos implements OnInit, OnDestroy {
   }
 
   get showAmount(): boolean {
-    return this.showPeriodYear && !!this.paymentForm.get('period')?.value;
+    return this.showPeriodYear
+      && !!this.paymentForm.get('period')?.value
+      && !!this.paymentForm.get('year')?.value;
   }
 
   get showMethod(): boolean {
-    return this.showAmount && Number(this.paymentForm.get('amount')?.value) > 0;
+    return this.showAmount;
   }
 
   onPlayerSearch(term: string) {
     if (this.selectedPlayer !== null) {
-      this.paymentForm.patchValue({ period: '', amount: '', method: '' });
+      this.paymentForm.patchValue({ period: '', year: '', amount: '', method: '' });
       this.montoDisplay = '';
     }
     this.selectedPlayer = null;
@@ -615,14 +614,9 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
   // El período arranca en el mes en curso: un pago hecho antes del 10 (por adelantado, cuando la cuota del
   // mes todavía no se generó) se imputa a este mes, no al anterior. Si paga otro mes, el operador lo cambia.
-  selectPlayer(jugador: JugadorResumen) {
+  selectPlayer(jugador: PlayerSummaryModel) {
     this.selectedPlayer = jugador;
-    const hoy = new Date();
-    this.paymentForm.patchValue({
-      player: jugador.nombreCompleto,
-      period: this.paymentForm.get('period')?.value || this.periods[hoy.getMonth()],
-      year: this.paymentForm.get('year')?.value || hoy.getFullYear(),
-    });
+    this.paymentForm.patchValue({ player: jugador.nombreCompleto });
     this.matchingPlayers = [];
     this.showSuggestions = false;
   }
@@ -645,7 +639,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
     this.pagosService.registrarPago(jugador.idJugador, period, Number(year), Number(amount), method).subscribe({
       next: () => {
         this.enviando = false;
-        this.paymentForm.reset({ player: '', period: '', year: new Date().getFullYear(), amount: '', method: '' });
+        this.paymentForm.reset({ player: '', period: '', year: '', amount: '', method: '' });
         this.montoDisplay = '';
         this.selectedPlayer = null;
         this.matchingPlayers = [];
@@ -689,7 +683,7 @@ function initialsOf(nombreCompleto: string): string {
   return `${(apellido?.[0] ?? '')}${(nombre?.[0] ?? '')}`.toUpperCase();
 }
 
-function mapPendiente(p: PendienteJugador): PendingRow {
+function mapPendiente(p: PendingDebtorModel): PendingRow {
   return {
     id: p.idJugador,
     initials: initialsOf(p.nombreCompleto),
@@ -703,7 +697,7 @@ function mapPendiente(p: PendienteJugador): PendingRow {
   };
 }
 
-function mapResumen(r: ResumenPagos): HeaderMetric[] {
+function mapResumen(r: PaymentSummaryModel): HeaderMetric[] {
   return [
     { value: formatCompactCurrency(r.recaudadoAnioActual), label: `Recaudado ${new Date().getFullYear()}` },
     { value: String(r.pagosDelMes), label: 'Pagos del mes' },

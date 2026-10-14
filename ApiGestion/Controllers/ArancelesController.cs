@@ -27,7 +27,7 @@ namespace ApiGestion.Controllers
         [HttpGet("historial")]
         public IActionResult ObtenerHistorial()
         {
-            return Ok(_arancelesService.ObtenerHistorial());
+            return Ok(_arancelesService.ObtenerHistorial().Select(TariffHistoryItemResponseDTO.FromEntity).ToList());
         }
 
         // GET api/aranceles/resumen -> header (arancel masculino/femenino vigente, próximo cambio).
@@ -36,7 +36,7 @@ namespace ApiGestion.Controllers
         [HttpGet("resumen")]
         public IActionResult ObtenerResumen()
         {
-            return Ok(_arancelesService.ObtenerResumen());
+            return Ok(TariffSummaryResponseDTO.FromEntity(_arancelesService.ObtenerResumen()));
         }
 
         // POST api/aranceles/programar -> form "Programar nuevo arancel"
@@ -44,7 +44,7 @@ namespace ApiGestion.Controllers
         //    o: { "idCategoria": 5, "monto": 50000, "vigenteDesde": "2026-09-24" } (género o categoría, uno solo)
         [Authorize(Roles = "1")]
         [HttpPost("programar")]
-        public IActionResult ProgramarArancel([FromBody] ProgramarArancelRequestDto request)
+        public IActionResult ProgramarArancel([FromBody] ScheduleTariffRequestDTO request)
         {
             try
             {
@@ -84,7 +84,7 @@ namespace ApiGestion.Controllers
         }
 
         // DELETE api/aranceles/{id} -> botón "Cancelar" del historial. Quita el arancel y las cuotas
-        // pendientes sin pagos emitidas con él; si alguna ya tiene pagos, se rechaza (400).
+        // pendientes sin pagos emitidas con él; si alguna ya tiene pagos, se rechaza (400). Responde 204 sin cuerpo.
         [Authorize(Roles = "1")]
         [HttpDelete("{idArancel:int}")]
         public IActionResult CancelarArancel(int idArancel)
@@ -92,13 +92,9 @@ namespace ApiGestion.Controllers
             try
             {
                 CancelarArancelResultado resultado = _arancelesService.CancelarArancel(idArancel);
-
-                string mensaje = resultado.CuotasEliminadas > 0
-                    ? $"Arancel cancelado. Se quitaron {resultado.CuotasEliminadas} cuota{(resultado.CuotasEliminadas == 1 ? "" : "s")} pendiente{(resultado.CuotasEliminadas == 1 ? "" : "s")} sin pagos."
-                    : "Arancel cancelado.";
-                mensaje += " Las cuotas se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.";
-
-                return Ok(new { exito = true, mensaje });
+                _logger.LogInformation("Arancel {IdArancel} cancelado ({CuotasEliminadas} cuotas pendientes eliminadas)",
+                    idArancel, resultado.CuotasEliminadas);
+                return NoContent();
             }
             catch (ArancelInvalidoException ex)
             {

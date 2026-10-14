@@ -31,7 +31,8 @@ public class ReportesControllerTests
             pagosService,
             new FakeArancelesService(),
             new DiscountDao(""),
-            categoriasDao);
+            categoriasDao,
+            new FakeRecaudacionDao());
         return (controller, pagosService, categoriasDao);
     }
 
@@ -162,5 +163,10 @@ public AnularPagoResultado AnularPago(AnularPagoRequest request) => throw new No
         public ArancelResumen ObtenerResumen() => throw new NotSupportedException();
         public ProgramarArancelResultado ProgramarArancel(ProgramarArancelRequest request) => throw new NotSupportedException();
         public CancelarArancelResultado CancelarArancel(int idArancel) => throw new NotSupportedException();
+    }
+
+    private class FakeRecaudacionDao : IRecaudacionDao
+    {
+        public RecaudacionPeriodo ObtenerDelPeriodo(int anio, int mes, int? idCategoria) => new RecaudacionPeriodo();
     }
 }

@@ -31,7 +31,8 @@ Proyecto - Sistema Administrativo - CACC/
 │   │   ├── AuthController.cs
 │   │   └── WeatherForecastController.cs   ← template residual, sin uso
 │   ├── Models/
-│   │   └── LoginRequest.cs                ← DTO {Usuario, Contrasena}
+│   │   ├── LoginDTO.cs                    ← DTO de entrada {Username, Password}
+│   │   └── LoginResponseDTO.cs            ← DTO de salida del login
 │   └── Properties/launchSettings.json
 ├── DaoLibrary/
 │   ├── DaoLibrary.csproj
@@ -58,13 +59,13 @@ Proyecto - Sistema Administrativo - CACC/
 ### ApiGestion (Web API)
 
 - **Program.cs**: registra `AuthDao` como scoped con la connection string, habilita CORS abierto (`AllowAngular`: any origin/method/header), Swagger solo en Development, HTTPS redirect y `MapControllers`.
-- **AuthController**: `POST api/auth/login`. Valida credenciales vía `AuthDao.ValidarLogin`; éxito → 200 `{mensaje, email, rol}`; credenciales inválidas → 401; excepción → 500.
-- **LoginRequest**: DTO `{Usuario, Contrasena}` sin validación de null.
+- **AuthController**: `POST api/auth/login`. Recibe `LoginDTO` y valida credenciales vía `AuthDao.ValidarLogin`; éxito → 200 con `LoginResponseDTO` `{message, email, firstName, lastName, dni, role, token}`; credenciales inválidas → 401; excepción → 500.
+- **LoginDTO**: DTO de entrada `{Username, Password}`, con `[Required]` y largos máximos.
 - `WeatherForecastController` y `WeatherForecast.cs` son scaffolding del template sin limpiar.
 
 ### DaoLibrary
 
-- **AuthDao.cs**: `ValidarLogin(dni o correo, contraseña): Usuario?`. SQL crudo parametrizado contra la tabla `USUARIO` usando `Microsoft.Data.SqlClient` (sin ORM, sin EF, sin stored procedures). Verifica solo contra `password_hash` (PBKDF2); la columna `contrasenia` en texto plano ya no se lee.
+- **AuthDao.cs**: `ValidarLogin(dni o correo, contraseña): Usuario?`. SQL crudo parametrizado contra la tabla `USUARIO` usando `Microsoft.Data.SqlClient` (sin ORM, sin EF, sin stored procedures). Verifica solo contra `password_hash` (BCrypt; los hash PBKDF2 anteriores se siguen aceptando y se pasan a BCrypt en el siguiente login correcto); la columna `contrasenia` en texto plano ya no se lee.
 
 ### EntityLibrary
 

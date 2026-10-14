@@ -5,18 +5,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { JugadoresService } from '../../services/jugadores';
-import {
-  CuotaJugador,
-  CuotaPendienteDetalle,
-  JugadorResumen,
-  PagosService,
-  PlayerStatement,
-  feeToCuotaJugador,
-} from '../../services/pagos';
+import { PagosService, feeToCuotaJugador } from '../../services/pagos';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { financialLoadErrorMessage } from '../../shared/http-error-message';
 import { estaVencida, vencimientoDelPeriodo } from '../../shared/calendario-cuotas';
+import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
+import { PendingFeeDetailModel, PlayerFeeModel, PlayerStatementModel } from '../../models/PaymentModel';
 
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -52,8 +47,8 @@ export type EstadoCuota = 'vencida' | 'parcial' | 'proxima';
   styleUrl: './deuda-jugador.css',
 })
 export class DeudaJugador implements OnInit, OnDestroy {
-  jugador: JugadorResumen | null = null;
-  cuotas: CuotaPendienteDetalle[] = [];
+  jugador: PlayerSummaryModel | null = null;
+  cuotas: PendingFeeDetailModel[] = [];
 
   cargandoJugador = true;
   cargandoDeuda = true;
@@ -76,7 +71,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
   // Convive con "Pagar saldo" (abono parcial de una cuota). La tabla sale del estado de cuenta
   // (HU-024) y, después de cada cobro, se vuelve a leer: el estado "Pagado" siempre lo informa
   // el backend, nunca se pinta localmente.
-  cuotasJugador: CuotaJugador[] = [];
+  cuotasJugador: PlayerFeeModel[] = [];
   cargandoCuotas = true;
   errorCuotas = '';
   readonly metodosCobro = ['Efectivo', 'Transferencia'];
@@ -185,13 +180,13 @@ export class DeudaJugador implements OnInit, OnDestroy {
     });
   }
 
-  private aplicarEstadoDeCuenta(estado: PlayerStatement) {
+  private aplicarEstadoDeCuenta(estado: PlayerStatementModel) {
     this.totalAAbonar = estado.totalDebtAmount;
     this.estadoCuentaCargado = true;
     this.aplicarCuotas(estado.fees.map(feeToCuotaJugador));
   }
 
-  private aplicarCuotas(cuotas: CuotaJugador[]) {
+  private aplicarCuotas(cuotas: PlayerFeeModel[]) {
     this.cuotasJugador = cuotas;
     // Una cuota que dejó de ser cobrable (por ejemplo, la cobró otro administrador) sale
     // de la selección: el total nunca incluye algo que el backend ya no aceptaría.
@@ -240,15 +235,15 @@ export class DeudaJugador implements OnInit, OnDestroy {
     this.actualizarEstadoDeCuenta(this.ultimaActualizacionTrasPago);
   }
 
-  esSeleccionable(cuota: CuotaJugador): boolean {
+  esSeleccionable(cuota: PlayerFeeModel): boolean {
     return cuota.estado !== 'Pagado' && !cuota.cubiertaPorBeneficio && cuota.saldoPendiente > 0;
   }
 
-  estaSeleccionada(cuota: CuotaJugador): boolean {
+  estaSeleccionada(cuota: PlayerFeeModel): boolean {
     return this.seleccion.has(cuota.idPago);
   }
 
-  alternarCuota(cuota: CuotaJugador) {
+  alternarCuota(cuota: PlayerFeeModel) {
     if (!this.esSeleccionable(cuota) || this.enviandoCobro) {
       return;
     }
@@ -260,7 +255,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  get cuotasSeleccionadas(): CuotaJugador[] {
+  get cuotasSeleccionadas(): PlayerFeeModel[] {
     return this.cuotasJugador.filter((c) => this.seleccion.has(c.idPago));
   }
 
@@ -359,12 +354,12 @@ export class DeudaJugador implements OnInit, OnDestroy {
   }
 
   // "Vence" el día que informa la API: el 10 del mes siguiente al que cubre la cuota.
-  vencimientoCuota(cuota: CuotaJugador): string {
+  vencimientoCuota(cuota: PlayerFeeModel): string {
     const [anio, mes, dia] = cuota.fechaVencimiento.slice(0, 10).split('-').map(Number);
     return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
-  estadoCuotaClase(cuota: CuotaJugador): string {
+  estadoCuotaClase(cuota: PlayerFeeModel): string {
     if (cuota.estado === 'Pagado') {
       return 'estado-pagado';
     }
@@ -374,7 +369,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     return cuota.estado === 'Vencido' ? 'estado-vencida' : 'estado-pendiente';
   }
 
-  estadoCuotaTexto(cuota: CuotaJugador): string {
+  estadoCuotaTexto(cuota: PlayerFeeModel): string {
     return cuota.estado !== 'Pagado' && cuota.cubiertaPorBeneficio ? 'Cubierta' : cuota.estado;
   }
 
@@ -386,7 +381,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     clearTimeout(this.mensajeExitoTimer);
   }
 
-  abrirPago(cuota: CuotaPendienteDetalle) {
+  abrirPago(cuota: PendingFeeDetailModel) {
     this.pagandoId = cuota.idPago;
     this.montoPagoDisplay = cuota.saldoPendiente.toLocaleString('es-AR');
     this.metodoPago = '';
@@ -428,7 +423,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     });
   }
 
-  confirmarPago(cuota: CuotaPendienteDetalle) {
+  confirmarPago(cuota: PendingFeeDetailModel) {
     const monto = Number(this.montoPagoDisplay.replace(/\D/g, ''));
     if (!monto || !this.metodoPago) {
       return;
@@ -497,7 +492,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
   // VENCIDA: ya llegó el día 10 del mes siguiente y todavía tiene saldo. PARCIAL: no venció aún pero
   // ya tiene algún abono cargado. PRÓXIMA: todavía no venció y no se abonó nada.
   // (Cubierta por beneficio se maneja aparte, en el template, con saldoPendiente <= 0.)
-  estadoCuota(cuota: CuotaPendienteDetalle): EstadoCuota {
+  estadoCuota(cuota: PendingFeeDetailModel): EstadoCuota {
     const vencimiento = this.vencimientoDe(cuota.periodo);
     if (vencimiento && estaVencida(vencimiento)) {
       return 'vencida';
@@ -505,7 +500,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
     return cuota.abonos.length > 0 ? 'parcial' : 'proxima';
   }
 
-  diasVencida(cuota: CuotaPendienteDetalle): number {
+  diasVencida(cuota: PendingFeeDetailModel): number {
     const vencimiento = this.vencimientoDe(cuota.periodo);
     if (!vencimiento) {
       return 0;
@@ -514,7 +509,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
   }
 
   // Texto del badge de beneficio: "Becado (100%)" o "Descuento ($15.000)".
-  beneficioTexto(cuota: CuotaPendienteDetalle): string {
+  beneficioTexto(cuota: PendingFeeDetailModel): string {
     if (!cuota.tieneBeneficio) {
       return '';
     }

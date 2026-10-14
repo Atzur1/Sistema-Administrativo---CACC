@@ -1,3 +1,4 @@
+using ApiGestion.Models;
 using DaoLibrary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +25,7 @@ namespace ApiGestion.Controllers
         {
             try
             {
-                return Ok(_estadisticasDao.ObtenerResumenGeneral());
+                return Ok(GeneralSummaryResponseDTO.FromEntity(_estadisticasDao.ObtenerResumenGeneral()));
             }
             catch (Exception ex)
             {

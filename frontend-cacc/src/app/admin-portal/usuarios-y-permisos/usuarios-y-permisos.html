@@ -96,19 +96,21 @@
                     </span>
                   </td>
                   <td class="cell-actions">
-                    <!-- Solo cuentas activas: una inactiva en la base del otro equipo no puede recibir el correo. -->
-                    @if (usuario.activo) {
-                      <button type="button" class="button-ghost" (click)="pedirEnlace(usuario)">
-                        {{ textoAccionEnlace(usuario) }}
-                      </button>
-                    }
-                    <span class="action-with-help">
-                      <button type="button" class="button-void" (click)="pedirBaja(usuario)">Deshabilitar</button>
-                      <app-help-hint
-                        label="Deshabilitar"
-                        text="Le corta el acceso al Portal Administrativo de inmediato; si tiene una sesión abierta, se cierra en su próxima acción. No borra la cuenta: pasa a Cuentas deshabilitadas y se puede reactivar."
-                      />
-                    </span>
+                    <div class="actions-wrap">
+                      <!-- Solo cuentas activas: una inactiva en la base del otro equipo no puede recibir el correo. -->
+                      @if (usuario.activo) {
+                        <button type="button" class="button-ghost" (click)="pedirEnlace(usuario)">
+                          {{ textoAccionEnlace(usuario) }}
+                        </button>
+                      }
+                      <span class="action-with-help">
+                        <button type="button" class="button-void" (click)="pedirBaja(usuario)">Deshabilitar</button>
+                        <app-help-hint
+                          label="Deshabilitar"
+                          text="Le corta el acceso al Portal Administrativo de inmediato; si tiene una sesión abierta, se cierra en su próxima acción. No borra la cuenta: pasa a Cuentas deshabilitadas y se puede reactivar."
+                        />
+                      </span>
+                    </div>
                   </td>
                 </tr>
               }

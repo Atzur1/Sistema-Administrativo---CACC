@@ -6,20 +6,15 @@ import { Observable, Subject, from, isObservable } from 'rxjs';
 
 import { DeudaJugador } from './deuda-jugador';
 import { JugadoresService } from '../../services/jugadores';
-import {
-  CobrarCuotasResponse,
-  CuotaJugador,
-  CuotaPendienteDetalle,
-  JugadorResumen,
-  PagosService,
-  PlayerStatement,
-} from '../../services/pagos';
+import { PagosService } from '../../services/pagos';
 import { NotificationService } from '../../shared/notifications/notification.service';
+import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
+import { CollectFeesResponseModel, PendingFeeDetailModel, PlayerFeeModel, PlayerStatementModel } from '../../models/PaymentModel';
 
 // HU-025: selección de cuotas, método de pago, confirmación y refresco con datos reales. Los
 // servicios HTTP se reemplazan por dobles; el cobro contra SQL Server se valida en QA-HU-025.md.
 
-const JUGADOR: JugadorResumen = {
+const JUGADOR: PlayerSummaryModel = {
   idJugador: 3,
   nombre: 'MATIAS',
   apellido: 'PRUEBA',
@@ -29,7 +24,7 @@ const JUGADOR: JugadorResumen = {
   nombreCompleto: 'PRUEBA, MATIAS',
 };
 
-function cuota(idPago: number, periodo: string, extra: Partial<CuotaJugador> = {}): CuotaJugador {
+function cuota(idPago: number, periodo: string, extra: Partial<PlayerFeeModel> = {}): PlayerFeeModel {
   return {
     idPago,
     periodo,
@@ -64,7 +59,7 @@ const MAYO_CUBIERTA = cuota(12, 'Mayo 2026', {
   motivoBeneficio: 'Becado',
 });
 
-const RESPUESTA_COBRO: CobrarCuotasResponse = {
+const RESPUESTA_COBRO: CollectFeesResponseModel = {
   exito: true,
   idJugador: 3,
   pagosAbonados: [10, 11],
@@ -91,7 +86,7 @@ const respuesta = <T>(valor: T | Error | HttpErrorResponse) =>
 // HU-024: la tabla y el total salen del estado de cuenta. Se arma con las mismas cuotas que
 // usaban los tests de HU-025/026, con el total calculado como lo hace el backend (saldo de las
 // cuotas no pagadas).
-function estadoDeCuenta(cuotas: CuotaJugador[]): PlayerStatement {
+function estadoDeCuenta(cuotas: PlayerFeeModel[]): PlayerStatementModel {
   return {
     playerId: 3,
     playerFullName: 'PRUEBA, MATIAS',
@@ -116,10 +111,10 @@ function estadoDeCuenta(cuotas: CuotaJugador[]): PlayerStatement {
 interface Opciones {
   // Una respuesta por cada lectura del estado de cuenta / de getDeuda (la última se repite). Un
   // Error o HttpErrorResponse simula que esa lectura falla. Un Observable controla cuándo responde.
-  cuotas?: (CuotaJugador[] | Error | HttpErrorResponse | Observable<PlayerStatement>)[];
-  deuda?: (CuotaPendienteDetalle[] | Error | HttpErrorResponse)[];
+  cuotas?: (PlayerFeeModel[] | Error | HttpErrorResponse | Observable<PlayerStatementModel>)[];
+  deuda?: (PendingFeeDetailModel[] | Error | HttpErrorResponse)[];
   // Un Observable permite controlar cuándo "responde" el backend al cobro.
-  cobro?: CobrarCuotasResponse | HttpErrorResponse | Observable<CobrarCuotasResponse>;
+  cobro?: CollectFeesResponseModel | HttpErrorResponse | Observable<CollectFeesResponseModel>;
 }
 
 const secuencia = <T>(lotes: T[]) => {
@@ -135,7 +130,7 @@ async function crear(opciones: Opciones = {}) {
     getEstadoDeCuenta: vi.fn(() => {
       const lote = siguienteCuotas();
       if (isObservable(lote)) return lote;
-      return Array.isArray(lote) ? respuesta(estadoDeCuenta(lote)) : respuesta<PlayerStatement>(lote);
+      return Array.isArray(lote) ? respuesta(estadoDeCuenta(lote)) : respuesta<PlayerStatementModel>(lote);
     }),
     getDeuda: vi.fn(() => respuesta(siguienteDeuda())),
     cobrarCuotas: vi.fn(() =>
@@ -375,7 +370,7 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
 // Arranca cuando el backend confirma el cobro de HU-025. El toast solo sale con esa respuesta, la
 // grilla y la deuda se vuelven a leer de la API, y un fallo de esa relectura nunca reintenta el cobro.
 
-function deudaDe(idPago: number, periodo: string, saldo = 85000): CuotaPendienteDetalle {
+function deudaDe(idPago: number, periodo: string, saldo = 85000): PendingFeeDetailModel {
   return {
     idPago,
     periodo,
@@ -391,7 +386,7 @@ function deudaDe(idPago: number, periodo: string, saldo = 85000): CuotaPendiente
 }
 
 const MAYO = cuota(13, 'Mayo 2026', { fechaVencimiento: '2026-05-01T00:00:00' });
-const pagada = (c: CuotaJugador, metodo = 'Transferencia'): CuotaJugador => ({
+const pagada = (c: PlayerFeeModel, metodo = 'Transferencia'): PlayerFeeModel => ({
   ...c,
   estado: 'Pagado',
   saldoPendiente: 0,
@@ -419,7 +414,7 @@ async function pagar(ctx: Contexto, ids: number[], metodo = 'Transferencia') {
 
 describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () => {
   it('no muestra éxito mientras el backend no confirmó el cobro', async () => {
-    const respuestaPendiente = new Subject<CobrarCuotasResponse>();
+    const respuestaPendiente = new Subject<CollectFeesResponseModel>();
     const ctx = await crear({ cobro: respuestaPendiente });
 
     await pagar(ctx, [10, 11]);
@@ -656,7 +651,7 @@ describe('DeudaJugador - estado de cuenta (HU-024)', () => {
   });
 
   it('muestra el indicador de carga mientras el estado de cuenta no llegó', async () => {
-    const { el } = await crear({ cuotas: [new Subject<PlayerStatement>()] });
+    const { el } = await crear({ cuotas: [new Subject<PlayerStatementModel>()] });
 
     expect(texto(el)).toContain('Cargando cuotas...');
     expect(el.querySelector('.total-adeudado')).toBeNull();

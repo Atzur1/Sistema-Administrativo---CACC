@@ -4,19 +4,19 @@ import { of, throwError } from 'rxjs';
 import { Usuarios } from './usuarios-y-permisos';
 import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { NotificationService } from '../../shared/notifications/notification.service';
-import { UsuarioCandidato, UsuarioPortal } from '../../models/UsuarioPortalModel';
+import { PortalUserCandidateModel, PortalUserModel } from '../../models/PortalUserModel';
 
 // Botón "Resetear contraseña" del SuperAdmin: le manda a una cuenta habilitada el enlace para elegir una contraseña
 // nueva. El enlace llega al correo de la propia cuenta; el SuperAdmin no ve ni fija la contraseña.
 
-const ADMIN: UsuarioPortal = {
+const ADMIN: PortalUserModel = {
   idUsuario: 7, nombre: 'Camila', apellido: 'Candidata', dni: '30111222',
   email: 'camila@cacc.test', rolPortal: 2, activo: true, activacionPendiente: false,
 };
-const SIN_ACTIVAR: UsuarioPortal = { ...ADMIN, idUsuario: 8, nombre: 'Nuevo', email: 'nuevo@cacc.test', activacionPendiente: true };
-const INACTIVO: UsuarioPortal = { ...ADMIN, idUsuario: 9, nombre: 'Baja', email: 'baja@cacc.test', activo: false };
+const SIN_ACTIVAR: PortalUserModel = { ...ADMIN, idUsuario: 8, nombre: 'Nuevo', email: 'nuevo@cacc.test', activacionPendiente: true };
+const INACTIVO: PortalUserModel = { ...ADMIN, idUsuario: 9, nombre: 'Baja', email: 'baja@cacc.test', activo: false };
 
-const CANDIDATO: UsuarioCandidato = {
+const CANDIDATO: PortalUserCandidateModel = {
   idUsuario: 20, nombre: 'Carla', apellido: 'Candidata', dni: '30.555.666', email: 'carla@cacc.test', fkIdRolSugerido: 2,
 };
 

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ApiGestion.Models;
 
-public sealed class HabilitarUsuarioRequest
+public sealed class EnableUserRequestDTO
 {
     // El SuperAdmin confirma el mail que ve en pantalla antes de habilitar: si el
     // otro equipo cargó mal el correo, el enlace de activación le llegaría a un

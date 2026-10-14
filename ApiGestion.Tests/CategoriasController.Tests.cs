@@ -4,13 +4,14 @@ using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ApiGestion.Controllers;
+using ApiGestion.Models;
 using DaoLibrary;
 using EntityLibrary;
 
 // HU-020: CategoriasController es un passthrough de ICategoriasDao.ObtenerTodas — el
 // catálogo completo de categorías del club, independiente de quién debe o no (la consulta
 // SQL en sí se validó aparte contra la base real). Acá solo se cubre el contrato del
-// endpoint: que expone el resultado del DAO tal cual y que exige autenticación.
+// endpoint: que expone el resultado del DAO como DTO y que exige autenticación.
 public class CategoriasControllerTests
 {
     private static (CategoriasController controller, FakeCategoriasDao dao) CreateController()
@@ -20,7 +21,7 @@ public class CategoriasControllerTests
     }
 
     [Fact]
-    public void ObtenerTodas_ReturnsOkWithTheDaoResultUnchanged()
+    public void ObtenerTodas_ReturnsOkWithEveryCategoryAsADto()
     {
         (CategoriasController controller, FakeCategoriasDao dao) = CreateController();
         dao.Result = new List<Categoria>
@@ -32,7 +33,9 @@ public class CategoriasControllerTests
         IActionResult result = controller.ObtenerTodas();
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Same(dao.Result, ok.Value);
+        List<CategoryResponseDTO> categories = Assert.IsType<List<CategoryResponseDTO>>(ok.Value);
+        Assert.Equal(new[] { 1, 2 }, categories.Select(c => c.IdCategoria));
+        Assert.Equal(new[] { "AFA 20067", "AFA 20112" }, categories.Select(c => c.Nombre));
     }
 
     [Fact]
@@ -43,7 +46,7 @@ public class CategoriasControllerTests
         IActionResult result = controller.ObtenerTodas();
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Empty(Assert.IsType<List<Categoria>>(ok.Value));
+        Assert.Empty(Assert.IsType<List<CategoryResponseDTO>>(ok.Value));
     }
 
     [Fact]

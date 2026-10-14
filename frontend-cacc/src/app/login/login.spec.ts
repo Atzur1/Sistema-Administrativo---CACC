@@ -40,7 +40,7 @@ describe('Login - secuencia de carga tras un login correcto', () => {
         {
           provide: AuthService,
           useValue: {
-            login: vi.fn(() => of({ email: 'admin@cacc.com', rol: 1, token: 'tok' })),
+            login: vi.fn(() => of({ email: 'admin@cacc.com', role: 1, token: 'tok' })),
             // Desde el ingreso por rol, el login navega con irAlInicio: la cuenta del test es SuperAdmin (rol 1).
             irAlInicio: vi.fn((router: Router) => router.navigate(['/portales'])),
           },
@@ -61,7 +61,7 @@ describe('Login - secuencia de carga tras un login correcto', () => {
 
   it('hides the overlay and shows the success message cleanly right after the response arrives', () => {
     const { component, navigate } = create();
-    component.loginForm.setValue({ usuario: 'admin', contrasena: '1234', recordarme: false });
+    component.loginForm.setValue({ username: 'admin', password: '1234', recordarme: false });
 
     component.onSubmit();
 
@@ -73,7 +73,7 @@ describe('Login - secuencia de carga tras un login correcto', () => {
   it('brings the overlay back only after the reading pause, then navigates only after the transition beat', () => {
     vi.useFakeTimers();
     const { component, navigate } = create();
-    component.loginForm.setValue({ usuario: 'admin', contrasena: '1234', recordarme: false });
+    component.loginForm.setValue({ username: 'admin', password: '1234', recordarme: false });
 
     component.onSubmit();
 

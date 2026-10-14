@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace DaoLibrary
 {
-    public class PagosDao : IPagosDao, ICuotasPorArancelDao
+    public class PagosDao : IPagosDao
     {
         private readonly string _cadenaConexion;
 

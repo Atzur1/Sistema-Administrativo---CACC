@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ApiGestion.Models;
 
 // El mail no forma parte de la corrección: no se modifica desde el portal (ver IUsuariosPortalDao).
-public sealed class EditarCandidatoRequest
+public sealed class EditCandidateRequestDTO
 {
     [Required, MaxLength(100)]
     public string Nombre { get; init; } = string.Empty;

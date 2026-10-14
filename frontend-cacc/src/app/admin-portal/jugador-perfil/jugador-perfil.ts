@@ -4,17 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import {
-  HistorialPagosResultado,
-  JugadoresService,
-  PagoHistorialAbono,
-  PagoHistorialItem,
-} from '../../services/jugadores';
-import { JugadorResumen } from '../../services/pagos';
+import { JugadoresService } from '../../services/jugadores';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { HelpHint } from '../../shared/help-hint/help-hint';
+import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
+import { PaymentHistoryItemModel, PaymentHistoryModel, PaymentHistoryPartialPaymentModel } from '../../models/PaymentHistoryModel';
 
 type DialogoPerfil = 'baja' | 'reactivar' | 'anular';
 
@@ -32,8 +28,8 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   styleUrl: './jugador-perfil.css',
 })
 export class JugadorPerfil implements OnInit {
-  jugador: JugadorResumen | null = null;
-  historial: HistorialPagosResultado | null = null;
+  jugador: PlayerSummaryModel | null = null;
+  historial: PaymentHistoryModel | null = null;
 
   cargandoJugador = true;
   cargandoHistorial = true;
@@ -131,7 +127,7 @@ export class JugadorPerfil implements OnInit {
   errorDialogo = '';
 
   fechaBaja = '';
-  abonoAnular: { abono: PagoHistorialAbono; item: PagoHistorialItem } | null = null;
+  abonoAnular: { abono: PaymentHistoryPartialPaymentModel; item: PaymentHistoryItemModel } | null = null;
   motivoAnulacion = '';
   readonly motivoMinimo = 5;
   readonly motivoMaximo = 500;
@@ -164,7 +160,7 @@ export class JugadorPerfil implements OnInit {
     this.abrir('reactivar');
   }
 
-  abrirAnulacion(abono: PagoHistorialAbono, item: PagoHistorialItem) {
+  abrirAnulacion(abono: PaymentHistoryPartialPaymentModel, item: PaymentHistoryItemModel) {
     this.abonoAnular = { abono, item };
     this.motivoAnulacion = '';
     this.abrir('anular');
@@ -257,7 +253,7 @@ export class JugadorPerfil implements OnInit {
   }
 
   // Texto del badge de beneficio: "Becado ($5.000)" o "Descuento (20%)".
-  beneficioTexto(item: PagoHistorialItem): string {
+  beneficioTexto(item: PaymentHistoryItemModel): string {
     if (!item.tieneBeneficio) {
       return '';
     }

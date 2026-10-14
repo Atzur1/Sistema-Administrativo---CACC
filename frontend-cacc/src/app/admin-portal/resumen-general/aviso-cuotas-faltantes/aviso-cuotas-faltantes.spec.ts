@@ -2,12 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
 import { AvisoCuotasFaltantes } from './aviso-cuotas-faltantes';
-import { CuotasFaltantesService, MesConCuotasFaltantes } from '../../../services/cuotas-faltantes';
+import { CuotasFaltantesService } from '../../../services/cuotas-faltantes';
 import { NotificationService } from '../../../shared/notifications/notification.service';
+import { MonthWithMissingFeesModel } from '../../../models/MissingFeeModel';
 
-const SEPTIEMBRE: MesConCuotasFaltantes = { periodo: '2026-09-01', cantidad: 45, montoTotal: 4_140_000 };
+const SEPTIEMBRE: MonthWithMissingFeesModel = { periodo: '2026-09-01', cantidad: 45, montoTotal: 4_140_000 };
 
-async function create(meses: MesConCuotasFaltantes[] = [SEPTIEMBRE]) {
+async function create(meses: MonthWithMissingFeesModel[] = [SEPTIEMBRE]) {
   const generar = vi.fn(() => of({ mensaje: 'Se generaron 2 cuotas de septiembre 2026.', creadas: 2 }));
   const getMeses = vi.fn(() => of(meses));
   const notify = vi.fn();

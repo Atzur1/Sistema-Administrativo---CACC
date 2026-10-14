@@ -1,18 +1,18 @@
 namespace ApiGestion.Models;
 
 // Outbound shape of GET api/pagos/jugador/{id}/estado-de-cuenta (HU-024)
-public class PlayerStatementDto
+public class PlayerStatementResponseDTO
 {
     public int PlayerId { get; set; }
     public string PlayerFullName { get; set; } = "";
     public string Dni { get; set; } = "";
     // What is left to pay on Pendiente and Vencido fees, benefits and partial payments applied
     public decimal TotalDebtAmount { get; set; }
-    public List<FeeItemDto> Fees { get; set; } = new();
+    public List<FeeItemDTO> Fees { get; set; } = new();
 }
 
 // One monthly fee of the statement, oldest first
-public class FeeItemDto
+public class FeeItemDTO
 {
     // Pendiente/Vencido: the PAGOS row to charge. Pagado: the last payment of the period.
     public int Id { get; set; }

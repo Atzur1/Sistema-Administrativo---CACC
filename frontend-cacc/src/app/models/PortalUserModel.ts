@@ -1,6 +1,6 @@
 // Persona cargada por el otro equipo (FK_id_rol de SuperAdmin o Administrador)
 // que todavía no tiene acceso al Portal Administrativo.
-export interface UsuarioCandidato {
+export interface PortalUserCandidateModel {
   idUsuario: number;
   nombre: string;
   apellido: string;
@@ -12,7 +12,7 @@ export interface UsuarioCandidato {
 }
 
 // Alguien con acceso_portal = 1 hoy.
-export interface UsuarioPortal {
+export interface PortalUserModel {
   idUsuario: number;
   nombre: string;
   apellido: string;
@@ -30,16 +30,16 @@ export const ROL_PORTAL_LABELS: Record<RolPortal, string> = {
   2: 'Administrador',
 };
 
-export interface HabilitarUsuarioRequest {
+export interface EnableUserRequestModel {
   email: string;
   rolPortal: RolPortal;
 }
 
-export interface CambiarRolRequest {
+export interface ChangeRoleRequestModel {
   rolPortal: RolPortal;
 }
 
-export interface EditarCandidatoRequest {
+export interface EditCandidateRequestModel {
   nombre: string;
   apellido: string;
   // Es el usuario con el que la persona ingresa al portal. Con o sin puntos: el servidor lo guarda solo con dígitos.

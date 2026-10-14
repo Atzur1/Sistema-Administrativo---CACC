@@ -37,7 +37,7 @@ public class PlayersControllerSearchTests
         IActionResult result = controller.SearchPlayers("bazan");
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        PlayerSearchResultDto dto = Assert.Single(Assert.IsAssignableFrom<IEnumerable<PlayerSearchResultDto>>(ok.Value));
+        PlayerSearchResultDTO dto = Assert.Single(Assert.IsAssignableFrom<IEnumerable<PlayerSearchResultDTO>>(ok.Value));
         Assert.Equal(10, dto.Id);
         Assert.Equal("NICOLÁS", dto.FirstName);
         Assert.Equal("BAZÁN", dto.LastName);
@@ -52,7 +52,7 @@ public class PlayersControllerSearchTests
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(controller.SearchPlayers("inexistente"));
 
-        Assert.Empty(Assert.IsAssignableFrom<IEnumerable<PlayerSearchResultDto>>(ok.Value));
+        Assert.Empty(Assert.IsAssignableFrom<IEnumerable<PlayerSearchResultDTO>>(ok.Value));
     }
 
     [Fact]
@@ -174,16 +174,6 @@ public class PlayersControllerSearchTests
         public IReadOnlyList<ArancelHistorialItem> ObtenerHistorial() => new List<ArancelHistorialItem>();
         public ArancelResumen ObtenerResumen() => new ArancelResumen();
         public void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde) { }
-        public void ProgramarArancel(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde)
-            => throw new NotSupportedException();
-        public Arancel? ObtenerPorId(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
-            => throw new NotSupportedException();
-        public DateTime? ObtenerVigenteDesdeEnMes(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, int anio, int mes)
-            => throw new NotSupportedException();
-        public DateTime? ObtenerSiguienteVigenteDesde(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde)
-            => throw new NotSupportedException();
-        public void EliminarArancel(SqlConnection conexion, SqlTransaction transaccion, int idArancel)
-            => throw new NotSupportedException();
     }
 
     private class FakeCategoriasDao : ICategoriasDao

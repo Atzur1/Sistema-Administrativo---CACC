@@ -66,16 +66,15 @@ export class DiscountService {
     // Answers 204 with no body: the benefit is kept as history and only flipped
     // to inactive. Cancelling is for taking a benefit down early; one that ran
     // its course expires on its own and needs no call.
-    cancelDiscount(playerId: number, discountId?: number): Observable<void> {
-        const query = discountId ? `?discountId=${discountId}` : '';
-        return this.http.delete<void>(`${this.API_URL}/players/${playerId}/discount${query}`);
+    cancelDiscount(playerId: number, discountId: number): Observable<void> {
+        return this.http.delete<void>(`${this.API_URL}/players/${playerId}/discount?discountId=${discountId}`);
     }
 
     // Para un beneficio asignado por error: a diferencia de cancelDiscount, esto no respeta los
     // meses que ya pasaron con ese beneficio aplicado — lo saca a todos, como si nunca se
     // hubiera otorgado.
     voidDiscount(playerId: number, discountId: number): Observable<void> {
-        return this.http.delete<void>(`${this.API_URL}/players/${playerId}/discount/void?discountId=${discountId}`);
+        return this.http.post<void>(`${this.API_URL}/players/${playerId}/discount/${discountId}/void`, null);
     }
 
     // The grids look discounts up by player, so they are handed over indexed and

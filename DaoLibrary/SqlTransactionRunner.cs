@@ -2,7 +2,9 @@ using Microsoft.Data.SqlClient;
 
 namespace DaoLibrary
 {
-    public class SqlTransactionRunner : ISqlTransactionRunner
+    // Solo lo usan los DAO transaccionales (PaymentTransactionDao, TariffTransactionDao): la conexión y la
+    // transacción nunca salen de esta capa.
+    public class SqlTransactionRunner
     {
         private readonly string _cadenaConexion;
 
