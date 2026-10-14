@@ -192,6 +192,47 @@ describe('Usuarios - Corregir el DNI de un candidato', () => {
   });
 });
 
+// Las tres listas (habilitadas, candidatos, deshabilitadas) se ven de a una, con su contador en la pestaña.
+describe('Usuarios - Pestañas', () => {
+  const tab = (element: HTMLElement, id: string) => element.querySelector(`#${id}`) as HTMLButtonElement;
+
+  it('arranca en las cuentas habilitadas y solo muestra esa lista', async () => {
+    const { element } = await create();
+
+    expect(element.querySelector('.panel-users')).not.toBeNull();
+    expect(element.querySelector('.panel-candidatos')).toBeNull();
+    expect(element.querySelector('.panel-deshabilitados')).toBeNull();
+    expect(tab(element, 'tab-habilitadas').getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('al elegir otra pestaña cambia la lista que se muestra', async () => {
+    const { fixture, element } = await create();
+
+    tab(element, 'tab-candidatos').click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('.panel-users')).toBeNull();
+    expect(element.querySelector('.panel-candidatos')?.textContent).toContain('Carla');
+    expect(tab(element, 'tab-candidatos').getAttribute('aria-selected')).toBe('true');
+    expect(tab(element, 'tab-habilitadas').getAttribute('aria-selected')).toBe('false');
+  });
+
+  it('cada pestaña muestra cuántas cuentas tiene', async () => {
+    const { element } = await create();
+
+    expect(tab(element, 'tab-habilitadas').textContent).toContain('3');
+    expect(tab(element, 'tab-candidatos').textContent).toContain('1');
+    expect(tab(element, 'tab-deshabilitadas').textContent).toContain('0');
+  });
+
+  it('resalta el contador de candidatos cuando hay alguien esperando habilitación', async () => {
+    const { element } = await create();
+
+    expect(tab(element, 'tab-candidatos').querySelector('.tab-count-alert')).not.toBeNull();
+    expect(tab(element, 'tab-habilitadas').querySelector('.tab-count-alert')).toBeNull();
+  });
+});
+
 // Reactivar: el SuperAdmin elige el rol con el que vuelve la cuenta; arranca seleccionado el que tenía.
 describe('Usuarios - Reactivar con rol', () => {
   async function crearConReactivar() {

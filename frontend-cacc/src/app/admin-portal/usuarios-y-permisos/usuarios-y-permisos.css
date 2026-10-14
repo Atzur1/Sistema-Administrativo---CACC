@@ -106,10 +106,76 @@
     color: var(--color-danger-strong);
 }
 
+/* ===== PESTAÑAS ===== */
+/* Mismo estilo subrayado que las pestañas de Cuotas y Pagos. */
+.tabs {
+    display: flex;
+    gap: 0;
+    margin: 0 0 14px;
+    border-bottom: 2px solid var(--color-border);
+    overflow-x: auto;
+}
+
+.tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover:not(.tab-active) {
+    color: var(--color-text);
+}
+
+.tab-active {
+    color: var(--color-brand-deep);
+    border-bottom-color: var(--color-brand-deep);
+}
+
+.tab-count {
+    min-width: 20px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--color-bg-page);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.tab-active .tab-count {
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+}
+
+/* Hay alguien esperando que se lo habilite: el contador llama la atención aunque la pestaña esté cerrada. */
+.tab-count-alert {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.tab-active .tab-count-alert {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
 /* ===== MAIN GRID ===== */
+/* Una sola lista por vez (ver pestañas): una columna a todo el ancho. */
 .main-grid {
     display: grid;
-    grid-template-columns: 1.3fr 1fr;
+    grid-template-columns: 1fr;
     gap: 12px;
     flex: 1;
     min-height: 0;
@@ -132,22 +198,10 @@
 
 /* Habilitados ocupa toda la columna izquierda (las dos filas); candidatos y
    deshabilitados se apilan en la derecha, más angostos. */
-.panel-users {
-    grid-column: 1;
-    grid-row: 1 / 3;
-    animation-delay: 80ms;
-}
-
-.panel-candidatos {
-    grid-column: 2;
-    grid-row: 1;
-    animation-delay: 160ms;
-}
-
+.panel-users,
+.panel-candidatos,
 .panel-deshabilitados {
-    grid-column: 2;
-    grid-row: 2;
-    animation-delay: 220ms;
+    animation-delay: 80ms;
 }
 
 .panel-head {
@@ -600,21 +654,6 @@
    de "Cuentas habilitadas" no entran los botones de cada fila (Resetear
    contraseña / Deshabilitar quedaban cortados). Hasta 1400px los paneles
    se apilan a ancho completo. */
-@media (max-width: 1400px) {
-    .main-grid {
-        grid-template-columns: 1fr;
-    }
-
-    /* Sin esto, el grid-column: 2 fijo de candidatos/deshabilitados crea una
-       segunda columna implícita y la grilla nunca llega a apilarse. */
-    .panel-users,
-    .panel-candidatos,
-    .panel-deshabilitados {
-        grid-column: auto;
-        grid-row: auto;
-    }
-}
-
 @media (max-width: 768px) {
     .page-header {
         flex-wrap: wrap;
