@@ -91,7 +91,7 @@ export class PlayerSearch implements OnInit {
       map((results): SearchOutcome => ({ term, results })),
       catchError((error: unknown) => {
         this.notifications.notify(
-          financialLoadErrorMessage(error, 'No se pudo realizar la búsqueda de alumnos. Intentá de nuevo.'),
+          financialLoadErrorMessage(error, 'No se pudo realizar la búsqueda de jugadores. Intentá de nuevo.'),
           'error',
         );
         return of<SearchOutcome>({ term, results: null });
