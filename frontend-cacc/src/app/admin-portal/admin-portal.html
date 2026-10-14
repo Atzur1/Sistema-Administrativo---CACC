@@ -1,14 +1,14 @@
 <!-- Admin portal layout: fixed sidebar on the left, content area on the right -->
-<div class="admin-layout">
+<div class="admin-layout" [class.is-pinned]="sidebarPinned">
 
 <!-- ===== SIDEBAR ===== -->
-<!-- En escritorio no hay botón ni estado persistido: el sidebar arranca
-     angosto (solo íconos) y se expande solo mientras el mouse está encima
-     (:hover) o hay foco por teclado adentro (:focus-within), tapando el
-     contenido en vez de empujarlo — así no hay ningún salto de layout cada
-     vez que se pasa el mouse. En móvil sigue siendo el drawer de siempre,
-     con .is-open controlado por el botón hamburguesa. -->
-<aside class="sidebar" [class.is-open]="sidebarOpen">
+<!-- En escritorio el sidebar arranca angosto (solo íconos) y, mientras el mouse
+     está encima (:hover) o hay foco por teclado adentro (:focus-within), se
+     expande POR ENCIMA del contenido sin moverlo. Con "Fijar menú" queda abierto
+     y empuja el contenido (el estado se recuerda en el navegador). En móvil
+     sigue siendo el drawer de siempre, con .is-open controlado por el botón
+     hamburguesa. -->
+<aside class="sidebar" [class.is-open]="sidebarOpen" [class.is-pinned]="sidebarPinned">
 
     <div class="sidebar-scroll">
 
@@ -21,18 +21,18 @@
     </div>
     </div>
 
-    <!-- Navigation: grouped into sections -->
+    <!-- Navigation: agrupada por tipo de tarea, de lo que se usa todos los días a lo ocasional.
+         routerLink maneja la navegación y routerLinkActive resalta la sección actual.
+         title: tooltip nativo cuando el sidebar está colapsado y el texto no se ve.
+         El Administrador (rol 2) solo ve "Cobranza"; el resto es exclusivo de SuperAdmin.
+         Los nombres coinciden con el título de cada pantalla y con el de la barra superior. -->
     <nav class="sidebar-nav">
 
-    <!-- Monitoreo group -->
+    @if (isSuperAdmin) {
+    <!-- Inicio -->
     <div class="nav-group">
-        <span class="nav-group-title">Monitoreo</span>
+        <span class="nav-group-title">Inicio</span>
 
-        <!-- routerLink drives navigation; routerLinkActive highlights the current item.
-             title: tooltip nativo cuando el sidebar está colapsado y el texto no se ve.
-             Resumen General, Actividad y Movimientos y Auditoría son exclusivas de
-             SuperAdmin: el Administrador (rol 2) no tiene esas secciones en su alcance. -->
-        @if (isSuperAdmin) {
         <a class="nav-item" routerLink="/admin/portal/resumen-general" routerLinkActive="active" title="Resumen General">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"></rect>
@@ -42,12 +42,99 @@
         </svg>
         <span>Resumen General</span>
         </a>
+    </div>
+    }
+
+    <!-- Cobranza: lo que se usa todos los días -->
+    <div class="nav-group">
+        <span class="nav-group-title">Cobranza</span>
+
+        <a class="nav-item" routerLink="/admin/portal/cuotas-pagos" routerLinkActive="active" title="Cuotas y Pagos">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+        </svg>
+        <span>Cuotas y Pagos</span>
+        </a>
+
+        <a class="nav-item" routerLink="/admin/portal/deudas-morosidad" routerLinkActive="active" title="Deudas y Morosidad">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>Deudas y Morosidad</span>
+        </a>
+
+        <a class="nav-item" routerLink="/admin/portal/becados-descuentos" routerLinkActive="active" title="Becados y Descuentos">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41 12 22l-9-9V4a1 1 0 0 1 1-1h9l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <circle cx="7.5" cy="7.5" r="1.5"></circle>
+        </svg>
+        <span>Becados y Descuentos</span>
+        </a>
+    </div>
+
+    @if (isSuperAdmin) {
+    <!-- Análisis: mirar cómo viene el club -->
+    <div class="nav-group">
+        <span class="nav-group-title">Análisis</span>
+
+        <a class="nav-item" routerLink="/admin/portal/recaudacion-mensual" routerLinkActive="active" title="Recaudación Mensual">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+            <circle cx="12" cy="12" r="2.5"></circle>
+            <path d="M6 12h.01"></path>
+            <path d="M18 12h.01"></path>
+        </svg>
+        <span>Recaudación Mensual</span>
+        </a>
 
         <a class="nav-item" routerLink="/admin/portal/actividad-movimientos" routerLinkActive="active" title="Actividad y Movimientos">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
         </svg>
         <span>Actividad y Movimientos</span>
+        </a>
+
+        <a class="nav-item" routerLink="/admin/portal/reportes" routerLinkActive="active" title="Reportes">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span>Reportes</span>
+        </a>
+    </div>
+
+    <!-- Administración: configuración y control, uso ocasional -->
+    <div class="nav-group">
+        <span class="nav-group-title">Administración</span>
+
+        <a class="nav-item" routerLink="/admin/portal/actualizacion-aranceles" routerLinkActive="active" title="Actualización de Aranceles">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+        <span>Actualización de Aranceles</span>
+        </a>
+
+        <a class="nav-item" routerLink="/admin/portal/usuarios" routerLinkActive="active" title="Usuarios y Permisos">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <span>Usuarios y Permisos</span>
         </a>
 
         <a class="nav-item" routerLink="/admin/portal/auditoria" routerLinkActive="active" title="Auditoría">
@@ -58,87 +145,23 @@
         </svg>
         <span>Auditoría</span>
         </a>
-        }
-
-        <a class="nav-item" routerLink="/admin/portal/deudas-morosidad" routerLinkActive="active" title="Deudas y Morosidad">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-        <span>Deudas y Morosidad</span>
-        </a>
     </div>
-
-    <!-- Gestión group -->
-    <div class="nav-group">
-        <span class="nav-group-title">Gestión</span>
-
-        @if (isSuperAdmin) {
-        <a class="nav-item" routerLink="/admin/portal/usuarios" routerLinkActive="active" title="Usuarios y permisos">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        <span>Usuarios y permisos</span>
-        </a>
-        }
-
-        <a class="nav-item" routerLink="/admin/portal/cuotas-pagos" routerLinkActive="active" title="Cuotas y pagos">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-            <line x1="1" y1="10" x2="23" y2="10"></line>
-        </svg>
-        <span>Cuotas y pagos</span>
-        </a>
-
-        @if (isSuperAdmin) {
-        <a class="nav-item" routerLink="/admin/portal/reportes" routerLinkActive="active" title="Reportes">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-        </svg>
-        <span>Reportes</span>
-        </a>
-        }
-
-        <a class="nav-item" routerLink="/admin/portal/becados-descuentos" routerLinkActive="active" title="Becados y descuentos">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.59 13.41 12 22l-9-9V4a1 1 0 0 1 1-1h9l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-            <circle cx="7.5" cy="7.5" r="1.5"></circle>
-        </svg>
-        <span>Becados y descuentos</span>
-        </a>
-
-        @if (isSuperAdmin) {
-        <a class="nav-item" routerLink="/admin/portal/actualizacion-aranceles" routerLinkActive="active" title="Actualización de aranceles">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-            <polyline points="17 6 23 6 23 12"></polyline>
-        </svg>
-        <span>Actualización de aranceles</span>
-        </a>
-        }
-
-        @if (isSuperAdmin) {
-        <a class="nav-item" routerLink="/admin/portal/recaudacion-mensual" routerLinkActive="active" title="Recaudación Mensual">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-            <circle cx="12" cy="12" r="2.5"></circle>
-            <path d="M6 12h.01"></path>
-            <path d="M18 12h.01"></path>
-        </svg>
-        <span>Recaudación Mensual</span>
-        </a>
-        }
-    </div>
+    }
     </nav>
 
-    <!-- Bottom actions: switch portal and log out -->
+    <!-- Bottom actions: pin the menu, switch portal and log out -->
     <div class="sidebar-footer">
+    <!-- Solo escritorio: en móvil el menú es un drawer y no hay nada que fijar. -->
+    <button class="nav-item nav-action nav-pin" type="button" (click)="togglePinned()"
+            [class.is-active]="sidebarPinned" [attr.aria-pressed]="sidebarPinned"
+            [title]="sidebarPinned ? 'Soltar menú' : 'Fijar menú'">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="17" x2="12" y2="22"></line>
+        <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"></path>
+        </svg>
+        <span>{{ sidebarPinned ? 'Soltar menú' : 'Fijar menú' }}</span>
+    </button>
+
     @if (isSuperAdmin) {
     <button class="nav-item nav-action" (click)="cambiarPortal()" title="Cambiar portal">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -170,7 +193,7 @@
 <div class="sidebar-backdrop" (click)="closeSidebar()"></div>
 }
 
-<!-- ===== TOPBAR ===== -->         
+<!-- ===== TOPBAR ===== -->
 <div class="admin-topbar">
     <!-- Only visible under the mobile breakpoint; opens the sidebar drawer -->
     <button type="button" class="sidebar-toggle" (click)="toggleSidebar()"
@@ -182,12 +205,9 @@
     </svg>
     </button>
 
+    <!-- "Cambiar portal" vive solo en el pie del menú: tenerlo también acá era un duplicado. -->
     <div class="topbar-breadcrumb">
-    @if (isSuperAdmin) {
-    <button type="button" class="breadcrumb-portal" (click)="cambiarPortal()">Portal administrativo</button>
-    } @else {
     <span class="breadcrumb-portal">Portal administrativo</span>
-    }
     <span class="breadcrumb-separator">·</span>
     <span class="breadcrumb-current">{{ currentPageTitle }}</span>
     </div>

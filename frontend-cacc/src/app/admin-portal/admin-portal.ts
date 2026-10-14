@@ -8,6 +8,16 @@ import { Toast } from '../shared/toast/toast';
 import { NotificationBell } from '../shared/notification-bell/notification-bell';
 import { DtAdminChat } from '../shared/dt-admin-chat/dt-admin-chat';
 
+const PINNED_KEY = 'menuFijado';
+
+function readPinned(): boolean {
+    try {
+        return localStorage.getItem(PINNED_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
 @Component({
     selector: 'app-admin-portal',
     standalone: true,
@@ -31,6 +41,10 @@ get roleLabel(): string { return this.isSuperAdmin ? 'Superadmin' : 'Administrad
 // Off-canvas sidebar state, only meaningful under the 768px breakpoint
 sidebarOpen: boolean = false;
 
+// Menú fijado abierto (solo escritorio). Se recuerda en este navegador; si el
+// almacenamiento no está disponible, el menú simplemente arranca sin fijar.
+sidebarPinned: boolean = readPinned();
+
 // Maps each route segment to its display name
 private pageTitles: Record<string, string> = {
     'resumen-general':        'Resumen General',
@@ -41,6 +55,8 @@ private pageTitles: Record<string, string> = {
     'cuotas-pagos':           'Cuotas y Pagos',
     'reportes':               'Reportes',
     'actualizacion-aranceles': 'Actualización de Aranceles',
+    'becados-descuentos':     'Becados y Descuentos',
+    'recaudacion-mensual':    'Recaudación Mensual',
 };
 
 private destroyRef = inject(DestroyRef);
@@ -103,6 +119,19 @@ toggleSidebar() {
 
 closeSidebar() {
     this.ngZone.run(() => (this.sidebarOpen = false));
+}
+
+// Fija o suelta el menú en escritorio. Mismo ngZone.run() que arriba: este shell
+// persistente no siempre repinta solo después de un click.
+togglePinned() {
+    this.ngZone.run(() => {
+        this.sidebarPinned = !this.sidebarPinned;
+        try {
+            localStorage.setItem(PINNED_KEY, this.sidebarPinned ? '1' : '0');
+        } catch {
+            // Sin almacenamiento (modo privado, datos bloqueados): se aplica igual en esta sesión.
+        }
+    });
 }
 
 // Go back to the portals selection screen

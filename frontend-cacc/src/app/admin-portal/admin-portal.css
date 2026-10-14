@@ -23,15 +23,27 @@
   transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.admin-layout:has(.sidebar:hover),
-.admin-layout:has(.sidebar:focus-within) {
-  grid-template-columns: 252px 1fr;
+/* Menú fijado (botón "Fijar menú"): la columna queda ancha y el contenido se
+   acomoda a su lado. Sin fijar, la columna se queda en 72px y el menú se abre
+   por encima (ver .sidebar), así el contenido no se corre cada vez que el mouse
+   pasa por el menú. Solo escritorio: en móvil el menú es un drawer. */
+@media (min-width: 769px) {
+  .admin-layout.is-pinned {
+    grid-template-columns: 252px 1fr;
+  }
 }
 
 /* ===== SIDEBAR (DEGRADÉ INSTITUCIONAL) ===== */
 .sidebar {
   position: relative;
+  /* Por encima de la barra superior y del contenido cuando se expande. */
+  z-index: 30;
   grid-area: sidebar;
+  /* El ancho lo maneja el propio sidebar (72px en reposo, 252px expandido o
+     fijado): en reposo ocupa la columna de la grilla y al expandirse la rebasa
+     hacia la derecha, tapando el contenido en vez de empujarlo. */
+  width: 72px;
+  justify-self: start;
   height: 100%;
   overflow: hidden;
   /* Degradé continuo: arranca en verde institucional y desciende al negro profundo */
@@ -47,18 +59,19 @@
      de la app — no es un panel a los golpes pegado al borde. */
   border-radius: 0 20px 20px 0;
   box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease, width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Expandido: al pasar el mouse (:hover) o entrar por teclado (:focus-within,
-   ej. Tab hasta un link) se resalta con más sombra. El ancho lo maneja la
-   grilla de arriba (:has()), no el propio sidebar — así crece "de verdad",
-   empujando el contenido, no flotando encima. .is-open es el mismo
-   mecanismo pero para el drawer móvil (ver el media query de abajo) — se
-   agrupan acá para no duplicar cada regla de "look expandido" dos veces. */
+/* Expandido: al pasar el mouse (:hover), entrar por teclado (:focus-within, ej.
+   Tab hasta un link) o con el menú fijado (.is-pinned) se ensancha y toma más
+   sombra. .is-open es el mismo "look expandido" pero para el drawer móvil (ver
+   el media query de abajo) — se agrupan acá y en las reglas siguientes para no
+   duplicar cada regla de "look expandido" por separado. */
 .sidebar:hover,
 .sidebar:focus-within,
+.sidebar.is-pinned,
 .sidebar.is-open {
+  width: 252px;
   box-shadow: 8px 0 30px rgba(0, 0, 0, 0.3);
 }
 
@@ -105,6 +118,9 @@
 .sidebar:focus-within .sidebar-brand,
 .sidebar:focus-within .nav-item span,
 .sidebar:focus-within .nav-action span,
+.sidebar.is-pinned .sidebar-brand,
+.sidebar.is-pinned .nav-item span,
+.sidebar.is-pinned .nav-action span,
 .sidebar.is-open .sidebar-brand,
 .sidebar.is-open .nav-item span,
 .sidebar.is-open .nav-action span {
@@ -130,6 +146,7 @@
 
 .sidebar:hover .sidebar-header,
 .sidebar:focus-within .sidebar-header,
+.sidebar.is-pinned .sidebar-header,
 .sidebar.is-open .sidebar-header {
   padding-left: 16px;
 }
@@ -232,6 +249,7 @@
 
 .sidebar:hover .nav-group-title,
 .sidebar:focus-within .nav-group-title,
+.sidebar.is-pinned .nav-group-title,
 .sidebar.is-open .nav-group-title {
   max-height: 24px;
   margin-bottom: 6px;
@@ -279,12 +297,14 @@
 
 .sidebar:hover .nav-item,
 .sidebar:focus-within .nav-item,
+.sidebar.is-pinned .nav-item,
 .sidebar.is-open .nav-item {
   padding-left: 16px;
 }
 
 .sidebar:hover .nav-item:hover,
 .sidebar:focus-within .nav-item:hover,
+.sidebar.is-pinned .nav-item:hover,
 .sidebar.is-open .nav-item:hover {
   padding-left: 20px;
 }
@@ -370,6 +390,7 @@
 
 .sidebar:hover .nav-action,
 .sidebar:focus-within .nav-action,
+.sidebar.is-pinned .nav-action,
 .sidebar.is-open .nav-action {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
@@ -385,6 +406,18 @@
   color: #ffffff;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* "Fijar menú": con el menú fijado el botón queda resaltado en verde, así se
+   ve de un vistazo que está activo (aria-pressed lo anuncia a lectores de pantalla). */
+.nav-pin.is-active {
+  background: rgba(0, 214, 102, 0.18);
+  border-color: rgba(0, 214, 102, 0.45);
+  color: #ffffff;
+}
+
+.nav-pin.is-active .nav-icon {
+  fill: currentColor;
 }
 
 /* ===== SIDEBAR TOGGLE (MÓVILES) ===== */
@@ -455,14 +488,7 @@
   border: none;
   padding: 0;
   font-family: inherit;
-  cursor: pointer;
   font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.breadcrumb-portal:hover {
-  color: var(--primary-green);
-  text-decoration: underline;
 }
 
 .breadcrumb-separator {
@@ -571,6 +597,11 @@
     display: flex;
   }
 
+  /* En móvil el menú es un drawer: no hay nada que fijar. */
+  .sidebar .nav-pin {
+    display: none;
+  }
+
   .topbar-breadcrumb {
     margin-right: auto;
     min-width: 0;
@@ -636,6 +667,7 @@
 
   .sidebar:hover .nav-group-title,
   .sidebar:focus-within .nav-group-title,
+  .sidebar.is-pinned .nav-group-title,
   .sidebar.is-open .nav-group-title {
     margin-bottom: 4px;
   }
