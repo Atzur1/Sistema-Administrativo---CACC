@@ -71,8 +71,8 @@ public class PlayersController : ControllerBase
         });
     }
 
-    // Player search on the Cuotas panel (HU-023): by DNI or last name, so the
-    // operator can open that player's fees and debt. Both administrative roles
+    // Player search on the Cuotas panel (HU-023): by DNI, first name or last name (several words, in
+    // any order), so the operator can open that player's fees and debt. Both administrative roles
     // manage fees, as on the rest of PagosController.
     [Authorize(Roles = "1,2")]
     [HttpGet("search")]
@@ -82,7 +82,7 @@ public class PlayersController : ControllerBase
 
         if (trimmed.Length < MinSearchTermLength)
         {
-            return BadRequest(new { mensaje = $"Ingresá al menos {MinSearchTermLength} caracteres del DNI o del apellido." });
+            return BadRequest(new { mensaje = $"Ingresá al menos {MinSearchTermLength} caracteres del DNI, del nombre o del apellido." });
         }
 
         if (trimmed.Length > MaxSearchTermLength)
@@ -108,7 +108,7 @@ public class PlayersController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching players");
-            return StatusCode(500, new { mensaje = "No se pudo realizar la búsqueda de alumnos." });
+            return StatusCode(500, new { mensaje = "No se pudo realizar la búsqueda de jugadores." });
         }
     }
 

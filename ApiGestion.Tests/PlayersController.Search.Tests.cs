@@ -141,6 +141,27 @@ public class PlayersControllerSearchTests
         Assert.Equal(expected, PlayerDAO.EscapeLike(value));
     }
 
+    // El término de nombre se parte en palabras (espacios o comas) y cada una se busca por separado.
+    [Theory]
+    [InlineData("santiago", new[] { "santiago" })]
+    [InlineData("Santiago Prueba", new[] { "Santiago", "Prueba" })]
+    [InlineData("  prueba,   santiago ", new[] { "prueba", "santiago" })]
+    [InlineData("PRUEBA, SANTIAGO", new[] { "PRUEBA", "SANTIAGO" })]
+    [InlineData(", ,", new string[0])]
+    public void SplitSearchWords_SplitsOnSpacesAndCommas(string term, string[] expected)
+    {
+        Assert.Equal(expected, PlayerDAO.SplitSearchWords(term));
+    }
+
+    [Fact]
+    public void SplitSearchWords_KeepsOnlyTheFirstWordsUpToTheCap()
+    {
+        string[] words = PlayerDAO.SplitSearchWords("a b c d e f g");
+
+        Assert.Equal(PlayerDAO.MaxSearchWords, words.Length);
+        Assert.Equal(new[] { "a", "b", "c", "d", "e" }, words);
+    }
+
     private class FakePlayerDAO : PlayerDAO
     {
         public List<PlayerSearchResult> Results { get; } = new();
@@ -209,6 +230,35 @@ public class PlayerSearchIntegrationTests
 
             Assert.Empty(PlayerDAO.SearchPlayers(connection, transaction, "qwz%rtez", 50));
             Assert.Empty(PlayerDAO.SearchPlayers(connection, transaction, "zzzzzzzzzzqx", 50));
+        }
+        finally
+        {
+            transaction.Rollback();
+        }
+    }
+
+    // Bug: "Buscar jugador" solo miraba el apellido, así que escribir el nombre de pila (o "Nombre Apellido")
+    // no encontraba a nadie. Ahora cada palabra se busca en nombre o apellido, en cualquier orden.
+    [IntegracionFact]
+    public void Search_FindsByFirstNameOrFullNameInAnyOrder()
+    {
+        using var connection = new SqlConnection(Environment.GetEnvironmentVariable(IntegracionFactAttribute.Variable));
+        connection.Open();
+        using SqlTransaction transaction = connection.BeginTransaction();
+
+        try
+        {
+            long playerId = InsertPlayer(connection, transaction, "QWZÁRTEZ", "XQJÚAN CARLOS", "99887755");
+
+            Assert.Contains(PlayerDAO.SearchPlayers(connection, transaction, "xqjuan", 50), p => p.Id == playerId);
+            Assert.Contains(PlayerDAO.SearchPlayers(connection, transaction, "xqjuan qwzartez", 50), p => p.Id == playerId);
+            Assert.Contains(PlayerDAO.SearchPlayers(connection, transaction, "qwzartez xqjuan", 50), p => p.Id == playerId);
+            Assert.Contains(PlayerDAO.SearchPlayers(connection, transaction, "QWZÁRTEZ, XQJÚAN", 50), p => p.Id == playerId);
+            Assert.Contains(PlayerDAO.SearchPlayers(connection, transaction, "xqj carlos", 50), p => p.Id == playerId);
+
+            // Todas las palabras tienen que coincidir: si una no está ni en nombre ni en apellido, no aparece.
+            Assert.DoesNotContain(PlayerDAO.SearchPlayers(connection, transaction, "xqjuan zzzzzzzzqx", 50), p => p.Id == playerId);
+            Assert.Empty(PlayerDAO.SearchPlayers(connection, transaction, ", ,", 50));
         }
         finally
         {
