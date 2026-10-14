@@ -1,14 +1,13 @@
 <!-- Admin portal layout: fixed sidebar on the left, content area on the right -->
-<div class="admin-layout" [class.is-pinned]="sidebarPinned">
+<div class="admin-layout">
 
 <!-- ===== SIDEBAR ===== -->
-<!-- En escritorio el sidebar arranca angosto (solo íconos) y, mientras el mouse
-     está encima (:hover) o hay foco por teclado adentro (:focus-within), se
-     expande POR ENCIMA del contenido sin moverlo. Con "Fijar menú" queda abierto
-     y empuja el contenido (el estado se recuerda en el navegador). En móvil
-     sigue siendo el drawer de siempre, con .is-open controlado por el botón
-     hamburguesa. -->
-<aside class="sidebar" [class.is-open]="sidebarOpen" [class.is-pinned]="sidebarPinned">
+<!-- En escritorio no hay botón ni estado persistido: el sidebar arranca
+     angosto (solo íconos) y se expande solo mientras el mouse está encima
+     (:hover) o hay foco por teclado adentro (:focus-within); la columna crece y
+     el contenido se acomoda a su lado. En móvil sigue siendo el drawer de
+     siempre, con .is-open controlado por el botón hamburguesa. -->
+<aside class="sidebar" [class.is-open]="sidebarOpen">
 
     <div class="sidebar-scroll">
 
@@ -149,19 +148,8 @@
     }
     </nav>
 
-    <!-- Bottom actions: pin the menu, switch portal and log out -->
+    <!-- Bottom actions: switch portal and log out -->
     <div class="sidebar-footer">
-    <!-- Solo escritorio: en móvil el menú es un drawer y no hay nada que fijar. -->
-    <button class="nav-item nav-action nav-pin" type="button" (click)="togglePinned()"
-            [class.is-active]="sidebarPinned" [attr.aria-pressed]="sidebarPinned"
-            [title]="sidebarPinned ? 'Soltar menú' : 'Fijar menú'">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="17" x2="12" y2="22"></line>
-        <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"></path>
-        </svg>
-        <span>{{ sidebarPinned ? 'Soltar menú' : 'Fijar menú' }}</span>
-    </button>
-
     @if (isSuperAdmin) {
     <button class="nav-item nav-action" (click)="cambiarPortal()" title="Cambiar portal">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
