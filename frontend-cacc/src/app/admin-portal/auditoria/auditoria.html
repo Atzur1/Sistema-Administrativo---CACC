@@ -1,11 +1,12 @@
 <section class="audit-page">
-  <header class="audit-hero">
-    <div class="hero-mark" aria-hidden="true">
+  <!-- Encabezado compartido (ver styles.css) -->
+  <header class="page-header">
+    <span class="header-icon" aria-hidden="true">
       <svg
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        stroke-width="1.7"
+        stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
       >
@@ -14,18 +15,19 @@
         <circle cx="18" cy="18" r="4"></circle>
         <path d="m21 21 1.5 1.5"></path>
       </svg>
+    </span>
+    <div class="header-text">
+      <h1 class="header-title">Auditoría</h1>
+      <span class="header-subtitle">Consultá quién realizó cada cambio y cuándo ocurrió en el Portal Administrativo.</span>
     </div>
-    <div class="hero-copy">
-      <span class="eyebrow">CONTROL Y TRANSPARENCIA</span>
-      <h1>Auditoría</h1>
-      <p>Consultá quién realizó cada cambio y cuándo ocurrió en el Portal Administrativo.</p>
-    </div>
-    <div class="hero-total" aria-live="polite">
-      <span class="total-label">REGISTROS</span>
-      <strong>{{ total | number }}</strong>
-      <span>operaciones encontradas</span>
+    <div class="header-metrics" aria-live="polite">
+      <div class="header-metric">
+        <span class="header-metric-value">{{ total | number }}</span>
+        <span class="header-metric-label">Operaciones encontradas</span>
+      </div>
     </div>
   </header>
+  <div class="header-divider"></div>
 
   <form class="filter-card" (ngSubmit)="search(1)">
     <div class="filter-heading">

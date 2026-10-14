@@ -1,38 +1,37 @@
 <!-- Recaudación Mensual: filtros, pagos del período y desglose por medio de pago (HU-018) -->
 <div class="dashboard">
 
-  <!-- ===== BANNER ===== -->
-  <section class="banner">
-    <div class="banner-intro">
-      <span class="banner-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-          <circle cx="12" cy="12" r="2.5"></circle>
-          <path d="M6 12h.01"></path>
-          <path d="M18 12h.01"></path>
-        </svg>
+  <!-- ===== HEADER (encabezado compartido, ver styles.css) ===== -->
+  <header class="page-header">
+    <span class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+        <circle cx="12" cy="12" r="2.5"></circle>
+        <path d="M6 12h.01"></path>
+        <path d="M18 12h.01"></path>
+      </svg>
+    </span>
+
+    <div class="header-text">
+      <h1 class="header-title">Recaudación Mensual</h1>
+      <span class="header-subtitle">
+        Consultá la recaudación del club por mes y año, y el detalle por medio de pago
       </span>
-
-      <div class="banner-text">
-        <h1 class="banner-title">Recaudación Mensual</h1>
-        <span class="banner-subtitle">
-          Consultá la recaudación del club por mes y año, y el detalle por medio de pago
-        </span>
-      </div>
     </div>
 
-    <div class="banner-metrics">
-      <div class="banner-metric">
-        <span class="banner-metric-value">{{ totalCompacto }}</span>
-        <span class="banner-metric-label">Total del período</span>
+    <div class="header-metrics">
+      <div class="header-metric">
+        <span class="header-metric-value">{{ totalCompacto }}</span>
+        <span class="header-metric-label">Total del período</span>
       </div>
-      <div class="banner-metric">
-        <span class="banner-metric-value">{{ datos ? datos.pagos : '—' }}</span>
-        <span class="banner-metric-label">Pagos procesados</span>
+      <div class="header-metric">
+        <span class="header-metric-value">{{ datos ? datos.pagos : '—' }}</span>
+        <span class="header-metric-label">Pagos procesados</span>
       </div>
     </div>
-  </section>
+  </header>
+  <div class="header-divider"></div>
 
   <!-- ===== BARRA DE FILTROS ===== -->
   <article class="panel panel-filtros">

@@ -1,33 +1,32 @@
 <!-- Deudas y Morosidad dashboard: banner, debtors ranking, inhabilitados and debt age -->
 <div class="dashboard">
 
-  <!-- ===== BANNER ===== -->
-  <section class="banner">
-    <div class="banner-intro">
-      <span class="banner-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-          <line x1="12" y1="9" x2="12" y2="13"></line>
-          <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-      </span>
+  <!-- ===== HEADER (encabezado compartido, ver styles.css) ===== -->
+  <header class="page-header">
+    <span class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </span>
 
-      <div class="banner-text">
-        <h1 class="banner-title">Deudas y Morosidad</h1>
-        <span class="banner-subtitle">Control de jugadores con cuotas impagas · Temporada 2026</span>
-      </div>
+    <div class="header-text">
+      <h1 class="header-title">Deudas y Morosidad</h1>
+      <span class="header-subtitle">Control de jugadores con cuotas impagas · Temporada 2026</span>
     </div>
 
-    <div class="banner-metrics">
+    <div class="header-metrics">
       @for (metric of bannerMetrics; track metric.label) {
-        <div class="banner-metric">
-          <span class="banner-metric-value">{{ metric.value }}</span>
-          <span class="banner-metric-label">{{ metric.label }}</span>
+        <div class="header-metric">
+          <span class="header-metric-value">{{ metric.value }}</span>
+          <span class="header-metric-label">{{ metric.label }}</span>
         </div>
       }
     </div>
-  </section>
+  </header>
+  <div class="header-divider"></div>
 
   <!-- ===== MAIN GRID ===== -->
   <section class="main-grid">

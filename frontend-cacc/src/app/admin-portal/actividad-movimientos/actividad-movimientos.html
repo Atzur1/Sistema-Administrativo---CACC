@@ -1,22 +1,30 @@
 <!-- Actividad y Movimientos dashboard: banner, payments table, activity feed and shortcuts -->
 <div class="dashboard">
 
-  <!-- ===== BANNER ===== -->
-  <section class="banner">
-    <div class="banner-intro">
-      <h1 class="banner-title">Actividad y Movimientos</h1>
-      <span class="banner-date">{{ currentDate }}</span>
+  <!-- ===== HEADER (encabezado compartido, ver styles.css) ===== -->
+  <header class="page-header">
+    <span class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+      </svg>
+    </span>
+
+    <div class="header-text">
+      <h1 class="header-title">Actividad y Movimientos</h1>
+      <span class="header-subtitle">Pagos y eventos del sistema · {{ currentDate }}</span>
     </div>
 
-    <div class="banner-metrics">
+    <div class="header-metrics">
       @for (metric of bannerMetrics; track metric.label) {
-        <div class="banner-metric">
-          <span class="banner-metric-value">{{ metric.display() }}</span>
-          <span class="banner-metric-label">{{ metric.label }}</span>
+        <div class="header-metric">
+          <span class="header-metric-value">{{ metric.display() }}</span>
+          <span class="header-metric-label">{{ metric.label }}</span>
         </div>
       }
     </div>
-  </section>
+  </header>
+  <div class="header-divider"></div>
 
   <!-- ===== MAIN GRID ===== -->
   <section class="main-grid">

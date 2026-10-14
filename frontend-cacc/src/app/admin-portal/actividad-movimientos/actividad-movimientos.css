@@ -22,89 +22,6 @@
   overflow-x: hidden;
 }
 
-/* ===== BANNER (DEGRADÉ INSTITUCIONAL CACC) ===== */
-.banner {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 24px;
-  margin-bottom: 20px;
-  padding: 24px 28px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, var(--primary-green) 0%, #0d4223 45%, #051a0e 100%);
-  color: var(--color-bg-card);
-  box-shadow: 0 16px 36px rgba(0, 79, 39, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  overflow: hidden;
-  animation: fadeSlideUp 0.4s ease both;
-}
-
-/* Destello que recorre el banner cada tanto, de punta a punta (mismo
-   tratamiento que el banner de Deudas y Morosidad). */
-.banner::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -30%;
-  width: 30%;
-  height: 100%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: bannerShimmerCycle 6s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.banner-intro {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.banner-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--color-bg-card);
-  letter-spacing: -0.5px;
-}
-
-.banner-date {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  text-transform: capitalize;
-}
-
-.banner-metrics {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.banner-metric {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 0 24px;
-  border-left: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.banner-metric-value {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--color-bg-card);
-}
-
-.banner-metric-label {
-  font-size: 10px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #a3e8c1;
-  white-space: nowrap;
-}
-
 /* ===== MAIN GRID ===== */
 .main-grid {
   display: grid;
@@ -548,26 +465,9 @@
   }
 }
 
-@media (max-width: 768px) {
-  .banner {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .banner-metric {
-    padding: 0 20px 0 0;
-    border-left: none;
-  }
-}
-
 @media (max-width: 520px) {
   .dashboard {
     padding: 16px;
-  }
-
-  .banner-metrics {
-    flex-wrap: wrap;
-    row-gap: 12px;
   }
 
   .panel-head {
