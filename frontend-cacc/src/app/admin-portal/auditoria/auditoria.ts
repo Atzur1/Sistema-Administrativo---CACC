@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { ChangeDetectorRef, Component, NgZone, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, NgZone, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { API_BASE_URL } from '../../services/api-url';
 import { AuthService } from '../../services/auth';
@@ -29,6 +29,37 @@ interface AuditResponse {
   items: AuditEvent[];
 }
 
+// Un campo con su valor ya legible, para mostrar un dato suelto.
+export interface CampoAuditoria {
+  label: string;
+  value: string;
+}
+
+// Un campo que cambió: lo que valía antes y lo que vale ahora.
+export interface FilaCambio {
+  label: string;
+  antes: string;
+  despues: string;
+}
+
+// Lo que muestra el panel de un evento:
+//  - alta: solo hay datos nuevos ("Datos cargados"),
+//  - baja: solo hay datos viejos ("Datos eliminados"),
+//  - cambio: se compara y se destaca solo lo que cambió; el resto queda plegado,
+//  - sin-datos: la operación no guardó una copia de los datos.
+export interface DetalleEvento {
+  modo: 'alta' | 'baja' | 'cambio' | 'sin-datos';
+  datos: CampoAuditoria[];
+  cambiados: FilaCambio[];
+  iguales: FilaCambio[];
+}
+
+// Un filtro puesto, para mostrarlo como etiqueta que se puede quitar con una ×.
+export interface FiltroActivo {
+  clave: 'email' | 'from' | 'to' | 'entity' | 'action';
+  etiqueta: string;
+}
+
 // Nombre legible de cada sección auditada: etiqueta las filas y arma las opciones del filtro "Sección".
 const SECCIONES: Record<string, string> = {
   PAGOS: 'Pago',
@@ -42,6 +73,55 @@ const SECCIONES: Record<string, string> = {
   TIPO_DESCUENTO: 'Tipo de beneficio',
   TOKEN_ACCESO_CUENTA: 'Acceso a cuenta',
 };
+
+// Los nombres internos de cada dato guardado en la auditoría, en castellano. Los que son un número de otra
+// tabla (jugador, división, beneficio) se rotulan "n.º": hoy se ve el número, no el nombre.
+const ETIQUETAS: Record<string, string> = {
+  idJugador: 'Jugador (n.º)',
+  idPersona: 'Persona (n.º)',
+  idCategoria: 'División (n.º)',
+  montoBase: 'Importe original',
+  montoFinal: 'Importe actualizado',
+  monto: 'Importe',
+  fechaPago: 'Fecha de pago',
+  metodoPago: 'Medio de pago',
+  vencimiento: 'Vencimiento',
+  estado: 'Estado',
+  concepto: 'Concepto',
+  genero: 'Rama',
+  vigente_desde: 'Vigente desde',
+  idDescuento: 'Beneficio (n.º)',
+  idTipo: 'Motivo del beneficio (n.º)',
+  activo: 'Activo',
+  anulado: 'Anulada',
+  canceladaPorBaja: 'Cancelada por la baja del jugador',
+  tipoValor: 'Tipo de valor',
+  porcentaje: 'Porcentaje',
+  montoFijo: 'Importe fijo',
+  desde: 'Vigente desde',
+  hasta: 'Vigente hasta',
+  fechaCancelacion: 'Cancelada hasta',
+  nombre_categoria: 'Nombre de división',
+  tipo_descuento: 'Nombre del beneficio',
+  email: 'Correo',
+  nombre: 'Nombre',
+  apellido: 'Apellido',
+  dni: 'DNI',
+  idRol: 'Rol',
+  activacionPendiente: 'Activación pendiente',
+  credencialActualizada: 'Contraseña actualizada',
+  idUsuario: 'Cuenta afectada',
+  tipo: 'Tipo de enlace',
+  venceUtc: 'Vencimiento del enlace',
+  consumidoUtc: 'Enlace utilizado',
+};
+
+// Datos que se guardan como 0/1 (o true/false) y se leen "Sí" / "No".
+const CLAVES_SI_NO = new Set(['activo', 'anulado', 'canceladaPorBaja', 'activacionPendiente', 'credencialActualizada']);
+
+const PESOS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 });
+
+type Datos = Record<string, unknown>;
 
 @Component({
   selector: 'app-auditoria',
@@ -77,6 +157,14 @@ export class Auditoria {
   // enlaces de contraseña había que escribir "TOKEN_ACCESO_CUENTA"). Sin elegir ninguna, el backend muestra
   // solo pagos y aranceles (ver AuditDao.Search); el resto se ve eligiéndolo acá.
   readonly secciones = Object.entries(SECCIONES).map(([value, label]) => ({ value, label }));
+
+  // Accesos rápidos de período: ponen "Desde" / "Hasta" de una vez.
+  readonly rangos = [
+    { clave: 'hoy', etiqueta: 'Hoy', dias: 0 },
+    { clave: '7', etiqueta: 'Últimos 7 días', dias: 6 },
+    { clave: '30', etiqueta: 'Últimos 30 días', dias: 29 },
+  ] as const;
+
   items: AuditEvent[] = [];
   total = 0;
   page = 1;
@@ -87,6 +175,18 @@ export class Auditoria {
   action = '';
   loading = false;
   error = '';
+
+  // "Más filtros" (período a medida, sección y tipo de cambio) arranca plegado: lo de todos los días es buscar
+  // una persona o elegir un período rápido.
+  masFiltros = false;
+
+  // Evento abierto en el panel lateral y su detalle ya armado (se calcula una vez al abrir).
+  seleccionado: AuditEvent | null = null;
+  detalleActual: DetalleEvento | null = null;
+  mostrarIguales = false;
+
+  private temporizadorBusqueda: ReturnType<typeof setTimeout> | undefined;
+
   get pages(): number {
     return Math.max(1, Math.ceil(this.total / this.pageSize));
   }
@@ -103,6 +203,8 @@ export class Auditoria {
     this.search(1);
   }
 
+  // ===== FILTROS =====
+
   // Botón separado de un simple type="reset": app-custom-select no es un
   // <select> nativo, así que el reset del navegador no lo sincroniza — acá
   // se resetea cada propiedad explícitamente y se vuelve a buscar sin filtros.
@@ -113,6 +215,65 @@ export class Auditoria {
     this.entity = '';
     this.action = '';
     this.search(1);
+  }
+
+  // Los filtros se aplican solos: no hay que apretar "Aplicar". Los de elegir (fechas, sección, tipo) buscan al
+  // instante; el de texto espera un instante a que termine de escribir.
+  buscarAhora(): void {
+    clearTimeout(this.temporizadorBusqueda);
+    this.search(1);
+  }
+
+  buscarAlEscribir(): void {
+    clearTimeout(this.temporizadorBusqueda);
+    this.temporizadorBusqueda = setTimeout(() => this.search(1), 400);
+  }
+
+  // "Hoy", "Últimos 7 días", etc. Elegir el que ya está puesto lo quita.
+  aplicarRango(dias: number): void {
+    const hasta = this.hoyLocal();
+    const desde = this.sumarDias(hasta, -dias);
+    const yaPuesto = this.from === desde && this.to === hasta;
+    this.from = yaPuesto ? '' : desde;
+    this.to = yaPuesto ? '' : hasta;
+    this.buscarAhora();
+  }
+
+  rangoActivo(dias: number): boolean {
+    return this.from === this.sumarDias(this.hoyLocal(), -dias) && this.to === this.hoyLocal();
+  }
+
+  get filtrosActivos(): FiltroActivo[] {
+    const lista: FiltroActivo[] = [];
+    if (this.email.trim()) lista.push({ clave: 'email', etiqueta: `Persona: ${this.email.trim()}` });
+    if (this.from) lista.push({ clave: 'from', etiqueta: `Desde ${this.fechaCorta(this.from)}` });
+    if (this.to) lista.push({ clave: 'to', etiqueta: `Hasta ${this.fechaCorta(this.to)}` });
+    if (this.entity) lista.push({ clave: 'entity', etiqueta: `Sección: ${this.entidadLegible(this.entity)}` });
+    if (this.action) {
+      const accion = this.actions.find((a) => a.value === this.action);
+      lista.push({ clave: 'action', etiqueta: `Tipo: ${accion?.label ?? this.action}` });
+    }
+    return lista;
+  }
+
+  // Cuántos de los filtros de "Más filtros" están puestos (para el número del botón).
+  get cantidadMasFiltros(): number {
+    return [this.from, this.to, this.entity, this.action].filter(Boolean).length;
+  }
+
+  quitarFiltro(clave: FiltroActivo['clave']): void {
+    this[clave] = '';
+    this.buscarAhora();
+  }
+
+  alternarMasFiltros(): void {
+    this.masFiltros = !this.masFiltros;
+  }
+
+  // Sin sección elegida el servidor muestra solo pagos y aranceles (ver AuditDao.Search): se avisa en pantalla
+  // en vez de dejarlo como una regla escondida detrás de un texto de ayuda.
+  get alcanceReducido(): boolean {
+    return !this.entity;
   }
 
   search(page: number): void {
@@ -155,11 +316,127 @@ export class Auditoria {
       });
   }
 
+  // ===== PANEL DE DETALLE =====
+
+  abrirDetalle(item: AuditEvent): void {
+    this.seleccionado = item;
+    this.detalleActual = this.detalle(item);
+    this.mostrarIguales = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  cerrarDetalle(): void {
+    this.seleccionado = null;
+    this.detalleActual = null;
+  }
+
+  // Arma lo que muestra el panel. Alta y baja listan los datos; un cambio compara antes y después y deja a la
+  // vista solo lo que cambió (el resto va plegado): ver 10 campos para encontrar los 2 que cambiaron era lo más
+  // difícil de leer de esta pantalla.
+  detalle(item: AuditEvent): DetalleEvento {
+    const antes = this.leer(item.beforeJson);
+    const despues = this.leer(item.afterJson);
+
+    if (!antes && !despues) return { modo: 'sin-datos', datos: [], cambiados: [], iguales: [] };
+    if (!antes) return { modo: 'alta', datos: this.campos(item.afterJson), cambiados: [], iguales: [] };
+    if (!despues) return { modo: 'baja', datos: this.campos(item.beforeJson), cambiados: [], iguales: [] };
+
+    const claves = [...new Set([...Object.keys(antes), ...Object.keys(despues)])];
+    const cambiados: FilaCambio[] = [];
+    const iguales: FilaCambio[] = [];
+    for (const clave of claves) {
+      const fila: FilaCambio = {
+        label: this.etiqueta(clave),
+        antes: this.valorLegible(antes[clave], clave),
+        despues: this.valorLegible(despues[clave], clave),
+      };
+      (this.distinto(antes[clave], despues[clave]) ? cambiados : iguales).push(fila);
+    }
+    return { modo: 'cambio', datos: [], cambiados, iguales };
+  }
+
+  // La frase que cuenta qué pasó, para leer la lista sin abrir cada fila.
+  resumen(item: AuditEvent): string {
+    const antes = this.leer(item.beforeJson);
+    const despues = this.leer(item.afterJson);
+    const cambio = (clave: string) => !!antes && !!despues && this.distinto(antes[clave], despues[clave]);
+    const siNo = (valor: unknown) => valor === true || valor === 1;
+
+    switch (item.entity) {
+      case 'PAGOS': {
+        if (this.esCuotaSaldada(item)) return 'Se saldó una cuota';
+        if (item.action === 'INSERT') {
+          const importe = despues?.['montoFinal'] ?? despues?.['monto'];
+          const medio = despues?.['metodoPago'];
+          return (
+            'Registró un pago' +
+            (typeof importe === 'number' ? ` de ${PESOS.format(importe)}` : '') +
+            (typeof medio === 'string' && medio ? ` en ${medio.toLocaleLowerCase('es-AR')}` : '')
+          );
+        }
+        return item.action === 'DELETE' ? 'Eliminó un registro de pago' : 'Modificó un pago';
+      }
+      case 'ARANCELES':
+        return 'Actualizó un arancel mensual';
+      case 'ARANCELES_INSCRIPCION':
+        return 'Actualizó el arancel de inscripción';
+      case 'JUGADORES_DESCUENTOS': {
+        if (item.action === 'INSERT') return 'Cargó una bonificación' + this.valorBeneficio(despues);
+        if (item.action === 'DELETE') return 'Eliminó una bonificación';
+        if (cambio('anulado') && siNo(despues?.['anulado'])) return 'Anuló una bonificación';
+        if (cambio('activo') && !siNo(despues?.['activo'])) return 'Canceló una bonificación';
+        return 'Modificó una bonificación';
+      }
+      case 'USUARIO': {
+        if (item.action === 'INSERT') return 'Creó una cuenta administrativa';
+        if (cambio('credencialActualizada') || cambio('activacionPendiente')) return 'Actualizó la contraseña de una cuenta';
+        if (cambio('activo')) return siNo(despues?.['activo']) ? 'Habilitó una cuenta' : 'Deshabilitó una cuenta';
+        if (cambio('idRol')) return 'Cambió el rol de una cuenta';
+        return 'Modificó una cuenta administrativa';
+      }
+      case 'TOKEN_ACCESO_CUENTA': {
+        if (item.action !== 'INSERT') return 'Se usó un enlace de contraseña';
+        return despues?.['tipo'] === 'ACTIVACION'
+          ? 'Envió el enlace para crear una contraseña'
+          : 'Envió el enlace para restablecer una contraseña';
+      }
+      case 'JUGADORES':
+        return item.action === 'INSERT' ? 'Dio de alta un jugador' : 'Modificó la ficha de un jugador';
+      case 'PERSONA':
+        return item.action === 'INSERT' ? 'Cargó datos personales' : 'Modificó datos personales';
+      default:
+        return `${this.accionLegible(item)} · ${this.entidadLegible(item.entity)}`;
+    }
+  }
+
+  // La segunda línea de cada fila: dónde ocurrió.
+  contexto(item: AuditEvent): string {
+    return `${this.entidadLegible(item.entity)} · registro n.º ${item.entityId}`;
+  }
+
+  private valorBeneficio(datos: Datos | null): string {
+    if (!datos) return '';
+    const porcentaje = datos['porcentaje'];
+    const fijo = datos['montoFijo'];
+    if (typeof porcentaje === 'number') return ` del ${porcentaje} %`;
+    if (typeof fijo === 'number') return ` de ${PESOS.format(fijo)}`;
+    return '';
+  }
+
+  // ===== FILAS =====
+
   nombreCompleto(event: AuditEvent): string {
     const name = [event.userName, event.userSurname].filter(Boolean).join(' ').trim();
     return (
       name || (event.userId === null ? 'Acción del sistema' : 'Identidad no cargada en la cuenta')
     );
+  }
+
+  // Segunda línea de la persona: el correo y, si hay, el DNI.
+  datosDePersona(event: AuditEvent): string {
+    return [event.userEmail || 'Usuario no identificado', event.userDni ? `DNI ${event.userDni}` : '']
+      .filter(Boolean)
+      .join(' · ');
   }
 
   iniciales(event: AuditEvent): string {
@@ -216,70 +493,53 @@ export class Auditoria {
     return SECCIONES[entity] ?? entity.replaceAll('_', ' ').toLocaleLowerCase('es-AR');
   }
 
-  campos(json: string | null): Array<{ label: string; value: string }> {
+  // ===== DATOS =====
+
+  // La lista de datos de un solo estado (antes o después), con su nombre y valor legibles.
+  campos(json: string | null): CampoAuditoria[] {
     if (!json) return [];
+    const values = this.leer(json);
+    if (!values) return [{ label: 'Información', value: 'No hay detalle disponible.' }];
+    return Object.entries(values).map(([key, value]) => ({
+      label: this.etiqueta(key),
+      value: this.valorLegible(value, key),
+    }));
+  }
+
+  private leer(json: string | null): Datos | null {
+    if (!json) return null;
     try {
-      const values = JSON.parse(json) as Record<string, unknown>;
-      const labels: Record<string, string> = {
-        idJugador: 'Jugador',
-        idPersona: 'Persona',
-        idCategoria: 'División',
-        montoBase: 'Importe original',
-        montoFinal: 'Importe actualizado',
-        monto: 'Importe',
-        fechaPago: 'Fecha de pago',
-        metodoPago: 'Medio de pago',
-        vencimiento: 'Vencimiento',
-        estado: 'Estado',
-        concepto: 'Concepto',
-        genero: 'Rama',
-        vigente_desde: 'Vigente desde',
-        idDescuento: 'Beneficio',
-        activo: 'Activo',
-        tipoValor: 'Tipo de valor',
-        porcentaje: 'Porcentaje',
-        montoFijo: 'Importe fijo',
-        desde: 'Vigente desde',
-        hasta: 'Vigente hasta',
-        fechaCancelacion: 'Fecha de baja',
-        nombre_categoria: 'Nombre de división',
-        tipo_descuento: 'Nombre del beneficio',
-        email: 'Correo',
-        nombre: 'Nombre',
-        apellido: 'Apellido',
-        dni: 'DNI',
-        idRol: 'Rol',
-        activacionPendiente: 'Activación pendiente',
-        credencialActualizada: 'Contraseña actualizada',
-        idUsuario: 'Cuenta afectada',
-        tipo: 'Tipo de enlace',
-        venceUtc: 'Vencimiento del enlace',
-        consumidoUtc: 'Enlace utilizado',
-      };
-      return Object.entries(values).map(([key, value]) => ({
-        label: labels[key] ?? key.replaceAll('_', ' '),
-        value: this.valorLegible(value, key),
-      }));
+      const values = JSON.parse(json) as unknown;
+      return values && typeof values === 'object' && !Array.isArray(values) ? (values as Datos) : null;
     } catch {
-      return [{ label: 'Información', value: 'No hay detalle disponible.' }];
+      return null;
     }
+  }
+
+  private etiqueta(clave: string): string {
+    return ETIQUETAS[clave] ?? clave.replaceAll('_', ' ');
+  }
+
+  // Compara dos valores como los muestra la pantalla: 1 y true son lo mismo, y el texto "50" igual al número 50.
+  private distinto(antes: unknown, despues: unknown): boolean {
+    const normalizar = (valor: unknown) =>
+      valor === null || valor === undefined || valor === ''
+        ? ''
+        : typeof valor === 'boolean'
+          ? String(Number(valor))
+          : String(valor);
+    return normalizar(antes) !== normalizar(despues);
   }
 
   private valorLegible(value: unknown, key: string): string {
     if (value === null || value === undefined || value === '') return '—';
     if (key === 'estado' && typeof value === 'number') return value === 1 ? 'Pagado' : 'Pendiente';
-    if (key === 'activo' || key === 'activacionPendiente' || key === 'credencialActualizada') {
-      return value === true || value === 1 ? 'Sí' : 'No';
-    }
+    if (CLAVES_SI_NO.has(key)) return value === true || value === 1 ? 'Sí' : 'No';
     if (typeof value === 'boolean') return value ? 'Sí' : 'No';
     if (key === 'tipo' && value === 'RECUPERACION') return 'Reestablecer contraseña';
     if (key === 'tipo' && value === 'ACTIVACION') return 'Crear contraseña (primer ingreso)';
     if (typeof value === 'number' && key.toLocaleLowerCase().includes('monto')) {
-      return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        maximumFractionDigits: 2,
-      }).format(value);
+      return PESOS.format(value);
     }
     if (typeof value === 'string' && /^\d{4}-\d\d-\d\d/.test(value)) {
       const date = new Date(value);
@@ -288,5 +548,23 @@ export class Auditoria {
         : new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium' }).format(date);
     }
     return String(value);
+  }
+
+  // ===== FECHAS (día calendario del club, en texto yyyy-MM-dd) =====
+
+  private hoyLocal(): string {
+    const ahora = new Date();
+    return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+  }
+
+  private sumarDias(iso: string, dias: number): string {
+    const [anio, mes, dia] = iso.split('-').map(Number);
+    const fecha = new Date(anio, mes - 1, dia + dias);
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+  }
+
+  private fechaCorta(iso: string): string {
+    const [anio, mes, dia] = iso.split('-');
+    return `${dia}/${mes}/${anio}`;
   }
 }
