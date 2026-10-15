@@ -248,6 +248,14 @@
     min-width: 0;
 }
 
+/* El selector de categoría va suelto en esta fila (los de mes y año van dentro de un .field que los estira). Un
+   componente propio es "inline" y en una fila flex se achica a su texto: quedaba del ancho de "Seleccionar", y el
+   menú desplegable copia el ancho del selector, así que cortaba "AFA 20067" y "Pt preAFA 2015" en dos líneas. */
+.filtro-campos > app-custom-select {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
 .field {
     display: flex;
     flex-direction: column;

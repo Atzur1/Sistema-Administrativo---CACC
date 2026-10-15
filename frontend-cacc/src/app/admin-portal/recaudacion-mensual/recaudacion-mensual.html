@@ -190,7 +190,8 @@
               </tr>
             </thead>
             <tbody>
-              @for (fila of filas; track fila.dni; let i = $index) {
+              <!-- Se identifica cada fila por su pago, no por el DNI: un jugador puede tener varios pagos en el mes. -->
+              @for (fila of filas; track fila.idPago; let i = $index) {
                 <tr>
                   <td class="col-num"><span class="fila-num">{{ i + 1 }}</span></td>
                   <td class="celda-jugador">{{ fila.jugador }}</td>
