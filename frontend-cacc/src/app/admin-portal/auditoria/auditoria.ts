@@ -101,7 +101,7 @@ const ETIQUETAS: Record<string, string> = {
   monto: 'Importe',
   fechaPago: 'Fecha de pago',
   metodoPago: 'Medio de pago',
-  vencimiento: 'Vencimiento',
+  vencimiento: 'Cuota del período',
   estado: 'Estado',
   concepto: 'Concepto',
   genero: 'Rama',
@@ -136,6 +136,11 @@ const ETIQUETAS: Record<string, string> = {
 
 // Datos que se guardan como 0/1 (o true/false) y se leen "Sí" / "No".
 const CLAVES_SI_NO = new Set(['activo', 'anulado', 'canceladaPorBaja', 'activacionPendiente', 'credencialActualizada', 'accesoPortal']);
+
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
 
 // Sin decimales cuando el importe es entero ("$ 80.000"), como en el resto del sistema.
 const PESOS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -333,6 +338,19 @@ export class Auditoria {
           });
         },
       });
+  }
+
+  // ===== HORA =====
+
+  // Argentina no tiene horario de verano: siempre UTC-3. Angular no entiende nombres de zona como
+  // "America/Argentina/Buenos_Aires" (los ignora y muestra la hora del navegador), por eso se usa el corrimiento fijo.
+  readonly HUSO_CLUB = '-0300';
+
+  // El momento del evento como fecha absoluta. La base lo guarda en UTC; si por algún motivo llega sin la "Z" final
+  // se la agrega, porque sin ella el navegador lo tomaría por hora local y lo mostraría 3 horas adelantado.
+  momento(item: AuditEvent): Date {
+    const texto = item.timestampUtc;
+    return new Date(/(Z|[+-]\d\d:?\d\d)$/i.test(texto) ? texto : `${texto}Z`);
   }
 
   // ===== PANEL DE DETALLE =====
@@ -635,11 +653,27 @@ export class Auditoria {
     if (typeof value === 'number' && key.toLocaleLowerCase().includes('monto')) {
       return PESOS.format(value);
     }
-    if (typeof value === 'string' && /^\d{4}-\d\d-\d\d/.test(value)) {
-      const date = new Date(value);
-      return Number.isNaN(date.getTime())
+    // "vencimiento" guarda el período que cubre la cuota (el primer día de su mes), no el día en que vence:
+    // se muestra como el mes, "Octubre 2026".
+    if (key === 'vencimiento' && typeof value === 'string' && /^\d{4}-\d\d/.test(value)) {
+      const [anio, mes] = value.split('-');
+      return `${MESES[Number(mes) - 1] ?? ''} ${anio}`.trim();
+    }
+    // Una fecha sin hora se lee tal cual, partida a mano: pasarla por Date la toma como medianoche UTC y la
+    // muestra un día antes en Argentina.
+    if (typeof value === 'string' && /^\d{4}-\d\d-\d\d$/.test(value)) {
+      const [anio, mes, dia] = value.split('-');
+      return `${dia}/${mes}/${anio}`;
+    }
+    // Fecha con hora: se guarda en UTC y se muestra en hora del club.
+    if (typeof value === 'string' && /^\d{4}-\d\d-\d\dT/.test(value)) {
+      const instante = new Date(/(Z|[+-]\d\d:?\d\d)$/i.test(value) ? value : `${value}Z`);
+      return Number.isNaN(instante.getTime())
         ? value
-        : new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium' }).format(date);
+        : new Intl.DateTimeFormat('es-AR', {
+            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+            hour12: false, timeZone: 'America/Argentina/Buenos_Aires',
+          }).format(instante).replace(', ', ' ') + ' hs';
     }
     return String(value);
   }
