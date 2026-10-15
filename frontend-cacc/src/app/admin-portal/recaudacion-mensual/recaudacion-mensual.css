@@ -1,6 +1,6 @@
 /* Recaudación Mensual (HU-018).
-   Usa el mismo lenguaje visual que el resto del portal: banner con degradé y
-   destello, tarjetas de vidrio (--glass-*) y la animación fadeSlideUp global. */
+   Usa el mismo lenguaje visual que el resto del portal: encabezado compartido
+   (styles.css), tarjetas de vidrio (--glass-*) y la animación fadeSlideUp global. */
 
 .dashboard {
     display: flex;
@@ -13,119 +13,6 @@
     color: var(--color-text);
     /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
-}
-
-/* ===== BANNER ===== */
-.banner {
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 20px;
-    padding: 24px 28px;
-    border-radius: 18px;
-    /* Degradé continuo del sistema, igual que Resumen General. Va con
-       --color-brand-deep directo: --primary-green no es global, cada componente
-       que lo usa lo define primero en su propio :host. */
-    background: linear-gradient(135deg, var(--color-brand-deep) 0%, #0d4223 45%, #051a0e 100%);
-    color: var(--color-bg-card);
-    box-shadow: 0 16px 36px rgba(0, 79, 39, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    overflow: hidden;
-    animation: fadeSlideUp 0.4s ease both;
-}
-
-/* Mismo destello que recorre los banners de Resumen General y Deudas y Morosidad
-   (keyframe global en styles.css). Se apaga solo con prefers-reduced-motion. */
-.banner::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -30%;
-    width: 30%;
-    height: 100%;
-    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: bannerShimmerCycle 6s ease-in-out infinite;
-    pointer-events: none;
-}
-
-.banner-intro {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-width: 0;
-}
-
-.banner-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.14);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--color-bg-card);
-    flex-shrink: 0;
-}
-
-.banner-icon svg {
-    width: 24px;
-    height: 24px;
-}
-
-.banner-text {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-}
-
-.banner-title {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    color: var(--color-bg-card);
-}
-
-.banner-subtitle {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.banner-metrics {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.banner-metric {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 0 24px;
-}
-
-.banner-metric + .banner-metric {
-    border-left: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.banner-metric-value {
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1.1;
-    color: var(--color-bg-card);
-}
-
-.banner-metric-label {
-    font-size: 10px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: #a3e8c1;
-    white-space: nowrap;
 }
 
 /* ===== PANELES (tarjeta de vidrio del sistema) ===== */
@@ -870,21 +757,6 @@
 }
 
 @media (max-width: 860px) {
-    .banner {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-    }
-
-    .banner-metrics {
-        align-self: stretch;
-        justify-content: space-around;
-    }
-
-    .banner-metric:first-child {
-        padding-left: 0;
-    }
-
     .filtro-periodo {
         padding-right: 0;
         border-right: none;

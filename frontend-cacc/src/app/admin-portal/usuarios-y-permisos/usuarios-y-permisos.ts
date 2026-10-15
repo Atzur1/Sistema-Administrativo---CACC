@@ -13,6 +13,8 @@ const ROL_OPTIONS: CustomSelectOption[] = [
   { value: 2, label: 'Administrador' },
 ];
 
+export type PestanaUsuarios = 'habilitadas' | 'candidatos' | 'deshabilitadas';
+
 @Component({
   selector: 'app-usuarios',
   standalone: true,
@@ -23,6 +25,9 @@ const ROL_OPTIONS: CustomSelectOption[] = [
 export class Usuarios implements OnInit {
   readonly rolOptions = ROL_OPTIONS;
   readonly rolLabels = ROL_PORTAL_LABELS;
+
+  // Lista que se muestra: una por vez, con el contador de cada una en su pestaña.
+  pestana = signal<PestanaUsuarios>('habilitadas');
 
   loading = signal(true);
   loadError = signal<string | null>(null);
@@ -97,6 +102,10 @@ export class Usuarios implements OnInit {
         next: (rows) => this.deshabilitados.set(rows),
         error: () => this.loadError.set('No se pudo cargar la lista de cuentas deshabilitadas.'),
       });
+  }
+
+  cambiarPestana(pestana: PestanaUsuarios): void {
+    this.pestana.set(pestana);
   }
 
   get totalHabilitados(): number {

@@ -171,8 +171,8 @@
               <th>Jugador</th>
               <th>Motivo</th>
               <th>Beneficio</th>
-              <th>Vigente desde</th>
-              <th>Vigente hasta</th>
+              <th>Desde la cuota de</th>
+              <th>Hasta la cuota de</th>
               <th>Asignado por</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -199,8 +199,8 @@
                   <span class="type-pill type-benefit">{{ row.type }}</span>
                 </td>
                 <td class="cell-benefit">{{ benefitValueOf(row) }}</td>
-                <td class="cell-muted">{{ formatDate(row.startDate) }}</td>
-                <td class="cell-muted">{{ formatDate(row.endDate) }}</td>
+                <td class="cell-muted">{{ periodOf(row.startDate) }}</td>
+                <td class="cell-muted">{{ periodOf(row.endDate) }}</td>
                 <td class="cell-muted">{{ responsableNombre(row) }}</td>
                 <td>
                   <!-- The state comes resolved from the server: nothing is worked
@@ -338,15 +338,21 @@
               <dd class="benefit-amount">{{ benefitValueOf(discount) }}</dd>
             </div>
             <div class="benefit-detail-wide">
-              <dt>Vigencia</dt>
+              <dt>Rige para las cuotas de</dt>
               <dd>{{ validityOf(discount) }}</dd>
             </div>
+            @if (discount.assignmentDate) {
+              <div class="benefit-detail-wide">
+                <dt>Cargada el</dt>
+                <dd>{{ formatDate(discount.assignmentDate) }}</dd>
+              </div>
+            }
           </dl>
 
           @if (discount.status === 'Scheduled') {
             <p class="benefit-note">
-              Esta bonificación todavía no comenzó: va a aplicarse a partir del
-              {{ formatDate(discount.startDate) }}.
+              Esta bonificación todavía no comenzó: va a aplicarse a partir de la cuota de
+              {{ periodOf(discount.startDate) }}.
             </p>
           }
         </div>
@@ -393,7 +399,7 @@
               </button>
               <app-help-hint
                 label="Cancelar bonificación"
-                text="Corta la bonificación desde hoy. Las cuotas que ya vencieron conservan el descuento; las siguientes se cobran completas. Usalo cuando el beneficio estuvo bien otorgado y termina antes de tiempo."
+                text="La corta desde hoy. Las cuotas que ya se emitieron conservan el descuento; las que todavía no se emitieron se cobran completas. Usalo cuando el beneficio estuvo bien otorgado y termina antes de tiempo."
               />
             </span>
           }
@@ -426,7 +432,7 @@
               </button>
               <app-help-hint
                 label="Editar bonificación"
-                text="Una bonificación programada se puede corregir completa. Una en curso solo admite cambiar la fecha de finalización: para cambiar el motivo o el valor, cancelala y asigná una nueva desde hoy. Las finalizadas, canceladas o anuladas quedan cerradas."
+                text="Una bonificación programada se puede corregir completa. Una en curso solo admite cambiar hasta qué cuota rige: para cambiar el motivo o el valor, cancelala y asigná una nueva. Las finalizadas, canceladas o anuladas quedan cerradas."
               />
             </span>
           }
@@ -490,8 +496,9 @@
         <form class="dialog-form" [formGroup]="benefitForm" (ngSubmit)="onSubmit()">
           @if (editandoEnCurso) {
             <p class="benefit-note">
-              Esta bonificación está en curso: solo se puede cambiar la fecha de finalización. Para
-              cambiar el motivo o el valor, cancelala y asigná una nueva desde hoy.
+              Esta bonificación está en curso: solo se puede cambiar hasta qué cuota rige, y no antes de
+              la última cuota ya emitida. Para cambiar el motivo o el valor, cancelala y asigná una
+              nueva.
             </p>
           }
           <div class="field-row">
@@ -564,33 +571,36 @@
             </div>
           }
 
-          <!-- Both dates are mandatory since HU-012: the benefit operates
-               strictly inside the authorised period and expires on its own -->
+          <!-- Both are mandatory since HU-012: the benefit operates strictly inside the authorised
+               period and expires on its own. Se elige por cuota, no por día: una bonificación cubre
+               cuotas enteras, y la fecha de carga la registra el sistema. -->
           <div class="field-dates">
             <div class="field">
-              <label class="field-label" for="startDate">Fecha desde</label>
-              <app-custom-datepicker
+              <label class="field-label" for="startDate">Desde la cuota de</label>
+              <app-custom-select
                 id="startDate"
+                [options]="startOptions()"
+                placeholder="Seleccionar cuota"
                 formControlName="startDate"
-                [min]="minFechaDesde"
-                [invalid]="!!dateRangeErrorMessage"
-                required
-              ></app-custom-datepicker>
+              ></app-custom-select>
             </div>
 
             <div class="field">
-              <label class="field-label" for="endDate">Fecha hasta</label>
-              <app-custom-datepicker
+              <label class="field-label" for="endDate">Hasta la cuota de</label>
+              <app-custom-select
                 id="endDate"
+                [options]="endOptions()"
+                placeholder="Seleccionar cuota"
                 formControlName="endDate"
-                [min]="minFechaHasta"
-                [invalid]="!!dateRangeErrorMessage"
-                required
-              ></app-custom-datepicker>
+              ></app-custom-select>
             </div>
           </div>
 
-          <!-- Shows the moment both dates carry a value, without waiting for the
+          @if (firstPeriodNote) {
+            <span class="field-hint">{{ firstPeriodNote }}</span>
+          }
+
+          <!-- Shows the moment both fees carry a value, without waiting for the
                form to be submitted -->
           @if (dateRangeErrorMessage) {
             <p class="dialog-form-error" role="alert">{{ dateRangeErrorMessage }}</p>

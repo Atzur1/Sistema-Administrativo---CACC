@@ -40,11 +40,36 @@
     <p class="load-error" role="alert">{{ loadError() }}</p>
   }
 
+  <!-- ===== PESTAÑAS: una lista por vez ===== -->
+  <!-- El contador de "Candidatos" se resalta cuando hay alguien esperando que se lo habilite,
+       así una persona pendiente no pasa inadvertida aunque la pestaña no esté abierta. -->
+  <div class="tabs" role="tablist" aria-label="Cuentas del Portal Administrativo">
+    <button type="button" role="tab" id="tab-habilitadas" class="tab"
+            [class.tab-active]="pestana() === 'habilitadas'"
+            [attr.aria-selected]="pestana() === 'habilitadas'"
+            (click)="cambiarPestana('habilitadas')">
+      Habilitadas <span class="tab-count">{{ totalHabilitados }}</span>
+    </button>
+    <button type="button" role="tab" id="tab-candidatos" class="tab"
+            [class.tab-active]="pestana() === 'candidatos'"
+            [attr.aria-selected]="pestana() === 'candidatos'"
+            (click)="cambiarPestana('candidatos')">
+      Candidatos <span class="tab-count" [class.tab-count-alert]="candidatos().length > 0">{{ candidatos().length }}</span>
+    </button>
+    <button type="button" role="tab" id="tab-deshabilitadas" class="tab"
+            [class.tab-active]="pestana() === 'deshabilitadas'"
+            [attr.aria-selected]="pestana() === 'deshabilitadas'"
+            (click)="cambiarPestana('deshabilitadas')">
+      Deshabilitadas <span class="tab-count">{{ deshabilitados().length }}</span>
+    </button>
+  </div>
+
   <!-- ===== MAIN GRID ===== -->
   <section class="main-grid">
 
     <!-- Cuentas habilitadas -->
-    <article class="panel panel-users">
+    @if (pestana() === 'habilitadas') {
+    <article class="panel panel-users" role="tabpanel" aria-labelledby="tab-habilitadas">
       <header class="panel-head">
         <h2 class="panel-title">Cuentas habilitadas</h2>
         <span class="panel-subtitle">Acceso vigente al Portal Administrativo</span>
@@ -119,9 +144,11 @@
         </table>
       </div>
     </article>
+    }
 
     <!-- Candidatos para habilitar -->
-    <article class="panel panel-candidatos">
+    @if (pestana() === 'candidatos') {
+    <article class="panel panel-candidatos" role="tabpanel" aria-labelledby="tab-candidatos">
       <header class="panel-head">
         <h2 class="panel-title">Candidatos para habilitar</h2>
         <span class="panel-subtitle">Cargados por el otro equipo como SuperAdmin/Administrador, sin acceso todavía</span>
@@ -174,10 +201,12 @@
         </table>
       </div>
     </article>
+    }
 
     <!-- Cuentas deshabilitadas: ya tuvieron acceso, se les revocó. Reactivar les
          devuelve el acceso con su misma contraseña y el rol que elija el SuperAdmin, sin mail nuevo. -->
-    <article class="panel panel-deshabilitados">
+    @if (pestana() === 'deshabilitadas') {
+    <article class="panel panel-deshabilitados" role="tabpanel" aria-labelledby="tab-deshabilitadas">
       <header class="panel-head">
         <h2 class="panel-title">Cuentas deshabilitadas</h2>
         <span class="panel-subtitle">Ya tuvieron acceso — reactivar no manda un correo nuevo</span>
@@ -221,6 +250,7 @@
         </table>
       </div>
     </article>
+    }
 
   </section>
 </div>

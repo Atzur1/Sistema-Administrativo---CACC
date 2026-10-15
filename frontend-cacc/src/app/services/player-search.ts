@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { PlayerSearchResultModel } from '../models/PlayerSearchResultModel';
 import { API_BASE_URL } from './api-url';
 
-// HU-023: búsqueda de alumnos por DNI o apellido del lado del servidor.
+// HU-023: búsqueda de jugadores por DNI, nombre o apellido del lado del servidor.
 @Injectable({ providedIn: 'root' })
 export class PlayerSearchService {
   // Mismo mínimo que valida PlayersController.SearchPlayers.

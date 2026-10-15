@@ -1,8 +1,8 @@
-<!-- HU-023: búsqueda de alumnos por DNI o apellido -->
+<!-- HU-023: búsqueda de jugadores por DNI, nombre o apellido -->
 <section class="player-search" aria-labelledby="player-search-title">
   <header class="search-head">
-    <h2 class="search-title" id="player-search-title">Buscar alumno</h2>
-    <span class="search-subtitle">Por DNI o apellido, para ver sus cuotas y su deuda</span>
+    <h2 class="search-title" id="player-search-title">Buscar jugador</h2>
+    <span class="search-subtitle">Por DNI, nombre o apellido, para ver sus cuotas y su deuda</span>
   </header>
 
   <form class="search-bar" role="search" (submit)="$event.preventDefault(); submit()">
@@ -13,8 +13,8 @@
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
       <input type="search" name="term" autocomplete="off" maxlength="50"
-             placeholder="Ej.: 47970803 o Bazán"
-             aria-label="DNI o apellido del alumno"
+             placeholder="Ej.: 47970803, Bazán o Juan Bazán"
+             aria-label="DNI, nombre o apellido del jugador"
              [value]="term()" (input)="onInput($any($event.target).value)" />
       @if (loading()) {
         <span class="search-spinner" aria-hidden="true"></span>
@@ -27,16 +27,16 @@
 
   <div class="search-body" aria-live="polite">
     @if (tooShort) {
-      <p class="search-hint">Ingresá al menos {{ minLength }} caracteres del DNI o del apellido.</p>
+      <p class="search-hint">Ingresá al menos {{ minLength }} caracteres del DNI, del nombre o del apellido.</p>
     } @else if (loading() && results() === null) {
-      <p class="search-hint">Buscando alumnos…</p>
+      <p class="search-hint">Buscando jugadores…</p>
     } @else if (failed()) {
       <p class="search-hint search-hint-error">No se pudo completar la búsqueda.
         <button type="button" class="search-retry" (click)="submit()">Reintentar</button>
       </p>
     } @else if (results(); as list) {
       @if (list.length === 0) {
-        <div class="search-empty">No se encontraron alumnos con ese criterio de búsqueda</div>
+        <div class="search-empty">No se encontraron jugadores con ese criterio de búsqueda</div>
       } @else {
         <div class="search-table-wrapper" [class.is-refreshing]="loading()">
           <table class="search-table">
