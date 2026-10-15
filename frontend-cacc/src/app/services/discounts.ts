@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { DiscountModel, DiscountRequest } from '../models/DiscountModel';
+import { DiscountModel, DiscountRequest, FirstPeriodModel } from '../models/DiscountModel';
 import { API_BASE_URL } from './api-url';
 
 @Injectable({
@@ -50,6 +50,12 @@ export class DiscountService {
     // the expired ones, the one running today and the scheduled ones.
     getDiscountsByPlayer(playerId: number): Observable<DiscountModel[]> {
         return this.http.get<DiscountModel[]>(`${this.API_URL}/players/${playerId}/discounts`);
+    }
+
+    // From which fee a benefit can start for this player today: the next one that is not issued yet, or the
+    // current month's when it is already issued and nobody paid anything of it.
+    getFirstPeriod(playerId: number): Observable<FirstPeriodModel> {
+        return this.http.get<FirstPeriodModel>(`${this.API_URL}/players/${playerId}/discount/first-period`);
     }
 
     assignDiscount(playerId: number, request: DiscountRequest): Observable<DiscountModel> {

@@ -173,6 +173,26 @@ public class PlayersController : ControllerBase
         return Ok(_beneficiosService.ObtenerDelJugador(playerId).Select(MapToDto).ToList());
     }
 
+    // From which fee a benefit can start for this player today (the form offers months from here on). Either the
+    // next fee that was not issued yet, or the current month's one when it is already issued and nobody paid it.
+    [Authorize(Roles = "1,2")]
+    [HttpGet("{playerId}/discount/first-period")]
+    public IActionResult GetFirstDiscountPeriod(long playerId)
+    {
+        if (playerId <= 0)
+        {
+            return BadRequest(new { mensaje = "Indicá un jugador válido." });
+        }
+
+        PrimerPeriodoBeneficio primero = _beneficiosService.ObtenerPrimerPeriodo(playerId);
+        return Ok(new
+        {
+            period = primero.Periodo.ToString("yyyy-MM-dd"),
+            issueDate = primero.Emision.ToString("yyyy-MM-dd"),
+            alreadyIssued = primero.CuotaYaEmitida
+        });
+    }
+
     // Assigns a benefit to a player (HU-011 / HU-012). A player can hold several over time, never two on the same
     // day; the overlap is checked again inside the insert's transaction, so a race between two requests also fails.
     [Authorize(Roles = "1,2")]
@@ -255,6 +275,7 @@ public class PlayersController : ControllerBase
             FixedAmount = discount.FixedAmount,
             StartDate = discount.StartDate.ToString("yyyy-MM-dd"),
             EndDate = discount.EndDate.ToString("yyyy-MM-dd"),
+            AssignmentDate = discount.AssignmentDate?.ToString("yyyy-MM-dd"),
             // The state the server resolved, and IsActive read off it. Both come
             // from the same value, so they cannot contradict each other.
             Status = discount.Status.ToString(),

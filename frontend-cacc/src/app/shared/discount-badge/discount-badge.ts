@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { DiscountModel, formatBenefitValue, formatIsoDate } from '../../models/DiscountModel';
+import { DiscountModel, formatBenefitValue, periodLabel } from '../../models/DiscountModel';
 
 @Component({
   selector: 'app-discount-badge',
@@ -51,10 +51,10 @@ export class DiscountBadge {
       return '';
     }
 
-    // Both dates are mandatory since HU-012, so the period always reads whole
-    const from = formatIsoDate(this.discount.startDate);
-    const to = formatIsoDate(this.discount.endDate);
+    // A benefit covers whole fees, so the period reads by fee: "de Octubre 2026 a Diciembre 2026"
+    const from = periodLabel(this.discount.startDate);
+    const to = periodLabel(this.discount.endDate);
 
-    return `Vigente desde ${from} hasta ${to}`;
+    return `Rige para las cuotas de ${from} a ${to}`;
   }
 }
