@@ -26,11 +26,14 @@ function periodo(detalle: PeriodPaymentModel[]): CollectionPeriodModel {
 // (cdr.detectChanges), y con una respuesta instantánea eso ocurriría mientras se está creando la vista.
 const respuesta = <T>(valor: T) => of(valor).pipe(delay(0));
 
+const llamadas: { anio: number; mes: number; idCategoria: number | null }[] = [];
+
 async function crear(detalle: PeriodPaymentModel[]) {
+  llamadas.length = 0;
   await TestBed.configureTestingModule({
     imports: [RecaudacionMensual],
     providers: [
-      { provide: RecaudacionService, useValue: { getDelPeriodo: () => respuesta(periodo(detalle)) } },
+      { provide: RecaudacionService, useValue: { getDelPeriodo: (anio: number, mes: number, idCategoria: number | null) => { llamadas.push({ anio, mes, idCategoria }); return respuesta(periodo(detalle)); } } },
       { provide: PagosService, useValue: { getCategorias: () => respuesta([{ idCategoria: 5, nombre: 'AFA 20067' }, { idCategoria: 9, nombre: 'Pt preAFA 2015' }]) } },
     ],
   }).compileComponents();
@@ -85,5 +88,52 @@ describe('RecaudacionMensual - lista de pagos', () => {
 
     // El selector es hijo directo de la fila de campos, y por eso necesita la regla que lo estira.
     expect(el.querySelector('.filtro-campos > app-custom-select')).not.toBeNull();
+  });
+});
+
+describe('RecaudacionMensual - filtros', () => {
+  const espera = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+  it('elegir una categoría consulta al instante, sin botón "Aplicar"', async () => {
+    const { component, el } = await crear([pago(101, 'PRUEBA, MATIAS', '99000003', 100000, 'Efectivo')]);
+    expect(el.querySelector('.btn-aplicar')).toBeNull();
+
+    component.onCategoriaChange('5');
+    await espera();
+
+    expect(llamadas.at(-1)!.idCategoria).toBe(5);
+  });
+
+  it('las flechas recorren los meses, cruzando el año hacia atrás', async () => {
+    const { component } = await crear([]);
+    component.mesSeleccionado = 'Enero';
+    component.anioSeleccionado = 2026;
+
+    component.mesAnterior();
+    expect(component.periodoLabel).toBe('Diciembre 2025');
+    expect(llamadas.at(-1)).toMatchObject({ anio: 2025, mes: 12 });
+    await espera();
+  });
+
+  it('no se puede avanzar más allá del mes actual', async () => {
+    const { component } = await crear([]);
+    expect(component.puedeAvanzar).toBe(false);
+
+    component.mesAnterior();
+    expect(component.puedeAvanzar).toBe(true);
+    component.mesSiguiente();
+    expect(component.puedeAvanzar).toBe(false);
+    await espera();
+  });
+
+  it('el monto va a la derecha y cada medio de pago tiene su color', async () => {
+    const { el } = await crear([
+      pago(101, 'PRUEBA, MATIAS', '99000003', 100000, 'Transferencia'),
+      pago(102, 'PRUEBA, SANTIAGO', '99000005', 85000, 'Efectivo'),
+    ]);
+
+    expect(el.querySelector('.tabla tbody .celda-monto')!.classList).toContain('col-monto');
+    expect(el.querySelector('.chip-transferencia')).not.toBeNull();
+    expect(el.querySelector('.chip-efectivo')).not.toBeNull();
   });
 });
