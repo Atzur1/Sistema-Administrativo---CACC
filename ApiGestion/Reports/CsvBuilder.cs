@@ -8,27 +8,24 @@ namespace ApiGestion.Reports
     // algo así de simple.
     public static class CsvBuilder
     {
-        // separator: la coma es el estándar, pero el Excel con configuración regional de Argentina espera punto y
-        // coma y con coma abre todo apilado en una sola columna.
-        public static byte[] Build(IEnumerable<string[]> metaRows, string[] columns, IEnumerable<string[]> dataRows, char separator = ',')
+        public static byte[] Build(IEnumerable<string[]> metaRows, string[] columns, IEnumerable<string[]> dataRows)
         {
             var sb = new StringBuilder();
             var meta = metaRows.ToList();
-            string Join(IEnumerable<string> row) => string.Join(separator, row.Select(v => Escape(v, separator)));
 
             foreach (var row in meta)
             {
-                sb.AppendLine(Join(row));
+                sb.AppendLine(string.Join(",", row.Select(Escape)));
             }
             if (meta.Count > 0)
             {
                 sb.AppendLine();
             }
 
-            sb.AppendLine(Join(columns));
+            sb.AppendLine(string.Join(",", columns.Select(Escape)));
             foreach (var row in dataRows)
             {
-                sb.AppendLine(Join(row));
+                sb.AppendLine(string.Join(",", row.Select(Escape)));
             }
 
             // BOM UTF-8: sin esto Excel abre acentos y "ñ" rotos en Windows.
@@ -36,7 +33,7 @@ namespace ApiGestion.Reports
             return bom.Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
         }
 
-        private static string Escape(string? value, char separator)
+        private static string Escape(string? value)
         {
             value ??= "";
             var firstMeaningful = value.FirstOrDefault(c => !char.IsWhiteSpace(c) && !char.IsControl(c));
@@ -44,7 +41,7 @@ namespace ApiGestion.Reports
             {
                 value = "'" + value;
             }
-            return value.Contains(separator) || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
+            return value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
                 ? $"\"{value.Replace("\"", "\"\"")}\""
                 : value;
         }

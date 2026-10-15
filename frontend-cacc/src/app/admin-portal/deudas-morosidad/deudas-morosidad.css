@@ -1,10 +1,4 @@
-﻿/* Color de la sección en el encabezado compartido (ver styles.css): rojo, alerta de deuda. */
-:host {
-  --section-accent: var(--color-danger);
-  --section-accent-bg: var(--color-danger-bg);
-}
-
-/* ===== ANIMATIONS ===== */
+﻿/* ===== ANIMATIONS ===== */
 /* fadeSlideUp y growWidth (antes "barGrow") viven ahora en styles.css (global) */
 
 /* ===== LAYOUT ===== */
@@ -19,6 +13,118 @@
     color: var(--color-text);
     /* Never scroll sideways, no matter how narrow the viewport gets */
     overflow-x: hidden;
+}
+
+/* ===== BANNER ===== */
+.banner {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 12px;
+    padding: 18px 24px;
+    background: var(--color-danger-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+/* Destello que recorre el banner cada tanto, de punta a punta (keyframe
+   "bannerShimmerCycle" global en styles.css, compartido con los banners de
+   Resumen General y Actividad y Movimientos). El barrido dura ~1.7s y el
+   ciclo completo 6s, así que queda "quieto" la mayor parte del tiempo: un
+   sistema de plata/morosidad tiene que sentirse serio, no animado todo el
+   tiempo. Se apaga solo con prefers-reduced-motion (regla global). */
+.banner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -30%;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    animation: bannerShimmerCycle 6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.banner-intro {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.banner-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--color-danger);
+    color: var(--color-bg-card);
+    flex-shrink: 0;
+}
+
+.banner-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.banner-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #7a1f1f;
+}
+
+.banner-subtitle {
+    font-size: 12px;
+    color: #a85252;
+}
+
+.banner-metrics {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    /* Divider between the title block and the metrics */
+    border-left: 1px solid #e9b8b4;
+}
+
+.banner-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0 20px;
+}
+
+/* Separator between metrics */
+.banner-metric + .banner-metric {
+    border-left: 1px solid #e9b8b4;
+}
+
+.banner-metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #7a1f1f;
+    line-height: 1.1;
+}
+
+.banner-metric-label {
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #a85252;
+    white-space: nowrap;
 }
 
 /* ===== MAIN GRID ===== */
@@ -601,10 +707,35 @@
     }
 }
 
-/* Small mobile: tighter padding and a stacked bar row */
+@media (max-width: 768px) {
+    .banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Drop the divider once the metrics sit under the title */
+    .banner-metrics {
+        border-left: none;
+    }
+
+    .banner-metric {
+        padding: 0 20px 0 0;
+    }
+
+    .banner-metric + .banner-metric {
+        padding-left: 20px;
+    }
+}
+
+/* Small mobile: tighter padding, wrapping metrics and a stacked bar row */
 @media (max-width: 520px) {
     .dashboard {
         padding: 14px;
+    }
+
+    .banner-metrics {
+        flex-wrap: wrap;
+        row-gap: 10px;
     }
 
     /* Buscador y filtros apilados a ancho completo en vez de achicarse */

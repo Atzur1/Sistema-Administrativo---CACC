@@ -8,17 +8,8 @@ namespace ServiceLibrary
     public sealed record SolicitudBeneficio(
         string Motivo, string TipoValor, decimal? Porcentaje, decimal? MontoFijo, DateTime Inicio, DateTime Fin);
 
-    // Desde qué cuota se le puede dar una bonificación a un jugador hoy. Periodo es el primer día del mes de esa
-    // cuota; CuotaYaEmitida dice si ya existe (la del mes en curso, todavía sin pagos) o si se emite más adelante.
-    public sealed record PrimerPeriodoBeneficio(DateTime Periodo, bool CuotaYaEmitida)
-    {
-        public DateTime Emision => CalendarioCuotas.FechaDeEmision(Periodo);
-    }
-
     public interface IBeneficiosService
     {
-        PrimerPeriodoBeneficio ObtenerPrimerPeriodo(long idJugador);
-
         IReadOnlyList<Discount> ObtenerVigentes();
         IReadOnlyList<Discount> ObtenerTodos();
         IReadOnlyList<string> ObtenerMotivos();
@@ -35,12 +26,7 @@ namespace ServiceLibrary
 
     // Becas y descuentos de los jugadores (HU-011 / HU-012). Reglas del club:
     //  - Un jugador puede tener varios beneficios en el tiempo, pero nunca dos el mismo día (sin superposición).
-    //  - Una bonificación cubre cuotas enteras: rige "desde la cuota de" un mes y "hasta la cuota de" otro. Las
-    //    fechas se llevan al primer día del mes de inicio y al último del mes de fin. Cargarla es una cosa (la
-    //    fecha de asignación, que pone el sistema) y desde cuándo rige es otra.
-    //  - Rige desde la próxima cuota que todavía no se emitió. La única excepción es la cuota del mes en curso ya
-    //    emitida, mientras nadie haya pagado nada de ella: becar una cuota vencida o con pagos sería condonar
-    //    deuda (o dejar plata de más), no becar.
+    //  - Nadie asigna con fecha pasada: empezar antes de hoy borraría deuda ya vencida (eso es condonar, no becar).
     //  - Lo que ya es historia no se edita (ReglasEdicionBeneficio); editar es solo del SuperAdmin (lo controla la API).
     //  - Un jugador dado de baja no recibe ni edita beneficios (los que tenía se cancelaron con la baja).
     //  - Solo se anula un beneficio cancelado; uno vencido sin cancelar ya dio por saldados sus meses.
@@ -71,28 +57,16 @@ namespace ServiceLibrary
 
         public IReadOnlyList<Discount> ObtenerDelJugador(long idJugador) => _discountDao.GetDiscountsByPlayer(idJugador);
 
-        // La cuota del mes en curso (ya emitida) se puede becar solo si nadie pagó nada de ella. Una cuota vencida
-        // nunca llega acá: la última emitida no vence hasta el día 10 del mes siguiente, cuando ya hay otra emitida.
-        public PrimerPeriodoBeneficio ObtenerPrimerPeriodo(long idJugador)
-        {
-            DateTime hoy = _hoy();
-            DateTime ultimaEmitida = CalendarioCuotas.UltimoPeriodoEmitible(hoy);
-
-            return _discountDao.HasPaymentsInPeriod(idJugador, ultimaEmitida)
-                ? new PrimerPeriodoBeneficio(CalendarioCuotas.PrimerPeriodoSinEmitir(hoy), CuotaYaEmitida: false)
-                : new PrimerPeriodoBeneficio(ultimaEmitida, CuotaYaEmitida: true);
-        }
-
         public ResultadoOperacion<Discount> Asignar(long idJugador, SolicitudBeneficio solicitud)
         {
             var (motivo, rechazo) = ValidarJugadorYMotivo(idJugador, solicitud);
             if (rechazo != null) return rechazo;
 
             Discount beneficio = Construir(idJugador, solicitud, motivo!);
-            PrimerPeriodoBeneficio primero = ObtenerPrimerPeriodo(idJugador);
-            if (beneficio.StartDate < primero.Periodo)
+            if (beneficio.StartDate.Date < _hoy().Date)
             {
-                return ResultadoOperacion<Discount>.Falla(TipoResultado.NoProcesable, MensajePrimerPeriodo(primero));
+                return ResultadoOperacion<Discount>.Falla(TipoResultado.NoProcesable,
+                    $"La bonificación no puede empezar antes de hoy ({_hoy():dd/MM/yyyy}).");
             }
 
             // Se consulta antes de grabar solo para nombrar al beneficio que molesta; la escritura vuelve a
@@ -122,15 +96,12 @@ namespace ServiceLibrary
             Discount beneficio = Construir(idJugador, solicitud, motivo!);
             beneficio.Id = actual.Id;
 
-            PrimerPeriodoBeneficio primero = ObtenerPrimerPeriodo(idJugador);
-            var edicion = ReglasEdicionBeneficio.Evaluar(actual, beneficio, _hoy(), primero.Periodo);
+            var edicion = ReglasEdicionBeneficio.Evaluar(actual, beneficio, _hoy());
             if (edicion != ResultadoEdicionBeneficio.Permitida)
             {
                 return ResultadoOperacion<Discount>.Falla(
                     edicion == ResultadoEdicionBeneficio.Cerrada ? TipoResultado.Conflicto : TipoResultado.NoProcesable,
-                    edicion == ResultadoEdicionBeneficio.InicioEnElPasado
-                        ? MensajePrimerPeriodo(primero)
-                        : ReglasEdicionBeneficio.Mensaje(edicion));
+                    ReglasEdicionBeneficio.Mensaje(edicion));
             }
 
             Discount? choque = _discountDao.GetOverlappingDiscount(idJugador, beneficio.StartDate, beneficio.EndDate, actual.Id);
@@ -240,18 +211,10 @@ namespace ServiceLibrary
                 ValueType = tipoValor,
                 Percentage = esPorcentaje ? solicitud.Porcentaje : null,
                 FixedAmount = esPorcentaje ? null : solicitud.MontoFijo,
-                // Cuotas enteras: desde el primer día del mes de inicio hasta el último del mes de fin.
-                StartDate = CalendarioCuotas.PrimerDiaDelMes(solicitud.Inicio),
-                EndDate = CalendarioCuotas.FinDelPeriodo(solicitud.Fin)
+                StartDate = solicitud.Inicio,
+                EndDate = solicitud.Fin
             };
         }
-
-        private static string MensajePrimerPeriodo(PrimerPeriodoBeneficio primero) =>
-            "Una bonificación rige por cuotas completas, y la primera que se puede becar a este jugador es la de " +
-            $"{CalendarioCuotas.NombreDelPeriodo(primero.Periodo)} " +
-            (primero.CuotaYaEmitida
-                ? "(ya emitida y sin pagos). Las anteriores ya vencieron o tienen pagos: becarlas sería condonar deuda."
-                : $"(se emite el {primero.Emision:dd/MM/yyyy}). Las anteriores ya se emitieron: becarlas sería condonar deuda.");
 
         // Un beneficio puntual del jugador. Los cancelados a mano no se alcanzan, igual que en el resto del sistema.
         private Discount? Buscar(long idJugador, long idBeneficio)

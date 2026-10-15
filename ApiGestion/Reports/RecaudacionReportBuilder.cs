@@ -1,7 +1,5 @@
 using System.Globalization;
 using EntityLibrary;
-using QuestPDF.Fluent;
-using QuestPDF.Infrastructure;
 
 namespace ApiGestion.Reports
 {
@@ -13,46 +11,34 @@ namespace ApiGestion.Reports
     {
         private static readonly CultureInfo Ars = CultureInfo.GetCultureInfo("es-AR");
 
-        private const string ColorEfectivo = "#007f3e";
-        private const string ColorTransferencia = "#2563eb";
-
         private static readonly string[] Columnas =
             { "Jugador", "DNI", "Categoría", "Medio de pago", "Monto" };
 
-        // Jugador y categoría necesitan más lugar que el DNI o el medio de pago.
-        private static readonly float[] Anchos = { 3.2f, 1.5f, 2.3f, 1.8f, 1.7f };
-
-        // "6 pagos · 75 %". Con total cero el porcentaje no se puede calcular,
-        // así que se informa el vacío en vez de dividir por cero.
-        private static string Participacion(int pagos, decimal monto, decimal total)
+        // "6 pagos · $145.000 (75%)". Con cero cobros el porcentaje no se puede
+        // calcular, así que se informa el vacío en vez de dividir por cero.
+        private static string Linea(int pagos, decimal monto, int totalPagos)
         {
-            if (total == 0)
+            if (totalPagos == 0)
             {
                 return "Sin cobros";
             }
-            // Porcentaje del dinero (no de la cantidad de cobros): coincide con la barra de reparto.
-            int porcentaje = (int)Math.Round((monto * 100m) / total);
-            return $"{pagos} {(pagos == 1 ? "pago" : "pagos")} · {porcentaje} %";
+            int porcentaje = (int)Math.Round((pagos * 100m) / totalPagos);
+            return $"{pagos} pagos · {monto.ToString("C0", Ars)} ({porcentaje}%)";
         }
 
-        private static string Pesos(decimal monto) => monto.ToString("C0", Ars);
-
-        // El CSV usa punto y coma (Excel en español lo abre en columnas) y los montos como número puro, para que
-        // se puedan sumar y ordenar. Quedan al final, en filas aparte, los totales.
         public static byte[] BuildCsv(RecaudacionPeriodo datos, string periodoLabel, string categoriaLabel)
         {
             var meta = new List<string[]>
             {
                 new[] { "Club Atlético Camioneros de Córdoba" },
                 new[] { "Reporte de Recaudación Mensual" },
-                new[] { "Emitido", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm") },
-                new[] { "Período", periodoLabel },
+                new[] { "Fecha de emisión", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm") },
+                new[] { "Período consultado", periodoLabel },
                 new[] { "Categoría", categoriaLabel },
-                Array.Empty<string>(),
-                new[] { "RESUMEN", "Cobros", "Monto ($)" },
-                new[] { "Efectivo", datos.PagosEfectivo.ToString(), datos.Efectivo.ToString("0", Ars) },
-                new[] { "Transferencia", datos.PagosTransferencia.ToString(), datos.Transferencia.ToString("0", Ars) },
-                new[] { "TOTAL RECAUDADO", datos.Pagos.ToString(), datos.Total.ToString("0", Ars) },
+                new[] { "Total recaudado", datos.Total.ToString("C0", Ars) },
+                new[] { "Efectivo", Linea(datos.PagosEfectivo, datos.Efectivo, datos.Pagos) },
+                new[] { "Transferencia", Linea(datos.PagosTransferencia, datos.Transferencia, datos.Pagos) },
+                new[] { "Cobros procesados", datos.Pagos.ToString() },
             };
 
             var rows = datos.Detalle.Select(p => new[]
@@ -61,36 +47,23 @@ namespace ApiGestion.Reports
                 p.Dni,
                 p.Categoria,
                 p.MedioPago,
-                p.Monto.ToString("0", Ars),
-            }).ToList();
+                p.Monto.ToString("C0", Ars),
+            });
 
-            string[] columnas = { "Jugador", "DNI", "Categoría", "Medio de pago", "Monto ($)" };
-            return CsvBuilder.Build(meta, columnas, rows, separator: ';');
+            return CsvBuilder.Build(meta, Columnas, rows);
         }
 
         public static byte[] BuildPdf(RecaudacionPeriodo datos, string periodoLabel, string categoriaLabel)
-            => BuildDocumento(datos, periodoLabel, categoriaLabel).GeneratePdf();
-
-        internal static IDocument BuildDocumento(RecaudacionPeriodo datos, string periodoLabel, string categoriaLabel)
         {
             var meta = new List<PdfMetaItem>
             {
-                new("Período", periodoLabel),
-                new("Categoría", categoriaLabel),
+                new("Fecha de emisión", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm")),
+                new("Período consultado", periodoLabel),
+                new("Categoría consultada", categoriaLabel),
                 new("Cobros procesados", datos.Pagos.ToString()),
-            };
-
-            var kpis = new List<PdfKpi>
-            {
-                new("Total recaudado", Pesos(datos.Total), $"{datos.Pagos} {(datos.Pagos == 1 ? "cobro" : "cobros")}", "#0d4223"),
-                new("Efectivo", Pesos(datos.Efectivo), Participacion(datos.PagosEfectivo, datos.Efectivo, datos.Total), ColorEfectivo),
-                new("Transferencia", Pesos(datos.Transferencia), Participacion(datos.PagosTransferencia, datos.Transferencia, datos.Total), ColorTransferencia),
-            };
-
-            var reparto = new List<PdfShare>
-            {
-                new("Efectivo", datos.Efectivo, ColorEfectivo),
-                new("Transferencia", datos.Transferencia, ColorTransferencia),
+                new("Efectivo", Linea(datos.PagosEfectivo, datos.Efectivo, datos.Pagos)),
+                new("Transferencia", Linea(datos.PagosTransferencia, datos.Transferencia, datos.Pagos)),
+                new("Total recaudado", datos.Total.ToString("C0", Ars), Highlight: true),
             };
 
             var rows = datos.Detalle.Select(p => new[]
@@ -99,35 +72,17 @@ namespace ApiGestion.Reports
                 p.Dni,
                 p.Categoria,
                 p.MedioPago,
-                Pesos(p.Monto),
+                p.Monto.ToString("C0", Ars),
             }).ToList();
 
-            var extras = new PdfReportExtras
-            {
-                IssuedAt = RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm"),
-                Kpis = kpis,
-                Distribution = reparto,
-                ColumnWeights = Anchos,
-                BadgeColumn = 3,
-                BadgeStyle = medio => medio switch
-                {
-                    "Efectivo" => new PdfBadgeStyle("#dff3e7", "#0d4223"),
-                    "Transferencia" => new PdfBadgeStyle("#dbe8fd", "#1e40af"),
-                    _ => null,
-                },
-                TotalLabel = $"Total recaudado ({datos.Pagos} {(datos.Pagos == 1 ? "cobro" : "cobros")})",
-                TotalValue = Pesos(datos.Total),
-            };
-
-            return PdfReportBuilder.BuildDocument(
+            return PdfReportBuilder.Build(
                 title: "Reporte de Recaudación Mensual",
-                subtitle: null,
+                subtitle: "Liquidez del período y desglose por medio de pago",
                 meta: meta,
                 columns: Columnas,
                 rows: rows,
                 emptyMessage: "No se registraron cobros en este período.",
-                rightAlignedColumns: new HashSet<int> { 4 },
-                extras: extras);
+                rightAlignedColumns: new HashSet<int> { 4 });
         }
     }
 }

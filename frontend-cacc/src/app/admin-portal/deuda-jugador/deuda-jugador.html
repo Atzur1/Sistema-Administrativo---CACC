@@ -73,17 +73,6 @@
       @if (cuotasJugador.length > 0) {
         <span class="panel-count">{{ cuotasJugador.length }}</span>
       }
-      <!-- Para pagar toda la deuda de una vez, sin tildar cuota por cuota -->
-      @if (cuotasSeleccionables.length > 0) {
-        <button
-          type="button"
-          class="pagar-cancelar seleccionar-todas"
-          (click)="alternarTodas()"
-          [disabled]="enviandoCobro"
-        >
-          {{ todasSeleccionadas ? 'Quitar selección' : 'Seleccionar todas (' + cuotasSeleccionables.length + ')' }}
-        </button>
-      }
       @if (actualizandoEstadoCuenta) {
         <span class="actualizando-estado" role="status">Actualizando estado de cuenta...</span>
       }
@@ -115,17 +104,7 @@
         <table class="cuotas-table">
           <thead>
             <tr>
-              <th class="col-check">
-                <input
-                  type="checkbox"
-                  class="cuota-check"
-                  aria-label="Seleccionar todas las cuotas a cobrar"
-                  [checked]="todasSeleccionadas"
-                  [indeterminate]="seleccionParcial"
-                  [disabled]="cuotasSeleccionables.length === 0 || enviandoCobro"
-                  (change)="alternarTodas()"
-                />
-              </th>
+              <th class="col-check"><span class="sr-only">Seleccionar</span></th>
               <th>Período</th>
               <th class="col-monto">Monto cuota</th>
               <th class="col-monto">A cobrar</th>

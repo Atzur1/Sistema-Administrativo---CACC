@@ -94,15 +94,11 @@ public class Discount
         set { endDate = value; }
     }
 
-    // El día en que se cargó la bonificación (lo pone el sistema). Es distinto de StartDate, que es desde
-    // qué cuota rige: se puede asignar hoy una bonificación que empieza con la cuota del mes que viene.
-    // Vacío en las cargadas antes de que se registrara este dato.
-    public DateTime? AssignmentDate { get; set; }
-
     // Solo tiene valor cuando el beneficio se canceló antes de tiempo (DeactivateDiscount la
-    // completa junto con estado_activo = 0). Marca el último día de la última cuota ya emitida
-    // en el momento de cancelar: esas cuotas conservan el beneficio, las que todavía no se emitieron
-    // ya no lo tienen — cancelar no reescribe lo ya emitido, solo deja de aplicar de ahí en adelante.
+    // completa junto con estado_activo = 0). Marca el último día que la cuota de un jugador
+    // sigue contando con el beneficio: los meses posteriores a esta fecha ya no lo tienen, pero
+    // los anteriores lo conservan aunque el beneficio ya no esté vigente hoy — cancelar no
+    // reescribe lo que ya se cobró correctamente en el pasado.
     public DateTime? CancellationDate
     {
         get { return cancellationDate; }

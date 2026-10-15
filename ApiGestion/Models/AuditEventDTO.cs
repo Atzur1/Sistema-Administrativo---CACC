@@ -18,10 +18,6 @@ public class AuditEventDTO
     public string? BeforeJson { get; set; }
     public string? AfterJson { get; set; }
 
-    // The names behind the numbers the snapshots carry, as "kind:number" -> text (for example "jugador:3" ->
-    // "PRUEBA, NICOLAS (DNI 99000001)"). What no longer exists in the database is simply not in the map.
-    public Dictionary<string, string> References { get; set; } = new();
-
     public static AuditEventDTO FromEntity(AuditEvent auditEvent)
     {
         return new AuditEventDTO
@@ -37,8 +33,7 @@ public class AuditEventDTO
             Action = auditEvent.Action,
             TimestampUtc = auditEvent.TimestampUtc,
             BeforeJson = auditEvent.BeforeJson,
-            AfterJson = auditEvent.AfterJson,
-            References = new Dictionary<string, string>(auditEvent.Referencias)
+            AfterJson = auditEvent.AfterJson
         };
     }
 }

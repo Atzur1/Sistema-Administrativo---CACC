@@ -1,12 +1,11 @@
 <section class="audit-page">
-  <!-- Encabezado compartido (ver styles.css) -->
-  <header class="page-header">
-    <span class="header-icon" aria-hidden="true">
+  <header class="audit-hero">
+    <div class="hero-mark" aria-hidden="true">
       <svg
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        stroke-width="2"
+        stroke-width="1.7"
         stroke-linecap="round"
         stroke-linejoin="round"
       >
@@ -15,314 +14,201 @@
         <circle cx="18" cy="18" r="4"></circle>
         <path d="m21 21 1.5 1.5"></path>
       </svg>
-    </span>
-    <div class="header-text">
-      <h1 class="header-title">Auditoría</h1>
-      <span class="header-subtitle">Consultá quién realizó cada cambio y cuándo ocurrió en el Portal Administrativo.</span>
     </div>
-    <div class="header-metrics" aria-live="polite">
-      <div class="header-metric">
-        <span class="header-metric-value">{{ total | number }}</span>
-        <span class="header-metric-label">Operaciones encontradas</span>
-      </div>
+    <div class="hero-copy">
+      <span class="eyebrow">CONTROL Y TRANSPARENCIA</span>
+      <h1>Auditoría</h1>
+      <p>Consultá quién realizó cada cambio y cuándo ocurrió en el Portal Administrativo.</p>
+    </div>
+    <div class="hero-total" aria-live="polite">
+      <span class="total-label">REGISTROS</span>
+      <strong>{{ total | number }}</strong>
+      <span>operaciones encontradas</span>
     </div>
   </header>
-  <div class="header-divider"></div>
 
-  <!-- ===== BÚSQUEDA ===== -->
-  <!-- Los filtros se aplican solos al elegirlos o al dejar de escribir: no hay botón "Aplicar". Lo de todos los
-       días (buscar una persona, elegir un período) está a la vista; el resto, en "Más filtros". -->
-  <form class="toolbar" role="search" (submit)="$event.preventDefault(); buscarAhora()">
-    <div class="toolbar-main">
-      <label class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7"></circle>
-          <path d="m20 20-4-4"></path>
-        </svg>
-        <input
+  <form class="filter-card" (ngSubmit)="search(1)">
+    <div class="filter-heading">
+      <div>
+        <h2>Buscar en la auditoría</h2>
+        <p>Combiná filtros para encontrar una operación.</p>
+      </div>
+    </div>
+    <div class="filter-grid">
+      <label class="filter-field"
+        ><span>Desde</span><app-custom-datepicker name="from" [(ngModel)]="from"
+      ></app-custom-datepicker></label>
+      <label class="filter-field"
+        ><span>Hasta</span><app-custom-datepicker name="to" [(ngModel)]="to"
+      ></app-custom-datepicker></label>
+      <label class="filter-field filter-wide"
+        ><span>Persona</span
+        ><input
           type="search"
           name="email"
-          [ngModel]="email"
-          (ngModelChange)="email = $event; buscarAlEscribir()"
-          placeholder="Buscar persona por nombre, apellido o correo"
-          aria-label="Buscar persona por nombre, apellido o correo"
-        />
+          [(ngModel)]="email"
+          placeholder="Buscar por nombre, apellido o correo"
+      /></label>
+      <label class="filter-field"
+        ><span>Sección</span>
+        <app-custom-select
+          [options]="secciones"
+          placeholder="Pagos y aranceles"
+          [(ngModel)]="entity"
+          name="entity"
+        ></app-custom-select>
       </label>
-
-      <div class="chips" role="group" aria-label="Período rápido">
-        @for (rango of rangos; track rango.clave) {
-          <button
-            type="button"
-            class="chip"
-            [class.chip-on]="rangoActivo(rango.dias)"
-            [attr.aria-pressed]="rangoActivo(rango.dias)"
-            (click)="aplicarRango(rango.dias)"
-          >
-            {{ rango.etiqueta }}
-          </button>
-        }
-      </div>
-
-      <button
-        type="button"
-        class="more-button"
-        [class.more-on]="masFiltros"
-        [attr.aria-expanded]="masFiltros"
-        (click)="alternarMasFiltros()"
-      >
-        Más filtros
-        @if (cantidadMasFiltros > 0) {
-          <span class="more-count">{{ cantidadMasFiltros }}</span>
-        }
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="m6 9 6 6 6-6"></path>
-        </svg>
-      </button>
+      <label class="filter-field"
+        ><span>Tipo de cambio</span>
+        <app-custom-select
+          [options]="actions"
+          placeholder="Todas las acciones"
+          [(ngModel)]="action"
+          name="action"
+        ></app-custom-select>
+      </label>
     </div>
-
-    @if (masFiltros) {
-      <div class="toolbar-more">
-        <label class="filter-field"
-          ><span>Desde</span
-          ><app-custom-datepicker name="from" [ngModel]="from" (ngModelChange)="from = $event; buscarAhora()"
-          ></app-custom-datepicker
-        ></label>
-        <label class="filter-field"
-          ><span>Hasta</span
-          ><app-custom-datepicker name="to" [ngModel]="to" (ngModelChange)="to = $event; buscarAhora()"
-          ></app-custom-datepicker
-        ></label>
-        <label class="filter-field"
-          ><span>Sección</span>
-          <app-custom-select
-            [options]="secciones"
-            placeholder="Pagos y aranceles"
-            [ngModel]="entity"
-            (ngModelChange)="entity = $event ?? ''; buscarAhora()"
-            name="entity"
-          ></app-custom-select>
-        </label>
-        <label class="filter-field"
-          ><span>Tipo de cambio</span>
-          <app-custom-select
-            [options]="actions"
-            placeholder="Todos los tipos"
-            [ngModel]="action"
-            (ngModelChange)="action = $event ?? ''; buscarAhora()"
-            name="action"
-          ></app-custom-select>
-        </label>
+    <div class="filter-actions">
+      <span class="filter-hint"
+        >Los datos personales se muestran solo a perfiles administradores.</span
+      >
+      <div class="filter-buttons">
+        <button type="button" class="clear-button" (click)="limpiarFiltros()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line></svg
+          >Limpiar filtros
+        </button>
+        <button type="submit" class="apply-button" [disabled]="loading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-4-4"></path></svg
+          >Aplicar filtros
+        </button>
       </div>
-    }
-
-    <!-- Lo que está filtrando ahora, y cómo sacarlo -->
-    <div class="toolbar-status">
-      @for (filtro of filtrosActivos; track filtro.clave) {
-        <span class="active-filter"
-          >{{ filtro.etiqueta }}
-          <button type="button" (click)="quitarFiltro(filtro.clave)" [attr.aria-label]="'Quitar filtro: ' + filtro.etiqueta">×</button>
-        </span>
-      }
-      @if (filtrosActivos.length > 1) {
-        <button type="button" class="clear-all" (click)="limpiarFiltros()">Limpiar todo</button>
-      }
-      @if (alcanceReducido) {
-        <span class="scope-note">
-          Sin elegir una sección se muestran pagos y aranceles.
-          <button type="button" (click)="masFiltros = true">Elegir otra sección</button>
-        </span>
-      }
     </div>
   </form>
 
-  @if (error) {
-    <div class="notice error-notice" role="alert">
-      <span class="notice-symbol">!</span><span>{{ error }}</span
-      ><button type="button" (click)="search(page)">Reintentar</button>
-    </div>
-  }
+  <div *ngIf="error" class="notice error-notice" role="alert">
+    <span class="notice-symbol">!</span><span>{{ error }}</span
+    ><button type="button" (click)="search(page)">Reintentar</button>
+  </div>
 
-  <!-- ===== LISTA ===== -->
   <section class="results-card" aria-label="Resultados de auditoría">
     <div class="results-heading">
-      <h2>Registro de actividad</h2>
-      @if (!loading) {
-        <p>{{ firstVisible }}–{{ lastVisible }} de {{ total }}</p>
-      } @else {
-        <p>Buscando operaciones…</p>
-      }
+      <div>
+        <h2>Registro de actividad</h2>
+        <p *ngIf="!loading">{{ firstVisible }}–{{ lastVisible }} de {{ total }} operaciones</p>
+        <p *ngIf="loading">Buscando operaciones…</p>
+      </div>
+      <span class="secure-label"
+        ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <path d="m9 12 2 2 4-4"></path></svg
+        >Registro protegido</span
+      >
     </div>
 
-    @if (loading) {
-      <div class="loading-state"><span class="spinner"></span><span>Cargando actividad administrativa…</span></div>
-    } @else if (!error && items.length === 0) {
-      <div class="empty-state">
-        <div class="empty-mark">✓</div>
-        <h3>No hay operaciones para mostrar</h3>
-        <p>Probá ampliar el período o quitar alguno de los filtros.</p>
-      </div>
-    } @else if (items.length > 0) {
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th class="col-when">Cuándo</th>
-              <th class="col-who">Quién</th>
-              <th>Qué pasó</th>
-              <th class="col-go"><span class="sr-only">Ver cambios</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items; track item.id) {
-              <tr [class.row-selected]="seleccionado?.id === item.id" (click)="abrirDetalle(item)">
-                <td class="when-cell">
-                  <strong>{{ momento(item) | date: 'dd/MM/yyyy' : HUSO_CLUB }}</strong>
-                  <span>{{ momento(item) | date: 'HH:mm' : HUSO_CLUB }} hs</span>
-                </td>
-                <td>
-                  <div class="person-cell">
-                    <span class="person-avatar">{{ iniciales(item) }}</span>
-                    <div class="person-info">
-                      <strong>{{ nombreCompleto(item) }}</strong>
-                      <span>{{ datosDePersona(item) }}</span>
-                    </div>
-                  </div>
-                </td>
-                <td class="what-cell">
-                  <span class="action-chip" [class]="'action-chip ' + claseAccion(item)">{{ accionLegible(item) }}</span>
-                  <div class="what-text">
-                    <strong>{{ resumen(item) }}</strong>
-                    <span>{{ contexto(item) }}</span>
-                  </div>
-                </td>
-                <td class="go-cell">
-                  <button
-                    type="button"
-                    class="open-button"
-                    [attr.aria-label]="'Ver cambios: ' + resumen(item)"
-                    (click)="$event.stopPropagation(); abrirDetalle(item)"
-                  >
-                    Ver cambios
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                      <path d="m9 6 6 6-6 6"></path>
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
+    <div class="loading-state" *ngIf="loading">
+      <span class="spinner"></span><span>Cargando actividad administrativa…</span>
+    </div>
+    <div class="empty-state" *ngIf="!loading && !error && items.length === 0">
+      <div class="empty-mark">✓</div>
+      <h3>No hay operaciones para mostrar</h3>
+      <p>Probá ampliar el período o quitar alguno de los filtros.</p>
+    </div>
 
-    @if (!loading && total > 0) {
-      <footer class="pagination">
-        <button type="button" (click)="search(page - 1)" [disabled]="page <= 1">Anterior</button>
-        <span>Página <strong>{{ page }}</strong> de {{ pages }}</span>
-        <button type="button" (click)="search(page + 1)" [disabled]="page >= pages">Siguiente</button>
-      </footer>
-    }
+    <div class="table-scroll" *ngIf="!loading && items.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>FECHA Y HORA</th>
+            <th>PERSONA</th>
+            <th>CAMBIO</th>
+            <th>SECCIÓN</th>
+            <th>DETALLE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td class="date-cell">
+              <strong>{{
+                item.timestampUtc | date: 'dd MMM yyyy' : 'America/Argentina/Buenos_Aires'
+              }}</strong
+              ><span
+                >{{
+                  item.timestampUtc | date: 'HH:mm:ss' : 'America/Argentina/Buenos_Aires'
+                }}
+                hs</span
+              >
+            </td>
+            <td>
+              <div class="person-cell">
+                <span class="person-avatar">{{ iniciales(item) }}</span>
+                <div class="person-info">
+                  <strong>{{ nombreCompleto(item) }}</strong
+                  ><span *ngIf="item.userDni">DNI {{ item.userDni }}</span
+                  ><span>{{ item.userEmail || 'Usuario no identificado' }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="action-chip" [class]="'action-chip ' + claseAccion(item)">{{
+                accionLegible(item)
+              }}</span>
+            </td>
+            <td class="entity-cell">
+              <strong>{{ entidadLegible(item.entity) }}</strong
+              ><span>Registro #{{ item.entityId }}</span>
+            </td>
+            <td>
+              <details class="change-details">
+                <summary>
+                  <span>Ver cambios</span
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </summary>
+                <div class="change-content">
+                  <section *ngIf="item.beforeJson" class="change-state before-state">
+                    <h3>Antes</h3>
+                    <dl>
+                      <div *ngFor="let field of campos(item.beforeJson)">
+                        <dt>{{ field.label }}</dt>
+                        <dd>{{ field.value }}</dd>
+                      </div>
+                    </dl>
+                  </section>
+                  <section *ngIf="item.afterJson" class="change-state after-state">
+                    <h3>Después</h3>
+                    <dl>
+                      <div *ngFor="let field of campos(item.afterJson)">
+                        <dt>{{ field.label }}</dt>
+                        <dd>{{ field.value }}</dd>
+                      </div>
+                    </dl>
+                  </section>
+                  <p *ngIf="!item.beforeJson && !item.afterJson" class="no-detail">
+                    Se registró la operación sin copiar datos personales sensibles.
+                  </p>
+                </div>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="pagination" *ngIf="!loading && total > 0">
+      <span>Mostrando {{ firstVisible }}–{{ lastVisible }} de {{ total }}</span>
+      <div>
+        <button type="button" (click)="search(page - 1)" [disabled]="page <= 1">Anterior</button
+        ><span
+          >Página <strong>{{ page }}</strong> de {{ pages }}</span
+        ><button type="button" (click)="search(page + 1)" [disabled]="page >= pages">
+          Siguiente
+        </button>
+      </div>
+    </footer>
   </section>
 </section>
-
-<!-- ===== PANEL DE DETALLE ===== -->
-<!-- Un cajón a la derecha en vez de abrir el detalle dentro de la fila: la lista queda a la vista y el detalle
-     tiene todo el ancho que necesita. Se cierra con la ×, con Esc o tocando afuera. -->
-@if (seleccionado; as evento) {
-  <div class="drawer-backdrop" (click)="cerrarDetalle()"></div>
-  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="detalleTitulo">
-    <header class="drawer-head">
-      <div class="drawer-title">
-        <span class="action-chip" [class]="'action-chip ' + claseAccion(evento)">{{ accionLegible(evento) }}</span>
-        <h2 id="detalleTitulo">{{ resumen(evento) }}</h2>
-      </div>
-      <button type="button" class="drawer-close" (click)="cerrarDetalle()" aria-label="Cerrar detalle">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="M18 6 6 18"></path>
-          <path d="m6 6 12 12"></path>
-        </svg>
-      </button>
-    </header>
-
-    <dl class="drawer-meta">
-      <div>
-        <dt>Cuándo</dt>
-        <dd>{{ momento(evento) | date: 'dd/MM/yyyy HH:mm:ss' : HUSO_CLUB }} hs</dd>
-      </div>
-      <div>
-        <dt>Quién</dt>
-        <dd>{{ nombreCompleto(evento) }}<span>{{ datosDePersona(evento) }}</span></dd>
-      </div>
-      <div>
-        <dt>Dónde</dt>
-        <dd>{{ contexto(evento) }}</dd>
-      </div>
-    </dl>
-
-    @if (detalleActual; as detalle) {
-      <div class="drawer-body">
-        @switch (detalle.modo) {
-          @case ('alta') {
-            <h3>Datos cargados</h3>
-            <dl class="data-list">
-              @for (campo of detalle.datos; track campo.label) {
-                <div><dt>{{ campo.label }}</dt><dd>{{ campo.value }}</dd></div>
-              }
-            </dl>
-          }
-          @case ('baja') {
-            <h3>Datos eliminados</h3>
-            <dl class="data-list">
-              @for (campo of detalle.datos; track campo.label) {
-                <div><dt>{{ campo.label }}</dt><dd>{{ campo.value }}</dd></div>
-              }
-            </dl>
-          }
-          @case ('cambio') {
-            @if (detalle.cambiados.length > 0) {
-              <h3>Qué cambió</h3>
-              <table class="diff">
-                <thead>
-                  <tr><th>Dato</th><th>Antes</th><th>Después</th></tr>
-                </thead>
-                <tbody>
-                  @for (fila of detalle.cambiados; track fila.label) {
-                    <tr>
-                      <th scope="row">{{ fila.label }}</th>
-                      <td class="diff-before">{{ fila.antes }}</td>
-                      <td class="diff-after">{{ fila.despues }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            } @else {
-              <p class="no-detail">En esta operación no cambió ningún dato visible.</p>
-            }
-
-            @if (detalle.iguales.length > 0) {
-              <button
-                type="button"
-                class="toggle-same"
-                [attr.aria-expanded]="mostrarIguales"
-                (click)="mostrarIguales = !mostrarIguales"
-              >
-                {{ mostrarIguales ? 'Ocultar' : 'Ver' }} {{ detalle.iguales.length }}
-                {{ detalle.iguales.length === 1 ? 'dato sin cambios' : 'datos sin cambios' }}
-              </button>
-              @if (mostrarIguales) {
-                <dl class="data-list data-list-quiet">
-                  @for (fila of detalle.iguales; track fila.label) {
-                    <div><dt>{{ fila.label }}</dt><dd>{{ fila.despues }}</dd></div>
-                  }
-                </dl>
-              }
-            }
-          }
-          @default {
-            <p class="no-detail">Se registró la operación sin copiar datos personales sensibles.</p>
-          }
-        }
-      </div>
-    }
-  </aside>
-}

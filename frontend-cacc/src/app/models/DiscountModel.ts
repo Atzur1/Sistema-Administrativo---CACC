@@ -18,15 +18,9 @@ export interface DiscountModel {
     percentage: number | null;
     fixedAmount: number | null;
 
-    // Both mandatory since HU-012, in yyyy-MM-dd. A benefit covers whole fees: startDate is the first day
-    // of the month of the first fee it applies to and endDate the last day of the month of the last one
-    // (the ones loaded before that rule can start or end mid-month; they are read by month all the same).
+    // Both mandatory since HU-012, in yyyy-MM-dd
     startDate: string;
     endDate: string;
-
-    // The day it was loaded (yyyy-MM-dd), set by the system. Not the same as startDate: a benefit loaded
-    // today can start with next month's fee. Null for the ones loaded before it was recorded.
-    assignmentDate?: string | null;
 
     // Where the benefit stands today, resolved by the server against its own
     // clock. This is the only field to read to know the situation: the browser
@@ -90,52 +84,9 @@ export function formatIsoDate(isoDate: string): string {
     return `${day}/${month}/${year}`;
 }
 
-const MONTH_NAMES = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-];
-
-// The fee a date belongs to, the way the club names it: "2026-10-01" -> "Octubre 2026". Same split-by-hand
-// reason as formatIsoDate.
-export function periodLabel(isoDate: string): string {
-    if (!isoDate) {
-        return '';
-    }
-    const [year, month] = isoDate.split('-');
-    return `${MONTH_NAMES[Number(month) - 1] ?? ''} ${year}`.trim();
-}
-
-// The validity the way the financial card shows it, by fee: "Octubre 2026 a Diciembre 2026"
+// The validity the way the financial card shows it: "01/10/2026 - 31/12/2026"
 export function formatValidity(discount: DiscountModel): string {
-    return `${periodLabel(discount.startDate)} a ${periodLabel(discount.endDate)}`;
-}
-
-// From which fee a benefit can start for a player today (GET players/{id}/discount/first-period).
-// alreadyIssued: that fee already exists (the current month's, with nothing paid yet) instead of being issued
-// later, on issueDate.
-export interface FirstPeriodModel {
-    period: string;
-    issueDate: string;
-    alreadyIssued: boolean;
-}
-
-export interface PeriodOption {
-    value: string;
-    label: string;
-}
-
-// The last day of the month of an ISO date: "2026-12-01" -> "2026-12-31".
-export function lastDayOfMonth(isoDate: string): string {
-    const [year, month] = isoDate.split('-').map(Number);
-    const day = new Date(year, month, 0).getDate();
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
-
-// The first day of the month that is `offset` months from the one of an ISO date.
-export function addMonthsToPeriod(isoDate: string, offset: number): string {
-    const [year, month] = isoDate.split('-').map(Number);
-    const moved = new Date(year, month - 1 + offset, 1);
-    return `${moved.getFullYear()}-${String(moved.getMonth() + 1).padStart(2, '0')}-01`;
+    return `${formatIsoDate(discount.startDate)} - ${formatIsoDate(discount.endDate)}`;
 }
 
 // Reads the benefit the way the club talks about it: "50 %" or "$15.000"

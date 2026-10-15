@@ -15,16 +15,11 @@ namespace DaoLibrary
         //
         // A propósito NO filtra por "jd.estado_activo = 1" a secas: eso haría que cancelar un
         // beneficio le borre el descuento a TODAS las cuotas que cubrió alguna vez, incluidas
-        // las ya emitidas que estuvieron correctamente cubiertas mientras estuvo activo.
-        // Un beneficio cancelado sigue contando para una cuota si el período de esa cuota
-        // (fecha_vencimiento = primer día del mes) es anterior o igual a fecha_cancelacion, que
-        // DiscountDao.DeactivateDiscount deja en el último día de la última cuota ya emitida al
-        // cancelar; para las que todavía no se habían emitido, no. Uno que nunca se canceló
-        // (fecha_cancelacion NULL) sigue el rango fecha_inicio/fecha_fin de siempre.
-        //
-        // Ojo: fecha_vencimiento NO es el día en que vence la cuota (eso es el 10 del mes siguiente, ver
-        // CalendarioCuotas): es el período que cubre, el primer día del mes. Una bonificación cubre
-        // períodos enteros, por eso todas las comparaciones de acá son por mes.
+        // las de meses ya pasados que estuvieron correctamente cubiertas mientras estuvo activo.
+        // Un beneficio cancelado sigue contando para una cuota si esa cuota venció el mismo día
+        // de la cancelación o antes (fecha_cancelacion, seteada por DiscountDao.DeactivateDiscount);
+        // para las de después, no. Uno que nunca se canceló (fecha_cancelacion NULL) sigue el
+        // rango fecha_inicio/fecha_fin de siempre.
         public const string ApplyDescuentoActivo = @"
             OUTER APPLY (
                 SELECT TOP (1) jd.PK_id_jugador_descuento, jd.FK_id_descuento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo, jd.cancelada_por_baja

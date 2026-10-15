@@ -1,10 +1,4 @@
-﻿/* Color de la sección en el encabezado compartido (ver styles.css): violeta, beneficios (las acciones de esta pantalla ya son violetas). */
-:host {
-  --section-accent: var(--color-accent);
-  --section-accent-bg: var(--color-accent-bg);
-}
-
-/* ===== ANIMATIONS ===== */
+﻿/* ===== ANIMATIONS ===== */
 /* fadeSlideUp y fadeIn viven ahora en styles.css (global) */
 
 /* ===== LAYOUT ===== */
@@ -23,8 +17,87 @@
 
 /* ===== HEADER ===== */
 /* Sits directly on the page background, with no card of its own */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: fadeSlideUp 0.4s ease both;
+}
+
+.header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+
+.header-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.header-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.header-metrics {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.header-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 18px;
+}
 
 /* Separator between metrics */
+.header-metric + .header-metric {
+  border-left: 1px solid var(--color-border);
+}
+
+.header-metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.header-metric-label {
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.header-divider {
+  height: 1px;
+  margin: 14px 0;
+  background: var(--color-border);
+}
 
 /* ===== ASSIGNMENT FORM ===== */
 /* Panel de acción "deportivo institucional": blanco limpio, acento verde

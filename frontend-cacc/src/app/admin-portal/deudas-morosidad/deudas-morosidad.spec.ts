@@ -93,7 +93,7 @@ describe('DeudasMorosidad - debtors list (HU-029)', () => {
     const fixture = await create([]);
 
     expect(textOf(fixture)).toContain(
-      'No se registran jugadores con cuotas atrasadas en este momento.',
+      'No se registran alumnos con cuotas atrasadas en este momento.',
     );
     expect(tablePlayers(fixture)).toEqual([]);
   });
@@ -125,7 +125,7 @@ describe('DeudasMorosidad - debtors list (HU-029)', () => {
     expect(textOf(fixture)).toContain(
       'Ningún deudor coincide con la búsqueda o los filtros aplicados.',
     );
-    expect(textOf(fixture)).not.toContain('No se registran jugadores con cuotas atrasadas');
+    expect(textOf(fixture)).not.toContain('No se registran alumnos con cuotas atrasadas');
   });
 
   it('shows every debtor again after clearing the filters', async () => {

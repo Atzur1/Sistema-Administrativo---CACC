@@ -117,47 +117,13 @@ public class AuditDao(string connectionString) : IAuditDao
                 Entity = reader.GetString(6),
                 EntityId = reader.GetString(7),
                 Action = reader.GetString(8),
-                // La base guarda la hora en UTC (sysutcdatetime). Marcarla como UTC hace que la API la mande con la "Z"
-                // final: sin ella, el navegador la tomaba por hora local y la mostraba 3 horas adelantada.
-                TimestampUtc = DateTime.SpecifyKind(reader.GetDateTime(9), DateTimeKind.Utc),
+                TimestampUtc = reader.GetDateTime(9),
                 BeforeJson = reader.IsDBNull(10) ? null : reader.GetString(10),
                 AfterJson = reader.IsDBNull(11) ? null : reader.GetString(11)
             });
         }
 
-        // Se cierra el lector antes de hacer otra consulta con la misma conexión.
-        reader.Close();
-        AgregarReferencias(connection, null, items);
-
         return (items, total);
-    }
-
-    // Les pone a los eventos el nombre de lo que mencionan por número (jugador, división, beneficio...): con una
-    // consulta por tipo para toda la página, no una por fila. Si la búsqueda de nombres falla, la auditoría se
-    // muestra igual con los números: los nombres son una ayuda para leer, no parte del registro.
-    internal static void AgregarReferencias(SqlConnection conexion, SqlTransaction? transaccion, IReadOnlyList<AuditEvent> eventos)
-    {
-        var porEvento = eventos.ToDictionary(e => e, AuditReferences.Recolectar);
-        var todas = porEvento.Values.SelectMany(r => r).Distinct().ToList();
-        if (todas.Count == 0) return;
-
-        Dictionary<string, string> nombres;
-        try
-        {
-            nombres = AuditReferenceResolver.Resolver(conexion, transaccion, todas);
-        }
-        catch (SqlException)
-        {
-            return;
-        }
-
-        foreach (var (evento, referencias) in porEvento)
-        {
-            evento.Referencias = referencias
-                .Select(r => AuditReferences.Clave(r.Tipo, r.Id))
-                .Where(nombres.ContainsKey)
-                .ToDictionary(clave => clave, clave => nombres[clave]);
-        }
     }
 
     private static SqlParameter CloneParameter(SqlParameter source) => new(source.ParameterName, source.SqlDbType)

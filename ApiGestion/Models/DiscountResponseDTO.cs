@@ -20,14 +20,9 @@ public class DiscountResponseDTO
     public decimal? Percentage { get; set; }
     public decimal? FixedAmount { get; set; }
 
-    // Both mandatory since HU-012, in yyyy-MM-dd. A benefit covers whole fees: StartDate is the first day of
-    // the month of the first fee it applies to and EndDate the last day of the month of the last one (the
-    // ones loaded before that rule can start or end mid-month).
+    // Both mandatory since HU-012, in yyyy-MM-dd
     public string StartDate { get; set; } = "";
     public string EndDate { get; set; } = "";
-
-    // The day it was loaded, in yyyy-MM-dd (the system sets it). Null for the ones loaded before it was recorded.
-    public string? AssignmentDate { get; set; }
 
     // Where the benefit stands today: "Scheduled", "Active" or "Expired".
     //

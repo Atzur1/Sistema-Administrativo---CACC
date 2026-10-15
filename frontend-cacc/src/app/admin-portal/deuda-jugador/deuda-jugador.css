@@ -626,18 +626,6 @@
   background: var(--color-bg-hover);
 }
 
-/* "Seleccionar todas" en el encabezado del panel de cuotas: mismo botón, pero de tamaño propio y sin estirarse. */
-.seleccionar-todas {
-  flex: none;
-  margin-left: 12px;
-  padding: 6px 12px;
-}
-
-.seleccionar-todas:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .pagar-confirmar {
   flex: 1.4;
   padding: 9px;
