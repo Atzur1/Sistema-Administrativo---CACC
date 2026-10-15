@@ -22,7 +22,7 @@
 
     <div class="header-metrics">
       <div class="header-metric">
-        <span class="header-metric-value">{{ totalCompacto }}</span>
+        <span class="header-metric-value">{{ datos ? formatMonto(datos.total) : '—' }}</span>
         <span class="header-metric-label">Total del período</span>
       </div>
       <div class="header-metric">
@@ -34,83 +34,47 @@
   <div class="header-divider"></div>
 
   <!-- ===== BARRA DE FILTROS ===== -->
+  <!-- Una sola fila: el mes se recorre con las flechas y la categoría filtra al elegirla. -->
   <article class="panel panel-filtros">
 
-    <div class="filtro filtro-periodo">
-      <div class="filtro-head">
-        <span class="filtro-icon">
+    <div class="field">
+      <span class="field-label">Período</span>
+      <div class="mes-nav">
+        <button type="button" class="mes-flecha" aria-label="Mes anterior" (click)="mesAnterior()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
-        </span>
-        <div class="filtro-head-text">
-          <h2 class="filtro-title">Período</h2>
-          <span class="filtro-hint">Elegí el mes y el año a consultar</span>
-        </div>
-      </div>
-
-      <div class="filtro-campos">
-        <div class="field">
-          <label class="field-label" for="mes">Mes</label>
-          <app-custom-select id="mes" [options]="meses" placeholder="Seleccionar mes"
-                             [ngModel]="mesSeleccionado"
-                             (ngModelChange)="onMesChange($event)"></app-custom-select>
-        </div>
-
-        <div class="field">
-          <label class="field-label" for="anio">Año</label>
-          <app-custom-select id="anio" [options]="anios"
-                             [ngModel]="anioSeleccionado"
-                             (ngModelChange)="onAnioChange($event)"></app-custom-select>
-        </div>
+        </button>
+        <span class="mes-actual" aria-live="polite">{{ periodoLabel }}</span>
+        <button type="button" class="mes-flecha" aria-label="Mes siguiente"
+                [disabled]="!puedeAvanzar" (click)="mesSiguiente()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
       </div>
     </div>
 
-    <div class="filtro">
-      <div class="filtro-head">
-        <span class="filtro-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-            <path d="M3 9h18M9 3v18"></path>
-          </svg>
-        </span>
-        <div class="filtro-head-text">
-          <h2 class="filtro-title">Categoría</h2>
-          <span class="filtro-hint">Filtrá por categoría (opcional)</span>
-        </div>
-      </div>
-
+    <div class="field field-categoria">
+      <span class="field-label">Categoría</span>
       <div class="filtro-campos">
-        <app-custom-select [options]="categorias" [ngModel]="categoriaBorrador"
+        <app-custom-select [options]="categorias" [ngModel]="categoriaSeleccionada"
                            (ngModelChange)="onCategoriaChange($event)"></app-custom-select>
       </div>
     </div>
 
-    <div class="filtro-acciones">
-      <button type="button" class="btn-aplicar" [class.is-pendiente]="hayCambiosSinAplicar"
-              (click)="aplicarFiltros()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="7"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        Aplicar filtros
-      </button>
-
+    @if (hayFiltros) {
       <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 12a9 9 0 1 0 3-6.7"></path>
-          <polyline points="3 4 3 9 8 9"></polyline>
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
-        Limpiar filtros
+        Quitar categoría
       </button>
-    </div>
+    }
   </article>
 
   <!-- ===== PAGOS + DESGLOSE ===== -->
@@ -181,31 +145,30 @@
           <table class="tabla">
             <thead>
               <tr>
-                <th class="col-num">#</th>
                 <th>Jugador</th>
                 <th>DNI</th>
                 <th>Categoría</th>
-                <th>Monto</th>
                 <th>Tipo de pago</th>
+                <th class="col-monto">Monto</th>
               </tr>
             </thead>
             <tbody>
-              @for (fila of filas; track fila.dni; let i = $index) {
+              <!-- Se identifica cada fila por su pago, no por el DNI: un jugador puede tener varios pagos en el mes. -->
+              @for (fila of filas; track fila.idPago) {
                 <tr>
-                  <td class="col-num"><span class="fila-num">{{ i + 1 }}</span></td>
                   <td class="celda-jugador">{{ fila.jugador }}</td>
                   <td>{{ fila.dni }}</td>
                   <td>{{ fila.categoria }}</td>
-                  <td class="celda-monto">{{ formatMonto(fila.monto) }}</td>
                   <td>
                     <!-- El puntito repite el color del donut, para que la tabla y el
                          gráfico se lean como la misma información -->
-                    <span class="chip-medio">
+                    <span class="chip-medio" [ngClass]="fila.medioPago === 'Efectivo' ? 'chip-efectivo' : 'chip-transferencia'">
                       <span class="legend-dot"
                             [ngClass]="fila.medioPago === 'Efectivo' ? 'dot-efectivo' : 'dot-transferencia'"></span>
                       {{ fila.medioPago }}
                     </span>
                   </td>
+                  <td class="celda-monto col-monto">{{ formatMonto(fila.monto) }}</td>
                 </tr>
               }
             </tbody>
@@ -303,16 +266,6 @@
               </li>
             }
           </ul>
-        </div>
-
-        <!-- Una sola barra partida: se lee de un vistazo qué medio pesa más -->
-        <div class="desglose-bar">
-          @for (item of desglose; track item.nombre) {
-            <span class="bar-segment" [ngClass]="'segment-' + item.tono"
-                  [style.width.%]="item.porcentaje">
-              {{ item.porcentaje }}%
-            </span>
-          }
         </div>
       } @else {
         <div class="desglose-vacio">

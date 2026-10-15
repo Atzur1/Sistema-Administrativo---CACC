@@ -2,6 +2,10 @@
 :host {
   --section-accent: var(--color-info);
   --section-accent-bg: var(--color-info-bg);
+
+  /* Elevación de las cajas: una sombra fina que las apoya en el fondo y otra amplia y suave que las despega. */
+  --card-shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.07);
 }
 
 /* ===== ANIMATIONS ===== */
@@ -32,49 +36,183 @@
     color: var(--color-danger-strong);
 }
 
-/* ===== PESTAÑAS ===== */
-/* Mismo estilo subrayado que las pestañas de Cuotas y Pagos. */
-.tabs {
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Cuántos esperan acceso, en el encabezado: se destaca cuando hay alguien (es lo único que pide una acción). */
+.header-metric-alert .header-metric-value {
+    color: var(--color-warning-text);
+}
+
+/* ===== AVISO DE PENDIENTES ===== */
+.pending-banner {
     display: flex;
-    gap: 0;
-    margin: 0 0 14px;
-    border-bottom: 2px solid var(--color-border);
-    overflow-x: auto;
+    align-items: center;
+    gap: 14px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    border: 1px solid rgba(138, 90, 11, 0.22);
+    border-left: 4px solid #e8920c;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #fff6e6 0%, var(--color-warning-bg) 100%);
+    color: var(--color-warning-text);
+    font-size: 14px;
+    box-shadow: var(--card-shadow-soft);
+}
+
+.pending-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff;
+    color: #c97a06;
+    box-shadow: 0 0 0 1px rgba(232, 146, 12, 0.3);
+}
+
+.pending-icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+.pending-text {
+    flex: 1;
+}
+
+.pending-action {
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 9px;
+    background: #c97a06;
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.pending-action:hover {
+    background: #a86405;
+}
+
+.pending-action:active {
+    transform: translateY(1px);
+}
+
+/* ===== PESTAÑAS Y BÚSQUEDA ===== */
+/* Control segmentado: las tres listas dentro de una pista hundida, y la elegida "se levanta" como una tarjeta blanca con
+   sombra. Se lee de un vistazo cuál está activa y se siente como un botón, no como un texto subrayado. */
+.tabs-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin: 0 0 16px;
+}
+
+.tabs {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 14px;
+    background: #e6ece7;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .tab {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 20px;
-    border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    background: none;
+    padding: 9px 16px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
     cursor: pointer;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--color-text-muted);
     white-space: nowrap;
-    transition: color 0.15s, border-color 0.15s;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tab-icon {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+}
+
+.tab:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+}
+
+.search-box {
+    position: relative;
+    flex: 0 1 320px;
+    min-width: 220px;
+}
+
+.search-box svg {
+    position: absolute;
+    top: 50%;
+    left: 11px;
+    width: 15px;
+    height: 15px;
+    transform: translateY(-50%);
+    color: var(--color-text-subtle);
+    pointer-events: none;
+}
+
+.search-box input {
+    width: 100%;
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 14px 0 36px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-bg-card);
+    color: var(--color-text);
+    font: inherit;
+    font-size: 13.5px;
+    outline: 0;
+    box-shadow: var(--card-shadow-soft);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-box input:focus {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.14);
 }
 
 .tab:hover:not(.tab-active) {
+    background: rgba(255, 255, 255, 0.65);
     color: var(--color-text);
 }
 
 .tab-active {
+    background: #fff;
     color: var(--color-brand-deep);
-    border-bottom-color: var(--color-brand-deep);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 .tab-count {
-    min-width: 20px;
-    padding: 1px 7px;
+    min-width: 22px;
+    padding: 1px 8px;
     border-radius: 999px;
     background: var(--color-bg-page);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     line-height: 1.5;
     text-align: center;
@@ -86,38 +224,37 @@
     color: var(--color-brand-deep);
 }
 
-/* Hay alguien esperando que se lo habilite: el contador llama la atención aunque la pestaña esté cerrada. */
-.tab-count-alert {
-    background: var(--color-warning-bg);
-    color: var(--color-warning-text);
-}
-
+/* Hay alguien esperando que se lo habilite: contador en ámbar sólido, que se ve aunque la pestaña esté cerrada. */
+.tab-count-alert,
 .tab-active .tab-count-alert {
-    background: var(--color-warning-bg);
-    color: var(--color-warning-text);
+    background: var(--color-warning-text);
+    color: #fff;
 }
 
 /* ===== MAIN GRID ===== */
-/* Una sola lista por vez (ver pestañas): una columna a todo el ancho. */
+/* Una sola lista por vez (ver pestañas). Ocupa todo el ancho, igual que el aviso, las pestañas y el buscador: si la
+   tarjeta fuera más angosta que lo de arriba, el buscador quedaría en una punta y la tarjeta terminaría a la mitad.
+   Para que la fila se siga con la vista, el espacio se reparte entre las columnas (ver .users-table). */
 .main-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 12px;
     flex: 1;
     min-height: 0;
+    align-content: start;
 }
 
 /* ===== PANELS ===== */
+/* Tarjeta sólida (blanca, sin transparencia): lo importante acá es leer una lista, y el fondo es plano, así que
+   transparentarla no aportaba nada. La profundidad sale de dos sombras en capas, una fina y una amplia y suave. */
 .panel {
     display: flex;
     flex-direction: column;
-    padding: 16px;
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    box-shadow: var(--glass-shadow);
+    padding: 22px 24px 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
     min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
 }
@@ -130,21 +267,12 @@
     animation-delay: 80ms;
 }
 
-.panel-head {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 14px;
-}
-
-.panel-title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.panel-subtitle {
-    font-size: 11px;
+/* Una línea que dice qué hay en la pestaña y qué se puede hacer. El nombre de la lista no se repite acá: ya lo dice
+   la pestaña activa (queda como encabezado oculto para lectores de pantalla). */
+.panel-lead {
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.5;
     color: var(--color-text-muted);
 }
 
@@ -163,11 +291,11 @@
 }
 
 .users-table th {
-    padding: 0 10px 8px;
+    padding: 0 12px 9px;
     border-bottom: 1px solid var(--color-border);
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-text-muted);
     text-align: left;
@@ -175,10 +303,52 @@
 }
 
 .users-table td {
-    padding: 9px 10px;
-    border-bottom: 1px solid var(--color-bg-page);
-    font-size: 12px;
+    padding: 14px 12px;
+    border-bottom: 1px solid #edf1ee;
+    font-size: 13.5px;
     vertical-align: middle;
+}
+
+/* Las columnas se reparten el ancho en proporciones (no en píxeles): sin esto, el espacio sobrante en una pantalla
+   ancha iba todo a la columna del nombre y el rol, el estado y las acciones quedaban lejísimos. */
+.users-table {
+    table-layout: fixed;
+}
+
+/* Candidatos y Deshabilitadas: persona / rol / acciones (el resto de ancho es para la persona). */
+.users-table .col-rol {
+    width: 26%;
+}
+
+.users-table .col-acciones {
+    width: 28%;
+}
+
+/* Habilitadas: persona / rol / estado / menú. */
+.users-table-cuatro .col-rol {
+    width: 24%;
+}
+
+.users-table-cuatro .col-estado {
+    width: 22%;
+}
+
+.users-table-cuatro .col-acciones {
+    width: 12%;
+}
+
+/* Un correo largo se corta con "…" en vez de romper la tabla. */
+.user-email,
+.user-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+    .users-table {
+        table-layout: auto;
+    }
 }
 
 .users-table tbody tr {
@@ -203,21 +373,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     color: var(--color-bg-card);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--color-bg-card), 0 0 0 4px var(--color-border);
 }
 
 .avatar-superadmin {
-    background: var(--color-brand);
+    background: linear-gradient(135deg, var(--color-brand-light), var(--color-brand-deep));
 }
 
 .avatar-admin {
-    background: var(--color-info);
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+}
+
+/* Candidato: ámbar, como el aviso (todavía no tiene acceso). Deshabilitada: gris. */
+.avatar-pending {
+    background: linear-gradient(135deg, #f5b041, #c97a06);
+}
+
+.avatar-off {
+    background: linear-gradient(135deg, #b7bfb9, #8c968f);
 }
 
 .user-identity {
@@ -228,14 +408,27 @@
 }
 
 .user-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 600;
     white-space: nowrap;
 }
 
 .user-email {
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--color-text-muted);
     white-space: nowrap;
+}
+
+/* "Vos": marca la fila de la cuenta con la que se inició sesión. */
+.self-tag {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--color-info-bg);
+    color: var(--color-info);
+    font-size: 11.5px;
+    font-weight: 700;
 }
 
 .rol-select {
@@ -245,9 +438,9 @@
 
 .role-pill {
     display: inline-block;
-    padding: 3px 9px;
+    padding: 3px 10px;
     border-radius: 20px;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     white-space: nowrap;
 }
@@ -262,28 +455,42 @@
     color: var(--color-info);
 }
 
+/* Estado de la cuenta: verde = activa, ámbar = falta que cree su contraseña, gris = inactiva. */
 .status {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     white-space: nowrap;
+    font-weight: 500;
 }
 
 .status-dot {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--color-brand);
     flex-shrink: 0;
 }
 
-.status-dot.status-off {
+.status-pending {
+    color: var(--color-warning-text);
+}
+
+.status-pending .status-dot {
+    background: #e8920c;
+}
+
+.status-off {
+    color: var(--color-text-muted);
+}
+
+.status-off .status-dot {
     background: #c4c7c4;
 }
 
 .cell-muted {
     color: var(--color-text-muted);
-    white-space: nowrap;
+    padding: 18px 12px;
 }
 
 .cell-actions {
@@ -291,15 +498,126 @@
     white-space: nowrap;
 }
 
-/* Resetear contraseña + Deshabilitar (con su ayuda "?") en la misma fila.
-   Si la columna queda angosta, Deshabilitar baja a una segunda línea en vez
-   de estirar la tabla por encima del panel de la derecha. */
-.actions-wrap {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 8px;
+/* ===== MENÚ DE ACCIONES DE UNA FILA (⋯) ===== */
+/* Las acciones poco frecuentes (resetear la contraseña, deshabilitar) van adentro de un menú: la fila queda limpia
+   y la acción destructiva no está a la vista de un clic distraído. */
+.menu-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.kebab {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.kebab svg {
+    width: 20px;
+    height: 20px;
+}
+
+.kebab:hover,
+.kebab-on {
+    border-color: var(--color-border);
+    background: var(--color-bg-card);
+    color: var(--color-text);
+}
+
+/* La fila con el menú abierto queda por encima de las de abajo, para que el menú no se pierda detrás. */
+.row-menu-open {
+    position: relative;
+    z-index: 20;
+}
+
+.menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 30;
+    display: grid;
+    width: 300px;
+    padding: 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-bg-card);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+    text-align: left;
+    animation: dialogFade 0.12s ease both;
+}
+
+.menu-item {
+    display: grid;
+    gap: 2px;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menu-item:hover:not(:disabled) {
+    background: var(--color-bg-hover);
+}
+
+.menu-title {
+    color: var(--color-text);
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.menu-hint {
+    color: var(--color-text-muted);
+    font-size: 12.5px;
+    line-height: 1.4;
+    white-space: normal;
+}
+
+.menu-item-danger .menu-title {
+    color: var(--color-danger-strong);
+}
+
+.menu-item-danger:hover:not(:disabled) {
+    background: var(--color-danger-bg);
+}
+
+.menu-item:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ===== CARGANDO: filas de esqueleto en vez de un "Cargando…" suelto ===== */
+.skeleton-row td {
+    padding: 14px 12px;
+}
+
+.skeleton {
+    display: block;
+    height: 34px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--color-bg-page) 25%, #e9eee9 50%, var(--color-bg-page) 75%);
+    background-size: 200% 100%;
+    animation: esqueleto 1.3s ease-in-out infinite;
+}
+
+@keyframes esqueleto {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
 }
 
 /* ===== EDITAR CANDIDATO (ícono en la fila) ===== */
@@ -523,7 +841,7 @@
 }
 
 .field-label {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -622,7 +940,7 @@
 
 /* Aclaración debajo de un campo (mismo estilo que los formularios de Becados y Descuentos). */
 .field-hint {
-    font-size: 10.5px;
+    font-size: 12px;
     line-height: 1.45;
     color: var(--color-text-muted);
 }

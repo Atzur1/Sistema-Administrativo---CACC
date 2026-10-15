@@ -275,6 +275,50 @@ describe('Auditoria - nombres en vez de números', () => {
   });
 });
 
+// Las horas y fechas se muestran en hora del club (Argentina, UTC-3), no en la del navegador ni en UTC.
+describe('Auditoria - fechas y horas', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('la hora de la fila es la del club: 18:30 UTC son las 15:30 en Argentina', async () => {
+    const { el } = await create([evento({ id: 30, timestampUtc: '2026-10-11T18:30:56.3671640Z' })]);
+
+    expect(el.querySelector('.when-cell span')!.textContent).toContain('15:30');
+    expect(el.querySelector('.when-cell strong')!.textContent).toBe('11/10/2026');
+  });
+
+  // La API mandaba la hora de la base sin la "Z" final y el navegador la tomaba por hora local (3 horas de más).
+  it('si la hora llega sin la "Z" final, igual se toma como UTC', async () => {
+    const { el } = await create([evento({ id: 31, timestampUtc: '2026-10-11T18:30:56.3671640' })]);
+
+    expect(el.querySelector('.when-cell span')!.textContent).toContain('15:30');
+  });
+
+  it('cerca de la medianoche el día también es el del club', async () => {
+    const { el } = await create([evento({ id: 32, timestampUtc: '2026-10-15T00:33:00Z' })]);
+
+    expect(el.querySelector('.when-cell strong')!.textContent).toBe('14/10/2026');
+    expect(el.querySelector('.when-cell span')!.textContent).toContain('21:33');
+  });
+
+  it('una fecha sin hora no se corre un día, y el período de una cuota se lee como el mes', async () => {
+    const { component } = await create();
+
+    expect(component.campos('{"vencimiento":"2026-10-01","fechaPago":"2026-10-14","vigente_desde":"2026-01-01"}')).toEqual([
+      { label: 'Cuota del período', value: 'Octubre 2026' },
+      { label: 'Fecha de pago', value: '14/10/2026' },
+      { label: 'Vigente desde', value: '01/01/2026' },
+    ]);
+  });
+
+  it('una fecha con hora se muestra en hora del club', async () => {
+    const { component } = await create();
+
+    const [vence] = component.campos('{"venceUtc":"2026-10-10T18:30:00"}');
+
+    expect(vence.value).toBe('10/10/2026 15:30 hs');
+  });
+});
+
 describe('Auditoria - panel lateral', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 

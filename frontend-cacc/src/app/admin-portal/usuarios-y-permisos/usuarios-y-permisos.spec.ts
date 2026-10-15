@@ -4,6 +4,7 @@ import { of, throwError } from 'rxjs';
 import { Usuarios } from './usuarios-y-permisos';
 import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { NotificationService } from '../../shared/notifications/notification.service';
+import { AuthService } from '../../services/auth';
 import { PortalUserCandidateModel, PortalUserModel } from '../../models/PortalUserModel';
 
 // Botón "Resetear contraseña" del SuperAdmin: le manda a una cuenta habilitada el enlace para elegir una contraseña
@@ -20,11 +21,19 @@ const CANDIDATO: PortalUserCandidateModel = {
   idUsuario: 20, nombre: 'Carla', apellido: 'Candidata', dni: '30.555.666', email: 'carla@cacc.test', fkIdRolSugerido: 2,
 };
 
+// Opciones extra para armar la pantalla: la cuenta con la que se inició sesión y el doble de "cambiar rol".
+interface OpcionesCreate {
+  yo?: { email: string; dni?: string } | null;
+  cambiarRol?: ReturnType<typeof vi.fn>;
+}
+
 async function create(
   resetear = vi.fn(() => of({ mensaje: 'Se envió el enlace.' })),
   editarCandidato = vi.fn(() => of({ mensaje: 'Datos corregidos.' })),
+  opciones: OpcionesCreate = {},
 ) {
   const notify = vi.fn();
+  const cambiarRol = opciones.cambiarRol ?? vi.fn(() => of({ mensaje: 'Rol actualizado.' }));
   await TestBed.configureTestingModule({
     imports: [Usuarios],
     providers: [
@@ -36,15 +45,17 @@ async function create(
           getDeshabilitados: () => of([]),
           resetearContrasena: resetear,
           editarCandidato,
+          cambiarRol,
         },
       },
       { provide: NotificationService, useValue: { notify } },
+      { provide: AuthService, useValue: { getUsuario: () => opciones.yo ?? null } },
     ],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(Usuarios);
   fixture.detectChanges();
-  return { fixture, component: fixture.componentInstance, element: fixture.nativeElement as HTMLElement, resetear, editarCandidato, notify };
+  return { fixture, component: fixture.componentInstance, element: fixture.nativeElement as HTMLElement, resetear, editarCandidato, notify, cambiarRol };
 }
 
 describe('Usuarios - Resetear contraseña', () => {
@@ -55,15 +66,22 @@ describe('Usuarios - Resetear contraseña', () => {
     expect(component.textoAccionEnlace(SIN_ACTIVAR)).toBe('Reenviar activación');
   });
 
+  // Las acciones de cada fila están en un menú "⋯": se abre la fila y se leen sus opciones.
+  const opcionesDelMenu = (element: HTMLElement, fixture: { detectChanges(): void }, fila: number) => {
+    element.querySelectorAll<HTMLElement>('.panel-users .kebab')[fila].click();
+    fixture.detectChanges();
+    const titulos = Array.from(element.querySelectorAll('.menu .menu-title')).map((t) => t.textContent?.trim());
+    document.body.click(); // cierra el menú
+    fixture.detectChanges();
+    return titulos;
+  };
+
   it('aparece en las cuentas activas y no en la que está inactiva en la base del otro equipo', async () => {
-    const { element } = await create();
+    const { element, fixture } = await create();
 
-    // Sin el "?" de ayuda (app-help-hint) que acompaña a Deshabilitar: no es una acción.
-    const botones = Array.from(element.querySelectorAll('.panel-users .cell-actions button:not(.help-trigger)'))
-      .map((b) => b.textContent?.trim())
-      .filter((t) => t !== 'Deshabilitar');
-
-    expect(botones).toEqual(['Resetear contraseña', 'Reenviar activación']); // 2 de las 3 filas
+    expect(opcionesDelMenu(element, fixture, 0)).toEqual(['Resetear contraseña', 'Deshabilitar']); // ADMIN
+    expect(opcionesDelMenu(element, fixture, 1)).toEqual(['Reenviar activación', 'Deshabilitar']); // SIN_ACTIVAR
+    expect(opcionesDelMenu(element, fixture, 2)).toEqual(['Deshabilitar']); // INACTIVO: no recibe correos
   });
 
   it('pide confirmación primero: hacer clic no manda ningún correo', async () => {
@@ -193,6 +211,207 @@ describe('Usuarios - Corregir el DNI de un candidato', () => {
 });
 
 // Las tres listas (habilitadas, candidatos, deshabilitadas) se ven de a una, con su contador en la pestaña.
+// Cambiar el rol da o quita permisos: no se aplica al elegirlo en el desplegable sino al confirmar.
+describe('Usuarios - cambiar el rol con confirmación', () => {
+  it('elegir otro rol no lo aplica: abre la confirmación y no llama al servidor', async () => {
+    const { component, cambiarRol } = await create();
+
+    component.onRolHabilitadoChange(ADMIN, 1);
+
+    expect(component.cambioDeRol()).toEqual({ usuario: ADMIN, rol: 1 });
+    expect(cambiarRol).not.toHaveBeenCalled();
+    expect(ADMIN.rolPortal).toBe(2); // sigue siendo Administrador hasta que se confirme
+  });
+
+  it('elegir el mismo rol que ya tiene no pide nada', async () => {
+    const { component } = await create();
+
+    component.onRolHabilitadoChange(ADMIN, 2);
+
+    expect(component.cambioDeRol()).toBeNull();
+  });
+
+  it('confirmar aplica el cambio, avisa y cierra la confirmación', async () => {
+    const usuario = { ...ADMIN, idUsuario: 70 };
+    const { component, cambiarRol, notify } = await create();
+
+    component.onRolHabilitadoChange(usuario, 1);
+    component.confirmarCambioDeRol();
+
+    expect(cambiarRol).toHaveBeenCalledWith(70, { rolPortal: 1 });
+    expect(usuario.rolPortal).toBe(1);
+    expect(notify).toHaveBeenCalledWith('Rol actualizado.', 'success');
+    expect(component.cambioDeRol()).toBeNull();
+  });
+
+  it('cancelar no cambia nada y vuelve a dibujar el desplegable con el rol real', async () => {
+    const { component, cambiarRol } = await create();
+    const antes = component.refrescoRoles();
+
+    component.onRolHabilitadoChange(ADMIN, 1);
+    component.cancelarCambioDeRol();
+
+    expect(cambiarRol).not.toHaveBeenCalled();
+    expect(component.cambioDeRol()).toBeNull();
+    expect(component.refrescoRoles()).toBe(antes + 1);
+  });
+
+  it('si el servidor lo rechaza muestra su motivo y deja el rol como estaba', async () => {
+    const rechazo = vi.fn(() => throwError(() => ({ error: { mensaje: 'Tiene que quedar al menos un SuperAdmin.' } })));
+    const usuario = { ...ADMIN, idUsuario: 71, rolPortal: 1 as const };
+    const { component, notify } = await create(undefined, undefined, { cambiarRol: rechazo });
+
+    component.onRolHabilitadoChange(usuario, 2);
+    component.confirmarCambioDeRol();
+
+    expect(notify).toHaveBeenCalledWith('Tiene que quedar al menos un SuperAdmin.', 'error');
+    expect(usuario.rolPortal).toBe(1);
+  });
+
+  it('la confirmación explica qué cambia: dar acceso total o quitarlo', async () => {
+    const { component } = await create();
+
+    component.onRolHabilitadoChange(ADMIN, 1);
+    expect(component.textoCambioDeRol!.titulo).toContain('acceso total');
+    expect(component.textoCambioDeRol!.cuerpo).toContain('todo el portal');
+
+    component.cancelarCambioDeRol();
+    component.onRolHabilitadoChange({ ...ADMIN, rolPortal: 1 }, 2);
+    expect(component.textoCambioDeRol!.cuerpo).toContain('solo va a ver Cobranza');
+  });
+
+  it('si es la propia cuenta y se quita el acceso total, lo advierte', async () => {
+    const { component } = await create(undefined, undefined, { yo: { email: 'camila@cacc.test', dni: '30111222' } });
+    const propia = { ...ADMIN, rolPortal: 1 as const };
+
+    component.onRolHabilitadoChange(propia, 2);
+
+    expect(component.textoCambioDeRol!.advertencia).toContain('tu propia cuenta');
+  });
+});
+
+describe('Usuarios - cuenta propia, búsqueda y aviso de pendientes', () => {
+  it('reconoce la cuenta propia por DNI o por correo y la marca con "Vos"', async () => {
+    const { component, fixture, element } = await create(undefined, undefined, {
+      yo: { email: 'otro@correo.test', dni: '30.111.222' }, // el DNI llega con puntos
+    });
+
+    expect(component.esMiCuenta(ADMIN)).toBe(true);
+    expect(component.esMiCuenta(SIN_ACTIVAR)).toBe(true); // mismo DNI en los datos de prueba
+    expect(component.esMiCuenta({ email: 'admin@cacc.test', dni: '1' })).toBe(false);
+    fixture.detectChanges();
+    expect(element.querySelector('.self-tag')!.textContent).toBe('Vos');
+  });
+
+  it('no se puede deshabilitar la propia cuenta desde el menú', async () => {
+    const { element, fixture } = await create(undefined, undefined, { yo: { email: 'camila@cacc.test' } });
+
+    element.querySelectorAll<HTMLElement>('.panel-users .kebab')[0].click();
+    fixture.detectChanges();
+
+    const deshabilitar = element.querySelector<HTMLButtonElement>('.menu-item-danger')!;
+    expect(deshabilitar.disabled).toBe(true);
+    expect(deshabilitar.textContent).toContain('tu propia cuenta');
+  });
+
+  it('el buscador filtra la lista por nombre, DNI o correo sin cambiar los contadores', async () => {
+    const { component, fixture, element } = await create();
+
+    component.alEscribirBusqueda('nuevo@');
+    fixture.detectChanges();
+    expect(component.habilitadosVisibles().map((u) => u.idUsuario)).toEqual([8]);
+    expect(element.querySelectorAll('.panel-users tbody tr')).toHaveLength(1);
+
+    component.alEscribirBusqueda('30.111.222'); // por DNI, con puntos
+    expect(component.habilitadosVisibles()).toHaveLength(3);
+
+    component.alEscribirBusqueda('zzzz');
+    fixture.detectChanges();
+    expect(element.querySelector('.panel-users .cell-muted')!.textContent).toContain('Ninguna cuenta habilitada coincide con “zzzz”');
+    expect(element.querySelector('#tab-habilitadas .tab-count')!.textContent).toContain('3'); // el total, no el filtro
+
+    component.limpiarBusqueda();
+    expect(component.habilitadosVisibles()).toHaveLength(3);
+  });
+
+  it('avisa desde cualquier pestaña que hay personas esperando acceso, y lleva a revisarlas', async () => {
+    const { component, fixture, element } = await create();
+
+    expect(element.querySelector('.pending-banner')!.textContent).toContain('1');
+    expect(element.querySelector('.pending-banner')!.textContent).toContain('espera');
+
+    element.querySelector<HTMLElement>('.pending-action')!.click();
+    fixture.detectChanges();
+
+    expect(component.pestana()).toBe('candidatos');
+    expect(element.querySelector('.pending-banner')).toBeNull(); // ya está en esa pestaña: no hace falta el aviso
+  });
+
+  it('el encabezado muestra cuántos esperan acceso en lugar de repetir el total de la pestaña', async () => {
+    const { component, element } = await create();
+
+    expect(component.totalPendientes).toBe(1);
+    const etiquetas = Array.from(element.querySelectorAll('.header-metric-label')).map((e) => e.textContent?.trim());
+    expect(etiquetas).toEqual(['SuperAdmin', 'Administrador', 'Esperan acceso']);
+    expect(element.querySelector('.header-metric-alert')).not.toBeNull();
+  });
+
+  it('el menú de una fila se cierra con Esc o al tocar afuera', async () => {
+    const { component, fixture, element } = await create();
+
+    element.querySelectorAll<HTMLElement>('.panel-users .kebab')[0].click();
+    fixture.detectChanges();
+    expect(component.menuAbierto()).toBe(ADMIN.idUsuario);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(component.menuAbierto()).toBeNull();
+  });
+});
+
+// Hay cuentas cargadas solo con el correo (sin nombre ni apellido): se muestran igual, con el correo en su lugar.
+describe('Usuarios - nombre y avatar de cada persona', () => {
+  it('arma el nombre y las iniciales con nombre y apellido', async () => {
+    const { component } = await create();
+
+    expect(component.nombreMostrar(ADMIN)).toBe('Camila Candidata');
+    expect(component.iniciales(ADMIN)).toBe('CC');
+    expect(component.tieneNombre(ADMIN)).toBe(true);
+  });
+
+  it('si la cuenta no tiene nombre, muestra el correo y usa su inicial', async () => {
+    const { component } = await create();
+    const sinNombre = { nombre: '', apellido: '', email: 'admin@cacc.com' };
+
+    expect(component.tieneNombre(sinNombre)).toBe(false);
+    expect(component.nombreMostrar(sinNombre)).toBe('admin@cacc.com');
+    expect(component.iniciales(sinNombre)).toBe('A');
+  });
+
+  it('un nombre nulo tampoco rompe la fila', async () => {
+    const { component } = await create();
+    const nulo = { nombre: null, apellido: null, email: 'x@cacc.test' };
+
+    expect(component.nombreMostrar(nulo)).toBe('x@cacc.test');
+    expect(component.iniciales(nulo)).toBe('X');
+  });
+
+  it('las tres listas muestran un avatar por persona', async () => {
+    const { component, fixture, element } = await create();
+
+    expect(element.querySelectorAll('.panel-users .user-avatar')).toHaveLength(3);
+    component.cambiarPestana('candidatos');
+    fixture.detectChanges();
+    expect(element.querySelectorAll('.panel-candidatos .user-avatar')).toHaveLength(1);
+  });
+
+  it('cada pestaña lleva su ícono', async () => {
+    const { element } = await create();
+
+    expect(element.querySelectorAll('.tabs .tab .tab-icon')).toHaveLength(3);
+  });
+});
+
 describe('Usuarios - Pestañas', () => {
   const tab = (element: HTMLElement, id: string) => element.querySelector(`#${id}`) as HTMLButtonElement;
 

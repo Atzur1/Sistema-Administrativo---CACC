@@ -64,7 +64,11 @@ html, body {
      actividad-movimientos, portales y login, ahora disponible para cualquier caja. */
   --glass-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 247, 0.94) 100%);
   --glass-border: rgba(255, 255, 255, 0.9);
-  --glass-blur: blur(16px);
+  /* Sin desenfoque a propósito: las tarjetas de gestión usan --glass-bg, que es 94-98 % opaco y está sobre un fondo
+     plano, así que blur(16px) no se ve pero el navegador lo calcula por cada tarjeta (costo de GPU, sobre todo en
+     notebooks). El desenfoque con sentido (Login y Portales, sobre imagen o degradé) está escrito directo en esas
+     pantallas, no depende de este valor. */
+  --glass-blur: none;
   --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 
   /* Variante en rojo del vidrio, para cajas que señalan algo grave (ej.

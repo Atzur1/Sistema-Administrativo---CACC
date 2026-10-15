@@ -176,8 +176,8 @@
             @for (item of items; track item.id) {
               <tr [class.row-selected]="seleccionado?.id === item.id" (click)="abrirDetalle(item)">
                 <td class="when-cell">
-                  <strong>{{ item.timestampUtc | date: 'dd/MM/yyyy' : 'America/Argentina/Buenos_Aires' }}</strong>
-                  <span>{{ item.timestampUtc | date: 'HH:mm' : 'America/Argentina/Buenos_Aires' }} hs</span>
+                  <strong>{{ momento(item) | date: 'dd/MM/yyyy' : HUSO_CLUB }}</strong>
+                  <span>{{ momento(item) | date: 'HH:mm' : HUSO_CLUB }} hs</span>
                 </td>
                 <td>
                   <div class="person-cell">
@@ -247,7 +247,7 @@
     <dl class="drawer-meta">
       <div>
         <dt>Cuándo</dt>
-        <dd>{{ evento.timestampUtc | date: 'dd/MM/yyyy HH:mm:ss' : 'America/Argentina/Buenos_Aires' }} hs</dd>
+        <dd>{{ momento(evento) | date: 'dd/MM/yyyy HH:mm:ss' : HUSO_CLUB }} hs</dd>
       </div>
       <div>
         <dt>Quién</dt>

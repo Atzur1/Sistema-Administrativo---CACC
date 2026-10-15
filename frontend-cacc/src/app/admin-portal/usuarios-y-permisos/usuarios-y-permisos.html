@@ -19,11 +19,9 @@
       <span class="header-subtitle">Quién tiene acceso al Portal Administrativo y con qué rol</span>
     </div>
 
+    <!-- Las cantidades de cada lista ya están en las pestañas; acá va lo que aporta algo más: el reparto de roles
+         y, sobre todo, cuántas personas esperan que se las habilite. -->
     <div class="header-metrics">
-      <div class="header-metric">
-        <span class="header-metric-value">{{ totalHabilitados }}</span>
-        <span class="header-metric-label">Habilitados</span>
-      </div>
       <div class="header-metric">
         <span class="header-metric-value">{{ totalSuperAdmins }}</span>
         <span class="header-metric-label">SuperAdmin</span>
@@ -31,6 +29,10 @@
       <div class="header-metric">
         <span class="header-metric-value">{{ totalAdministradores }}</span>
         <span class="header-metric-label">Administrador</span>
+      </div>
+      <div class="header-metric" [class.header-metric-alert]="totalPendientes > 0">
+        <span class="header-metric-value">{{ totalPendientes }}</span>
+        <span class="header-metric-label">Esperan acceso</span>
       </div>
     </div>
   </header>
@@ -40,69 +42,126 @@
     <p class="load-error" role="alert">{{ loadError() }}</p>
   }
 
-  <!-- ===== PESTAÑAS: una lista por vez ===== -->
-  <!-- El contador de "Candidatos" se resalta cuando hay alguien esperando que se lo habilite,
-       así una persona pendiente no pasa inadvertida aunque la pestaña no esté abierta. -->
-  <div class="tabs" role="tablist" aria-label="Cuentas del Portal Administrativo">
-    <button type="button" role="tab" id="tab-habilitadas" class="tab"
-            [class.tab-active]="pestana() === 'habilitadas'"
-            [attr.aria-selected]="pestana() === 'habilitadas'"
-            (click)="cambiarPestana('habilitadas')">
-      Habilitadas <span class="tab-count">{{ totalHabilitados }}</span>
-    </button>
-    <button type="button" role="tab" id="tab-candidatos" class="tab"
-            [class.tab-active]="pestana() === 'candidatos'"
-            [attr.aria-selected]="pestana() === 'candidatos'"
-            (click)="cambiarPestana('candidatos')">
-      Candidatos <span class="tab-count" [class.tab-count-alert]="candidatos().length > 0">{{ candidatos().length }}</span>
-    </button>
-    <button type="button" role="tab" id="tab-deshabilitadas" class="tab"
-            [class.tab-active]="pestana() === 'deshabilitadas'"
-            [attr.aria-selected]="pestana() === 'deshabilitadas'"
-            (click)="cambiarPestana('deshabilitadas')">
-      Deshabilitadas <span class="tab-count">{{ deshabilitados().length }}</span>
-    </button>
+  <!-- Aviso de lo único que pide una acción: personas esperando acceso. Se ve desde cualquier pestaña. -->
+  @if (totalPendientes > 0 && pestana() !== 'candidatos') {
+    <div class="pending-banner" role="status">
+      <span class="pending-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M19 8v6M22 11h-6"></path>
+        </svg>
+      </span>
+      <span class="pending-text">
+        <strong>{{ totalPendientes }}</strong>
+        {{ totalPendientes === 1 ? 'persona espera' : 'personas esperan' }} que
+        {{ totalPendientes === 1 ? 'la habiliten' : 'las habiliten' }} para entrar al portal.
+      </span>
+      <button type="button" class="pending-action" (click)="cambiarPestana('candidatos')">Revisar</button>
+    </div>
+  }
+
+  <!-- ===== PESTAÑAS Y BÚSQUEDA ===== -->
+  <div class="tabs-bar">
+    <div class="tabs" role="tablist" aria-label="Cuentas del Portal Administrativo">
+      <button type="button" role="tab" id="tab-habilitadas" class="tab"
+              [class.tab-active]="pestana() === 'habilitadas'"
+              [attr.aria-selected]="pestana() === 'habilitadas'"
+              (click)="cambiarPestana('habilitadas')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <path d="m9 11 3 3L22 4"></path>
+        </svg>
+        Habilitadas <span class="tab-count">{{ totalHabilitados }}</span>
+      </button>
+      <button type="button" role="tab" id="tab-candidatos" class="tab"
+              [class.tab-active]="pestana() === 'candidatos'"
+              [attr.aria-selected]="pestana() === 'candidatos'"
+              (click)="cambiarPestana('candidatos')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M19 8v6M22 11h-6"></path>
+        </svg>
+        Candidatos <span class="tab-count" [class.tab-count-alert]="candidatos().length > 0">{{ candidatos().length }}</span>
+      </button>
+      <button type="button" role="tab" id="tab-deshabilitadas" class="tab"
+              [class.tab-active]="pestana() === 'deshabilitadas'"
+              [attr.aria-selected]="pestana() === 'deshabilitadas'"
+              (click)="cambiarPestana('deshabilitadas')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="m4.9 4.9 14.2 14.2"></path>
+        </svg>
+        Deshabilitadas <span class="tab-count">{{ deshabilitados().length }}</span>
+      </button>
+    </div>
+
+    <label class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="m20 20-4-4"></path>
+      </svg>
+      <input
+        type="search"
+        placeholder="Buscar por nombre, DNI o correo"
+        aria-label="Buscar en la lista por nombre, DNI o correo"
+        [ngModel]="busqueda()"
+        (ngModelChange)="alEscribirBusqueda($event)"
+      />
+    </label>
   </div>
 
-  <!-- ===== MAIN GRID ===== -->
+  <!-- ===== LISTA ===== -->
   <section class="main-grid">
 
     <!-- Cuentas habilitadas -->
     @if (pestana() === 'habilitadas') {
     <article class="panel panel-users" role="tabpanel" aria-labelledby="tab-habilitadas">
-      <header class="panel-head">
-        <h2 class="panel-title">Cuentas habilitadas</h2>
-        <span class="panel-subtitle">Acceso vigente al Portal Administrativo</span>
-      </header>
+      <h2 class="sr-only">Cuentas habilitadas</h2>
+      <p class="panel-lead">Quienes hoy pueden entrar al portal. El rol se cambia desde la lista, con confirmación.</p>
 
       <div class="table-wrapper">
-        <table class="users-table">
+        <table class="users-table users-table-cuatro">
           <thead>
             <tr>
               <th>Usuario</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              <th></th>
+              <th class="col-rol">Rol</th>
+              <th class="col-estado">Estado</th>
+              <th class="col-acciones"><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
-              <tr><td colspan="4" class="cell-muted">Cargando…</td></tr>
-            } @else if (habilitados().length === 0) {
-              <tr><td colspan="4" class="cell-muted">Todavía no hay nadie habilitado.</td></tr>
+              @for (n of [1, 2, 3]; track n) {
+                <tr class="skeleton-row"><td colspan="4"><span class="skeleton"></span></td></tr>
+              }
+            } @else if (habilitadosVisibles().length === 0) {
+              <tr>
+                <td colspan="4" class="cell-muted">
+                  {{ busqueda() ? 'Ninguna cuenta habilitada coincide con “' + busqueda() + '”.' : 'Todavía no hay nadie habilitado.' }}
+                </td>
+              </tr>
             } @else {
-              @for (usuario of habilitados(); track usuario.idUsuario) {
-                <tr>
+              @for (usuario of habilitadosVisibles(); track usuario.idUsuario + '-' + refrescoRoles()) {
+                <tr [class.row-menu-open]="menuAbierto() === usuario.idUsuario">
                   <td>
                     <div class="cell-user">
                       <span class="user-avatar" [ngClass]="usuario.rolPortal === 1 ? 'avatar-superadmin' : 'avatar-admin'">
-                        {{ (usuario.nombre.charAt(0) + usuario.apellido.charAt(0)).toUpperCase() }}
+                        {{ iniciales(usuario) }}
                       </span>
                       <div class="user-identity">
-                        <span class="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</span>
-                        <span class="user-email">
-                          @if (usuario.dni) { DNI {{ usuario.dni }} · } {{ usuario.email }}
+                        <span class="user-name">
+                          {{ nombreMostrar(usuario) }}
+                          @if (esMiCuenta(usuario)) {
+                            <span class="self-tag">Vos</span>
+                          }
                         </span>
+                        @if (tieneNombre(usuario)) {
+                          <span class="user-email">
+                            @if (usuario.dni) { DNI {{ usuario.dni }} · } {{ usuario.email }}
+                          </span>
+                        }
                       </div>
                     </div>
                   </td>
@@ -115,26 +174,52 @@
                     ></app-custom-select>
                   </td>
                   <td>
-                    <span class="status">
-                      <span class="status-dot" [class.status-off]="!usuario.activo"></span>
+                    <span class="status"
+                          [class.status-off]="!usuario.activo"
+                          [class.status-pending]="usuario.activo && usuario.activacionPendiente"
+                          [attr.title]="usuario.activo && usuario.activacionPendiente ? 'Todavía no creó su contraseña' : null">
+                      <span class="status-dot"></span>
                       {{ !usuario.activo ? 'Inactivo (otro equipo)' : usuario.activacionPendiente ? 'Falta activar' : 'Activo' }}
                     </span>
                   </td>
                   <td class="cell-actions">
-                    <div class="actions-wrap">
-                      <!-- Solo cuentas activas: una inactiva en la base del otro equipo no puede recibir el correo. -->
-                      @if (usuario.activo) {
-                        <button type="button" class="button-ghost" (click)="pedirEnlace(usuario)">
-                          {{ textoAccionEnlace(usuario) }}
-                        </button>
+                    <div class="menu-wrap">
+                      <button type="button" class="kebab" [class.kebab-on]="menuAbierto() === usuario.idUsuario"
+                              aria-haspopup="menu"
+                              [attr.aria-expanded]="menuAbierto() === usuario.idUsuario"
+                              [attr.aria-label]="'Acciones de ' + usuario.nombre + ' ' + usuario.apellido"
+                              (click)="alternarMenu(usuario.idUsuario, $event)">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <circle cx="5" cy="12" r="1.8"></circle>
+                          <circle cx="12" cy="12" r="1.8"></circle>
+                          <circle cx="19" cy="12" r="1.8"></circle>
+                        </svg>
+                      </button>
+
+                      @if (menuAbierto() === usuario.idUsuario) {
+                        <div class="menu" role="menu" (click)="$event.stopPropagation()">
+                          <!-- Solo cuentas activas: una inactiva en la base del otro equipo no puede recibir el correo. -->
+                          @if (usuario.activo) {
+                            <button type="button" role="menuitem" class="menu-item" (click)="pedirEnlace(usuario)">
+                              <span class="menu-title">{{ textoAccionEnlace(usuario) }}</span>
+                              <span class="menu-hint">
+                                {{ usuario.activacionPendiente
+                                    ? 'Le vuelve a mandar el correo para crear su contraseña.'
+                                    : 'Le manda un enlace al correo de la cuenta para elegir una contraseña nueva.' }}
+                              </span>
+                            </button>
+                          }
+                          <button type="button" role="menuitem" class="menu-item menu-item-danger"
+                                  [disabled]="esMiCuenta(usuario)" (click)="pedirBaja(usuario)">
+                            <span class="menu-title">Deshabilitar</span>
+                            <span class="menu-hint">
+                              {{ esMiCuenta(usuario)
+                                  ? 'No podés deshabilitar tu propia cuenta.'
+                                  : 'Le corta el acceso de inmediato. No borra la cuenta: se puede reactivar.' }}
+                            </span>
+                          </button>
+                        </div>
                       }
-                      <span class="action-with-help">
-                        <button type="button" class="button-void" (click)="pedirBaja(usuario)">Deshabilitar</button>
-                        <app-help-hint
-                          label="Deshabilitar"
-                          text="Le corta el acceso al Portal Administrativo de inmediato; si tiene una sesión abierta, se cierra en su próxima acción. No borra la cuenta: pasa a Cuentas deshabilitadas y se puede reactivar."
-                        />
-                      </span>
                     </div>
                   </td>
                 </tr>
@@ -149,32 +234,39 @@
     <!-- Candidatos para habilitar -->
     @if (pestana() === 'candidatos') {
     <article class="panel panel-candidatos" role="tabpanel" aria-labelledby="tab-candidatos">
-      <header class="panel-head">
-        <h2 class="panel-title">Candidatos para habilitar</h2>
-        <span class="panel-subtitle">Cargados por el otro equipo como SuperAdmin/Administrador, sin acceso todavía</span>
-      </header>
+      <h2 class="sr-only">Candidatos para habilitar</h2>
+      <p class="panel-lead">Personas cargadas como SuperAdmin o Administrador que todavía no tienen acceso. Revisá sus datos y habilitalas.</p>
 
       <div class="table-wrapper">
         <table class="users-table">
           <thead>
             <tr>
               <th>Persona</th>
-              <th>Rol</th>
-              <th></th>
+              <th class="col-rol">Rol</th>
+              <th class="col-acciones"><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
-              <tr><td colspan="3" class="cell-muted">Cargando…</td></tr>
-            } @else if (candidatos().length === 0) {
-              <tr><td colspan="3" class="cell-muted">No hay candidatos pendientes de habilitar.</td></tr>
+              @for (n of [1, 2, 3]; track n) {
+                <tr class="skeleton-row"><td colspan="3"><span class="skeleton"></span></td></tr>
+              }
+            } @else if (candidatosVisibles().length === 0) {
+              <tr>
+                <td colspan="3" class="cell-muted">
+                  {{ busqueda() ? 'Ningún candidato coincide con “' + busqueda() + '”.' : 'No hay nadie esperando acceso.' }}
+                </td>
+              </tr>
             } @else {
-              @for (candidato of candidatos(); track candidato.idUsuario) {
+              @for (candidato of candidatosVisibles(); track candidato.idUsuario) {
                 <tr>
                   <td>
-                    <div class="user-identity">
-                      <span class="user-name">{{ candidato.nombre }} {{ candidato.apellido }}</span>
-                      <span class="user-email">{{ candidato.email }} · DNI {{ candidato.dni }}</span>
+                    <div class="cell-user">
+                      <span class="user-avatar avatar-pending">{{ iniciales(candidato) }}</span>
+                      <div class="user-identity">
+                        <span class="user-name">{{ nombreMostrar(candidato) }}</span>
+                        <span class="user-email">{{ candidato.email }} · DNI {{ candidato.dni }}</span>
+                      </div>
                     </div>
                   </td>
                   <td>
@@ -186,7 +278,7 @@
                     ></app-custom-select>
                   </td>
                   <td class="cell-actions">
-                    <button type="button" class="icon-button icon-edit-visible" (click)="abrirEditar(candidato)" aria-label="Editar datos">
+                    <button type="button" class="icon-button icon-edit-visible" (click)="abrirEditar(candidato)" aria-label="Editar datos" title="Corregir nombre, apellido o DNI">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -207,32 +299,41 @@
          devuelve el acceso con su misma contraseña y el rol que elija el SuperAdmin, sin mail nuevo. -->
     @if (pestana() === 'deshabilitadas') {
     <article class="panel panel-deshabilitados" role="tabpanel" aria-labelledby="tab-deshabilitadas">
-      <header class="panel-head">
-        <h2 class="panel-title">Cuentas deshabilitadas</h2>
-        <span class="panel-subtitle">Ya tuvieron acceso — reactivar no manda un correo nuevo</span>
-      </header>
+      <h2 class="sr-only">Cuentas deshabilitadas</h2>
+      <p class="panel-lead">Ya tuvieron acceso y se les cortó. Reactivarlas les devuelve la misma contraseña, sin mandar un correo nuevo.</p>
 
       <div class="table-wrapper">
         <table class="users-table">
           <thead>
             <tr>
               <th>Persona</th>
-              <th>Rol</th>
-              <th></th>
+              <th class="col-rol">Rol</th>
+              <th class="col-acciones"><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
-              <tr><td colspan="3" class="cell-muted">Cargando…</td></tr>
-            } @else if (deshabilitados().length === 0) {
-              <tr><td colspan="3" class="cell-muted">No hay cuentas deshabilitadas.</td></tr>
+              @for (n of [1, 2, 3]; track n) {
+                <tr class="skeleton-row"><td colspan="3"><span class="skeleton"></span></td></tr>
+              }
+            } @else if (deshabilitadosVisibles().length === 0) {
+              <tr>
+                <td colspan="3" class="cell-muted">
+                  {{ busqueda() ? 'Ninguna cuenta deshabilitada coincide con “' + busqueda() + '”.' : 'No hay cuentas deshabilitadas.' }}
+                </td>
+              </tr>
             } @else {
-              @for (usuario of deshabilitados(); track usuario.idUsuario) {
+              @for (usuario of deshabilitadosVisibles(); track usuario.idUsuario) {
                 <tr>
                   <td>
-                    <div class="user-identity">
-                      <span class="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</span>
-                      <span class="user-email">{{ usuario.email }}</span>
+                    <div class="cell-user">
+                      <span class="user-avatar avatar-off">{{ iniciales(usuario) }}</span>
+                      <div class="user-identity">
+                        <span class="user-name">{{ nombreMostrar(usuario) }}</span>
+                        @if (tieneNombre(usuario)) {
+                          <span class="user-email">{{ usuario.email }}</span>
+                        }
+                      </div>
                     </div>
                   </td>
                   <td>
@@ -254,6 +355,42 @@
 
   </section>
 </div>
+
+<!-- ===== CAMBIAR ROL: confirmación ===== -->
+<!-- Un cambio de rol da o quita permisos: no se aplica al elegirlo en la lista sino al confirmarlo acá. -->
+@if (cambioDeRol(); as cambio) {
+  @if (textoCambioDeRol; as texto) {
+    <div class="dialog-backdrop" (click)="cancelarCambioDeRol()">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="cambioRolTitulo" (click)="$event.stopPropagation()">
+        <header class="dialog-head">
+          <div class="dialog-head-text">
+            <h2 class="dialog-title" id="cambioRolTitulo">{{ texto.titulo }}</h2>
+            <span class="dialog-subtitle">{{ cambio.usuario.nombre }} {{ cambio.usuario.apellido }}</span>
+          </div>
+          <button type="button" class="dialog-close" (click)="cancelarCambioDeRol()" aria-label="Cerrar">✕</button>
+        </header>
+
+        <p class="dialog-confirm">
+          Rol actual: <strong>{{ rolLabels[cambio.usuario.rolPortal] }}</strong> → nuevo rol:
+          <strong>{{ rolLabels[cambio.rol] }}</strong>.
+        </p>
+        <p class="dialog-confirm">{{ texto.cuerpo }}</p>
+        @if (texto.advertencia) {
+          <p class="dialog-confirm dialog-confirm-warning">{{ texto.advertencia }}</p>
+        }
+
+        <footer class="dialog-actions">
+          <button type="button" class="button-ghost" (click)="cancelarCambioDeRol()" [disabled]="rolSubmitting()">
+            Cancelar
+          </button>
+          <button type="button" class="button-primary" (click)="confirmarCambioDeRol()" [disabled]="rolSubmitting()">
+            {{ rolSubmitting() ? 'Guardando…' : 'Confirmar cambio' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+}
 
 <!-- ===== EDITAR CANDIDATO: nombre / apellido / DNI (el mail se muestra pero no se modifica) ===== -->
 @if (dialogEditar(); as candidato) {
