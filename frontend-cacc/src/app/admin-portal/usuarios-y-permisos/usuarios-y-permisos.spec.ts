@@ -369,6 +369,49 @@ describe('Usuarios - cuenta propia, búsqueda y aviso de pendientes', () => {
   });
 });
 
+// Hay cuentas cargadas solo con el correo (sin nombre ni apellido): se muestran igual, con el correo en su lugar.
+describe('Usuarios - nombre y avatar de cada persona', () => {
+  it('arma el nombre y las iniciales con nombre y apellido', async () => {
+    const { component } = await create();
+
+    expect(component.nombreMostrar(ADMIN)).toBe('Camila Candidata');
+    expect(component.iniciales(ADMIN)).toBe('CC');
+    expect(component.tieneNombre(ADMIN)).toBe(true);
+  });
+
+  it('si la cuenta no tiene nombre, muestra el correo y usa su inicial', async () => {
+    const { component } = await create();
+    const sinNombre = { nombre: '', apellido: '', email: 'admin@cacc.com' };
+
+    expect(component.tieneNombre(sinNombre)).toBe(false);
+    expect(component.nombreMostrar(sinNombre)).toBe('admin@cacc.com');
+    expect(component.iniciales(sinNombre)).toBe('A');
+  });
+
+  it('un nombre nulo tampoco rompe la fila', async () => {
+    const { component } = await create();
+    const nulo = { nombre: null, apellido: null, email: 'x@cacc.test' };
+
+    expect(component.nombreMostrar(nulo)).toBe('x@cacc.test');
+    expect(component.iniciales(nulo)).toBe('X');
+  });
+
+  it('las tres listas muestran un avatar por persona', async () => {
+    const { component, fixture, element } = await create();
+
+    expect(element.querySelectorAll('.panel-users .user-avatar')).toHaveLength(3);
+    component.cambiarPestana('candidatos');
+    fixture.detectChanges();
+    expect(element.querySelectorAll('.panel-candidatos .user-avatar')).toHaveLength(1);
+  });
+
+  it('cada pestaña lleva su ícono', async () => {
+    const { element } = await create();
+
+    expect(element.querySelectorAll('.tabs .tab .tab-icon')).toHaveLength(3);
+  });
+});
+
 describe('Usuarios - Pestañas', () => {
   const tab = (element: HTMLElement, id: string) => element.querySelector(`#${id}`) as HTMLButtonElement;
 

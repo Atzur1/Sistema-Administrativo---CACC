@@ -2,6 +2,10 @@
 :host {
   --section-accent: var(--color-info);
   --section-accent-bg: var(--color-info-bg);
+
+  /* Elevación de las cajas: una sombra fina que las apoya en el fondo y otra amplia y suave que las despega. */
+  --card-shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.07);
 }
 
 /* ===== ANIMATIONS ===== */
@@ -50,23 +54,33 @@
 .pending-banner {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 0 0 14px;
-    padding: 11px 14px;
-    border: 1px solid rgba(138, 90, 11, 0.28);
-    border-radius: 10px;
-    background: var(--color-warning-bg);
+    gap: 14px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    border: 1px solid rgba(138, 90, 11, 0.22);
+    border-left: 4px solid #e8920c;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #fff6e6 0%, var(--color-warning-bg) 100%);
     color: var(--color-warning-text);
-    font-size: 13.5px;
+    font-size: 14px;
+    box-shadow: var(--card-shadow-soft);
 }
 
-.pending-dot {
-    width: 9px;
-    height: 9px;
-    flex: 0 0 9px;
+.pending-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
     border-radius: 50%;
-    background: #e8920c;
-    box-shadow: 0 0 0 4px rgba(232, 146, 12, 0.22);
+    background: #fff;
+    color: #c97a06;
+    box-shadow: 0 0 0 1px rgba(232, 146, 12, 0.3);
+}
+
+.pending-icon svg {
+    width: 19px;
+    height: 19px;
 }
 
 .pending-text {
@@ -74,64 +88,80 @@
 }
 
 .pending-action {
-    padding: 7px 14px;
-    border: 1px solid var(--color-warning-text);
-    border-radius: 8px;
-    background: transparent;
-    color: var(--color-warning-text);
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 9px;
+    background: #c97a06;
+    color: #fff;
     font: inherit;
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
 }
 
 .pending-action:hover {
-    background: rgba(138, 90, 11, 0.1);
+    background: #a86405;
+}
+
+.pending-action:active {
+    transform: translateY(1px);
 }
 
 /* ===== PESTAÑAS Y BÚSQUEDA ===== */
-/* La barra lleva la línea de abajo; las pestañas la tapan con su subrayado verde (margen de -2px). Sin overflow
-   a propósito: cualquier overflow recortaría ese subrayado o dibujaría una barra de desplazamiento diminuta. */
+/* Control segmentado: las tres listas dentro de una pista hundida, y la elegida "se levanta" como una tarjeta blanca con
+   sombra. Se lee de un vistazo cuál está activa y se siente como un botón, no como un texto subrayado. */
 .tabs-bar {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
-    gap: 8px 16px;
-    margin: 0 0 14px;
-    border-bottom: 2px solid var(--color-border);
+    gap: 10px 16px;
+    margin: 0 0 16px;
 }
 
-/* Mismo estilo subrayado que las pestañas de Cuotas y Pagos. */
 .tabs {
-    display: flex;
+    display: inline-flex;
     flex-wrap: wrap;
-    gap: 0;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 14px;
+    background: #e6ece7;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .tab {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 20px;
-    border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    background: none;
+    padding: 9px 16px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
     cursor: pointer;
     font-family: inherit;
     font-size: 14px;
     font-weight: 600;
     color: var(--color-text-muted);
     white-space: nowrap;
-    transition: color 0.15s, border-color 0.15s;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tab-icon {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+}
+
+.tab:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
 }
 
 .search-box {
     position: relative;
     flex: 0 1 320px;
     min-width: 220px;
-    margin-bottom: 6px;
 }
 
 .search-box svg {
@@ -147,16 +177,18 @@
 
 .search-box input {
     width: 100%;
-    height: 36px;
+    height: 40px;
     box-sizing: border-box;
-    padding: 0 12px 0 34px;
+    padding: 0 14px 0 36px;
     border: 1px solid var(--color-border);
-    border-radius: 9px;
+    border-radius: 12px;
     background: var(--color-bg-card);
     color: var(--color-text);
     font: inherit;
-    font-size: 13px;
+    font-size: 13.5px;
     outline: 0;
+    box-shadow: var(--card-shadow-soft);
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .search-box input:focus {
@@ -165,12 +197,14 @@
 }
 
 .tab:hover:not(.tab-active) {
+    background: rgba(255, 255, 255, 0.65);
     color: var(--color-text);
 }
 
 .tab-active {
+    background: #fff;
     color: var(--color-brand-deep);
-    border-bottom-color: var(--color-brand-deep);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 .tab-count {
@@ -198,30 +232,29 @@
 }
 
 /* ===== MAIN GRID ===== */
-/* Una sola lista por vez (ver pestañas). Con tan pocas columnas, estirarla a todo el ancho de una pantalla grande
-   deja el nombre en una punta y las acciones en la otra: se limita para que la fila se pueda seguir con la vista. */
+/* Una sola lista por vez (ver pestañas). Ocupa todo el ancho, igual que el aviso, las pestañas y el buscador: si la
+   tarjeta fuera más angosta que lo de arriba, el buscador quedaría en una punta y la tarjeta terminaría a la mitad.
+   Para que la fila se siga con la vista, el espacio se reparte entre las columnas (ver .users-table). */
 .main-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 12px;
     flex: 1;
     min-height: 0;
-    width: 100%;
-    max-width: 1100px;
     align-content: start;
 }
 
 /* ===== PANELS ===== */
+/* Tarjeta sólida (blanca, sin transparencia): lo importante acá es leer una lista, y el fondo es plano, así que
+   transparentarla no aportaba nada. La profundidad sale de dos sombras en capas, una fina y una amplia y suave. */
 .panel {
     display: flex;
     flex-direction: column;
-    padding: 16px;
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    box-shadow: var(--glass-shadow);
+    padding: 22px 24px 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
     min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
 }
@@ -270,23 +303,52 @@
 }
 
 .users-table td {
-    padding: 12px;
-    border-bottom: 1px solid var(--color-bg-page);
-    font-size: 13px;
+    padding: 14px 12px;
+    border-bottom: 1px solid #edf1ee;
+    font-size: 13.5px;
     vertical-align: middle;
 }
 
-/* Anchos fijos para las columnas cortas: el nombre se queda con el resto y la fila no se estira de punta a punta. */
-.users-table .col-rol {
-    width: 230px;
+/* Las columnas se reparten el ancho en proporciones (no en píxeles): sin esto, el espacio sobrante en una pantalla
+   ancha iba todo a la columna del nombre y el rol, el estado y las acciones quedaban lejísimos. */
+.users-table {
+    table-layout: fixed;
 }
 
-.users-table .col-estado {
-    width: 180px;
+/* Candidatos y Deshabilitadas: persona / rol / acciones (el resto de ancho es para la persona). */
+.users-table .col-rol {
+    width: 26%;
 }
 
 .users-table .col-acciones {
-    width: 64px;
+    width: 28%;
+}
+
+/* Habilitadas: persona / rol / estado / menú. */
+.users-table-cuatro .col-rol {
+    width: 24%;
+}
+
+.users-table-cuatro .col-estado {
+    width: 22%;
+}
+
+.users-table-cuatro .col-acciones {
+    width: 12%;
+}
+
+/* Un correo largo se corta con "…" en vez de romper la tabla. */
+.user-email,
+.user-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+    .users-table {
+        table-layout: auto;
+    }
 }
 
 .users-table tbody tr {
@@ -311,21 +373,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     color: var(--color-bg-card);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--color-bg-card), 0 0 0 4px var(--color-border);
 }
 
 .avatar-superadmin {
-    background: var(--color-brand);
+    background: linear-gradient(135deg, var(--color-brand-light), var(--color-brand-deep));
 }
 
 .avatar-admin {
-    background: var(--color-info);
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+}
+
+/* Candidato: ámbar, como el aviso (todavía no tiene acceso). Deshabilitada: gris. */
+.avatar-pending {
+    background: linear-gradient(135deg, #f5b041, #c97a06);
+}
+
+.avatar-off {
+    background: linear-gradient(135deg, #b7bfb9, #8c968f);
 }
 
 .user-identity {

@@ -45,7 +45,13 @@
   <!-- Aviso de lo único que pide una acción: personas esperando acceso. Se ve desde cualquier pestaña. -->
   @if (totalPendientes > 0 && pestana() !== 'candidatos') {
     <div class="pending-banner" role="status">
-      <span class="pending-dot" aria-hidden="true"></span>
+      <span class="pending-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M19 8v6M22 11h-6"></path>
+        </svg>
+      </span>
       <span class="pending-text">
         <strong>{{ totalPendientes }}</strong>
         {{ totalPendientes === 1 ? 'persona espera' : 'personas esperan' }} que
@@ -62,18 +68,31 @@
               [class.tab-active]="pestana() === 'habilitadas'"
               [attr.aria-selected]="pestana() === 'habilitadas'"
               (click)="cambiarPestana('habilitadas')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <path d="m9 11 3 3L22 4"></path>
+        </svg>
         Habilitadas <span class="tab-count">{{ totalHabilitados }}</span>
       </button>
       <button type="button" role="tab" id="tab-candidatos" class="tab"
               [class.tab-active]="pestana() === 'candidatos'"
               [attr.aria-selected]="pestana() === 'candidatos'"
               (click)="cambiarPestana('candidatos')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M19 8v6M22 11h-6"></path>
+        </svg>
         Candidatos <span class="tab-count" [class.tab-count-alert]="candidatos().length > 0">{{ candidatos().length }}</span>
       </button>
       <button type="button" role="tab" id="tab-deshabilitadas" class="tab"
               [class.tab-active]="pestana() === 'deshabilitadas'"
               [attr.aria-selected]="pestana() === 'deshabilitadas'"
               (click)="cambiarPestana('deshabilitadas')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="m4.9 4.9 14.2 14.2"></path>
+        </svg>
         Deshabilitadas <span class="tab-count">{{ deshabilitados().length }}</span>
       </button>
     </div>
@@ -103,7 +122,7 @@
       <p class="panel-lead">Quienes hoy pueden entrar al portal. El rol se cambia desde la lista, con confirmación.</p>
 
       <div class="table-wrapper">
-        <table class="users-table">
+        <table class="users-table users-table-cuatro">
           <thead>
             <tr>
               <th>Usuario</th>
@@ -129,18 +148,20 @@
                   <td>
                     <div class="cell-user">
                       <span class="user-avatar" [ngClass]="usuario.rolPortal === 1 ? 'avatar-superadmin' : 'avatar-admin'">
-                        {{ (usuario.nombre.charAt(0) + usuario.apellido.charAt(0)).toUpperCase() }}
+                        {{ iniciales(usuario) }}
                       </span>
                       <div class="user-identity">
                         <span class="user-name">
-                          {{ usuario.nombre }} {{ usuario.apellido }}
+                          {{ nombreMostrar(usuario) }}
                           @if (esMiCuenta(usuario)) {
                             <span class="self-tag">Vos</span>
                           }
                         </span>
-                        <span class="user-email">
-                          @if (usuario.dni) { DNI {{ usuario.dni }} · } {{ usuario.email }}
-                        </span>
+                        @if (tieneNombre(usuario)) {
+                          <span class="user-email">
+                            @if (usuario.dni) { DNI {{ usuario.dni }} · } {{ usuario.email }}
+                          </span>
+                        }
                       </div>
                     </div>
                   </td>
@@ -240,9 +261,12 @@
               @for (candidato of candidatosVisibles(); track candidato.idUsuario) {
                 <tr>
                   <td>
-                    <div class="user-identity">
-                      <span class="user-name">{{ candidato.nombre }} {{ candidato.apellido }}</span>
-                      <span class="user-email">{{ candidato.email }} · DNI {{ candidato.dni }}</span>
+                    <div class="cell-user">
+                      <span class="user-avatar avatar-pending">{{ iniciales(candidato) }}</span>
+                      <div class="user-identity">
+                        <span class="user-name">{{ nombreMostrar(candidato) }}</span>
+                        <span class="user-email">{{ candidato.email }} · DNI {{ candidato.dni }}</span>
+                      </div>
                     </div>
                   </td>
                   <td>
@@ -302,9 +326,14 @@
               @for (usuario of deshabilitadosVisibles(); track usuario.idUsuario) {
                 <tr>
                   <td>
-                    <div class="user-identity">
-                      <span class="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</span>
-                      <span class="user-email">{{ usuario.email }}</span>
+                    <div class="cell-user">
+                      <span class="user-avatar avatar-off">{{ iniciales(usuario) }}</span>
+                      <div class="user-identity">
+                        <span class="user-name">{{ nombreMostrar(usuario) }}</span>
+                        @if (tieneNombre(usuario)) {
+                          <span class="user-email">{{ usuario.email }}</span>
+                        }
+                      </div>
                     </div>
                   </td>
                   <td>

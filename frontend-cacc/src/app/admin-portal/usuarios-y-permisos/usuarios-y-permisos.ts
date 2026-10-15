@@ -174,6 +174,24 @@ export class Usuarios implements OnInit {
     );
   }
 
+  // ===== Cómo se nombra cada persona =====
+
+  // Hay cuentas sin nombre cargado (solo correo): se muestra el correo en su lugar, y su avatar sale de él.
+  tieneNombre(persona: { nombre?: string | null; apellido?: string | null }): boolean {
+    return !!`${persona.nombre ?? ''}${persona.apellido ?? ''}`.trim();
+  }
+
+  nombreMostrar(persona: { nombre?: string | null; apellido?: string | null; email: string }): string {
+    return this.tieneNombre(persona) ? `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim() : persona.email;
+  }
+
+  iniciales(persona: { nombre?: string | null; apellido?: string | null; email: string }): string {
+    const letras = this.tieneNombre(persona)
+      ? `${(persona.nombre ?? '').trim().charAt(0)}${(persona.apellido ?? '').trim().charAt(0)}`
+      : persona.email.trim().charAt(0);
+    return letras.toUpperCase();
+  }
+
   // ===== Mi cuenta =====
 
   // La fila es la cuenta con la que se inició sesión. Se reconoce por DNI o por correo.
