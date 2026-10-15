@@ -166,17 +166,17 @@
         <table>
           <thead>
             <tr>
-              <th>Cuándo</th>
-              <th>Quién</th>
+              <th class="col-when">Cuándo</th>
+              <th class="col-who">Quién</th>
               <th>Qué pasó</th>
-              <th><span class="sr-only">Ver cambios</span></th>
+              <th class="col-go"><span class="sr-only">Ver cambios</span></th>
             </tr>
           </thead>
           <tbody>
             @for (item of items; track item.id) {
               <tr [class.row-selected]="seleccionado?.id === item.id" (click)="abrirDetalle(item)">
                 <td class="when-cell">
-                  <strong>{{ item.timestampUtc | date: 'dd MMM yyyy' : 'America/Argentina/Buenos_Aires' }}</strong>
+                  <strong>{{ item.timestampUtc | date: 'dd/MM/yyyy' : 'America/Argentina/Buenos_Aires' }}</strong>
                   <span>{{ item.timestampUtc | date: 'HH:mm' : 'America/Argentina/Buenos_Aires' }} hs</span>
                 </td>
                 <td>

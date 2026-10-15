@@ -20,6 +20,9 @@ interface AuditEvent {
   timestampUtc: string;
   beforeJson: string | null;
   afterJson: string | null;
+  // Los nombres de lo que el evento menciona solo por número, como "tipo:número" -> texto (por ejemplo
+  // "jugador:3" -> "PRUEBA, NICOLAS (DNI 99000001)"). Lo que ya no existe en la base no figura.
+  references?: Record<string, string>;
 }
 
 interface AuditResponse {
@@ -74,12 +77,25 @@ const SECCIONES: Record<string, string> = {
   TOKEN_ACCESO_CUENTA: 'Acceso a cuenta',
 };
 
-// Los nombres internos de cada dato guardado en la auditoría, en castellano. Los que son un número de otra
-// tabla (jugador, división, beneficio) se rotulan "n.º": hoy se ve el número, no el nombre.
+// Los datos que la copia guarda solo como número de otra tabla, y de qué tabla es (ver DaoLibrary.AuditReferences).
+// El servidor manda el nombre en `references`; si ya no existe en la base, se muestra el número y la etiqueta lo dice.
+const TIPO_DE_REFERENCIA: Record<string, string> = {
+  idJugador: 'jugador',
+  idPersona: 'persona',
+  idCategoria: 'categoria',
+  idTipo: 'tipo',
+  idUsuario: 'usuario',
+  idDescuento: 'beneficio',
+};
+
+// Estos se rotulan "(n.º)" cuando solo hay número. La cuenta afectada no: "Cuenta afectada: 7" se lee bien igual.
+const SIN_SUFIJO_NUMERO = new Set(['idUsuario']);
+
+// Los nombres internos de cada dato guardado en la auditoría, en castellano.
 const ETIQUETAS: Record<string, string> = {
-  idJugador: 'Jugador (n.º)',
-  idPersona: 'Persona (n.º)',
-  idCategoria: 'División (n.º)',
+  idJugador: 'Jugador',
+  idPersona: 'Persona',
+  idCategoria: 'División',
   montoBase: 'Importe original',
   montoFinal: 'Importe actualizado',
   monto: 'Importe',
@@ -90,8 +106,10 @@ const ETIQUETAS: Record<string, string> = {
   concepto: 'Concepto',
   genero: 'Rama',
   vigente_desde: 'Vigente desde',
-  idDescuento: 'Beneficio (n.º)',
-  idTipo: 'Motivo del beneficio (n.º)',
+  idDescuento: 'Beneficio',
+  idTipo: 'Motivo del beneficio',
+  rolPortal: 'Rol en el portal',
+  accesoPortal: 'Acceso al portal',
   activo: 'Activo',
   anulado: 'Anulada',
   canceladaPorBaja: 'Cancelada por la baja del jugador',
@@ -117,9 +135,10 @@ const ETIQUETAS: Record<string, string> = {
 };
 
 // Datos que se guardan como 0/1 (o true/false) y se leen "Sí" / "No".
-const CLAVES_SI_NO = new Set(['activo', 'anulado', 'canceladaPorBaja', 'activacionPendiente', 'credencialActualizada']);
+const CLAVES_SI_NO = new Set(['activo', 'anulado', 'canceladaPorBaja', 'activacionPendiente', 'credencialActualizada', 'accesoPortal']);
 
-const PESOS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 });
+// Sin decimales cuando el importe es entero ("$ 80.000"), como en el resto del sistema.
+const PESOS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 type Datos = Record<string, unknown>;
 
@@ -338,17 +357,17 @@ export class Auditoria {
     const despues = this.leer(item.afterJson);
 
     if (!antes && !despues) return { modo: 'sin-datos', datos: [], cambiados: [], iguales: [] };
-    if (!antes) return { modo: 'alta', datos: this.campos(item.afterJson), cambiados: [], iguales: [] };
-    if (!despues) return { modo: 'baja', datos: this.campos(item.beforeJson), cambiados: [], iguales: [] };
+    if (!antes) return { modo: 'alta', datos: this.campos(item.afterJson, item.references), cambiados: [], iguales: [] };
+    if (!despues) return { modo: 'baja', datos: this.campos(item.beforeJson, item.references), cambiados: [], iguales: [] };
 
     const claves = [...new Set([...Object.keys(antes), ...Object.keys(despues)])];
     const cambiados: FilaCambio[] = [];
     const iguales: FilaCambio[] = [];
     for (const clave of claves) {
       const fila: FilaCambio = {
-        label: this.etiqueta(clave),
-        antes: this.valorLegible(antes[clave], clave),
-        despues: this.valorLegible(despues[clave], clave),
+        label: this.etiqueta(clave, [antes[clave], despues[clave]], item.references),
+        antes: this.valorLegible(antes[clave], clave, item.references),
+        despues: this.valorLegible(despues[clave], clave, item.references),
       };
       (this.distinto(antes[clave], despues[clave]) ? cambiados : iguales).push(fila);
     }
@@ -362,56 +381,115 @@ export class Auditoria {
     const cambio = (clave: string) => !!antes && !!despues && this.distinto(antes[clave], despues[clave]);
     const siNo = (valor: unknown) => valor === true || valor === 1;
 
+    // A quién le pasó, con su nombre si el servidor lo pudo resolver. Sin nombre, la frase queda genérica. En la
+    // frase va solo el nombre: el DNI está en la línea de abajo y en el detalle, no repetido en las dos.
+    const quien = this.sinDni(this.sujeto(item));
+
     switch (item.entity) {
       case 'PAGOS': {
-        if (this.esCuotaSaldada(item)) return 'Se saldó una cuota';
+        if (this.esCuotaSaldada(item)) return quien ? `Se saldó una cuota de ${quien}` : 'Se saldó una cuota';
         if (item.action === 'INSERT') {
           const importe = despues?.['montoFinal'] ?? despues?.['monto'];
           const medio = despues?.['metodoPago'];
-          return (
-            'Registró un pago' +
-            (typeof importe === 'number' ? ` de ${PESOS.format(importe)}` : '') +
-            (typeof medio === 'string' && medio ? ` en ${medio.toLocaleLowerCase('es-AR')}` : '')
-          );
+          const monto = typeof importe === 'number' ? PESOS.format(importe) : null;
+          const enMedio = typeof medio === 'string' && medio ? ` en ${medio.toLocaleLowerCase('es-AR')}` : '';
+          return quien
+            ? `Registró el pago de ${quien}${monto ? `: ${monto}` : ''}${enMedio}`
+            : `Registró un pago${monto ? ` de ${monto}` : ''}${enMedio}`;
         }
         return item.action === 'DELETE' ? 'Eliminó un registro de pago' : 'Modificó un pago';
       }
       case 'ARANCELES':
-        return 'Actualizó un arancel mensual';
+        return quien ? `Actualizó el arancel de ${quien}` : 'Actualizó un arancel mensual';
       case 'ARANCELES_INSCRIPCION':
         return 'Actualizó el arancel de inscripción';
       case 'JUGADORES_DESCUENTOS': {
-        if (item.action === 'INSERT') return 'Cargó una bonificación' + this.valorBeneficio(despues);
-        if (item.action === 'DELETE') return 'Eliminó una bonificación';
-        if (cambio('anulado') && siNo(despues?.['anulado'])) return 'Anuló una bonificación';
-        if (cambio('activo') && !siNo(despues?.['activo'])) return 'Canceló una bonificación';
-        return 'Modificó una bonificación';
+        const cuyo = quien ? `la bonificación de ${quien}` : 'una bonificación';
+        if (item.action === 'INSERT') {
+          return quien
+            ? `Cargó una bonificación${this.valorBeneficio(despues)} a ${quien}`
+            : 'Cargó una bonificación' + this.valorBeneficio(despues);
+        }
+        if (item.action === 'DELETE') return `Eliminó ${cuyo}`;
+        if (cambio('anulado') && siNo(despues?.['anulado'])) return `Anuló ${cuyo}`;
+        if (cambio('activo') && !siNo(despues?.['activo'])) return `Canceló ${cuyo}`;
+        return `Modificó ${cuyo}`;
       }
       case 'USUARIO': {
-        if (item.action === 'INSERT') return 'Creó una cuenta administrativa';
-        if (cambio('credencialActualizada') || cambio('activacionPendiente')) return 'Actualizó la contraseña de una cuenta';
-        if (cambio('activo')) return siNo(despues?.['activo']) ? 'Habilitó una cuenta' : 'Deshabilitó una cuenta';
-        if (cambio('idRol')) return 'Cambió el rol de una cuenta';
-        return 'Modificó una cuenta administrativa';
+        const cuenta = quien ? `la cuenta de ${quien}` : 'una cuenta';
+        if (item.action === 'INSERT') return quien ? `Creó la cuenta de ${quien}` : 'Creó una cuenta administrativa';
+        if (cambio('credencialActualizada') || cambio('activacionPendiente')) {
+          return quien ? `Actualizó la contraseña de ${quien}` : 'Actualizó la contraseña de una cuenta';
+        }
+        if (cambio('activo')) return `${siNo(despues?.['activo']) ? 'Habilitó' : 'Deshabilitó'} ${cuenta}`;
+        if (cambio('idRol') || cambio('rolPortal')) return `Cambió el rol de ${cuenta}`;
+        return quien ? `Modificó la cuenta de ${quien}` : 'Modificó una cuenta administrativa';
       }
       case 'TOKEN_ACCESO_CUENTA': {
         if (item.action !== 'INSERT') return 'Se usó un enlace de contraseña';
+        const contrasena = quien ? `la contraseña de ${quien}` : 'una contraseña';
         return despues?.['tipo'] === 'ACTIVACION'
-          ? 'Envió el enlace para crear una contraseña'
-          : 'Envió el enlace para restablecer una contraseña';
+          ? `Envió el enlace para crear ${contrasena}`
+          : `Envió el enlace para restablecer ${contrasena}`;
       }
       case 'JUGADORES':
-        return item.action === 'INSERT' ? 'Dio de alta un jugador' : 'Modificó la ficha de un jugador';
+        if (item.action === 'INSERT') return quien ? `Dio de alta a ${quien}` : 'Dio de alta un jugador';
+        return quien ? `Modificó la ficha de ${quien}` : 'Modificó la ficha de un jugador';
       case 'PERSONA':
-        return item.action === 'INSERT' ? 'Cargó datos personales' : 'Modificó datos personales';
+        if (item.action === 'INSERT') return quien ? `Cargó los datos personales de ${quien}` : 'Cargó datos personales';
+        return quien ? `Modificó los datos personales de ${quien}` : 'Modificó datos personales';
       default:
         return `${this.accionLegible(item)} · ${this.entidadLegible(item.entity)}`;
     }
   }
 
-  // La segunda línea de cada fila: dónde ocurrió.
+  // La segunda línea de cada fila: qué registro es (no repite el nombre, que ya está en la frase de arriba) y, si
+  // el evento es de un jugador o una persona, su DNI para distinguir a dos con el mismo nombre.
   contexto(item: AuditEvent): string {
-    return `${this.entidadLegible(item.entity)} · registro n.º ${item.entityId}`;
+    const dni = /\(DNI (\d+)\)/.exec(this.sujeto(item) ?? '')?.[1];
+    return `${this.entidadLegible(item.entity)} n.º ${item.entityId}${dni ? ` · DNI ${dni}` : ''}`;
+  }
+
+  // "PRUEBA, NICOLAS (DNI 99000001)" -> "PRUEBA, NICOLAS"
+  private sinDni(texto: string | null): string | null {
+    return texto === null ? null : texto.replace(/\s*\(DNI \d+\)\s*$/, '');
+  }
+
+  // A quién (jugador, cuenta, división...) corresponde el evento, con su nombre. Es null cuando el evento no se
+  // refiere a nadie en particular o cuando lo mencionado ya no existe en la base.
+  sujeto(item: AuditEvent): string | null {
+    const datos = this.leer(item.afterJson) ?? this.leer(item.beforeJson);
+    const numero = (campo: string): number | null => {
+      const valor = datos?.[campo];
+      return typeof valor === 'number' ? valor : null;
+    };
+    const nombre = (tipo: string, id: string | number | null): string | null =>
+      id === null ? null : (item.references?.[`${tipo}:${id}`] ?? null);
+
+    switch (item.entity) {
+      case 'JUGADORES':
+        return nombre('jugador', item.entityId);
+      case 'PERSONA':
+        return nombre('persona', item.entityId);
+      case 'USUARIO':
+        return nombre('usuario', item.entityId);
+      case 'CATEGORIAS':
+        return nombre('categoria', item.entityId);
+      case 'TIPO_DESCUENTO':
+        return nombre('tipo', item.entityId);
+      case 'PAGOS':
+      case 'JUGADORES_DESCUENTOS':
+        return nombre('jugador', numero('idJugador'));
+      case 'TOKEN_ACCESO_CUENTA':
+        return nombre('usuario', numero('idUsuario'));
+      case 'ARANCELES': {
+        const division = nombre('categoria', numero('idCategoria'));
+        const rama = typeof datos?.['genero'] === 'string' ? `rama ${(datos['genero'] as string).toLocaleLowerCase('es-AR')}` : null;
+        return division ?? rama;
+      }
+      default:
+        return null;
+    }
   }
 
   private valorBeneficio(datos: Datos | null): string {
@@ -495,14 +573,15 @@ export class Auditoria {
 
   // ===== DATOS =====
 
-  // La lista de datos de un solo estado (antes o después), con su nombre y valor legibles.
-  campos(json: string | null): CampoAuditoria[] {
+  // La lista de datos de un solo estado (antes o después), con su nombre y valor legibles. `referencias` son los
+  // nombres que mandó el servidor para los datos que vienen como número.
+  campos(json: string | null, referencias?: Record<string, string>): CampoAuditoria[] {
     if (!json) return [];
     const values = this.leer(json);
     if (!values) return [{ label: 'Información', value: 'No hay detalle disponible.' }];
     return Object.entries(values).map(([key, value]) => ({
-      label: this.etiqueta(key),
-      value: this.valorLegible(value, key),
+      label: this.etiqueta(key, [value], referencias),
+      value: this.valorLegible(value, key, referencias),
     }));
   }
 
@@ -516,8 +595,16 @@ export class Auditoria {
     }
   }
 
-  private etiqueta(clave: string): string {
-    return ETIQUETAS[clave] ?? clave.replaceAll('_', ' ');
+  // El nombre del dato. Un dato que viene como número de otra tabla y que no se pudo traducir a un nombre (porque
+  // ya no existe) lo dice: "Jugador (n.º)".
+  private etiqueta(clave: string, valores: unknown[] = [], referencias?: Record<string, string>): string {
+    const base = ETIQUETAS[clave] ?? clave.replaceAll('_', ' ');
+    const tipo = TIPO_DE_REFERENCIA[clave];
+    if (!tipo || SIN_SUFIJO_NUMERO.has(clave)) return base;
+
+    const hayNumero = valores.some((valor) => typeof valor === 'number');
+    const sinNombre = valores.some((valor) => typeof valor === 'number' && !referencias?.[`${tipo}:${valor}`]);
+    return hayNumero && sinNombre ? `${base} (n.º)` : base;
   }
 
   // Compara dos valores como los muestra la pantalla: 1 y true son lo mismo, y el texto "50" igual al número 50.
@@ -531,8 +618,15 @@ export class Auditoria {
     return normalizar(antes) !== normalizar(despues);
   }
 
-  private valorLegible(value: unknown, key: string): string {
+  private valorLegible(value: unknown, key: string, referencias?: Record<string, string>): string {
     if (value === null || value === undefined || value === '') return '—';
+    // Un número de otra tabla se muestra con su nombre cuando el servidor lo mandó.
+    const tipo = TIPO_DE_REFERENCIA[key];
+    if (tipo && typeof value === 'number') {
+      const nombre = referencias?.[`${tipo}:${value}`];
+      if (nombre) return nombre;
+    }
+    if (key === 'rolPortal' && typeof value === 'number') return value === 1 ? 'SuperAdmin' : 'Administrador';
     if (key === 'estado' && typeof value === 'number') return value === 1 ? 'Pagado' : 'Pendiente';
     if (CLAVES_SI_NO.has(key)) return value === true || value === 1 ? 'Sí' : 'No';
     if (typeof value === 'boolean') return value ? 'Sí' : 'No';

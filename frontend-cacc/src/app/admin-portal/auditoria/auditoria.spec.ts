@@ -26,18 +26,6 @@ async function create(items: unknown[] = []) {
   return { fixture, component: fixture.componentInstance, http, el: fixture.nativeElement as HTMLElement };
 }
 
-const evento = (extra: Partial<Evento> = {}): Evento => ({ ...ENLACE, ...extra });
-
-const ANULACION = evento({
-  id: 20, entity: 'JUGADORES_DESCUENTOS', entityId: '2012', action: 'UPDATE',
-  beforeJson: '{"idJugador":1,"activo":0,"porcentaje":50,"anulado":0,"canceladaPorBaja":0}',
-  afterJson: '{"idJugador":1,"activo":0,"porcentaje":50,"anulado":1,"canceladaPorBaja":0}',
-});
-const PAGO = evento({
-  id: 21, entity: 'PAGOS', entityId: '900', action: 'INSERT',
-  beforeJson: null, afterJson: '{"idJugador":1,"montoFinal":5000,"metodoPago":"Efectivo","estado":1}',
-});
-
 // La misma forma que el evento que devuelve la API.
 interface Evento {
   id: number;
@@ -59,6 +47,19 @@ const ENLACE: Evento = {
   entity: 'TOKEN_ACCESO_CUENTA', entityId: '5', action: 'INSERT', timestampUtc: '2026-10-10T18:00:00Z',
   beforeJson: null, afterJson: '{"idUsuario":7,"tipo":"RECUPERACION","venceUtc":"2026-10-10T18:30:00","consumidoUtc":null}',
 };
+
+// Un evento cualquiera a partir del de ejemplo. Tiene que ir DESPUÉS de ENLACE: se arma con él.
+const evento = (extra: Partial<Evento> = {}): Evento => ({ ...ENLACE, ...extra });
+
+const ANULACION = evento({
+  id: 20, entity: 'JUGADORES_DESCUENTOS', entityId: '2012', action: 'UPDATE',
+  beforeJson: '{"idJugador":1,"activo":0,"porcentaje":50,"anulado":0,"canceladaPorBaja":0}',
+  afterJson: '{"idJugador":1,"activo":0,"porcentaje":50,"anulado":1,"canceladaPorBaja":0}',
+});
+const PAGO = evento({
+  id: 21, entity: 'PAGOS', entityId: '900', action: 'INSERT',
+  beforeJson: null, afterJson: '{"idJugador":1,"montoFinal":5000,"metodoPago":"Efectivo","estado":1}',
+});
 
 describe('Auditoria - enlaces de contraseña', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
@@ -93,7 +94,10 @@ describe('Auditoria - qué pasó, en una frase', () => {
   it('cuenta un pago con su importe y su medio', async () => {
     const { component } = await create();
 
-    expect(component.resumen(PAGO)).toBe(`Registró un pago de ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 }).format(5000)} en efectivo`);
+    // Un importe entero va sin decimales, como en el resto del sistema ("$ 5.000", no "$ 5.000,00").
+    const cinco = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(5000);
+    expect(cinco).not.toContain(',00');
+    expect(component.resumen(PAGO)).toBe(`Registró un pago de ${cinco} en efectivo`);
   });
 
   it('distingue anular, cancelar y modificar una bonificación', async () => {
@@ -172,6 +176,102 @@ describe('Auditoria - detalle de un cambio', () => {
       { label: 'Anulada', value: 'Sí' },
       { label: 'Cancelada por la baja del jugador', value: 'No' },
     ]);
+  });
+});
+
+// Etapa 2: el servidor manda el nombre de lo que cada evento menciona solo por número, y la pantalla lo usa.
+describe('Auditoria - nombres en vez de números', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const NICOLAS = 'PRUEBA, NICOLAS (DNI 99000001)';
+  const conNombres: Evento & { references: Record<string, string> } = {
+    ...ANULACION,
+    references: { 'jugador:1': NICOLAS },
+  };
+
+  // En la frase va solo el nombre: el DNI queda en la línea de abajo y en el detalle, no repetido en las dos.
+  it('la frase nombra a quién le pasó, sin el DNI', async () => {
+    const { component } = await create();
+
+    expect(component.resumen(conNombres)).toBe('Anuló la bonificación de PRUEBA, NICOLAS');
+    const pago = { ...PAGO, references: { 'jugador:1': NICOLAS } };
+    expect(component.resumen(pago)).toContain('Registró el pago de PRUEBA, NICOLAS: ');
+    expect(component.resumen(pago)).not.toContain('DNI');
+    expect(component.resumen(pago)).toContain('en efectivo');
+  });
+
+  it('sin el nombre, la frase sigue siendo genérica (el jugador ya no existe en la base)', async () => {
+    const { component } = await create();
+
+    expect(component.resumen(ANULACION)).toBe('Anuló una bonificación');
+  });
+
+  it('la segunda línea de la fila dice qué registro es y el DNI, sin repetir el nombre de la frase', async () => {
+    const { component } = await create();
+
+    expect(component.contexto(conNombres)).toBe('Beneficio de jugador n.º 2012 · DNI 99000001');
+    expect(component.contexto(conNombres)).not.toContain('NICOLAS');
+    // Sin nombre resuelto no hay DNI que mostrar: queda solo el registro.
+    expect(component.contexto(ANULACION)).toBe('Beneficio de jugador n.º 2012');
+  });
+
+  it('en el detalle el jugador aparece con su nombre y sin la marca "n.º"', async () => {
+    const { component } = await create();
+
+    const jugador = component.detalle(conNombres).iguales.find((fila) => fila.label.startsWith('Jugador'))!;
+
+    expect(jugador).toEqual({ label: 'Jugador', antes: NICOLAS, despues: NICOLAS });
+  });
+
+  it('si el nombre no llegó, el detalle muestra el número y lo aclara', async () => {
+    const { component } = await create();
+
+    const jugador = component.detalle(ANULACION).iguales.find((fila) => fila.label.startsWith('Jugador'))!;
+
+    expect(jugador).toEqual({ label: 'Jugador (n.º)', antes: '1', despues: '1' });
+  });
+
+  it('nombra la división, el beneficio de un pago y el rol de una cuenta', async () => {
+    const { component } = await create();
+    const pago = {
+      ...PAGO,
+      afterJson: '{"idJugador":1,"idDescuento":12,"idCategoria":5}',
+      references: { 'jugador:1': NICOLAS, 'beneficio:12': 'Becado · 50 %', 'categoria:5': 'AFA 20067' },
+    };
+
+    expect(component.campos(pago.afterJson, pago.references)).toEqual([
+      { label: 'Jugador', value: NICOLAS },
+      { label: 'Beneficio', value: 'Becado · 50 %' },
+      { label: 'División', value: 'AFA 20067' },
+    ]);
+    expect(component.campos('{"rolPortal":1,"accesoPortal":true}')).toEqual([
+      { label: 'Rol en el portal', value: 'SuperAdmin' },
+      { label: 'Acceso al portal', value: 'Sí' },
+    ]);
+  });
+
+  it('un arancel se identifica por su división o, si no tiene, por su rama', async () => {
+    const { component } = await create();
+    const arancel = evento({ entity: 'ARANCELES', entityId: '4', action: 'INSERT', beforeJson: null, afterJson: '{"genero":"Masculino","idCategoria":null}' });
+
+    expect(component.sujeto(arancel)).toBe('rama masculino');
+    const deDivision = { ...arancel, afterJson: '{"idCategoria":5}', references: { 'categoria:5': 'AFA 20067' } };
+    expect(component.sujeto(deDivision)).toBe('AFA 20067');
+  });
+
+  it('la ficha, la cuenta y el enlace de contraseña se nombran por la persona a la que pertenecen', async () => {
+    const { component } = await create();
+
+    expect(component.sujeto({ ...evento({ entity: 'JUGADORES', entityId: '3' }), references: { 'jugador:3': NICOLAS } })).toBe(NICOLAS);
+    expect(component.sujeto({ ...evento({ entity: 'USUARIO', entityId: '4' }), references: { 'usuario:4': 'Monelli, Alexander' } })).toBe('Monelli, Alexander');
+    expect(component.resumen({ ...ENLACE, references: { 'usuario:7': 'Monelli, Alexander' } }))
+      .toBe('Envió el enlace para restablecer la contraseña de Monelli, Alexander');
+  });
+
+  it('la fecha de cada fila va como dd/MM/yyyy, igual que el resto de las pantallas', async () => {
+    const { el } = await create([PAGO]);
+
+    expect(el.querySelector('.when-cell strong')!.textContent).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
   });
 });
 

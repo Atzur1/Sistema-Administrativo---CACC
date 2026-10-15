@@ -7,10 +7,9 @@
   color: var(--color-text-dark);
 }
 
+/* Mismo ancho y márgenes que las demás pantallas del portal (antes quedaba centrada y angosta). */
 .audit-page {
-  width: min(100%, 1500px);
-  margin: 0 auto;
-  padding: 24px clamp(18px, 3vw, 42px) 42px;
+  padding: 20px;
   box-sizing: border-box;
 }
 
@@ -325,8 +324,21 @@ th {
   white-space: nowrap;
 }
 
+/* Anchos de las columnas: la frase de "Qué pasó" es la que más espacio necesita; "Quién" y "Cuándo" son cortas. */
+.col-when {
+  width: 130px;
+}
+
+.col-who {
+  width: 300px;
+}
+
+.col-go {
+  width: 150px;
+}
+
 td {
-  padding: 14px 18px;
+  padding: 11px 18px;
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
   font-size: 13px;
@@ -795,7 +807,7 @@ tbody tr:hover {
 
 @media (max-width: 680px) {
   .audit-page {
-    padding: 16px 12px 28px;
+    padding: 14px 12px 28px;
   }
 
   .toolbar-more {
