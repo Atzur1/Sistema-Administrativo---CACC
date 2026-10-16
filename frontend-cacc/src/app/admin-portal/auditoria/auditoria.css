@@ -5,9 +5,8 @@
 }
 
 .audit-page {
-  width: min(100%, 1500px);
-  margin: 0 auto;
-  padding: 30px clamp(18px, 3vw, 42px) 42px;
+  width: 100%;
+  padding: 24px;
   box-sizing: border-box;
 }
 
@@ -15,15 +14,14 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 22px;
-  min-height: 170px;
-  padding: 30px 34px;
+  gap: 24px;
+  padding: 24px 28px;
   color: #fff;
   /* Mismo sentido que el resto de los banners institucionales: claro arriba
      a la izquierda, oscureciendo hacia abajo a la derecha (antes iba al revés). */
   background: linear-gradient(135deg, var(--color-brand-deep) 0%, #0d4223 45%, #051a0e 100%);
   border-radius: 18px;
-  box-shadow: 0 14px 34px rgb(0 77 37 / 16%);
+  box-shadow: 0 16px 36px rgba(0, 79, 39, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.15);
   overflow: hidden;
   animation: fadeSlideUp 0.4s ease both;
@@ -43,21 +41,6 @@
   pointer-events: none;
 }
 
-.hero-mark {
-  display: grid;
-  width: 64px;
-  height: 64px;
-  flex: 0 0 64px;
-  place-items: center;
-  border: 1px solid rgb(255 255 255 / 28%);
-  border-radius: 17px;
-  background: rgb(255 255 255 / 12%);
-}
-
-.hero-mark svg {
-  width: 34px;
-  height: 34px;
-}
 .hero-copy {
   flex: 1;
 }
@@ -69,27 +52,27 @@
   opacity: 0.78;
 }
 .hero-copy h1 {
-  margin: 5px 0 7px;
+  margin: 4px 0;
   color: white;
-  font-size: clamp(27px, 3vw, 36px);
+  font-size: 24px;
   font-weight: 750;
-  letter-spacing: -0.7px;
+  letter-spacing: -0.5px;
 }
 .hero-copy p {
   margin: 0;
   color: rgb(255 255 255 / 82%);
-  font-size: 14px;
+  font-size: 12px;
 }
 .hero-total {
-  min-width: 170px;
-  padding-left: 26px;
+  min-width: 150px;
+  padding-left: 24px;
   border-left: 1px solid rgb(255 255 255 / 28%);
   text-align: right;
 }
 .hero-total strong {
   display: block;
-  margin: 3px 0;
-  font-size: 29px;
+  margin: 4px 0;
+  font-size: 26px;
   font-variant-numeric: tabular-nums;
 }
 .hero-total > span:last-child {
@@ -706,16 +689,6 @@ tbody tr:hover {
     gap: 13px;
     padding: 22px 18px;
     border-radius: 14px;
-  }
-  .hero-mark {
-    width: 44px;
-    height: 44px;
-    flex-basis: 44px;
-    border-radius: 12px;
-  }
-  .hero-mark svg {
-    width: 25px;
-    height: 25px;
   }
   .eyebrow {
     font-size: 8px;
