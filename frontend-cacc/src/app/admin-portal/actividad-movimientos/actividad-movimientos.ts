@@ -9,7 +9,7 @@ import {
     WritableSignal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription, debounceTime, timeout } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -55,13 +55,6 @@ interface BannerMetric {
     display: WritableSignal<string>;
 }
 
-// One shortcut button in the quick access panel
-interface QuickAction {
-    label: string;
-    icon: 'card' | 'chart';
-    link: string;
-}
-
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency: 'ARS',
@@ -71,7 +64,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
     selector: 'app-actividad-movimientos',
     standalone: true,
-    imports: [CommonModule, RouterLink, ReactiveFormsModule, CustomSelect],
+    imports: [CommonModule,ReactiveFormsModule, CustomSelect],
     templateUrl: './actividad-movimientos.html',
     styleUrl: './actividad-movimientos.css',
 })
@@ -120,12 +113,6 @@ export class ActividadMovimientos implements OnInit {
 
     page = 1;
     readonly pageSize = 10;
-
-    // Shortcuts to the related dashboards
-    quickActions: QuickAction[] = [
-        { label: 'Registrar pago', icon: 'card', link: '/admin/portal/cuotas-pagos' },
-        { label: 'Reportes', icon: 'chart', link: '/admin/portal/reportes' },
-    ];
 
     private monthNames = [
         'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
