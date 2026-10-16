@@ -749,9 +749,8 @@ tbody tr:hover {
   .filter-wide {
     grid-column: span 2;
   }
-  .filter-actions {
-    align-items: flex-start;
-    flex-direction: column;
+  .filter-heading {
+    flex-wrap: wrap;
   }
   .filter-buttons {
     width: 100%;
