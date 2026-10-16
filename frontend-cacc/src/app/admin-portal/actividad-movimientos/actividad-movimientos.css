@@ -153,8 +153,9 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .panel-head-text {
@@ -182,7 +183,8 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  justify-content: flex-end;
+  margin: 0;
 }
 
 .search-control {

@@ -28,9 +28,8 @@
           <h2 class="panel-title">Pagos registrados</h2>
           <span class="panel-subtitle">Historial completo de pagos</span>
         </div>
-      </header>
 
-      <form class="filter-row" [formGroup]="filterForm">
+        <form class="filter-row" [formGroup]="filterForm">
         <div class="search-control">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -53,7 +52,8 @@
             Limpiar filtros
           </button>
         }
-      </form>
+        </form>
+      </header>
 
       @if (paymentsLoaded) {
         <p class="filter-count">
