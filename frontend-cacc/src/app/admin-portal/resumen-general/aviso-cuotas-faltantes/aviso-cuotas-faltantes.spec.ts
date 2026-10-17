@@ -8,6 +8,8 @@ import { MonthWithMissingFeesModel } from '../../../models/MissingFeeModel';
 
 const SEPTIEMBRE: MonthWithMissingFeesModel = { periodo: '2026-09-01', cantidad: 45, montoTotal: 4_140_000 };
 
+const JULIO: MonthWithMissingFeesModel = { periodo: '2026-07-01', cantidad: 5, montoTotal: 400_000 };
+
 async function create(meses: MonthWithMissingFeesModel[] = [SEPTIEMBRE]) {
   const generar = vi.fn(() => of({ mensaje: 'Se generaron 2 cuotas de septiembre 2026.', creadas: 2 }));
   const getMeses = vi.fn(() => of(meses));
@@ -43,10 +45,44 @@ describe('AvisoCuotasFaltantes', () => {
     expect(element.querySelector('.aviso')).toBeNull();
   });
 
-  it('avisa cuántas cuotas faltan de cada mes', async () => {
+  it('resume en una línea cuántos meses y cuántas cuotas faltan', async () => {
     const { element } = await create();
 
-    expect(element.querySelector('.aviso-item')?.textContent?.replace(/\s+/g, ' ')).toContain('Faltan 45 cuotas de septiembre 2026');
+    const resumen = element.querySelector('.aviso-resumen')?.textContent?.replace(/\s+/g, ' ') ?? '';
+    expect(resumen).toContain('1 mes con cuotas sin generar');
+    expect(resumen).toContain('45 cuotas');
+  });
+
+  it('con un solo mes, "Revisar" abre directo el detalle para confirmar', async () => {
+    const { component, fixture, element } = await create();
+
+    (element.querySelector('.aviso-revisar') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(component.mesElegido).toEqual(SEPTIEMBRE);
+    expect(element.querySelector('.aviso-despliegue')).toBeNull();
+  });
+
+  it('con varios meses, el listado arranca plegado y "Revisar" lo despliega con cada mes y su total', async () => {
+    const { component, fixture, element } = await create([JULIO, SEPTIEMBRE]);
+    const resumen = element.querySelector('.aviso-resumen')?.textContent?.replace(/\s+/g, ' ') ?? '';
+
+    expect(resumen).toContain('2 meses con cuotas sin generar');
+    expect(resumen).toContain('50 cuotas');
+    expect(element.querySelector('.aviso-lista')).toBeNull();
+
+    component.revisar();
+    fixture.detectChanges();
+
+    const filas = Array.from(element.querySelectorAll('.aviso-item')).map((f) => f.textContent?.replace(/\s+/g, ' '));
+    expect(filas).toHaveLength(2);
+    expect(filas[0]).toContain('Julio 2026');
+    expect(filas[1]).toContain('Septiembre 2026');
+    expect(element.querySelector('.aviso-revisar')?.getAttribute('aria-expanded')).toBe('true');
+
+    component.revisar();
+    fixture.detectChanges();
+    expect(element.querySelector('.aviso-lista')).toBeNull();
   });
 
   it('"Generar" solo abre la explicación: no genera nada hasta confirmar', async () => {
