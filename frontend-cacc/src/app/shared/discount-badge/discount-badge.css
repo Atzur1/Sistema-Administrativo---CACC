@@ -55,13 +55,13 @@
 }
 
 .discount-badge.tone-descuento {
-  border-color: #fcd34d;
-  background: #fef3c7;
-  color: #92400e;
+  border-color: var(--aviso-borde-solido);
+  background: #e3edfb;
+  color: #1d4f91;
 }
 
 .discount-badge.tone-descuento .discount-dot {
-  background: #d97706;
+  background: #3b82f6;
 }
 
 .discount-tooltip {

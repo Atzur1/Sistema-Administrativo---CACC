@@ -107,6 +107,7 @@ export class AvisoCuotasFaltantes implements OnInit {
       next: (detalle) => {
         this.detalle = detalle;
         this.cargandoDetalle = false;
+        this.cdr.markForCheck();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {

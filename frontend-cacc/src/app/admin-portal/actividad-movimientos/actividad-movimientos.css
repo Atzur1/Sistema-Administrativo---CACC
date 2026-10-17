@@ -365,9 +365,9 @@
 }
 
 .status-partial {
-  background: linear-gradient(135deg, #fef7ec 0%, #fce3bc 100%);
+  background: linear-gradient(135deg, #eef4fd 0%, #cfe0f6 100%);
   color: var(--color-warning-text);
-  border: 1px solid rgba(217, 119, 6, 0.2);
+  border: 1px solid rgba(29, 79, 145, 0.2);
 }
 
 /* ===== ACTIVIDAD RECIENTE ===== */

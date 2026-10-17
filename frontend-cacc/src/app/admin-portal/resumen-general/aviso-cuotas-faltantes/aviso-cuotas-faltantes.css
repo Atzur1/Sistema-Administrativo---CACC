@@ -4,9 +4,11 @@
 }
 
 .aviso {
+  /* Aire debajo: que no quede pegado a las tarjetas de abajo */
+  margin-bottom: 20px;
   padding: 8px 10px 8px 14px;
   background: var(--color-warning-bg);
-  border: 1px solid rgba(138, 90, 11, 0.22);
+  border: 1px solid var(--aviso-borde);
   border-radius: 12px;
   animation: avisoEntrada 0.3s ease both;
 }
@@ -61,7 +63,7 @@
   flex-shrink: 0;
   padding: 6px 14px;
   background: var(--color-bg-card);
-  border: 1px solid rgba(138, 90, 11, 0.35);
+  border: 1px solid var(--aviso-borde-fuerte);
   border-radius: 8px;
   font-family: inherit;
   font-size: 12.5px;
@@ -88,7 +90,7 @@
 .aviso-despliegue {
   margin-top: 8px;
   padding: 10px 4px 4px 28px;
-  border-top: 1px solid rgba(138, 90, 11, 0.18);
+  border-top: 1px solid var(--aviso-borde-suave);
 }
 
 .aviso-texto {
@@ -250,7 +252,6 @@
   justify-content: center;
   padding: 20px;
   background: rgba(17, 24, 20, 0.45);
-  backdrop-filter: blur(2px);
   animation: dialogFade 0.18s ease both;
 }
 

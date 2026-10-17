@@ -51,8 +51,32 @@ html, body {
   --color-danger-strong: #dc2626;
   --color-danger-bg: #fdecea;
 
-  --color-warning-text: #8a5a0b;
-  --color-warning-bg: #fef4e3;
+  /* Avisos y estados de atención ("hay algo para revisar"): azul acero. Cualquier aviso, franja, etiqueta o
+     contador de atención nuevo debe usar estos tokens en vez de escribir un color: así toda la aplicación cambia
+     de tono desde acá. Para un error o algo bloqueante se sigue usando --color-danger-*.
+       fondo de la franja:        background: var(--aviso-bg)  (o el degradado --aviso-bg-suave -> --aviso-bg)
+       borde de la franja:        border: 1px solid var(--aviso-borde); border-left: 4px solid var(--aviso-acento)
+       texto y números:           color: var(--aviso-texto)
+       botón principal del aviso: background: var(--aviso-acento); hover --aviso-acento-hover; texto blanco
+       punto de estado / ícono:   var(--aviso-punto) y anillo var(--aviso-anillo)
+       avatar o insignia:         background: var(--aviso-degradado) */
+  --aviso-bg: #eaf2fc;
+  --aviso-bg-suave: #f3f8fe;
+  --aviso-borde: rgba(29, 79, 145, 0.22);
+  --aviso-borde-fuerte: rgba(29, 79, 145, 0.35);
+  --aviso-borde-suave: rgba(29, 79, 145, 0.18);
+  --aviso-borde-solido: #c5d9f2;
+  --aviso-texto: #1d4f91;
+  --aviso-acento: #2c5fa8;
+  --aviso-acento-hover: #1d4f91;
+  --aviso-punto: #3b82f6;
+  --aviso-anillo: rgba(59, 130, 246, 0.3);
+  --aviso-degradado: linear-gradient(135deg, #6f9be0, #1d4f91);
+  --aviso-rgb: 29, 79, 145;
+
+  /* Nombres anteriores: apuntan a los tokens de aviso, para no tocar lo que ya los usa. */
+  --color-warning-text: var(--aviso-texto);
+  --color-warning-bg: var(--aviso-bg);
 
   --color-info: #3b82f6;
   --color-info-bg: #eff6ff;

@@ -427,8 +427,8 @@
 }
 
 .tone-warning {
-  background: linear-gradient(90deg, #fef7ec 0%, #fffbf5 100%);
-  border: 1px solid #fce3bc;
+  background: linear-gradient(90deg, #eef4fd 0%, #f7faff 100%);
+  border: 1px solid #cfe0f6;
 }
 
 .tone-warning .eligibility-icon {
