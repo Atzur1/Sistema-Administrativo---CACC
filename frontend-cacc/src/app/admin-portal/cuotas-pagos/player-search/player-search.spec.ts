@@ -107,7 +107,7 @@ describe('PlayerSearch (HU-023)', () => {
     waitDebounce();
 
     expect(el().querySelector('.search-empty')?.textContent?.trim())
-      .toBe('No se encontraron alumnos con ese criterio de búsqueda');
+      .toBe('No se encontraron jugadores con ese criterio de búsqueda');
     expect(el().querySelector('table')).toBeNull();
   });
 
@@ -119,7 +119,7 @@ describe('PlayerSearch (HU-023)', () => {
     waitDebounce();
 
     expect(el().querySelector('.search-spinner')).not.toBeNull();
-    expect(text()).toContain('Buscando alumnos…');
+    expect(text()).toContain('Buscando jugadores…');
 
     pending.next([BAZAN]);
     pending.complete();
@@ -151,7 +151,7 @@ describe('PlayerSearch (HU-023)', () => {
       'error',
     );
     expect(text()).toContain('No se pudo completar la búsqueda');
-    expect(text()).not.toContain('No se encontraron alumnos');
+    expect(text()).not.toContain('No se encontraron jugadores');
 
     fails = false;
     (el().querySelector('.search-retry') as HTMLButtonElement).click();
@@ -167,7 +167,7 @@ describe('PlayerSearch (HU-023)', () => {
     type('bazan');
     waitDebounce();
 
-    expect(notify).toHaveBeenCalledWith('No se pudo realizar la búsqueda de alumnos. Intentá de nuevo.', 'error');
+    expect(notify).toHaveBeenCalledWith('No se pudo realizar la búsqueda de jugadores. Intentá de nuevo.', 'error');
   });
 
   it('a slow older response never overwrites the newer one', async () => {

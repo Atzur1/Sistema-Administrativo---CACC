@@ -9,7 +9,7 @@ import { financialLoadErrorMessage } from '../../../shared/http-error-message';
 // Resultado de una búsqueda: la lista (vacía = sin coincidencias), o null si falló.
 type SearchOutcome = { term: string; results: PlayerSearchResultModel[] | null };
 
-// HU-023: buscador de alumnos por DNI o apellido, arriba del panel de Cuotas.
+// HU-023: buscador de jugadores por DNI, nombre o apellido, arriba del panel de Cuotas.
 // Busca en el servidor mientras se escribe (con debounce) o al apretar Enter/Buscar;
 // al elegir un alumno avisa al panel, que abre su deuda y su historial de cuotas.
 @Component({
@@ -91,7 +91,7 @@ export class PlayerSearch implements OnInit {
       map((results): SearchOutcome => ({ term, results })),
       catchError((error: unknown) => {
         this.notifications.notify(
-          financialLoadErrorMessage(error, 'No se pudo realizar la búsqueda de alumnos. Intentá de nuevo.'),
+          financialLoadErrorMessage(error, 'No se pudo realizar la búsqueda de jugadores. Intentá de nuevo.'),
           'error',
         );
         return of<SearchOutcome>({ term, results: null });

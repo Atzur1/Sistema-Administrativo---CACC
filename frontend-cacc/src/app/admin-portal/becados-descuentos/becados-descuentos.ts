@@ -9,10 +9,10 @@ import {
   Validators,
 } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { catchError, forkJoin, of } from 'rxjs';
 import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { HelpHint } from '../../shared/help-hint/help-hint';
-import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { DiscountService } from '../../services/discounts';
 import {
@@ -20,9 +20,14 @@ import {
   DiscountModel,
   DiscountRequest,
   DiscountStatus,
+  FirstPeriodModel,
+  PeriodOption,
+  addMonthsToPeriod,
   formatBenefitValue,
   formatIsoDate,
   formatValidity,
+  lastDayOfMonth,
+  periodLabel,
   statusLabel,
   statusToneClass,
 } from '../../models/DiscountModel';
@@ -68,7 +73,7 @@ type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel' | 'confirmVoid
 @Component({
   selector: 'app-becados-descuentos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DiscountBadge, CustomSelect, CustomDatepicker, HelpHint],
+  imports: [CommonModule, ReactiveFormsModule, DiscountBadge, CustomSelect, HelpHint],
   templateUrl: './becados-descuentos.html',
   styleUrl: './becados-descuentos.css',
 })
@@ -115,6 +120,16 @@ export class BecadosDescuentos implements OnInit {
   // Every benefit of the player the popup is about: what expired, what runs
   // today and what is scheduled. Since HU-012 a player can hold several.
   playerDiscounts = signal<DiscountModel[]>([]);
+
+  // Desde qué cuota se le puede dar una bonificación a este jugador hoy (la dice el servidor, porque depende
+  // de si la cuota del mes en curso ya tiene pagos). Con esto se arman los selectores de "desde" y "hasta".
+  firstPeriod = signal<FirstPeriodModel | null>(null);
+  startOptions = signal<PeriodOption[]>([]);
+  endOptions = signal<PeriodOption[]>([]);
+
+  // Cuántos meses ofrecen los selectores: el inicio, hasta dos años hacia adelante; el fin, tres años desde el inicio.
+  private static readonly START_MONTHS = 24;
+  private static readonly END_MONTHS = 36;
 
   // Every benefit ever granted: the table mixes current and cancelled ones.
   // benefitsLoaded tells "still loading" apart from "there is nothing to show".
@@ -166,11 +181,12 @@ export class BecadosDescuentos implements OnInit {
         valueType: ['', [Validators.required]],
         percentage: [null as number | null],
         fixedAmount: [null as number | null],
-        // Mandatory since HU-012: no benefit without an authorised period
+        // Mandatory since HU-012: no benefit without an authorised period. Se elige por cuota: startDate es el
+        // primer día del mes de la primera cuota y endDate el último día del mes de la última.
         startDate: ['', [Validators.required]],
         endDate: ['', [Validators.required]],
       },
-      { validators: [this.benefitValueValidator, this.dateRangeValidator, this.noPastDatesValidator] },
+      { validators: [this.benefitValueValidator, this.dateRangeValidator] },
     );
 
     this.filterForm = this.fb.group({
@@ -189,6 +205,10 @@ export class BecadosDescuentos implements OnInit {
     // valueChanges es la forma correcta en Reactive Forms de reaccionar a esto sin
     // importar qué control de UI esté detrás.
     this.benefitForm.get('valueType')!.valueChanges.subscribe(() => this.onValueTypeChange());
+
+    // Las cuotas finales posibles dependen de la inicial: al mover el inicio se rearman y, si la final elegida
+    // quedó antes, se corrige sola a la misma cuota.
+    this.benefitForm.get('startDate')!.valueChanges.subscribe(() => this.rebuildEndOptions());
   }
 
   ngOnInit() {
@@ -401,8 +421,14 @@ export class BecadosDescuentos implements OnInit {
     // may be stale and a benefit assigned from another screen has to show up.
     // Since HU-012 that is a list, not one record, and each item carries the
     // state the server resolved.
-    this.discountService.getDiscountsByPlayer(player.id).subscribe({
-      next: (discounts) => {
+    // La primera cuota que se puede becar se pide junto con las bonificaciones. Si esa consulta falla no se
+    // bloquea nada: se usa un cálculo conservador local (la próxima cuota que se emite) y el servidor valida igual.
+    forkJoin({
+      discounts: this.discountService.getDiscountsByPlayer(player.id),
+      first: this.discountService.getFirstPeriod(player.id).pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ discounts, first }) => {
+        this.firstPeriod.set(first ?? this.localFirstPeriod());
         this.playerDiscounts.set(discounts);
 
         // Si se abrió desde una fila puntual de la tabla, esa es la que se muestra, sea cual
@@ -428,10 +454,21 @@ export class BecadosDescuentos implements OnInit {
       },
       error: () => {
         this.dialogError.set('No se pudo cargar la bonificación del jugador. Intentá de nuevo.');
+        this.firstPeriod.set(this.localFirstPeriod());
         this.resetBenefitForm();
         this.dialogView.set('form');
       },
     });
+  }
+
+  // Cálculo de respaldo si el servidor no contestó: desde el día 10 la cuota del mes ya se emitió, así que la
+  // primera que se puede becar es la del mes que viene; antes del 10, la del mes en curso. No ofrece la cuota
+  // ya emitida (eso depende de los pagos y solo lo sabe el servidor).
+  private localFirstPeriod(): FirstPeriodModel {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const period = now.getDate() >= 10 ? addMonthsToPeriod(thisMonth, 1) : thisMonth;
+    return { period, issueDate: `${period.slice(0, 8)}10`, alreadyIssued: false };
   }
 
   closeDialog() {
@@ -451,17 +488,23 @@ export class BecadosDescuentos implements OnInit {
 
     this.currentDiscount.set(target);
 
+    // Las bonificaciones viejas pueden empezar o terminar a mitad de mes: se leen por cuota (mes completo).
+    const start = addMonthsToPeriod(target.startDate, 0);
+    const end = lastDayOfMonth(target.endDate);
+
     this.benefitForm.enable({ emitEvent: false });
+    this.buildStartOptions(start);
     this.benefitForm.reset({
       reason: target.type,
       valueType: target.valueType,
       percentage: target.percentage,
       fixedAmount: target.fixedAmount,
-      startDate: target.startDate,
-      endDate: target.endDate,
+      startDate: start,
+      endDate: end,
     });
+    this.rebuildEndOptions();
 
-    // En curso: lo ya transcurrido es historia, solo se mueve la fecha de fin (el servidor lo exige igual).
+    // En curso: lo ya emitido es historia, solo se mueve hasta qué cuota rige (el servidor lo exige igual).
     if (target.status === 'Active') {
       for (const campo of ['reason', 'valueType', 'percentage', 'fixedAmount', 'startDate']) {
         this.benefitForm.get(campo)!.disable({ emitEvent: false });
@@ -486,18 +529,6 @@ export class BecadosDescuentos implements OnInit {
 
   get editandoEnCurso(): boolean {
     return this.isEditing && this.currentDiscount()?.status === 'Active';
-  }
-
-  // Al editar no se puede llevar nada al pasado: una programada no empieza antes de hoy y ninguna
-  // termina antes de hoy (para cortarla está Cancelar).
-  // Regla del club: nadie asigna ni corrige una bonificación para que empiece o termine antes de hoy. (En una
-  // en curso la fecha de inicio ya pasó, pero ese campo está bloqueado y no se envía cambiado.)
-  get minFechaDesde(): string {
-    return this.today();
-  }
-
-  get minFechaHasta(): string {
-    return this.today();
   }
 
   get motivoNoEditable(): string {
@@ -548,32 +579,99 @@ export class BecadosDescuentos implements OnInit {
     return this.playerDiscounts().length > 0;
   }
 
-  // Opens the form with a sensible period already filled: from today to the
-  // end of the year, which is the cycle the club grants benefits for. Both are
-  // editable; they are a starting point, not a decision.
+  // Opens the form with a sensible period already filled: desde la primera cuota que se puede becar hasta la
+  // cuota de diciembre, que es el ciclo para el que el club otorga beneficios. Both are editable; they are a
+  // starting point, not a decision.
   private resetBenefitForm() {
+    const first = this.firstPeriod() ?? this.localFirstPeriod();
+    this.firstPeriod.set(first);
+
     this.benefitForm.enable({ emitEvent: false });
+    this.buildStartOptions();
     this.benefitForm.reset({
       reason: '',
       valueType: '',
       percentage: null,
       fixedAmount: null,
-      startDate: this.today(),
-      endDate: this.endOfYear(),
+      startDate: first.period,
+      endDate: lastDayOfMonth(`${first.period.slice(0, 4)}-12-01`),
     });
+    this.rebuildEndOptions();
   }
 
-  // Local date of the browser, used only to prefill the field. What the state
-  // of a benefit is gets decided by the server, never here.
-  private today(): string {
-    const now = new Date();
-    const month = `${now.getMonth() + 1}`.padStart(2, '0');
-    const day = `${now.getDate()}`.padStart(2, '0');
-    return `${now.getFullYear()}-${month}-${day}`;
+  // ===== SELECTORES DE CUOTA =====
+  // El servidor es quien decide desde qué cuota se puede becar; acá solo se ofrece lo que va a aceptar.
+
+  // "10/11": el día en que se emite la cuota de ese período.
+  private issueDayLabel(period: string): string {
+    return `10/${period.slice(5, 7)}`;
   }
 
-  private endOfYear(): string {
-    return `${new Date().getFullYear()}-12-31`;
+  // Cuotas desde las que puede empezar la bonificación. `current` es el inicio que ya tiene una bonificación
+  // que se está editando: si es anterior a la primera permitida (una vieja, o una en curso) se agrega igual para
+  // que el campo muestre lo que hay, aunque no se pueda elegir para una nueva.
+  private buildStartOptions(current?: string) {
+    const first = this.firstPeriod() ?? this.localFirstPeriod();
+    const options: PeriodOption[] = [];
+
+    for (let i = 0; i < BecadosDescuentos.START_MONTHS; i++) {
+      const period = addMonthsToPeriod(first.period, i);
+      const note = i === 0 && first.alreadyIssued ? 'ya emitida' : `se emite el ${this.issueDayLabel(period)}`;
+      options.push({ value: period, label: `${periodLabel(period)} · ${note}` });
+    }
+
+    if (current && !options.some((option) => option.value === current)) {
+      options.unshift({ value: current, label: periodLabel(current) });
+    }
+
+    this.startOptions.set(options);
+  }
+
+  // Cuotas en las que puede terminar. Desde la inicial; si se está editando una en curso, tampoco antes de la
+  // última cuota ya emitida (esa ya se descontó y no se le puede sacar el beneficio).
+  private rebuildEndOptions() {
+    const start: string = this.benefitForm.get('startDate')?.value ?? '';
+    if (!start) {
+      this.endOptions.set([]);
+      return;
+    }
+
+    const first = this.firstPeriod() ?? this.localFirstPeriod();
+    const lastIssued = first.alreadyIssued ? first.period : addMonthsToPeriod(first.period, -1);
+    const from = this.editandoEnCurso && lastIssued > start ? lastIssued : addMonthsToPeriod(start, 0);
+
+    const options: PeriodOption[] = [];
+    for (let i = 0; i < BecadosDescuentos.END_MONTHS; i++) {
+      const period = addMonthsToPeriod(from, i);
+      options.push({ value: lastDayOfMonth(period), label: periodLabel(period) });
+    }
+
+    // Lo que ya está guardado se muestra aunque quede fuera de la ventana de arriba.
+    const endControl = this.benefitForm.get('endDate')!;
+    const currentEnd: string = endControl.value ?? '';
+    if (currentEnd && currentEnd >= start && !options.some((option) => option.value === currentEnd)) {
+      options.push({ value: currentEnd, label: periodLabel(currentEnd) });
+      options.sort((a, b) => a.value.localeCompare(b.value));
+    }
+
+    this.endOptions.set(options);
+
+    // Si cambió el inicio y la cuota final quedó antes, pasa a ser la misma que la inicial.
+    if (currentEnd && currentEnd < from) {
+      endControl.setValue(options[0].value);
+    }
+  }
+
+  // Lo que se le dice al operador sobre la primera cuota disponible, debajo del selector de inicio.
+  get firstPeriodNote(): string {
+    const first = this.firstPeriod();
+    if (first === null || this.editandoEnCurso) {
+      return '';
+    }
+    const name = periodLabel(first.period);
+    return first.alreadyIssued
+      ? `La cuota de ${name} ya está emitida y nadie pagó nada de ella, así que se puede becar. Las anteriores ya vencieron.`
+      : `Rige desde la próxima cuota que todavía no se emitió: ${name} (se emite el ${this.issueDayLabel(first.period)}). Las anteriores ya se emitieron, y becarlas sería condonar deuda.`;
   }
 
   // ===== FORM =====
@@ -629,10 +727,9 @@ export class BecadosDescuentos implements OnInit {
     return null;
   };
 
-  // The end has to be strictly later than the start: a range that opens and
-  // closes the same day is not a period the club grants. Lives on the group,
-  // not on a single field, so it re-runs when either date changes and the
-  // error shows the moment the second one is picked.
+  // La cuota final no puede ser anterior a la inicial. Las dos fechas son de mes completo (primer día del mes de
+  // inicio, último día del mes de fin), así que una bonificación de una sola cuota tiene inicio y fin en el mismo
+  // mes y es válida. Lives on the group so it re-runs when either one changes.
   //
   // ISO strings compare correctly as text (yyyy-MM-dd sorts chronologically),
   // so there is no Date involved and no time zone to get wrong.
@@ -644,44 +741,15 @@ export class BecadosDescuentos implements OnInit {
       return null;
     }
 
-    return end <= start ? { endNotAfterStart: true } : null;
+    return end < start ? { endBeforeStart: true } : null;
   };
 
-  // The date range message, sitting next to the two date fields.
-  //
-  // It does not wait for the form to be touched or submitted: as soon as both
-  // dates carry a value and the range is wrong, the administrator sees why.
-  // That is the point of HU-012, catching it while the dates are being picked
-  // and not after pressing a button that was never going to work.
+  // The range message, sitting next to the two fee selectors. Los selectores solo ofrecen lo que el servidor va a
+  // aceptar (nada de cuotas ya vencidas, ver firstPeriod), así que acá queda solo la comparación entre las dos.
   get dateRangeErrorMessage(): string {
     const errors = this.benefitForm.errors ?? {};
-    if (errors['startInPast']) {
-      return 'La bonificación no puede empezar antes de hoy.';
-    }
-    if (errors['endInPast']) {
-      return 'La fecha de finalización no puede ser anterior a hoy.';
-    }
-    return errors['endNotAfterStart']
-      ? 'La fecha de finalización debe ser posterior a la fecha de inicio.'
-      : '';
+    return errors['endBeforeStart'] ? 'La cuota final no puede ser anterior a la inicial.' : '';
   }
-
-  // Regla del club: ninguna bonificación se asigna ni se corrige hacia el pasado (empezar antes de hoy le
-  // borraría deuda ya vencida). Si la fecha de inicio está bloqueada (bonificación en curso), no se valida:
-  // ya pasó y no se envía cambiada. El servidor aplica la misma regla.
-  private noPastDatesValidator = (group: AbstractControl): ValidationErrors | null => {
-    const start = group.get('startDate');
-    const end = group.get('endDate');
-    const today = this.today();
-
-    if (start?.enabled && start.value && start.value < today) {
-      return { startInPast: true };
-    }
-    if (end?.enabled && end.value && end.value < today) {
-      return { endInPast: true };
-    }
-    return null;
-  };
 
   // Single message for the rest of the form, shown above the actions
   get formErrorMessage(): string {
@@ -710,10 +778,10 @@ export class BecadosDescuentos implements OnInit {
       return 'El monto debe ser mayor a cero.';
     }
     if (this.benefitForm.get('startDate')?.invalid) {
-      return 'Indicá la fecha desde la que rige la bonificación.';
+      return 'Indicá desde qué cuota rige la bonificación.';
     }
     if (this.benefitForm.get('endDate')?.invalid) {
-      return 'Indicá la fecha hasta la que rige la bonificación.';
+      return 'Indicá hasta qué cuota rige la bonificación.';
     }
 
     // The range message has its own place, next to the dates
@@ -900,13 +968,18 @@ export class BecadosDescuentos implements OnInit {
     return formatBenefitValue(row);
   }
 
-  // "01/10/2026 - 31/12/2026"
+  // "Octubre 2026 a Diciembre 2026": por cuota, que es como rige una bonificación
   validityOf(row: DiscountModel): string {
     return formatValidity(row);
   }
 
   formatDate(isoDate: string): string {
     return formatIsoDate(isoDate) || '—';
+  }
+
+  // "Octubre 2026" (la cuota que contiene esa fecha)
+  periodOf(isoDate: string): string {
+    return periodLabel(isoDate) || '—';
   }
 
   responsableNombre(discount: DiscountModel): string {

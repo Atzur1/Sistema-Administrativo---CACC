@@ -71,8 +71,8 @@ public class PlayersController : ControllerBase
         });
     }
 
-    // Player search on the Cuotas panel (HU-023): by DNI or last name, so the
-    // operator can open that player's fees and debt. Both administrative roles
+    // Player search on the Cuotas panel (HU-023): by DNI, first name or last name (several words, in
+    // any order), so the operator can open that player's fees and debt. Both administrative roles
     // manage fees, as on the rest of PagosController.
     [Authorize(Roles = "1,2")]
     [HttpGet("search")]
@@ -82,7 +82,7 @@ public class PlayersController : ControllerBase
 
         if (trimmed.Length < MinSearchTermLength)
         {
-            return BadRequest(new { mensaje = $"Ingresá al menos {MinSearchTermLength} caracteres del DNI o del apellido." });
+            return BadRequest(new { mensaje = $"Ingresá al menos {MinSearchTermLength} caracteres del DNI, del nombre o del apellido." });
         }
 
         if (trimmed.Length > MaxSearchTermLength)
@@ -108,7 +108,7 @@ public class PlayersController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching players");
-            return StatusCode(500, new { mensaje = "No se pudo realizar la búsqueda de alumnos." });
+            return StatusCode(500, new { mensaje = "No se pudo realizar la búsqueda de jugadores." });
         }
     }
 
@@ -171,6 +171,26 @@ public class PlayersController : ControllerBase
         }
 
         return Ok(_beneficiosService.ObtenerDelJugador(playerId).Select(MapToDto).ToList());
+    }
+
+    // From which fee a benefit can start for this player today (the form offers months from here on). Either the
+    // next fee that was not issued yet, or the current month's one when it is already issued and nobody paid it.
+    [Authorize(Roles = "1,2")]
+    [HttpGet("{playerId}/discount/first-period")]
+    public IActionResult GetFirstDiscountPeriod(long playerId)
+    {
+        if (playerId <= 0)
+        {
+            return BadRequest(new { mensaje = "Indicá un jugador válido." });
+        }
+
+        PrimerPeriodoBeneficio primero = _beneficiosService.ObtenerPrimerPeriodo(playerId);
+        return Ok(new
+        {
+            period = primero.Periodo.ToString("yyyy-MM-dd"),
+            issueDate = primero.Emision.ToString("yyyy-MM-dd"),
+            alreadyIssued = primero.CuotaYaEmitida
+        });
     }
 
     // Assigns a benefit to a player (HU-011 / HU-012). A player can hold several over time, never two on the same
@@ -255,6 +275,7 @@ public class PlayersController : ControllerBase
             FixedAmount = discount.FixedAmount,
             StartDate = discount.StartDate.ToString("yyyy-MM-dd"),
             EndDate = discount.EndDate.ToString("yyyy-MM-dd"),
+            AssignmentDate = discount.AssignmentDate?.ToString("yyyy-MM-dd"),
             // The state the server resolved, and IsActive read off it. Both come
             // from the same value, so they cannot contradict each other.
             Status = discount.Status.ToString(),

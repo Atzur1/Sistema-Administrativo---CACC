@@ -23,6 +23,7 @@ public class DiscountDao
             jd.monto_fijo,
             jd.fecha_inicio,
             jd.fecha_fin,
+            jd.fecha_asignacion,
             jd.fecha_cancelacion,
             responsable.nombre_usuario AS responsable_nombre,
             responsable.apellido_usuario AS responsable_apellido";
@@ -207,7 +208,7 @@ public class DiscountDao
     // test. Used to answer a readable error before writing; the write path calls
     // it again inside its own transaction, holding the range, so two requests
     // arriving together cannot both find it free.
-    public Discount? GetOverlappingDiscount(long playerId, DateTime startDate, DateTime endDate, long excludeId = 0)
+    public virtual Discount? GetOverlappingDiscount(long playerId, DateTime startDate, DateTime endDate, long excludeId = 0)
     {
         string query = $@"
             SELECT TOP 1 {SelectColumns}, {StatusExpression} AS estado
@@ -240,7 +241,7 @@ public class DiscountDao
     //
     // Returns null when the range collides, and the caller turns that into a
     // 409 naming the benefit in the way.
-    public Discount? CreateDiscount(Discount discount)
+    public virtual Discount? CreateDiscount(Discount discount)
     {
         string overlapQuery = @"
             SELECT TOP 1 PK_id_jugador_descuento
@@ -250,13 +251,14 @@ public class DiscountDao
               AND fecha_inicio <= @endDate
               AND @startDate <= fecha_fin;";
 
-        string insertQuery = @"
+        // fecha_asignacion es el día de la carga (hora del club); fecha_inicio es desde qué cuota rige.
+        string insertQuery = $@"
             INSERT INTO JUGADORES_DESCUENTOS
                 (FK_id_jugador, FK_id_descuento, estado_activo, tipo_valor,
-                 porcentaje, monto_fijo, fecha_inicio, fecha_fin)
+                 porcentaje, monto_fijo, fecha_inicio, fecha_fin, fecha_asignacion)
             VALUES
                 (@playerId, @typeId, 1, @valueType,
-                 @percentage, @fixedAmount, @startDate, @endDate);
+                 @percentage, @fixedAmount, @startDate, @endDate, {SqlReloj.Hoy});
 
             SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS nuevo_id;";
 
@@ -383,25 +385,49 @@ public class DiscountDao
         return affectedRows > 0;
     }
 
+    // Whether the player already has a payment registered for the fee of that period (a partial payment
+    // counts). An assignment cannot start with a fee that already took money: the benefit is worked out on
+    // the whole fee, so what was paid would be left over.
+    public virtual bool HasPaymentsInPeriod(long playerId, DateTime period)
+    {
+        string query = @"
+            SELECT TOP 1 1
+            FROM PAGOS
+            WHERE FK_id_jugador = @playerId
+              AND concepto = 'Cuota'
+              AND estado = 1
+              AND fecha_vencimiento >= @periodStart
+              AND fecha_vencimiento < DATEADD(MONTH, 1, @periodStart);";
+
+        using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
+        {
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@playerId", playerId);
+                command.Parameters.Add("@periodStart", SqlDbType.Date).Value = new DateTime(period.Year, period.Month, 1);
+                return command.ExecuteScalar() != null;
+            }
+        }
+    }
+
     // Cancels one benefit of a player. The row is kept and only flipped to
     // inactive: the administration table has to keep showing what was granted
     // and PAGOS may still point at it. fecha_cancelacion queda como el último día
     // que ese beneficio sigue contando para una cuota (DescuentosSql.ApplyDescuentoActivo,
-    // PagosDao.ObtenerDescuentoAplicableEnPeriodo): cancelar no debe reescribir meses ya
-    // cubiertos en el pasado, solo dejar de aplicar de acá para adelante.
+    // PagosDao.ObtenerDescuentoAplicableEnPeriodo): cancelar no debe reescribir cuotas ya
+    // emitidas, solo dejar de aplicar a las que todavía no se emitieron.
     //
-    // Uno cancelado antes de empezar (Programado) nunca llegó a aplicar, así que su corte va al
-    // último día del mes previo al inicio, igual que al anular. Con la fecha de hoy, uno que
-    // arrancaba el 15/02 y se cancela el 10/02 le seguía descontando la cuota de febrero
-    // (vence el 01/02, antes del corte).
+    // Se corta al final del último período ya emitido (el mes en curso desde el 10, el anterior antes):
+    // esas cuotas conservan el beneficio. Una cancelada antes de que se emita ninguna de sus cuotas nunca
+    // llegó a aplicar, así que su corte va al último día del mes previo al inicio, igual que al anular.
     public virtual bool DeactivateDiscount(long playerId, long discountId)
     {
         string query = $@"
             UPDATE JUGADORES_DESCUENTOS
             SET estado_activo = 0,
                 fecha_cancelacion = CASE
-                    WHEN {SqlReloj.Hoy} < fecha_inicio THEN EOMONTH(fecha_inicio, -1)
-                    ELSE {SqlReloj.Hoy}
+                    WHEN EOMONTH({SqlCalendarioCuotas.UltimoPeriodoEmitible}) < fecha_inicio THEN EOMONTH(fecha_inicio, -1)
+                    ELSE EOMONTH({SqlCalendarioCuotas.UltimoPeriodoEmitible})
                 END
             WHERE FK_id_jugador = @playerId
               AND PK_id_jugador_descuento = @discountId
@@ -517,6 +543,7 @@ public class DiscountDao
             FixedAmount = reader["monto_fijo"] == DBNull.Value ? null : Convert.ToDecimal(reader["monto_fijo"]),
             StartDate = Convert.ToDateTime(reader["fecha_inicio"]),
             EndDate = Convert.ToDateTime(reader["fecha_fin"]),
+            AssignmentDate = reader["fecha_asignacion"] == DBNull.Value ? null : Convert.ToDateTime(reader["fecha_asignacion"]),
             CancellationDate = reader["fecha_cancelacion"] == DBNull.Value
                 ? null
                 : Convert.ToDateTime(reader["fecha_cancelacion"]),

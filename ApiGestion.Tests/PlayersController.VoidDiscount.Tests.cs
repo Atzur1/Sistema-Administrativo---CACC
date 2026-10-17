@@ -47,17 +47,18 @@ public class PlayersControllerVoidDiscountTests
         Status = DiscountStatus.Expired,
     };
 
-    // ===== AssignDiscount: sin fechas pasadas =====
+    // ===== AssignDiscount: sin cuotas ya vencidas =====
 
-    // Regla del club: nadie (ni SuperAdmin ni Administrador) asigna becas o descuentos con fecha de inicio
-    // anterior a hoy, porque eso borraría deuda ya vencida. Se rechaza antes de tocar la base.
+    // Regla del club: nadie (ni SuperAdmin ni Administrador) asigna becas o descuentos que empiecen con una
+    // cuota que ya no se puede becar, porque eso borraría deuda ya vencida. Se rechaza antes de tocar la base.
+    // Siempre es anterior a la última cuota emitida, ya sea que hoy sea antes o después del día 10.
     [Theory]
     [InlineData(-1)]
-    [InlineData(-400)]
-    public void AssignDiscount_StartingBeforeToday_IsRefused(int diasAtras)
+    [InlineData(-13)]
+    public void AssignDiscount_StartingWithAnOldFee_IsRefused(int mesesAtras)
     {
         var (controller, _) = CreateController();
-        DateTime inicio = RelojNegocio.Hoy.AddDays(diasAtras);
+        DateTime inicio = RelojNegocio.Hoy.AddMonths(mesesAtras);
 
         IActionResult result = controller.AssignDiscount(PlayerId, new DiscountRequestDTO
         {
@@ -69,7 +70,18 @@ public class PlayersControllerVoidDiscountTests
         });
 
         var rechazo = Assert.IsType<UnprocessableEntityObjectResult>(result);
-        Assert.Contains("no puede empezar antes de hoy", rechazo.Value!.ToString());
+        Assert.Contains("primera que se puede becar", rechazo.Value!.ToString());
+    }
+
+    [Fact]
+    public void GetFirstDiscountPeriod_AnswersFromWhichFeeABenefitCanStart()
+    {
+        var (controller, _) = CreateController();
+
+        var ok = Assert.IsType<OkObjectResult>(controller.GetFirstDiscountPeriod(PlayerId));
+
+        Assert.Contains("period", ok.Value!.ToString());
+        Assert.IsType<BadRequestObjectResult>(controller.GetFirstDiscountPeriod(0));
     }
 
     // ===== VoidDiscount =====
@@ -210,6 +222,8 @@ public class PlayersControllerVoidDiscountTests
 
         public override bool DeactivateDiscount(long playerId, long discountId)
             => DeactivateResult;
+
+        public override bool HasPaymentsInPeriod(long playerId, DateTime period) => false;
     }
 
     private class FakeJugadoresDao : IJugadoresDao

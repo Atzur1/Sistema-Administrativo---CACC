@@ -64,7 +64,11 @@ html, body {
      actividad-movimientos, portales y login, ahora disponible para cualquier caja. */
   --glass-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 247, 0.94) 100%);
   --glass-border: rgba(255, 255, 255, 0.9);
-  --glass-blur: blur(16px);
+  /* Sin desenfoque a propósito: las tarjetas de gestión usan --glass-bg, que es 94-98 % opaco y está sobre un fondo
+     plano, así que blur(16px) no se ve pero el navegador lo calcula por cada tarjeta (costo de GPU, sobre todo en
+     notebooks). El desenfoque con sentido (Login y Portales, sobre imagen o degradé) está escrito directo en esas
+     pantallas, no depende de este valor. */
+  --glass-blur: none;
   --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 
   /* Variante en rojo del vidrio, para cajas que señalan algo grave (ej.
@@ -225,6 +229,114 @@ html, body {
    ocupa el ancho y el "?" queda al costado. */
 .action-with-help > button {
   flex: 1 1 auto;
+}
+
+/* =====================================================================
+   ENCABEZADO DE PANTALLA (compartido)
+   Mismo molde en todas las pantallas del portal: ícono, título, subtítulo y
+   métricas a la derecha. Antes estaba copiado idéntico en 5 hojas de estilo y
+   reinventado (banners con color y brillo) en otras 3.
+   Cada pantalla pone su color con dos variables en su :host; sin ellas, verde:
+     --section-accent     color del ícono
+     --section-accent-bg  fondo suave del cuadro del ícono
+   Colores por sección: verde = plata (cuotas, aranceles, recaudación, actividad),
+   violeta = beneficios (becados), rojo = alerta (deudas), azul = control
+   (usuarios, reportes, auditoría).
+   ===================================================================== */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: fadeSlideUp 0.4s ease both;
+}
+
+.header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--section-accent-bg, var(--color-brand-tint));
+  color: var(--section-accent, var(--color-brand));
+  flex-shrink: 0;
+}
+
+.header-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.header-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.header-metrics {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.header-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 18px;
+}
+
+.header-metric + .header-metric {
+  border-left: 1px solid var(--color-border);
+}
+
+.header-metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.header-metric-label {
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.header-divider {
+  height: 1px;
+  margin: 14px 0;
+  background: var(--color-border);
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-wrap: wrap;
+  }
+
+  .header-metrics {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .header-metric {
+    padding: 0 18px 0 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

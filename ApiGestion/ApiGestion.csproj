@@ -29,6 +29,13 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <!-- El escudo del club para los PDF (convertido del ícono del frontend): viaja dentro del ensamblado. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Reports\Assets\logo-cacc.png">
+      <LogicalName>ApiGestion.Reports.logo-cacc.png</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="..\frontend-cacc\public\cacc-email-header.jpg"
              Link="Assets\cacc-email-header.jpg"

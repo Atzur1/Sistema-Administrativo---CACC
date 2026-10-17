@@ -10,7 +10,6 @@ import { CollectionPeriodModel, PeriodPaymentModel } from '../../models/Collecti
 import { PagosService } from '../../services/pagos';
 import { triggerBlobDownload } from '../../shared/download-file';
 import { animateCountUp } from '../../shared/count-up';
-import { formatCompactCurrency } from '../../shared/format-currency';
 
 // Mismo formateador que usan Cuotas y pagos y Actualización de aranceles, para que
 // un monto se lea igual en todo el portal ("$5.000.000", sin centavos).
@@ -64,23 +63,16 @@ export class RecaudacionMensual {
     exportMenuOpen = false;
     exportando = false;
 
-    // Opciones de los filtros. Los años se recalculan con la fecha de hoy, igual que
-    // en Cuotas y pagos, así la ventana se corre sola con los años.
-    meses = MESES;
-    anios = buildYearOptions();
-    // Las 13 del club, vengan o no con pagos en el período (HU-020 ya expone el
-    // catálogo completo). Filtrar por una categoría sin cobros muestra la pantalla
-    // en cero, que es la respuesta correcta y no un error.
+    // La categoría trae las 13 del club, vengan o no con pagos en el período (HU-020 ya expone el catálogo
+    // completo). Filtrar por una categoría sin cobros muestra la pantalla en cero, que es la respuesta correcta
+    // y no un error.
     categorias: CustomSelectOption[] = [TODAS_LAS_CATEGORIAS];
 
-    // El período se aplica al instante (es el eje de la pantalla, y la HU pide que
-    // al cambiar el mes cambien los datos). La categoría se escribe en el borrador
-    // y recién impacta con "Aplicar filtros".
+    // Los dos filtros se aplican al instante (la HU pide que al cambiar el mes cambien los datos): no hay botón
+    // "Aplicar". El mes se recorre con las flechas y no puede pasar del mes actual, que es lo último con cobros.
     mesSeleccionado: string;
     anioSeleccionado: number;
-
-    categoriaBorrador: string = '';
-    private categoriaAplicada: string = '';
+    categoriaSeleccionada: string = '';
 
     datos: CollectionPeriodModel | null = null;
     cargando = false;
@@ -112,42 +104,43 @@ export class RecaudacionMensual {
         this.destroyRef.onDestroy(() => this.cancelarAnimacion());
     }
 
-    onMesChange(mes: string | number | null): void {
-        this.mesSeleccionado = String(mes);
-        this.cargarPeriodo();
+    mesAnterior(): void {
+        this.moverMes(-1);
     }
 
-    onAnioChange(anio: string | number | null): void {
-        this.anioSeleccionado = Number(anio);
-        this.cargarPeriodo();
+    mesSiguiente(): void {
+        if (this.puedeAvanzar) this.moverMes(1);
+    }
+
+    get puedeAvanzar(): boolean {
+        const hoy = new Date();
+        return this.anioSeleccionado * 12 + MESES.indexOf(this.mesSeleccionado) < hoy.getFullYear() * 12 + hoy.getMonth();
     }
 
     onCategoriaChange(categoria: string | number | null): void {
-        this.categoriaBorrador = categoria == null ? '' : String(categoria);
-    }
-
-    aplicarFiltros(): void {
-        this.categoriaAplicada = this.categoriaBorrador;
+        this.categoriaSeleccionada = categoria == null ? '' : String(categoria);
         this.cargarPeriodo();
     }
 
     limpiarFiltros(): void {
-        this.categoriaBorrador = '';
-        this.aplicarFiltros();
+        this.categoriaSeleccionada = '';
+        this.cargarPeriodo();
     }
 
-    // true mientras el borrador no coincida con lo aplicado: sirve para avisar en la
-    // vista que hay cambios sin aplicar.
-    get hayCambiosSinAplicar(): boolean {
-        return this.categoriaBorrador !== this.categoriaAplicada;
+    // La categoría se puede limpiar solo si hay una elegida.
+    get hayFiltros(): boolean {
+        return this.categoriaSeleccionada !== '';
+    }
+
+    private moverMes(delta: number): void {
+        const indice = this.anioSeleccionado * 12 + MESES.indexOf(this.mesSeleccionado) + delta;
+        this.anioSeleccionado = Math.floor(indice / 12);
+        this.mesSeleccionado = MESES[indice % 12];
+        this.cargarPeriodo();
     }
 
     get periodoLabel(): string {
         return `${this.mesSeleccionado} ${this.anioSeleccionado}`;
-    }
-
-    get totalCompacto(): string {
-        return this.datos ? formatCompactCurrency(this.datos.total) : '—';
     }
 
     // Un período puede existir y no tener cobros (mes futuro, o un mes sin
@@ -173,7 +166,7 @@ export class RecaudacionMensual {
         this.exportando = true;
 
         const mes = MESES.indexOf(this.mesSeleccionado) + 1;
-        const idCategoria = this.categoriaAplicada === '' ? null : Number(this.categoriaAplicada);
+        const idCategoria = this.categoriaSeleccionada === '' ? null : Number(this.categoriaSeleccionada);
         const request =
             formato === 'pdf'
                 ? this.recaudacionService.exportarPdf(this.anioSeleccionado, mes, idCategoria)
@@ -222,7 +215,7 @@ export class RecaudacionMensual {
 
     private cargarPeriodo(): void {
         const mes = MESES.indexOf(this.mesSeleccionado) + 1;
-        const idCategoria = this.categoriaAplicada === '' ? null : Number(this.categoriaAplicada);
+        const idCategoria = this.categoriaSeleccionada === '' ? null : Number(this.categoriaSeleccionada);
 
         this.cargando = true;
         this.huboError = false;
@@ -289,8 +282,3 @@ export class RecaudacionMensual {
     }
 }
 
-// Año actual + los 2 anteriores, igual que en Cuotas y pagos
-function buildYearOptions(): number[] {
-    const actual = new Date().getFullYear();
-    return [actual, actual - 1, actual - 2];
-}

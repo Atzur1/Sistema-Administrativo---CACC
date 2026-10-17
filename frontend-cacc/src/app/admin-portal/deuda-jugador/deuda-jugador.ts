@@ -255,6 +255,35 @@ export class DeudaJugador implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  // Las que se pueden cobrar ahora: las pendientes o vencidas con saldo (no las pagadas ni las cubiertas por beneficio).
+  get cuotasSeleccionables(): PlayerFeeModel[] {
+    return this.cuotasJugador.filter((c) => this.esSeleccionable(c));
+  }
+
+  get todasSeleccionadas(): boolean {
+    const seleccionables = this.cuotasSeleccionables;
+    return seleccionables.length > 0 && seleccionables.every((c) => this.seleccion.has(c.idPago));
+  }
+
+  // Casilla del encabezado: queda "a medias" cuando hay algunas elegidas pero no todas.
+  get seleccionParcial(): boolean {
+    return this.cuotasSeleccionadas.length > 0 && !this.todasSeleccionadas;
+  }
+
+  // Selecciona todas las cuotas cobrables de una vez (para pagar toda la deuda); si ya estaban todas
+  // seleccionadas, las deselecciona. Mismas reglas que elegirlas una por una: solo las seleccionables.
+  alternarTodas() {
+    if (this.enviandoCobro || this.cuotasSeleccionables.length === 0) {
+      return;
+    }
+    if (this.todasSeleccionadas) {
+      this.seleccion.clear();
+    } else {
+      this.cuotasSeleccionables.forEach((c) => this.seleccion.add(c.idPago));
+    }
+    this.cdr.detectChanges();
+  }
+
   get cuotasSeleccionadas(): PlayerFeeModel[] {
     return this.cuotasJugador.filter((c) => this.seleccion.has(c.idPago));
   }
