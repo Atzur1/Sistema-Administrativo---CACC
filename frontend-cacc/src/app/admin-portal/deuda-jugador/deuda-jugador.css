@@ -21,13 +21,13 @@
   /* Paleta "pendiente": ámbar/bronce en vez del naranja saturado de antes — mismo mensaje
      (esto es una deuda, no un estado neutro) pero más elegante. El rojo de --saldo-monto
      es aparte, siempre el mismo, y no depende de esta paleta. */
-  --pending: #b45309;
-  --pending-strong: #92400e;
-  --pending-soft: #d97706;
-  --pending-bg: #fdf6ea;
-  --pending-bg-alt: #f6e3bd;
-  --pending-border: #ecd9b3;
-  --pending-shadow: 180, 83, 9;
+  --pending: #2c5fa8;
+  --pending-strong: #1d4f91;
+  --pending-soft: #3b82f6;
+  --pending-bg: var(--aviso-bg-suave);
+  --pending-bg-alt: var(--aviso-bg);
+  --pending-border: var(--aviso-borde-solido);
+  --pending-shadow: var(--aviso-rgb);
 }
 
 .page-header {
@@ -305,8 +305,8 @@
   --state-vencida-bg: #f5e3e2;
   --state-vencida-text: #7a2a28;
   --state-vencida-border: #d98a86;
-  --state-parcial-bg: #f2e6d6;
-  --state-parcial-text: #7a4d1f;
+  --state-parcial-bg: var(--aviso-bg);
+  --state-parcial-text: var(--aviso-texto);
   --state-proxima-bg: #e8eaed;
   --state-proxima-text: #475467;
   --state-cubierta-bg: #e2efe6;
@@ -795,7 +795,7 @@
 }
 
 .cuota-fila-seleccionada td {
-  background: #fdf6ea;
+  background: var(--aviso-bg-suave);
 }
 
 .cuota-fila-pagada td {
@@ -910,8 +910,8 @@
   overflow-y: auto;
   padding: 24px 26px;
   box-sizing: border-box;
-  background: linear-gradient(180deg, #ffffff 0%, #fdf6ea 100%);
-  border: 1px solid #ecd9b3;
+  background: linear-gradient(180deg, #ffffff 0%, var(--aviso-bg-suave) 100%);
+  border: 1px solid var(--aviso-borde-solido);
   border-top: 4px solid var(--action);
   border-radius: 18px;
   box-shadow: 0 2px 6px rgba(180, 83, 9, 0.08), 0 20px 44px rgba(180, 83, 9, 0.16);
@@ -990,13 +990,13 @@
 }
 
 .cobro-resumen .cobro-resumen-fila {
-  border-bottom: 1px dashed #ecd9b3;
+  border-bottom: 1px dashed var(--aviso-borde-solido);
 }
 
 .cobro-resumen-total {
   margin-top: 4px;
   padding-top: 10px;
-  border-top: 1px solid #ecd9b3;
+  border-top: 1px solid var(--aviso-borde-solido);
   font-size: 15px;
 }
 

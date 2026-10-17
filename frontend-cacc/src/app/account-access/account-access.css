@@ -288,12 +288,12 @@
 }
 
 .strength[data-nivel='1'] .strength-bars span:nth-child(-n + 1) { background: #dc2626; }
-.strength[data-nivel='2'] .strength-bars span:nth-child(-n + 2) { background: #f59e0b; }
+.strength[data-nivel='2'] .strength-bars span:nth-child(-n + 2) { background: #3b82f6; }
 .strength[data-nivel='3'] .strength-bars span:nth-child(-n + 3) { background: #84cc16; }
 .strength[data-nivel='4'] .strength-bars span:nth-child(-n + 4) { background: #00a651; }
 
 .strength[data-nivel='1'] .strength-label { color: #dc2626; }
-.strength[data-nivel='2'] .strength-label { color: #b45309; }
+.strength[data-nivel='2'] .strength-label { color: #2c5fa8; }
 .strength[data-nivel='3'] .strength-label { color: #4d7c0f; }
 .strength[data-nivel='4'] .strength-label { color: var(--primary-green); }
 

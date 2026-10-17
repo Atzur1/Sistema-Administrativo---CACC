@@ -28,6 +28,9 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 export class AvisoCuotasFaltantes implements OnInit {
   meses: MonthWithMissingFeesModel[] = [];
 
+  // La franja arranca resumida (una línea); el listado de meses se despliega a pedido.
+  expandido = false;
+
   // Mes abierto en el popup de confirmación, con su detalle.
   mesElegido: MonthWithMissingFeesModel | null = null;
   detalle: MissingFeeModel[] = [];
@@ -48,6 +51,30 @@ export class AvisoCuotasFaltantes implements OnInit {
   nombreMes(mes: MonthWithMissingFeesModel): string {
     const [anio, numero] = this.partes(mes);
     return `${NOMBRES_MES[numero - 1]} ${anio}`;
+  }
+
+  // "Julio 2026" para encabezar cada fila (nombreMes va en minúscula porque se usa dentro de frases).
+  tituloMes(mes: MonthWithMissingFeesModel): string {
+    const texto = this.nombreMes(mes);
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  get totalCuotas(): number {
+    return this.meses.reduce((suma, mes) => suma + mes.cantidad, 0);
+  }
+
+  get totalMonto(): number {
+    return this.meses.reduce((suma, mes) => suma + mes.montoTotal, 0);
+  }
+
+  // Con un solo mes no hay nada que desplegar: "Revisar" abre directo el detalle para confirmar.
+  revisar(): void {
+    if (this.meses.length === 1) {
+      this.abrir(this.meses[0]);
+      return;
+    }
+    this.expandido = !this.expandido;
+    this.cdr.detectChanges();
   }
 
   formatMonto(valor: number): string {
@@ -80,6 +107,7 @@ export class AvisoCuotasFaltantes implements OnInit {
       next: (detalle) => {
         this.detalle = detalle;
         this.cargandoDetalle = false;
+        this.cdr.markForCheck();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {

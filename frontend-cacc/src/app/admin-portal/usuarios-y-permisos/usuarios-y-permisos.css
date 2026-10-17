@@ -47,7 +47,7 @@
 
 /* Cuántos esperan acceso, en el encabezado: se destaca cuando hay alguien (es lo único que pide una acción). */
 .header-metric-alert .header-metric-value {
-    color: var(--color-warning-text);
+    color: var(--aviso-texto);
 }
 
 /* ===== AVISO DE PENDIENTES ===== */
@@ -57,11 +57,11 @@
     gap: 14px;
     margin: 0 0 16px;
     padding: 12px 16px;
-    border: 1px solid rgba(138, 90, 11, 0.22);
-    border-left: 4px solid #e8920c;
+    border: 1px solid var(--aviso-borde);
+    border-left: 4px solid var(--aviso-acento);
     border-radius: 12px;
-    background: linear-gradient(90deg, #fff6e6 0%, var(--color-warning-bg) 100%);
-    color: var(--color-warning-text);
+    background: linear-gradient(90deg, var(--aviso-bg-suave) 0%, var(--aviso-bg) 100%);
+    color: var(--aviso-texto);
     font-size: 14px;
     box-shadow: var(--card-shadow-soft);
 }
@@ -74,8 +74,8 @@
     place-items: center;
     border-radius: 50%;
     background: #fff;
-    color: #c97a06;
-    box-shadow: 0 0 0 1px rgba(232, 146, 12, 0.3);
+    color: var(--aviso-acento);
+    box-shadow: 0 0 0 1px var(--aviso-anillo);
 }
 
 .pending-icon svg {
@@ -91,7 +91,7 @@
     padding: 8px 16px;
     border: 0;
     border-radius: 9px;
-    background: #c97a06;
+    background: var(--aviso-acento);
     color: #fff;
     font: inherit;
     font-size: 13px;
@@ -101,7 +101,7 @@
 }
 
 .pending-action:hover {
-    background: #a86405;
+    background: var(--aviso-acento-hover);
 }
 
 .pending-action:active {
@@ -391,9 +391,9 @@
     background: linear-gradient(135deg, #60a5fa, #2563eb);
 }
 
-/* Candidato: ámbar, como el aviso (todavía no tiene acceso). Deshabilitada: gris. */
+/* Candidato: del color del aviso (todavía no tiene acceso). Deshabilitada: gris. */
 .avatar-pending {
-    background: linear-gradient(135deg, #f5b041, #c97a06);
+    background: var(--aviso-degradado);
 }
 
 .avatar-off {
@@ -477,7 +477,7 @@
 }
 
 .status-pending .status-dot {
-    background: #e8920c;
+    background: var(--aviso-punto);
 }
 
 .status-off {

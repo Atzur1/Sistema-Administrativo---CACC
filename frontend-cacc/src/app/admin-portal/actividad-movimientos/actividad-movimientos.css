@@ -70,9 +70,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .panel-head-text {
@@ -100,8 +99,7 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  margin: 0;
+  margin-bottom: 10px;
 }
 
 .search-control {
@@ -367,9 +365,9 @@
 }
 
 .status-partial {
-  background: linear-gradient(135deg, #fef7ec 0%, #fce3bc 100%);
+  background: linear-gradient(135deg, #eef4fd 0%, #cfe0f6 100%);
   color: var(--color-warning-text);
-  border: 1px solid rgba(217, 119, 6, 0.2);
+  border: 1px solid rgba(29, 79, 145, 0.2);
 }
 
 /* ===== ACTIVIDAD RECIENTE ===== */
