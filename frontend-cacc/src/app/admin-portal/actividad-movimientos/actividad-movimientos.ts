@@ -64,7 +64,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
     selector: 'app-actividad-movimientos',
     standalone: true,
-    imports: [CommonModule,ReactiveFormsModule, CustomSelect],
+    imports: [CommonModule, ReactiveFormsModule, CustomSelect],
     templateUrl: './actividad-movimientos.html',
     styleUrl: './actividad-movimientos.css',
 })
@@ -114,6 +114,7 @@ export class ActividadMovimientos implements OnInit {
     page = 1;
     readonly pageSize = 10;
 
+    // Shortcuts to the related dashboards
     private monthNames = [
         'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
         'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',

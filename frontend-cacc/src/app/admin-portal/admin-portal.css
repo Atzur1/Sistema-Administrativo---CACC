@@ -25,7 +25,7 @@
 
 .admin-layout:has(.sidebar:hover),
 .admin-layout:has(.sidebar:focus-within) {
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 252px 1fr;
 }
 
 /* ===== SIDEBAR (DEGRADÉ INSTITUCIONAL) ===== */
@@ -108,7 +108,7 @@
 .sidebar.is-open .sidebar-brand,
 .sidebar.is-open .nav-item span,
 .sidebar.is-open .nav-action span {
-  max-width: 220px;
+  max-width: 232px;
   opacity: 1;
   /* Un poco más lento que el achique y con demora: el texto no aparece
      hasta que el riel ya ganó buena parte del ancho nuevo. */
@@ -222,11 +222,11 @@
   margin-bottom: 0;
   overflow: hidden;
   opacity: 0;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #7ee0a6;
+  color: #8ee8b2;
   transition: max-height 0.22s ease, opacity 0.12s ease, margin-bottom 0.22s ease;
 }
 
@@ -235,7 +235,7 @@
 .sidebar.is-open .nav-group-title {
   max-height: 24px;
   margin-bottom: 6px;
-  opacity: 0.85;
+  opacity: 0.95;
   transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease 0.12s, margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -262,8 +262,9 @@
      3px reservados del border-left: (72 - 18) / 2 - 3 = 24px. */
   padding-left: 24px;
   gap: 12px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 13.5px;
+  font-weight: 500;
   text-decoration: none;
   border: none;
   border-left: 3px solid transparent;
@@ -302,7 +303,7 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  opacity: 0.85;
+  opacity: 0.9;
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
@@ -447,6 +448,21 @@
   gap: 8px;
 }
 
+.breadcrumb-portal {
+  color: var(--color-text-subtle);
+  font-size: 12.5px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.breadcrumb-separator {
+  color: #c4c7c4;
+  font-size: 14px;
+}
+
 .breadcrumb-current {
   color: var(--color-text-dark);
   font-size: 13px;
@@ -499,6 +515,11 @@
   grid-area: content;
   background: var(--color-bg-page-alt);
   overflow-y: auto;
+  /* Lugar libre al final para el botón flotante del DT Administrativo (56px +
+     24px de margen): sin esto, al llegar al fondo tapa la última fila o el
+     borde de la última tarjeta. Las pantallas usan min-height: 100% del área
+     de contenido, así que este padding no agrega scroll si todo entra. */
+  padding-bottom: 72px;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -525,7 +546,7 @@
     top: 0;
     left: 0;
     z-index: 50;
-    width: 240px;
+    width: 252px;
     max-width: 82vw;
     height: 100vh;
     height: 100dvh;
@@ -542,7 +563,6 @@
   .sidebar-backdrop {
     display: flex;
   }
-
   .topbar-breadcrumb {
     margin-right: auto;
     min-width: 0;
@@ -560,7 +580,9 @@
     padding: 0 12px;
   }
 
-  .user-info {
+  .user-info,
+  .breadcrumb-portal,
+  .breadcrumb-separator {
     display: none;
   }
 
