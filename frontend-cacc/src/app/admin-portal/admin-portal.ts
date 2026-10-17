@@ -30,7 +30,6 @@ get roleLabel(): string { return this.isSuperAdmin ? 'Superadmin' : 'Administrad
 
 // Off-canvas sidebar state, only meaningful under the 768px breakpoint
 sidebarOpen: boolean = false;
-
 // Maps each route segment to its display name
 private pageTitles: Record<string, string> = {
     'resumen-general':        'Resumen General',
@@ -41,6 +40,8 @@ private pageTitles: Record<string, string> = {
     'cuotas-pagos':           'Cuotas y Pagos',
     'reportes':               'Reportes',
     'actualizacion-aranceles': 'Actualización de Aranceles',
+    'becados-descuentos':     'Becados y Descuentos',
+    'recaudacion-mensual':    'Recaudación Mensual',
 };
 
 private destroyRef = inject(DestroyRef);
@@ -104,7 +105,6 @@ toggleSidebar() {
 closeSidebar() {
     this.ngZone.run(() => (this.sidebarOpen = false));
 }
-
 // Go back to the portals selection screen
 cambiarPortal() {
     this.router.navigate(['/portales']);

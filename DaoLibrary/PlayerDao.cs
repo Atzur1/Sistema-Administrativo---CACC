@@ -35,9 +35,11 @@ public class PlayerDAO
 
     // Player search on the Cuotas panel (HU-023). A term made only of digits (dots,
     // spaces and dashes are ignored, so "47.970.803" works) is looked up as part of
-    // the DNI; anything else as part of the last name.
+    // the DNI; anything else is split into words and EVERY word must be part of the
+    // first name or of the last name, in any order: "santiago", "prueba" and
+    // "santiago prueba" all find the same player.
     //
-    // The last name is compared accent-insensitively: the database collation
+    // Names are compared accent-insensitively: the database collation
     // (Modern_Spanish_CI_AS) tells "Bazan" from "BAZÁN", and 160 of the 577 real
     // players have an accented last name. Ñ stays a letter of its own, as in Spanish.
     //
@@ -56,12 +58,22 @@ public class PlayerDAO
     {
         string term = searchTerm.Trim();
         string? dniDigits = OnlyDniDigits(term);
+        string[] words = dniDigits != null ? Array.Empty<string>() : SplitSearchWords(term);
 
+        // A term of only separators ("," or ", ,") has nothing to look for: without this it would
+        // build an empty filter and return the whole roster.
+        if (dniDigits == null && words.Length == 0)
+        {
+            return new List<PlayerSearchResult>();
+        }
+
+        // Each word must be in the first name OR in the last name; all the words must match (AND).
         string filter = dniDigits != null
             ? @"p.Dni LIKE @pattern ESCAPE '\'"
-            : @"p.apellido COLLATE Modern_Spanish_CI_AI LIKE @pattern ESCAPE '\'";
+            : string.Join(" AND ", words.Select((_, i) =>
+                $@"(p.apellido COLLATE Modern_Spanish_CI_AI LIKE @word{i} ESCAPE '\' OR p.nombre COLLATE Modern_Spanish_CI_AI LIKE @word{i} ESCAPE '\')"));
 
-        // Exact DNI or last names that start with the term go first.
+        // Exact DNI first, then last names that start with the (first) word, then first names that do.
         string query = $@"
             SELECT TOP (@maxResults) j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja
             FROM JUGADORES j
@@ -72,11 +84,12 @@ public class PlayerDAO
                 CASE
                     WHEN LTRIM(RTRIM(p.Dni)) = @exact THEN 0
                     WHEN p.apellido COLLATE Modern_Spanish_CI_AI LIKE @prefix ESCAPE '\' THEN 1
-                    ELSE 2
+                    WHEN p.nombre COLLATE Modern_Spanish_CI_AI LIKE @prefix ESCAPE '\' THEN 2
+                    ELSE 3
                 END,
                 p.apellido, p.nombre;";
 
-        string value = dniDigits ?? term;
+        string value = dniDigits ?? words[0];
         string escaped = EscapeLike(value);
 
         // VarChar, like the columns: an nvarchar parameter would force a conversion of every row.
@@ -85,6 +98,10 @@ public class PlayerDAO
         command.Parameters.Add("@pattern", SqlDbType.VarChar, 110).Value = $"%{escaped}%";
         command.Parameters.Add("@prefix", SqlDbType.VarChar, 110).Value = $"{escaped}%";
         command.Parameters.Add("@exact", SqlDbType.VarChar, 110).Value = value;
+        for (int i = 0; i < words.Length; i++)
+        {
+            command.Parameters.Add($"@word{i}", SqlDbType.VarChar, 110).Value = $"%{EscapeLike(words[i])}%";
+        }
 
         List<PlayerSearchResult> results = new List<PlayerSearchResult>();
         using SqlDataReader reader = command.ExecuteReader();
@@ -104,8 +121,21 @@ public class PlayerDAO
         return results;
     }
 
+    // The words of a name search. Spaces and commas separate them, so "Prueba, Santiago" and
+    // "santiago prueba" give the same two words. At most MaxSearchWords: more would only slow the
+    // query down, and the controller already caps the length of the whole term.
+    internal const int MaxSearchWords = 5;
+
+    internal static string[] SplitSearchWords(string term)
+    {
+        return term
+            .Split(new[] { ' ', ',', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+            .Take(MaxSearchWords)
+            .ToArray();
+    }
+
     // The digits of a DNI typed with dots, spaces or dashes, or null when the term
-    // has anything else (then it is a last name).
+    // has anything else (then it is a name).
     internal static string? OnlyDniDigits(string term)
     {
         string digits = new string(term.Where(char.IsAsciiDigit).ToArray());

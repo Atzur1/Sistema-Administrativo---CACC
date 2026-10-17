@@ -30,6 +30,18 @@ namespace EntityLibrary
         public static DateTime UltimoPeriodoEmitible(DateTime hoy)
             => YaSeGeneraElMesEnCurso(hoy) ? PrimerDiaDelMes(hoy) : PrimerDiaDelMes(hoy).AddMonths(-1);
 
+        // Primer período cuya cuota todavía no se emitió: el siguiente al último emitible.
+        public static DateTime PrimerPeriodoSinEmitir(DateTime hoy)
+            => UltimoPeriodoEmitible(hoy).AddMonths(1);
+
+        // Último día del mes que cubre el período (una bonificación "hasta la cuota de X" termina ahí).
+        public static DateTime FinDelPeriodo(DateTime periodo)
+            => PrimerDiaDelMes(periodo).AddMonths(1).AddDays(-1);
+
+        // Día en que se emite la cuota del período: el 10 de ese mismo mes.
+        public static DateTime FechaDeEmision(DateTime periodo)
+            => PrimerDiaDelMes(periodo).AddDays(DiaDeCorte - 1);
+
         public static readonly IReadOnlyList<string> NombresMes = new[]
         {
             "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",

@@ -676,6 +676,93 @@ describe('DeudaJugador - estado de cuenta (HU-024)', () => {
   });
 });
 
+// "Seleccionar todas": para pagar toda la deuda de una vez sin tildar cuota por cuota. Solo alcanza a las
+// cuotas que se pueden cobrar (las mismas que se eligen una por una): no las pagadas ni las cubiertas por beneficio.
+describe('DeudaJugador - seleccionar todas las cuotas', () => {
+  const botonTodas = (el: HTMLElement) => el.querySelector<HTMLButtonElement>('.seleccionar-todas');
+  const casillaEncabezado = (el: HTMLElement) =>
+    el.querySelector<HTMLInputElement>('.cuotas-table thead input[type="checkbox"]')!;
+
+  it('el botón cuenta las cuotas que se pueden cobrar y las selecciona todas de una vez', async () => {
+    const { el, refrescar, component } = await crear();
+
+    expect(texto(botonTodas(el))).toBe('Seleccionar todas (2)');
+
+    botonTodas(el)!.click();
+    await refrescar();
+
+    expect(component.cuotasSeleccionadas.map((c) => c.idPago)).toEqual([10, 11]);
+    expect(texto(el.querySelector('.cobro-total'))).toContain('170.000');
+  });
+
+  it('no selecciona las pagadas ni las cubiertas por beneficio', async () => {
+    const { el, refrescar } = await crear();
+
+    botonTodas(el)!.click();
+    await refrescar();
+
+    expect(checkbox(el, 9).checked).toBe(false);
+    expect(checkbox(el, 12).checked).toBe(false);
+    expect(checkbox(el, 10).checked).toBe(true);
+    expect(checkbox(el, 11).checked).toBe(true);
+  });
+
+  it('con todas seleccionadas el botón pasa a "Quitar selección" y las deselecciona', async () => {
+    const { el, refrescar, component } = await crear();
+
+    botonTodas(el)!.click();
+    await refrescar();
+    expect(texto(botonTodas(el))).toBe('Quitar selección');
+
+    botonTodas(el)!.click();
+    await refrescar();
+
+    expect(component.cuotasSeleccionadas).toHaveLength(0);
+    expect(texto(botonTodas(el))).toBe('Seleccionar todas (2)');
+  });
+
+  it('la casilla del encabezado hace lo mismo y queda "a medias" si hay solo algunas elegidas', async () => {
+    const { el, refrescar } = await crear();
+
+    await seleccionar(el, refrescar, 10);
+    expect(casillaEncabezado(el).indeterminate).toBe(true);
+    expect(casillaEncabezado(el).checked).toBe(false);
+
+    casillaEncabezado(el).click();
+    await refrescar();
+    expect(casillaEncabezado(el).checked).toBe(true);
+    expect(casillaEncabezado(el).indeterminate).toBe(false);
+    expect(checkbox(el, 11).checked).toBe(true);
+  });
+
+  it('si ya había alguna elegida, "Seleccionar todas" completa el resto', async () => {
+    const { el, refrescar, component } = await crear();
+
+    await seleccionar(el, refrescar, 11);
+    botonTodas(el)!.click();
+    await refrescar();
+
+    expect(component.cuotasSeleccionadas.map((c) => c.idPago)).toEqual([10, 11]);
+  });
+
+  it('sin cuotas cobrables no hay botón y la casilla del encabezado queda deshabilitada', async () => {
+    const { el } = await crear({ cuotas: [[ENERO_PAGADA, MAYO_CUBIERTA]] });
+
+    expect(botonTodas(el)).toBeNull();
+    expect(casillaEncabezado(el).disabled).toBe(true);
+  });
+
+  it('con todas seleccionadas y un método elegido se puede registrar el pago', async () => {
+    const { el, refrescar, elegirMetodo } = await crear();
+
+    botonTodas(el)!.click();
+    await refrescar();
+    await elegirMetodo('Efectivo');
+
+    expect(botonRegistrar(el).disabled).toBe(false);
+  });
+});
+
 // Como PagosController: la cuota de un mes vence el 10 del mes siguiente ("2026-03-01" -> "2026-04-10").
 function vencimientoComoLaApi(primerDiaDelMes: string): string {
   const [anio, mes] = primerDiaDelMes.slice(0, 7).split('-').map(Number);
