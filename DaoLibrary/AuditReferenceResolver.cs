@@ -50,14 +50,14 @@ internal static class AuditReferenceResolver
             SELECT CAST(j.PK_id_jugador AS BIGINT),
                    LTRIM(RTRIM(ISNULL(p.apellido, ''))) + ', ' + LTRIM(RTRIM(ISNULL(p.nombre, '')))
                        + CASE WHEN p.Dni IS NULL THEN '' ELSE ' (DNI ' + LTRIM(RTRIM(p.Dni)) + ')' END
-            FROM JUGADORES j JOIN PERSONA p ON p.PK_id_persona = j.FK_id_persona
+            FROM JUGADORES j JOIN PERSONAS p ON p.PK_id_persona = j.FK_id_persona
             WHERE j.PK_id_jugador IN ({ids})",
 
         AuditReferences.Persona => @"
             SELECT CAST(p.PK_id_persona AS BIGINT),
                    LTRIM(RTRIM(ISNULL(p.apellido, ''))) + ', ' + LTRIM(RTRIM(ISNULL(p.nombre, '')))
                        + CASE WHEN p.Dni IS NULL THEN '' ELSE ' (DNI ' + LTRIM(RTRIM(p.Dni)) + ')' END
-            FROM PERSONA p
+            FROM PERSONAS p
             WHERE p.PK_id_persona IN ({ids})",
 
         AuditReferences.Categoria => @"
@@ -66,7 +66,7 @@ internal static class AuditReferenceResolver
 
         AuditReferences.Tipo => @"
             SELECT CAST(PK_id_descuento AS BIGINT), tipo_descuento
-            FROM TIPO_DESCUENTO WHERE PK_id_descuento IN ({ids})",
+            FROM TIPOS_DESCUENTO WHERE PK_id_descuento IN ({ids})",
 
         // Una cuenta del portal: nombre y apellido si los tiene cargados, si no su correo.
         AuditReferences.Usuario => @"
@@ -74,7 +74,7 @@ internal static class AuditReferenceResolver
                    CASE WHEN LTRIM(RTRIM(ISNULL(apellido, ''))) = '' AND LTRIM(RTRIM(ISNULL(nombre, ''))) = ''
                         THEN email
                         ELSE LTRIM(RTRIM(ISNULL(apellido, ''))) + ', ' + LTRIM(RTRIM(ISNULL(nombre, ''))) END
-            FROM USUARIO WHERE PK_id_usuario IN ({ids})",
+            FROM USUARIOS LEFT JOIN PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona WHERE PK_id_usuario IN ({ids})",
 
         // Una bonificación, por su motivo y su valor: "Becado · 50 %" o "Descuento · $15.000".
         AuditReferences.Beneficio => @"
@@ -85,7 +85,7 @@ internal static class AuditReferenceResolver
                               WHEN jd.monto_fijo IS NOT NULL
                               THEN ' · $' + CONVERT(VARCHAR(20), CAST(jd.monto_fijo AS DECIMAL(12, 2)))
                               ELSE '' END
-            FROM JUGADORES_DESCUENTOS jd JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
+            FROM JUGADORES_DESCUENTOS jd JOIN TIPOS_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
             WHERE jd.PK_id_jugador_descuento IN ({ids})",
 
         _ => null

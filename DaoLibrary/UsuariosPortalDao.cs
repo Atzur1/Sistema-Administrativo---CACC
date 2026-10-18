@@ -17,13 +17,13 @@ namespace DaoLibrary
         {
             var resultado = new List<UsuarioCandidato>();
 
-            // password_hash IS NULL: nunca completó una activación, así que nunca tuvo
+            // contrasenia IS NULL: nunca completó una activación, así que nunca tuvo
             // contraseña propia. A alguien que ya la tuvo (se deshabilitó después de estar
             // activo) no le corresponde este flujo — ver ListarDeshabilitados/Reactivar.
             const string query = @"
                 SELECT PK_id_usuario, nombre, apellido, dni, email, FK_id_rol
-                FROM USUARIO
-                WHERE activo = 1 AND acceso_portal = 0 AND FK_id_rol IN (1, 2) AND password_hash IS NULL
+                FROM USUARIOS JOIN PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona
+                WHERE activo = 1 AND acceso_portal = 0 AND FK_id_rol IN (1, 2) AND rol_portal IS NULL
                 ORDER BY apellido, nombre";
 
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
@@ -51,7 +51,7 @@ namespace DaoLibrary
 
             const string query = @"
                 SELECT PK_id_usuario, nombre, apellido, dni, email, rol_portal, activo, activacion_pendiente
-                FROM USUARIO
+                FROM USUARIOS JOIN PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona
                 WHERE acceso_portal = 1
                 ORDER BY apellido, nombre";
 
@@ -80,13 +80,13 @@ namespace DaoLibrary
         {
             var resultado = new List<UsuarioPortal>();
 
-            // Ya tuvieron acceso alguna vez (tienen password_hash y un rol_portal de cuando
+            // Ya tuvieron acceso alguna vez (tienen contrasenia y un rol_portal de cuando
             // estaban habilitados) — reactivarlos no necesita token ni mail nuevo, solo
             // devolverles acceso_portal.
             const string query = @"
                 SELECT PK_id_usuario, nombre, apellido, dni, email, rol_portal, activo, activacion_pendiente
-                FROM USUARIO
-                WHERE activo = 1 AND acceso_portal = 0 AND password_hash IS NOT NULL AND rol_portal IS NOT NULL
+                FROM USUARIOS JOIN PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona
+                WHERE activo = 1 AND acceso_portal = 0 AND contrasenia IS NOT NULL AND rol_portal IS NOT NULL
                 ORDER BY apellido, nombre";
 
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
@@ -121,9 +121,9 @@ namespace DaoLibrary
             if (rolPortal is not (1 or 2)) return false;
 
             using var comando = new SqlCommand(
-                @"UPDATE dbo.USUARIO SET acceso_portal = 1, rol_portal = @rol
+                @"UPDATE dbo.USUARIOS SET acceso_portal = 1, rol_portal = @rol
                   WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0
-                    AND password_hash IS NOT NULL AND rol_portal IS NOT NULL",
+                    AND contrasenia IS NOT NULL AND rol_portal IS NOT NULL",
                 conexion, transaccion);
             comando.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
             comando.Parameters.Add("@rol", SqlDbType.Int).Value = rolPortal;
@@ -155,8 +155,8 @@ namespace DaoLibrary
             if (DniEnUsoPorOtraCuenta(conexion, transaccion, dniNormalizado, idUsuario)) return EditarCandidatoResultado.DniEnUso;
 
             using var comando = new SqlCommand(
-                @"UPDATE dbo.USUARIO SET nombre = @nombre, apellido = @apellido, dni = @dni
-                  WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
+                @"UPDATE dbo.PERSONAS SET nombre = @nombre, apellido = @apellido, dni = @dni
+                  WHERE PK_id_persona = (SELECT FK_id_persona FROM dbo.USUARIOS WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0)",
                 conexion, transaccion);
             comando.Parameters.Add("@nombre", SqlDbType.NVarChar, 100).Value = nombre.Trim();
             comando.Parameters.Add("@apellido", SqlDbType.NVarChar, 100).Value = apellido.Trim();
@@ -170,8 +170,8 @@ namespace DaoLibrary
         private static bool DniEnUsoPorOtraCuenta(SqlConnection conexion, SqlTransaction transaccion, string dniNormalizado, int idExcluido)
         {
             using var buscar = new SqlCommand(
-                $@"SELECT TOP (1) 1 FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK)
-                   WHERE acceso_portal = 1 AND PK_id_usuario <> @id AND {AuthDao.DniNormalizadoSql} = @dni",
+                $@"SELECT TOP (1) 1 FROM dbo.PERSONAS WITH (UPDLOCK, HOLDLOCK)
+                   WHERE PK_id_persona <> ISNULL((SELECT FK_id_persona FROM dbo.USUARIOS WHERE PK_id_usuario = @id), 0) AND {AuthDao.DniNormalizadoSql} = @dni",
                 conexion, transaccion);
             buscar.Parameters.Add("@id", SqlDbType.Int).Value = idExcluido;
             buscar.Parameters.Add("@dni", SqlDbType.NVarChar, 40).Value = dniNormalizado;
@@ -195,7 +195,7 @@ namespace DaoLibrary
             string? email;
             string? dni;
             using (var buscar = new SqlCommand(
-                "SELECT email, dni FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
+                "SELECT email, dni FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) JOIN dbo.PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
                 conexion, transaccion))
             {
                 buscar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
@@ -214,10 +214,9 @@ namespace DaoLibrary
             if (DniEnUsoPorOtraCuenta(conexion, transaccion, dniNormalizado, idUsuario)) return (HabilitarResultado.DniEnUso, null);
 
             using var actualizar = new SqlCommand(
-                @"UPDATE dbo.USUARIO SET acceso_portal = 1, rol_portal = @rol, activacion_pendiente = 1, dni = @dni
+                @"UPDATE dbo.USUARIOS SET acceso_portal = 1, rol_portal = @rol, activacion_pendiente = 1
                   WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0",
                 conexion, transaccion);
-            actualizar.Parameters.Add("@dni", SqlDbType.NVarChar, 40).Value = dniNormalizado;
             actualizar.Parameters.Add("@rol", SqlDbType.Int).Value = rolPortal;
             actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
             return actualizar.ExecuteNonQuery() == 1 ? (HabilitarResultado.Ok, email) : (HabilitarResultado.NoEncontrado, null);
@@ -231,7 +230,7 @@ namespace DaoLibrary
             using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
 
             using (var bloquear = new SqlCommand(
-                "SELECT rol_portal FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
+                "SELECT rol_portal FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
                 conexion, transaccion))
             {
                 bloquear.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
@@ -251,7 +250,7 @@ namespace DaoLibrary
             }
 
             using (var actualizar = new SqlCommand(
-                "UPDATE dbo.USUARIO SET rol_portal = @rol, token_version = token_version + 1 WHERE PK_id_usuario = @id AND acceso_portal = 1",
+                "UPDATE dbo.USUARIOS SET rol_portal = @rol, token_version = token_version + 1 WHERE PK_id_usuario = @id AND acceso_portal = 1",
                 conexion, transaccion))
             {
                 actualizar.Parameters.Add("@rol", SqlDbType.Int).Value = nuevoRolPortal;
@@ -273,7 +272,7 @@ namespace DaoLibrary
             using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
 
             using (var bloquear = new SqlCommand(
-                "SELECT rol_portal FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
+                "SELECT rol_portal FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
                 conexion, transaccion))
             {
                 bloquear.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
@@ -293,7 +292,7 @@ namespace DaoLibrary
             }
 
             using (var actualizar = new SqlCommand(
-                "UPDATE dbo.USUARIO SET acceso_portal = 0, token_version = token_version + 1 WHERE PK_id_usuario = @id AND acceso_portal = 1",
+                "UPDATE dbo.USUARIOS SET acceso_portal = 0, token_version = token_version + 1 WHERE PK_id_usuario = @id AND acceso_portal = 1",
                 conexion, transaccion))
             {
                 actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
@@ -314,7 +313,7 @@ namespace DaoLibrary
         private static bool QuedaOtroSuperAdminHabilitado(SqlConnection conexion, SqlTransaction transaccion, int idUsuarioExcluido)
         {
             using var contar = new SqlCommand(
-                @"SELECT COUNT(*) FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK)
+                @"SELECT COUNT(*) FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK)
                   WHERE rol_portal = 1 AND acceso_portal = 1 AND activo = 1 AND PK_id_usuario <> @id",
                 conexion, transaccion);
             contar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuarioExcluido;

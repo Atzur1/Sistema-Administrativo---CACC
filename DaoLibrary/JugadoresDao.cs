@@ -16,7 +16,7 @@ namespace DaoLibrary
         private const string SelectJugador = @"
                 SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, p.genero, c.nombre_categoria, j.fecha_alta, j.fecha_baja
                 FROM JUGADORES j
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria";
 
         public JugadoresDao(string cadenaConexion)

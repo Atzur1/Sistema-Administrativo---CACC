@@ -1,6 +1,6 @@
 namespace EntityLibrary
 {
-    // Los dos géneros del padrón (PERSONA.genero). El arancel por género y la inscripción (solo rama masculina)
+    // Los dos géneros del padrón (PERSONAS.genero). El arancel por género y la inscripción (solo rama masculina)
     // dependen de estos valores exactos.
     public static class Generos
     {

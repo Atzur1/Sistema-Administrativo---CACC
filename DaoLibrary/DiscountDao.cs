@@ -9,7 +9,7 @@ public class DiscountDao
     private readonly string _connectionString;
 
     // Since HU-011 the benefit itself lives in JUGADORES_DESCUENTOS and
-    // TIPO_DESCUENTO only holds the reason, so every projection reads the value
+    // TIPOS_DESCUENTO only holds the reason, so every projection reads the value
     // and the validity from the assignment row.
     private const string SelectColumns = @"
             jd.PK_id_jugador_descuento,
@@ -31,8 +31,8 @@ public class DiscountDao
     private const string FromJoins = @"
         FROM JUGADORES_DESCUENTOS jd
             INNER JOIN JUGADORES j ON j.PK_id_jugador = jd.FK_id_jugador
-            INNER JOIN PERSONA p ON p.PK_id_persona = j.FK_id_persona
-            INNER JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
+            INNER JOIN PERSONAS p ON p.PK_id_persona = j.FK_id_persona
+            INNER JOIN TIPOS_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
             LEFT JOIN CATEGORIAS c ON c.PK_id_categoria = j.FK_id_categoria
             OUTER APPLY (
                 SELECT TOP (1) ac.nombre_usuario, ac.apellido_usuario
@@ -146,7 +146,7 @@ public class DiscountDao
     public List<DiscountType> GetDiscountTypes()
     {
         List<DiscountType> types = new List<DiscountType>();
-        string query = "SELECT PK_id_descuento, tipo_descuento FROM TIPO_DESCUENTO ORDER BY PK_id_descuento;";
+        string query = "SELECT PK_id_descuento, tipo_descuento FROM TIPOS_DESCUENTO ORDER BY PK_id_descuento;";
 
         using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
@@ -175,7 +175,7 @@ public class DiscountDao
     public virtual DiscountType? GetDiscountTypeByName(string name)
     {
         DiscountType? foundType = null;
-        string query = "SELECT PK_id_descuento, tipo_descuento FROM TIPO_DESCUENTO WHERE tipo_descuento = @name;";
+        string query = "SELECT PK_id_descuento, tipo_descuento FROM TIPOS_DESCUENTO WHERE tipo_descuento = @name;";
 
         using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {

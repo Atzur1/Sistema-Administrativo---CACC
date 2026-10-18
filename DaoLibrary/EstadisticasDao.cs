@@ -192,7 +192,7 @@ namespace DaoLibrary
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
                 JOIN JUGADORES j ON pg.FK_id_jugador = j.PK_id_jugador
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE pg.estado = 0
                 GROUP BY j.PK_id_jugador, p.nombre, p.apellido, c.nombre_categoria

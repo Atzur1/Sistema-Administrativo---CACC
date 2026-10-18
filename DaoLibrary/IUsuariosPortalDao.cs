@@ -25,14 +25,14 @@ namespace DaoLibrary
     public interface IUsuariosPortalDao
     {
         // Gente cargada por el otro equipo con FK_id_rol de SuperAdmin/Administrador
-        // que todavía no tiene acceso al portal ni tuvo nunca (sin password_hash).
+        // que todavía no tiene acceso al portal ni tuvo nunca (sin contrasenia).
         IReadOnlyList<UsuarioCandidato> ListarCandidatos();
 
         // Gente con acceso_portal = 1 hoy.
         IReadOnlyList<UsuarioPortal> ListarHabilitados();
 
         // Tuvieron acceso alguna vez y se les deshabilitó (acceso_portal = 0, pero ya
-        // tienen password_hash y rol_portal de cuando estaban activos).
+        // tienen contrasenia y rol_portal de cuando estaban activos).
         IReadOnlyList<UsuarioPortal> ListarDeshabilitados();
 
         // Corrige nombre, apellido y DNI de un candidato todavía sin acceso, por si el otro equipo los cargó

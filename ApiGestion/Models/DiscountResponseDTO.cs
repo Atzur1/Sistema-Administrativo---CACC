@@ -9,7 +9,7 @@ public class DiscountResponseDTO
     public string PlayerName { get; set; } = "";
     public string Category { get; set; } = "";
 
-    // The reason, as it reads in the TIPO_DESCUENTO catalogue
+    // The reason, as it reads in the TIPOS_DESCUENTO catalogue
     public string Type { get; set; } = "";
 
     // '%' or '$'. Tells the client which of the two values below to render.

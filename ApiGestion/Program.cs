@@ -171,7 +171,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnTokenValidated = async context =>
             {
                 var idClaim = context.Principal?.FindFirst("idUsuario")?.Value;
-                var roleClaim = context.Principal?.FindFirst(ClaimTypes.Role)?.Value;
+                var roleClaim = context.Principal?.FindFirst("rol_portal")?.Value;
                 var versionClaim = context.Principal?.FindFirst("tokenVersion")?.Value;
                 if (!int.TryParse(idClaim, out var id) || !int.TryParse(roleClaim, out var role) || !int.TryParse(versionClaim, out var tokenVersion))
                 {

@@ -1,6 +1,6 @@
 namespace EntityLibrary;
 
-// A row of the TIPO_DESCUENTO catalogue: the reason a benefit is granted for.
+// A row of the TIPOS_DESCUENTO catalogue: the reason a benefit is granted for.
 // Since HU-011 the catalogue is closed and holds no value of its own, so the
 // amount and the validity of each grant live with the assignment instead.
 public class DiscountType

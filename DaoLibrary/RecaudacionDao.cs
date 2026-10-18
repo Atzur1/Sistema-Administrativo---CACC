@@ -93,7 +93,7 @@ public class RecaudacionDao : IRecaudacionDao
                 ISNULL(p.metodo_pago, '') AS medio_pago
             FROM PAGOS p
             JOIN JUGADORES j ON j.PK_id_jugador = p.FK_id_jugador
-            JOIN PERSONA pe ON pe.PK_id_persona = j.FK_id_persona
+            JOIN PERSONAS pe ON pe.PK_id_persona = j.FK_id_persona
             LEFT JOIN CATEGORIAS c ON c.PK_id_categoria = j.FK_id_categoria
             WHERE p.estado = 1
               AND YEAR(p.fecha_pago) = @anio

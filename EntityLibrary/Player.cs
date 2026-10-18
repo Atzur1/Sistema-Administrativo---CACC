@@ -1,6 +1,6 @@
 namespace EntityLibrary;
 
-// A player as registered on the club: the PERSONA row plus the JUGADORES row (HU-033)
+// A player as registered on the club: the PERSONAS row plus the JUGADORES row (HU-033)
 public class Player
 {
     private long id = 0;
@@ -42,7 +42,7 @@ public class Player
         set { birthDate = value; }
     }
 
-    // "Masculino" | "Femenino", the values PERSONA.genero and ARANCELES already use
+    // "Masculino" | "Femenino", the values PERSONAS.genero and ARANCELES already use
     public string Gender
     {
         get { return gender; }

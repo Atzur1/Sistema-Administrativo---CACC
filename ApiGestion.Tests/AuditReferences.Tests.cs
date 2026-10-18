@@ -31,7 +31,7 @@ public class AuditReferencesTests
     public void LaPropiaFilaAuditadaTambienEsUnaReferencia()
     {
         Assert.Contains((AuditReferences.Jugador, 7L), AuditReferences.Recolectar(Evento("JUGADORES", "7")));
-        Assert.Contains((AuditReferences.Usuario, 4L), AuditReferences.Recolectar(Evento("USUARIO", "4")));
+        Assert.Contains((AuditReferences.Usuario, 4L), AuditReferences.Recolectar(Evento("USUARIOS", "4")));
         Assert.Contains((AuditReferences.Categoria, 9L), AuditReferences.Recolectar(Evento("CATEGORIAS", "9")));
     }
 
@@ -96,7 +96,9 @@ public class AuditTimestampTests
     {
         var dao = new AuditDao(Environment.GetEnvironmentVariable(IntegracionFactAttribute.Variable)!);
 
-        var (items, _) = dao.Search(null, null, null, null, null, null, 1, 10);
+        // La vista por defecto solo muestra pagos y aranceles, que una base recién creada no tiene: se pide una sección
+        // que toda base con cuentas sí tiene (las cuentas de prueba dejan su alta en la auditoría).
+        var (items, _) = dao.Search(null, null, null, null, "USUARIOS", null, 1, 10);
 
         Assert.NotEmpty(items);
         Assert.All(items, e => Assert.Equal(DateTimeKind.Utc, e.TimestampUtc.Kind));
@@ -197,8 +199,8 @@ public class AuditReferenceResolverIntegrationTests
 
         try
         {
-            long idUsuario = Convert.ToInt64(new SqlCommand("SELECT TOP 1 PK_id_usuario FROM USUARIO ORDER BY PK_id_usuario", connection, transaction).ExecuteScalar());
-            long idTipo = Convert.ToInt64(new SqlCommand("SELECT TOP 1 PK_id_descuento FROM TIPO_DESCUENTO ORDER BY PK_id_descuento", connection, transaction).ExecuteScalar());
+            long idUsuario = Convert.ToInt64(new SqlCommand("SELECT TOP 1 PK_id_usuario FROM USUARIOS ORDER BY PK_id_usuario", connection, transaction).ExecuteScalar());
+            long idTipo = Convert.ToInt64(new SqlCommand("SELECT TOP 1 PK_id_descuento FROM TIPOS_DESCUENTO ORDER BY PK_id_descuento", connection, transaction).ExecuteScalar());
 
             var nombres = AuditReferenceResolver.Resolver(connection, transaction, new[]
             {

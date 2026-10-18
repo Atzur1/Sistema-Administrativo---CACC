@@ -64,7 +64,7 @@ namespace DaoLibrary
                 SELECT d.PK_id_jugador_descuento, td.tipo_descuento AS motivo, d.tipo_valor, d.porcentaje, d.monto_fijo
                 FROM (SELECT @idJugador AS FK_id_jugador, @fechaVencimiento AS fecha_vencimiento, CAST('Cuota' AS VARCHAR(20)) AS concepto) pg
                 {DescuentosSql.ApplyDescuentoActivo}
-                JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento";
+                JOIN TIPOS_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento";
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
             comando.Parameters.Add("@idJugador", System.Data.SqlDbType.Int).Value = idJugador;
@@ -155,7 +155,7 @@ namespace DaoLibrary
                     SELECT DISTINCT p.FK_id_jugador, YEAR(p.fecha_vencimiento) AS anio, MONTH(p.fecha_vencimiento) AS mes
                     FROM PAGOS p WITH (UPDLOCK, HOLDLOCK)
                     JOIN JUGADORES j ON j.PK_id_jugador = p.FK_id_jugador
-                    JOIN PERSONA pe ON pe.PK_id_persona = j.FK_id_persona
+                    JOIN PERSONAS pe ON pe.PK_id_persona = j.FK_id_persona
                     WHERE {FiltroCuotasDelArancel}
                       AND p.estado = 1
                       AND (@montoBase IS NULL OR {CuotaEmitidaConMonto})
@@ -174,7 +174,7 @@ namespace DaoLibrary
                 DELETE p
                 FROM PAGOS p WITH (UPDLOCK, HOLDLOCK)
                 JOIN JUGADORES j ON j.PK_id_jugador = p.FK_id_jugador
-                JOIN PERSONA pe ON pe.PK_id_persona = j.FK_id_persona
+                JOIN PERSONAS pe ON pe.PK_id_persona = j.FK_id_persona
                 WHERE {FiltroCuotasDelArancel}
                   AND p.estado = 0
                   AND (@montoBase IS NULL OR p.monto_base = @montoBase)
@@ -465,7 +465,7 @@ namespace DaoLibrary
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
                 JOIN JUGADORES j ON pg.FK_id_jugador = j.PK_id_jugador
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 WHERE pg.estado = 0 AND pg.concepto = 'Cuota'
                   AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
@@ -524,7 +524,7 @@ namespace DaoLibrary
                        ISNULL(d.cantidad_cuotas, 0) AS cantidad_cuotas,
                        ISNULL(d.cantidad_vencidas, 0) AS cantidad_vencidas
                 FROM JUGADORES j
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 LEFT JOIN (
                     SELECT t.FK_id_jugador,
@@ -570,7 +570,7 @@ namespace DaoLibrary
         {
             var resultado = new List<CategoriaDeuda>();
 
-            // No hace falta JOIN a PERSONA acá (no se necesita nombre/DNI, solo el total por
+            // No hace falta JOIN a PERSONAS acá (no se necesita nombre/DNI, solo el total por
             // categoría), así que la consulta queda liviana aunque el club tenga 700+ jugadores.
             string query = $@"
                 SELECT j.FK_id_categoria, c.nombre_categoria,
@@ -682,7 +682,7 @@ namespace DaoLibrary
                              THEN 1 ELSE 0 END AS cumple_filtros
                     FROM Grupos g
                     JOIN JUGADORES j ON g.FK_id_jugador = j.PK_id_jugador
-                    JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                    JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                     JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                     WHERE g.rn = 1
                 )";
@@ -804,7 +804,7 @@ namespace DaoLibrary
                        ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
-                LEFT JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento
+                LEFT JOIN TIPOS_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento
                 WHERE pg.FK_id_jugador = @idJugador AND pg.estado = 0
                 ORDER BY pg.fecha_vencimiento, pg.concepto";
 
@@ -893,7 +893,7 @@ namespace DaoLibrary
             const string queryJugador = @"
                 SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni
                 FROM JUGADORES j
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                 WHERE j.PK_id_jugador = @idJugador";
 
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
@@ -931,7 +931,7 @@ namespace DaoLibrary
                        ({DescuentosSql.SaldoAjustadoExpr}) AS saldo_ajustado
                 FROM PAGOS pg
                 {DescuentosSql.ApplyDescuentoActivo}
-                LEFT JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento
+                LEFT JOIN TIPOS_DESCUENTO td ON td.PK_id_descuento = d.FK_id_descuento
                 WHERE pg.FK_id_jugador = @idJugador AND pg.concepto = 'Cuota' AND pg.fecha_vencimiento IS NOT NULL
                 ORDER BY pg.fecha_vencimiento, pg.fecha_pago, pg.PK_id_pago";
 
@@ -1044,7 +1044,7 @@ namespace DaoLibrary
                        a.fecha_grupo, a.fecha_vencimiento, jd.tipo_valor, jd.porcentaje, jd.monto_fijo, td.tipo_descuento AS motivo
                 FROM Agrupado a
                 LEFT JOIN JUGADORES_DESCUENTOS jd ON jd.PK_id_jugador_descuento = a.id_descuento_grupo
-                LEFT JOIN TIPO_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
+                LEFT JOIN TIPOS_DESCUENTO td ON td.PK_id_descuento = jd.FK_id_descuento
                 WHERE a.rn = 1
                 ORDER BY a.fecha_grupo DESC, a.clave_periodo DESC, a.concepto
                 OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY";

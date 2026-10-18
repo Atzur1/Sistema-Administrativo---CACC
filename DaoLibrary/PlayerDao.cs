@@ -19,11 +19,11 @@ public class PlayerDAO
         _connectionString = connectionString;
     }
 
-    // PERSONA is shared with staff, guardians and users, so the DNI is checked
+    // PERSONAS is shared with staff, guardians and users, so the DNI is checked
     // against every person and not only against players.
     public virtual bool ExistsPersonByDni(string dni)
     {
-        string query = "SELECT COUNT(*) FROM PERSONA WHERE LTRIM(RTRIM(Dni)) = @dni;";
+        string query = "SELECT COUNT(*) FROM PERSONAS WHERE LTRIM(RTRIM(Dni)) = @dni;";
 
         using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
 
@@ -77,7 +77,7 @@ public class PlayerDAO
         string query = $@"
             SELECT TOP (@maxResults) j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja
             FROM JUGADORES j
-            JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+            JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
             JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
             WHERE {filter}
             ORDER BY
@@ -177,7 +177,7 @@ public class PlayerDAO
             // ExistsPersonByDni (antes de la transacción) solo da el mensaje rápido; esta verificación con
             // bloqueo de rango es la que impide que dos altas simultáneas del mismo DNI pasen las dos.
             using (SqlCommand duplicate = new SqlCommand(
-                "SELECT COUNT(*) FROM PERSONA WITH (UPDLOCK, HOLDLOCK) WHERE LTRIM(RTRIM(Dni)) = @dni;", connection, transaction))
+                "SELECT COUNT(*) FROM PERSONAS WITH (UPDLOCK, HOLDLOCK) WHERE LTRIM(RTRIM(Dni)) = @dni;", connection, transaction))
             {
                 duplicate.Parameters.AddWithValue("@dni", player.Dni.Trim());
                 if (Convert.ToInt32(duplicate.ExecuteScalar()) > 0)
@@ -215,14 +215,14 @@ public class PlayerDAO
     // The three insert helpers are internal (not private) so the integration test can run them inside a
     // transaction it rolls back.
     //
-    // OUTPUT INTO (not a bare OUTPUT): PERSONA has an audit trigger (TR_AUDIT_PERSONA) and SQL Server
+    // OUTPUT INTO (not a bare OUTPUT): PERSONAS has an audit trigger (TR_AUDIT_PERSONA) and SQL Server
     // refuses a bare OUTPUT on a table with enabled triggers (Msg 334). This is also what PagosDao does.
     internal static int InsertPerson(SqlConnection connection, SqlTransaction transaction, Player player)
     {
         string query = @"
             DECLARE @nueva TABLE (id INT);
 
-            INSERT INTO PERSONA (genero, fecha_de_nacimiento, Dni, nombre, apellido)
+            INSERT INTO PERSONAS (genero, fecha_de_nacimiento, Dni, nombre, apellido)
             OUTPUT INSERTED.PK_id_persona INTO @nueva (id)
             VALUES (@gender, @birthDate, @dni, @firstName, @lastName);
 
