@@ -1,0 +1,155 @@
+/* ===== AVISO: jugadores sin género cargado ===== (misma franja de una línea que el aviso de cuotas faltantes) */
+:host {
+  display: block;
+}
+
+.aviso {
+  /* Aire debajo: que no quede pegado a lo que sigue */
+  margin-bottom: 20px;
+  padding: 8px 10px 8px 14px;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--aviso-borde);
+  border-radius: 12px;
+  animation: avisoEntrada 0.3s ease both;
+}
+
+@keyframes avisoEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Una sola línea: ícono, resumen y el botón que despliega el listado */
+.aviso-barra {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+}
+
+.aviso-icono {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-warning-text);
+}
+
+.aviso-icono svg {
+  width: 18px;
+  height: 18px;
+}
+
+.aviso-resumen {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-warning-text);
+}
+
+.aviso-detalle {
+  color: var(--color-text-muted);
+}
+
+.aviso-revisar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 6px 14px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--aviso-borde-fuerte);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-warning-text);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.aviso-revisar:hover {
+  border-color: var(--color-warning-text);
+}
+
+.aviso-chevron {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.aviso-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.aviso-despliegue {
+  margin-top: 8px;
+  padding: 10px 4px 4px 28px;
+  border-top: 1px solid var(--aviso-borde-suave);
+}
+
+.aviso-texto {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.aviso-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.aviso-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.aviso-item-nombre {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+}
+
+.aviso-item-meta {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.aviso-mas {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 480px) {
+  .aviso-barra {
+    flex-wrap: wrap;
+  }
+
+  .aviso-despliegue {
+    padding-left: 4px;
+  }
+
+  .aviso-item {
+    flex-wrap: wrap;
+  }
+}

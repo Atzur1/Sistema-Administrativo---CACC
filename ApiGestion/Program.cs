@@ -97,6 +97,10 @@ builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.IEstadoDeudaDao>(provider =>
     new DaoLibrary.EstadoDeudaDao(conexionSql));
 
+// Aviso de jugadores sin género del Resumen General
+builder.Services.AddScoped<DaoLibrary.IJugadoresSinGeneroDao>(provider =>
+    new DaoLibrary.JugadoresSinGeneroDao(conexionSql));
+
 // Categorías: catálogo para el selector de Deudas y Morosidad (HU-020)
 builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
     new DaoLibrary.CategoriasDao(conexionSql));
