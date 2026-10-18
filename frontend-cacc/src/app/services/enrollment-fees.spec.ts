@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { EnrollmentFeeService } from './enrollment-fees';
 import {
     EnrollmentFeeModel,
+    enrollmentFeeLabel,
     enrollmentFeeStatusClass,
     enrollmentFeeStatusLabel,
     findCurrentEnrollmentFee,
@@ -13,13 +14,20 @@ import {
 } from '../models/EnrollmentFeeModel';
 
 const FEES: EnrollmentFeeModel[] = [
-    { id: 3, amount: 70000, startDate: '2027-03-01', endDate: null, status: 'Scheduled' },
-    { id: 2, amount: 60000, startDate: '2026-11-01', endDate: '2027-02-28', status: 'Scheduled' },
-    { id: 1, amount: 50000, startDate: '2026-06-01', endDate: '2026-10-31', status: 'Current' },
-    { id: 0, amount: 40000, startDate: '2026-01-01', endDate: '2026-05-31', status: 'Previous' },
+    { id: 3, gender: 'Masculino', amount: 70000, startDate: '2027-03-01', endDate: null, status: 'Scheduled' },
+    { id: 2, gender: 'Masculino', amount: 60000, startDate: '2026-11-01', endDate: '2027-02-28', status: 'Scheduled' },
+    { id: 1, gender: 'Masculino', amount: 50000, startDate: '2026-06-01', endDate: '2026-10-31', status: 'Current' },
+    { id: 0, gender: 'Masculino', amount: 40000, startDate: '2026-01-01', endDate: '2026-05-31', status: 'Previous' },
 ];
 
-// HU-033: enrollment fee of the men's squad
+// Las mujeres hoy no pagan inscripción; si el club programa un arancel femenino, tiene su propia historia.
+const FEES_CON_FEMENINO: EnrollmentFeeModel[] = [
+    ...FEES,
+    { id: 5, gender: 'Femenino', amount: 30000, startDate: '2026-11-01', endDate: null, status: 'Scheduled' },
+    { id: 4, gender: 'Femenino', amount: 0, startDate: '2026-01-01', endDate: '2026-10-31', status: 'Current' },
+];
+
+// HU-033: enrollment fee, one history per gender
 describe('EnrollmentFeeService', () => {
     let service: EnrollmentFeeService;
     let http: HttpTestingController;
@@ -43,12 +51,12 @@ describe('EnrollmentFeeService', () => {
         expect(received).toEqual(FEES);
     });
 
-    it('schedules a new fee with POST, sending amount and start date', () => {
-        service.createEnrollmentFee({ amount: 55000, startDate: '2026-12-01' }).subscribe();
+    it('schedules a new fee with POST, sending gender, amount and start date', () => {
+        service.createEnrollmentFee({ gender: 'Femenino', amount: 55000, startDate: '2026-12-01' }).subscribe();
 
         const req = http.expectOne('/api/enrollmentfees');
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual({ amount: 55000, startDate: '2026-12-01' });
+        expect(req.request.body).toEqual({ gender: 'Femenino', amount: 55000, startDate: '2026-12-01' });
         req.flush(FEES[0]);
     });
 });
@@ -67,6 +75,25 @@ describe('EnrollmentFeeModel helpers', () => {
     it('tells whether a start date is already taken', () => {
         expect(isEnrollmentFeeDateTaken(FEES, '2026-11-01')).toBe(true);
         expect(isEnrollmentFeeDateTaken(FEES, '2026-11-02')).toBe(false);
+    });
+
+    it('keeps one history per gender: the fee in force, the next change and the taken days do not mix', () => {
+        expect(findCurrentEnrollmentFee(FEES_CON_FEMENINO, 'Masculino')?.amount).toBe(50000);
+        expect(findCurrentEnrollmentFee(FEES_CON_FEMENINO, 'Femenino')?.amount).toBe(0);
+        expect(findNextEnrollmentFee(FEES_CON_FEMENINO, 'Femenino')?.amount).toBe(30000);
+        // El 1/11 empieza un arancel de cada género: son días distintos para cada historia
+        expect(isEnrollmentFeeDateTaken(FEES_CON_FEMENINO, '2026-11-01', 'Femenino')).toBe(true);
+        expect(isEnrollmentFeeDateTaken(FEES_CON_FEMENINO, '2027-03-01', 'Femenino')).toBe(false);
+        expect(isEnrollmentFeeDateTaken(FEES_CON_FEMENINO, '2027-03-01', 'Masculino')).toBe(true);
+    });
+
+    it('an unknown gender has no fee in force (it is not charged)', () => {
+        expect(findCurrentEnrollmentFee(FEES, 'Femenino')).toBeNull();
+    });
+
+    it('names each enrollment fee by gender', () => {
+        expect(enrollmentFeeLabel('Masculino')).toBe('Inscripción masculina');
+        expect(enrollmentFeeLabel('Femenino')).toBe('Inscripción femenina');
     });
 
     it('translates the status and picks the pill the screen already styles', () => {

@@ -5,6 +5,7 @@ namespace ApiGestion.Models;
 public class EnrollmentFeeResponseDTO
 {
     public long Id { get; set; }
+    public string Gender { get; set; } = "";
     public decimal Amount { get; set; }
     public string StartDate { get; set; } = "";
     public string? EndDate { get; set; }

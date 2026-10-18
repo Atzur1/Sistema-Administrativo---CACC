@@ -90,7 +90,7 @@ public class PlayersControllerCreatePlayerTests
     }
 
     [Fact]
-    public void CreatePlayer_Female_NeverChargesAnEnrollmentFee()
+    public void CreatePlayer_FemaleWithoutAFemaleFee_DoesNotChargeAnEnrollmentFee()
     {
         var (controller, players, enrollment, aranceles) = CreateController();
         enrollment.Current = new EnrollmentFee { Id = 1, Amount = EnrollmentFeeAmount, Status = EnrollmentFeeStatus.Current };
@@ -102,7 +102,49 @@ public class PlayersControllerCreatePlayerTests
         Assert.Null(player.EnrollmentFeeAmount);
         Assert.Null(players.LastEnrollmentFee);
         Assert.Equal(80000, players.LastMonthlyFee);
-        Assert.False(enrollment.WasAsked);
+    }
+
+    // Hoy las mujeres no pagan inscripción; el día que el club programe un arancel femenino, se les cobra sin tocar código.
+    [Fact]
+    public void CreatePlayer_FemaleWithAFemaleFeeInForce_ChargesIt()
+    {
+        var (controller, players, enrollment, aranceles) = CreateController();
+        enrollment.Current = new EnrollmentFee { Id = 1, Amount = EnrollmentFeeAmount, Status = EnrollmentFeeStatus.Current };
+        enrollment.Current = new EnrollmentFee { Id = 2, Gender = "Femenino", Amount = 30000, Status = EnrollmentFeeStatus.Current };
+        aranceles.Amounts["Femenino"] = 80000;
+
+        IActionResult result = controller.CreatePlayer(ValidRequest("Femenino"));
+
+        PlayerResponseDTO player = Assert.IsType<PlayerResponseDTO>(Assert.IsType<CreatedResult>(result).Value);
+        Assert.Equal(30000, player.EnrollmentFeeAmount); // la femenina, no la masculina
+        Assert.Equal(30000, players.LastEnrollmentFee);
+    }
+
+    [Fact]
+    public void CreatePlayer_FemaleWhoseFeeIsZero_DoesNotChargeAnEnrollmentFee()
+    {
+        var (controller, players, enrollment, aranceles) = CreateController();
+        enrollment.Current = new EnrollmentFee { Id = 2, Gender = "Femenino", Amount = 0, Status = EnrollmentFeeStatus.Current };
+        aranceles.Amounts["Femenino"] = 80000;
+
+        IActionResult result = controller.CreatePlayer(ValidRequest("Femenino"));
+
+        PlayerResponseDTO player = Assert.IsType<PlayerResponseDTO>(Assert.IsType<CreatedResult>(result).Value);
+        Assert.Null(player.EnrollmentFeeAmount);
+        Assert.Null(players.LastEnrollmentFee);
+    }
+
+    [Fact]
+    public void CreatePlayer_MaleWhoseFeeIsZero_IsCreatedWithoutAnEnrollmentFee()
+    {
+        var (controller, players, enrollment, aranceles) = CreateController();
+        enrollment.Current = new EnrollmentFee { Id = 1, Amount = 0, Status = EnrollmentFeeStatus.Current };
+        aranceles.Amounts["Masculino"] = 85000;
+
+        IActionResult result = controller.CreatePlayer(ValidRequest("Masculino"));
+
+        Assert.IsType<CreatedResult>(result);
+        Assert.Null(players.LastEnrollmentFee);
     }
 
     [Fact]
@@ -274,17 +316,23 @@ public class PlayersControllerCreatePlayerTests
 
     private class FakeEnrollmentFeeDAO : EnrollmentFeeDAO
     {
-        public EnrollmentFee? Current { get; set; }
+        public Dictionary<string, EnrollmentFee> PorGenero { get; } = new();
+        // El arancel masculino: lo que estas pruebas usaban antes de que la inscripción dependiera del género.
+        public EnrollmentFee? Current
+        {
+            get => PorGenero.GetValueOrDefault(Generos.Masculino);
+            set { if (value != null) PorGenero[value.Gender] = value; }
+        }
         public bool WasAsked { get; private set; }
 
         public FakeEnrollmentFeeDAO() : base("")
         {
         }
 
-        public override EnrollmentFee? GetCurrentEnrollmentFee()
+        public override EnrollmentFee? GetCurrentEnrollmentFee(string gender)
         {
             WasAsked = true;
-            return Current;
+            return PorGenero.GetValueOrDefault(gender);
         }
     }
 

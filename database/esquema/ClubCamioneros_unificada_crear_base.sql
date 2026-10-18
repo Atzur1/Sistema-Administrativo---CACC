@@ -13,6 +13,8 @@
         Portal Administrativo) ni la configuracion de cobranza.
      4. Registra en dbo.__CaccMigraciones las 20 migraciones que ya existen en el repositorio del Portal
         Administrativo (mismo nombre y mismo hash que calcula la API), para que al iniciar no vuelva a aplicarlas.
+        Las migraciones posteriores (por ejemplo V20261018_01__inscripcion_por_genero) las aplica la API al iniciar; sobre
+        esta estructura no cambian nada porque ya nace en su forma final.
    COMO USARLO: sqlcmd -S <servidor> -E -C -b -i este_archivo.sql   (o F5 en SSMS). Es seguro repetirlo:
    si la base ya tiene tablas, no hace nada.
 
@@ -98,13 +100,13 @@ CREATE TABLE dbo.[ARANCELES] (
 );
 GO
 
--- Arancel de inscripcion. genero NULL = aplica a todos los generos (asi funciona el codigo actual, que no manda genero);
--- con genero, solo a ese genero y tiene prioridad. monto 0 = no se cobra inscripcion a ese genero.
+-- Arancel de inscripcion, una historia por genero. Un genero sin arancel vigente, o con uno de monto 0, no paga
+-- inscripcion (hoy: las mujeres). Si el club decide cobrarla, se programa un arancel femenino con monto mayor a 0.
 CREATE TABLE dbo.[ARANCELES_INSCRIPCION] (
     [PK_id_arancel_inscripcion] int IDENTITY(1,1) NOT NULL,
     [monto] decimal(18,2) NOT NULL,
     [vigente_desde] date NOT NULL,
-    [genero] varchar(20) NULL,
+    [genero] varchar(20) NOT NULL,
     CONSTRAINT [PK_ARANCELES_INSCRIPCION] PRIMARY KEY CLUSTERED ([PK_id_arancel_inscripcion]),
     CONSTRAINT [CK_ARANCELES_INSCRIPCION_MONTO] CHECK ([monto]>=(0)),
     CONSTRAINT [CK_ARANCELES_INSCRIPCION_GENERO] CHECK ([genero] IS NULL OR [genero]='Masculino' OR [genero]='Femenino')
@@ -450,8 +452,7 @@ GO
 
 CREATE UNIQUE NONCLUSTERED INDEX [UX_ARANCELES_CATEGORIA_FECHA] ON dbo.[ARANCELES] ([FK_id_categoria], [vigente_desde]) WHERE ([FK_id_categoria] IS NOT NULL);
 CREATE UNIQUE NONCLUSTERED INDEX [UX_ARANCELES_GENERO_FECHA] ON dbo.[ARANCELES] ([genero], [vigente_desde]) WHERE ([genero] IS NOT NULL);
-CREATE UNIQUE NONCLUSTERED INDEX [UX_ARANCELES_INSCRIPCION_GENERAL_FECHA] ON dbo.[ARANCELES_INSCRIPCION] ([vigente_desde]) WHERE ([genero] IS NULL);
-CREATE UNIQUE NONCLUSTERED INDEX [UX_ARANCELES_INSCRIPCION_GENERO_FECHA] ON dbo.[ARANCELES_INSCRIPCION] ([genero], [vigente_desde]) WHERE ([genero] IS NOT NULL);
+CREATE UNIQUE NONCLUSTERED INDEX [UX_ARANCELES_INSCRIPCION_GENERO_FECHA] ON dbo.[ARANCELES_INSCRIPCION] ([genero], [vigente_desde]);
 CREATE NONCLUSTERED INDEX [IX_ASISTENCIAS_persona_fecha] ON dbo.[ASISTENCIAS] ([FK_id_persona], [fecha_hora]);
 CREATE NONCLUSTERED INDEX [IX_ASISTENCIAS_jugador_fecha] ON dbo.[ASISTENCIAS] ([FK_id_jugador], [fecha_hora]);
 CREATE NONCLUSTERED INDEX [IX_AUDITORIA_CAMBIOS_entidad_evento] ON dbo.[AUDITORIA_CAMBIOS] ([entidad], [id_entidad], [accion], [fecha_utc], [PK_id_evento]) INCLUDE ([id_usuario]);

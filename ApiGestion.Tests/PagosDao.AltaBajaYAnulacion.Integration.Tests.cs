@@ -136,7 +136,10 @@ public class PagosDaoAltaBajaYAnulacionIntegrationTests
         new EstadisticasDao(Conexion).ObtenerResumenGeneral();
         new DiscountDao(Conexion).GetActiveDiscounts();
         new DiscountDao(Conexion).GetAllDiscounts();
-        new EnrollmentFeeDAO(Conexion).GetCurrentEnrollmentFee();
+        var inscripciones = new EnrollmentFeeDAO(Conexion);
+        inscripciones.GetAllEnrollmentFees();
+        inscripciones.GetCurrentEnrollmentFee(Generos.Masculino);
+        inscripciones.GetCurrentEnrollmentFee(Generos.Femenino);
         Assert.NotNull(new JugadoresDao(Conexion).ListarJugadores());
         // Consultas que ahora leen fecha_baja o cancelada_por_baja.
         pagos.ObtenerPendientesAgrupados();

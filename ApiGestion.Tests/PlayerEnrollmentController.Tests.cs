@@ -145,6 +145,43 @@ public class PlayerEnrollmentControllerTests
         Assert.False(dao.FirstPaymentCreated);
     }
 
+    // Las mujeres hoy no pagan inscripción, pero si el club programa un arancel femenino, se les cobra como a los varones.
+    [Fact]
+    public void CreateEnrollmentPayment_ForAFemalePlayerWithAFemaleFee_CreatesItWithThatFee()
+    {
+        (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController(
+            new EnrollmentFee { Gender = "Femenino", Amount = 30000, StartDate = new DateTime(2026, 1, 1) }, gender: "Femenino");
+
+        IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
+
+        Assert.IsType<CreatedResult>(result);
+        Assert.True(dao.FirstPaymentCreated);
+    }
+
+    [Fact]
+    public void CreateEnrollmentPayment_ForAGenderWhoseFeeIsZero_IsRefusedAndCreatesNothing()
+    {
+        (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController(
+            new EnrollmentFee { Gender = "Femenino", Amount = 0, StartDate = new DateTime(2026, 1, 1) }, gender: "Femenino");
+
+        IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.False(dao.FirstPaymentCreated);
+    }
+
+    [Fact]
+    public void CreateEnrollmentPayment_ForAPlayerWithoutGender_IsRefusedAndCreatesNothing()
+    {
+        (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController(
+            new EnrollmentFee { Amount = 50000, StartDate = new DateTime(2026, 1, 1) }, gender: "");
+
+        IActionResult result = controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 1000, PaymentMethod = "Efectivo" });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.False(dao.FirstPaymentCreated);
+    }
+
     [Fact]
     public void CreateEnrollmentPayment_ForAMalePlayerWithoutEnrollment_CreatesItWithTheOperator()
     {
@@ -281,10 +318,16 @@ public class PlayerEnrollmentControllerTests
 
     private class FakeEnrollmentFeeDAO : EnrollmentFeeDAO
     {
-        public EnrollmentFee? Current { get; set; }
+        public Dictionary<string, EnrollmentFee> PorGenero { get; } = new();
+        // El arancel masculino: lo que estas pruebas usaban antes de que la inscripción dependiera del género.
+        public EnrollmentFee? Current
+        {
+            get => PorGenero.GetValueOrDefault(Generos.Masculino);
+            set { if (value != null) PorGenero[value.Gender] = value; }
+        }
 
         public FakeEnrollmentFeeDAO() : base("") { }
 
-        public override EnrollmentFee? GetCurrentEnrollmentFee() => Current;
+        public override EnrollmentFee? GetCurrentEnrollmentFee(string gender) => PorGenero.GetValueOrDefault(gender);
     }
 }

@@ -1,7 +1,8 @@
 namespace EntityLibrary;
 
-// One row of ARANCELES_INSCRIPCION: the one-time enrollment fee charged to new
-// players of the men's squad, in force from StartDate until the next one starts.
+// One row of ARANCELES_INSCRIPCION: the one-time enrollment fee charged to new players of one gender
+// (Gender), in force from StartDate until the next fee of that same gender starts. A gender with no
+// fee in force, or with a fee of 0, is not charged an enrollment.
 public class EnrollmentFee
 {
     private long id = 0;
@@ -15,6 +16,9 @@ public class EnrollmentFee
         get { return id; }
         set { id = value; }
     }
+
+    // Masculino or Femenino. Each gender has its own history of fees.
+    public string Gender { get; set; } = Generos.Masculino;
 
     public decimal Amount
     {

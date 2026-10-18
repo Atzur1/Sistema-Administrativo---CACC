@@ -66,7 +66,7 @@ public class EnrollmentFeesControllerTests
     {
         (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
         DateTime futuro = RelojNegocio.Hoy.AddMonths(1);
-        EnrollmentFeeRequestDTO request = new EnrollmentFeeRequestDTO { Amount = 55000, StartDate = futuro.AddHours(15).AddMinutes(30) };
+        EnrollmentFeeRequestDTO request = new EnrollmentFeeRequestDTO { Gender = "Masculino", Amount = 55000, StartDate = futuro.AddHours(15).AddMinutes(30) };
 
         IActionResult result = controller.CreateEnrollmentFee(request);
 
@@ -86,7 +86,7 @@ public class EnrollmentFeesControllerTests
         DateTime futuro = RelojNegocio.Hoy.AddMonths(1);
         dao.Fees.Add(new EnrollmentFee { Id = 1, Amount = 50000, StartDate = futuro });
 
-        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Amount = 60000, StartDate = futuro });
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Gender = "Masculino", Amount = 60000, StartDate = futuro });
 
         Assert.IsType<BadRequestObjectResult>(result);
         Assert.Single(dao.Fees);
@@ -98,7 +98,7 @@ public class EnrollmentFeesControllerTests
     {
         (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
 
-        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Amount = 60000, StartDate = RelojNegocio.Hoy.AddDays(-1) });
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Gender = "Masculino", Amount = 60000, StartDate = RelojNegocio.Hoy.AddDays(-1) });
 
         Assert.IsType<BadRequestObjectResult>(result);
         Assert.Empty(dao.Fees);
@@ -109,19 +109,36 @@ public class EnrollmentFeesControllerTests
     {
         (EnrollmentFeesController controller, _) = CreateController();
 
-        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Amount = 60000, StartDate = RelojNegocio.Hoy });
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Gender = "Masculino", Amount = 60000, StartDate = RelojNegocio.Hoy });
 
         Assert.IsType<CreatedResult>(result);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-100)]
-    public void RequestDTO_WithAnAmountNotGreaterThanZero_IsInvalid(int amount)
+    [Fact]
+    public void RequestDTO_WithANegativeAmount_IsInvalid()
     {
-        EnrollmentFeeRequestDTO request = new EnrollmentFeeRequestDTO { Amount = amount, StartDate = new DateTime(2026, 10, 1) };
+        EnrollmentFeeRequestDTO request = new EnrollmentFeeRequestDTO { Gender = "Masculino", Amount = -100, StartDate = new DateTime(2026, 10, 1) };
 
         Assert.Contains(Validate(request), r => r.MemberNames.Contains(nameof(EnrollmentFeeRequestDTO.Amount)));
+    }
+
+    // Monto 0 = ese género no paga inscripción desde esa fecha.
+    [Fact]
+    public void RequestDTO_WithAnAmountOfZero_IsValid()
+    {
+        Assert.Empty(Validate(new EnrollmentFeeRequestDTO { Gender = "Femenino", Amount = 0, StartDate = new DateTime(2026, 10, 1) }));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("Otro")]
+    [InlineData("masculino ")]
+    public void RequestDTO_WithoutAValidGender_IsInvalid(string? gender)
+    {
+        EnrollmentFeeRequestDTO request = new EnrollmentFeeRequestDTO { Gender = gender, Amount = 50000, StartDate = new DateTime(2026, 10, 1) };
+
+        Assert.Contains(Validate(request), r => r.MemberNames.Contains(nameof(EnrollmentFeeRequestDTO.Gender)));
     }
 
     [Fact]
@@ -136,7 +153,61 @@ public class EnrollmentFeesControllerTests
     [Fact]
     public void RequestDTO_WithAPositiveAmountAndAStartDate_IsValid()
     {
-        Assert.Empty(Validate(new EnrollmentFeeRequestDTO { Amount = 50000, StartDate = new DateTime(2026, 10, 1) }));
+        Assert.Empty(Validate(new EnrollmentFeeRequestDTO { Gender = "Masculino", Amount = 50000, StartDate = new DateTime(2026, 10, 1) }));
+    }
+
+    // Cada género tiene su propia historia de aranceles: el mismo día puede empezar uno masculino y uno femenino.
+    [Fact]
+    public void CreateEnrollmentFee_OnADayTakenByTheOtherGender_IsAccepted()
+    {
+        (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
+        DateTime futuro = RelojNegocio.Hoy.AddMonths(1);
+        dao.Fees.Add(new EnrollmentFee { Id = 1, Gender = "Masculino", Amount = 50000, StartDate = futuro });
+
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Gender = "Femenino", Amount = 30000, StartDate = futuro });
+
+        EnrollmentFeeResponseDTO fee = Assert.IsType<EnrollmentFeeResponseDTO>(Assert.IsType<CreatedResult>(result).Value);
+        Assert.Equal("Femenino", fee.Gender);
+        Assert.Equal(2, dao.Fees.Count);
+    }
+
+    [Fact]
+    public void CreateEnrollmentFee_WithADayTakenByTheSameGender_ReturnsBadRequest()
+    {
+        (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
+        DateTime futuro = RelojNegocio.Hoy.AddMonths(1);
+        dao.Fees.Add(new EnrollmentFee { Id = 1, Gender = "Femenino", Amount = 30000, StartDate = futuro });
+
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Gender = "Femenino", Amount = 40000, StartDate = futuro });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Single(dao.Fees);
+    }
+
+    [Fact]
+    public void CreateEnrollmentFee_WithAZeroAmount_IsStored_SoTheGenderStopsPaying()
+    {
+        (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
+
+        IActionResult result = controller.CreateEnrollmentFee(new EnrollmentFeeRequestDTO { Gender = "Femenino", Amount = 0, StartDate = RelojNegocio.Hoy.AddDays(1) });
+
+        Assert.IsType<CreatedResult>(result);
+        Assert.Equal(0, dao.Fees.Single().Amount);
+    }
+
+    [Fact]
+    public void GetCurrentEnrollmentFee_AsksForTheGenderRequested()
+    {
+        (EnrollmentFeesController controller, FakeEnrollmentFeeDAO dao) = CreateController();
+        dao.Current = new EnrollmentFee { Id = 1, Gender = "Masculino", Amount = 50000, StartDate = new DateTime(2026, 1, 1), Status = EnrollmentFeeStatus.Current };
+        dao.Current = new EnrollmentFee { Id = 2, Gender = "Femenino", Amount = 30000, StartDate = new DateTime(2026, 1, 1), Status = EnrollmentFeeStatus.Current };
+
+        EnrollmentFeeResponseDTO femenino = Assert.IsType<EnrollmentFeeResponseDTO>(Assert.IsType<OkObjectResult>(controller.GetCurrentEnrollmentFee("Femenino")).Value);
+        EnrollmentFeeResponseDTO porDefecto = Assert.IsType<EnrollmentFeeResponseDTO>(Assert.IsType<OkObjectResult>(controller.GetCurrentEnrollmentFee()).Value);
+
+        Assert.Equal(30000, femenino.Amount);
+        Assert.Equal("Masculino", porDefecto.Gender);
+        Assert.IsType<BadRequestObjectResult>(controller.GetCurrentEnrollmentFee("Otro"));
     }
 
     [Fact]
@@ -157,7 +228,13 @@ public class EnrollmentFeesControllerTests
     private class FakeEnrollmentFeeDAO : EnrollmentFeeDAO
     {
         public List<EnrollmentFee> Fees { get; set; } = new();
-        public EnrollmentFee? Current { get; set; }
+        public Dictionary<string, EnrollmentFee> PorGenero { get; } = new();
+        // El arancel masculino: lo que estas pruebas usaban antes de que la inscripción dependiera del género.
+        public EnrollmentFee? Current
+        {
+            get => PorGenero.GetValueOrDefault(Generos.Masculino);
+            set { if (value != null) PorGenero[value.Gender] = value; }
+        }
 
         public FakeEnrollmentFeeDAO() : base("")
         {
@@ -168,14 +245,14 @@ public class EnrollmentFeesControllerTests
             return Fees;
         }
 
-        public override EnrollmentFee? GetCurrentEnrollmentFee()
+        public override EnrollmentFee? GetCurrentEnrollmentFee(string gender)
         {
-            return Current;
+            return PorGenero.GetValueOrDefault(gender);
         }
 
-        public override EnrollmentFee? GetEnrollmentFeeByStartDate(DateTime startDate)
+        public override EnrollmentFee? GetEnrollmentFeeByStartDate(string gender, DateTime startDate)
         {
-            return Fees.FirstOrDefault(f => f.StartDate.Date == startDate.Date);
+            return Fees.FirstOrDefault(f => f.Gender == gender && f.StartDate.Date == startDate.Date);
         }
 
         public override EnrollmentFee CreateEnrollmentFee(EnrollmentFee fee)

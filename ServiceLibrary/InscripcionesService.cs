@@ -13,7 +13,8 @@ namespace ServiceLibrary
 
     // La inscripción de un jugador y sus pagos (HU-033): separada de las cuotas, con su propio saldo y pagos parciales.
     //  - Si el jugador todavía no tiene inscripción, se crea en el primer pago con el arancel de inscripción
-    //    vigente: solo para la rama masculina y nunca para un jugador dado de baja.
+    //    vigente de SU género. Un género sin arancel vigente, o con uno de $0, no paga inscripción (hoy: las mujeres).
+    //    Nunca se crea para un jugador dado de baja.
     //  - Una inscripción que ya existe se puede cobrar siempre (también a un dado de baja: es deuda).
     //  - Nunca se cobra más que el saldo (ni que el arancel, en el primer pago).
     public class InscripcionesService : IInscripcionesService
@@ -70,19 +71,23 @@ namespace ServiceLibrary
         // Jugador sin inscripción todavía (por ejemplo, dado de alta antes de HU-033): se crea con el arancel vigente.
         private ResultadoOperacion<EnrollmentPayment> CrearConPrimerPago(JugadorResumen jugador, SolicitudPagoInscripcion solicitud, string metodo)
         {
-            if (jugador.Genero != Generos.Masculino)
+            if (!Generos.Validos.Contains(jugador.Genero))
             {
-                return Falla(TipoResultado.Invalido, "La inscripción corresponde solo a la rama masculina: este jugador no tiene inscripción para cobrar.");
+                return Falla(TipoResultado.Invalido, "El jugador no tiene el género cargado: sin ese dato no se puede saber si le corresponde inscripción.");
             }
             if (jugador.FechaBaja != null)
             {
                 return Falla(TipoResultado.Invalido, $"El jugador está dado de baja desde el {jugador.FechaBaja:dd/MM/yyyy}: no se le genera una inscripción nueva.");
             }
 
-            EnrollmentFee? arancel = _enrollmentFeeDao.GetCurrentEnrollmentFee();
-            if (arancel == null)
+            EnrollmentFee? arancel = _enrollmentFeeDao.GetCurrentEnrollmentFee(jugador.Genero);
+            if (arancel == null && jugador.Genero == Generos.Masculino)
             {
                 return Falla(TipoResultado.Conflicto, "No hay un arancel de inscripción vigente. Cargalo en Actualización de aranceles antes de registrar el pago.");
+            }
+            if (arancel == null || arancel.Amount == 0)
+            {
+                return Falla(TipoResultado.Invalido, "A este jugador no le corresponde inscripción: no hay un arancel de inscripción vigente para su género.");
             }
             if (solicitud.Monto > arancel.Amount)
             {
