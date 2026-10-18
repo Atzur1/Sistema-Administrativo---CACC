@@ -7,7 +7,6 @@ import { AuthService } from '../../services/auth';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { animateCountUp } from '../../shared/count-up';
 import { AvisoCuotasFaltantes } from './aviso-cuotas-faltantes/aviso-cuotas-faltantes';
-import { AvisoJugadoresSinGenero } from './aviso-jugadores-sin-genero/aviso-jugadores-sin-genero';
 import { GeneralSummaryModel, MonthlyCollectionPointModel, MonthlyCoveragePointModel } from '../../models/GeneralSummaryModel';
 
 Chart.register(...registerables);
@@ -64,7 +63,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-resumen-general',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective, AvisoCuotasFaltantes, AvisoJugadoresSinGenero],
+  imports: [CommonModule, BaseChartDirective, AvisoCuotasFaltantes],
   templateUrl: './resumen-general.html',
   styleUrl: './resumen-general.css',
 })

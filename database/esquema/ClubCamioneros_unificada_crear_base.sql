@@ -13,8 +13,8 @@
         Portal Administrativo) ni la configuracion de cobranza.
      4. Registra en dbo.__CaccMigraciones las 20 migraciones que ya existen en el repositorio del Portal
         Administrativo (mismo nombre y mismo hash que calcula la API), para que al iniciar no vuelva a aplicarlas.
-        Las migraciones posteriores (por ejemplo V20261018_01__inscripcion_por_genero) las aplica la API al iniciar; sobre
-        esta estructura no cambian nada porque ya nace en su forma final.
+        Las migraciones posteriores (V20261018_01__inscripcion_por_genero y V20261018_02__genero_y_categoria_obligatorios)
+        las aplica la API al iniciar; sobre esta estructura no cambian nada porque ya nace en su forma final.
    COMO USARLO: sqlcmd -S <servidor> -E -C -b -i este_archivo.sql   (o F5 en SSMS). Es seguro repetirlo:
    si la base ya tiene tablas, no hace nada.
 
@@ -29,6 +29,11 @@
      - USUARIOS: una cuenta por persona, UNA contrasena (contrasenia, BCrypt) para los dos portales. Una cuenta nueva
        nace SIN acceso al Portal Administrativo (acceso_portal = 0). rol_portal (1 SuperAdmin, 2 Administrador) es
        independiente de FK_id_rol (ROLES, ids fijos del Portal Deportivo).
+     - GENERO Y CATEGORIA SON OBLIGATORIOS para todo jugador: de ellos sale el arancel que se le cobra (la categoria, si tiene
+       arancel propio; si no, el genero) y la inscripcion depende del genero. La base rechaza el alta si falta alguno
+       (JUGADORES.FK_id_categoria NOT NULL y los triggers TR_JUGADORES_GENERO_OBLIGATORIO / TR_PERSONAS_GENERO_DE_JUGADOR).
+       El genero valido es Masculino o Femenino; para el resto de las personas (personal, tutores) PERSONAS.genero es libre.
+       Al dar de alta: primero PERSONAS (con genero) y despues JUGADORES (con categoria).
      - Baja de jugadores: JAMAS se borra. JUGADORES.fecha_baja con fecha = dado de baja; JUGADORES.activo se calcula.
        Reingresar = fecha_baja NULL y fecha_alta = fecha del reingreso. JUGADORES_PERIODOS conserva todas las
        permanencias (el trigger TR_JUGADORES_PERIODOS la mantiene sola, escriba quien escriba).
@@ -231,7 +236,7 @@ GO
 CREATE TABLE dbo.[JUGADORES] (
     [PK_id_jugador] int NOT NULL CONSTRAINT [DF_JUGADORES_PK_id_jugador] DEFAULT (NEXT VALUE FOR dbo.SEQ_JUGADORES),
     [FK_id_persona] int NULL,
-    [FK_id_categoria] int NULL,
+    [FK_id_categoria] int NOT NULL,
     [club_origen] varchar(100) NULL,
     [ficha_medica_liga] bit NULL,
     [posicion_cancha] varchar(50) NULL,
@@ -670,6 +675,28 @@ BEGIN
     WHERE d.fecha_baja IS NOT NULL AND i.fecha_baja IS NOT NULL AND i.fecha_baja <> d.fecha_baja
       AND p.fecha_baja = d.fecha_baja
       AND p.fecha_alta = (SELECT MAX(q.fecha_alta) FROM dbo.JUGADORES_PERIODOS q WHERE q.FK_id_jugador = p.FK_id_jugador);
+END;
+GO
+
+-- Genero obligatorio para todo jugador: la persona tiene que tener genero Masculino o Femenino.
+CREATE TRIGGER dbo.TR_JUGADORES_GENERO_OBLIGATORIO ON dbo.JUGADORES AFTER INSERT, UPDATE AS
+BEGIN
+    SET NOCOUNT ON;
+    IF UPDATE(FK_id_persona) AND EXISTS (
+        SELECT 1 FROM inserted i LEFT JOIN dbo.PERSONAS p ON p.PK_id_persona = i.FK_id_persona
+        WHERE p.PK_id_persona IS NULL OR p.genero IS NULL OR LTRIM(RTRIM(p.genero)) NOT IN (N'Masculino', N'Femenino'))
+        THROW 51010, N'Un jugador necesita su persona con genero Masculino o Femenino: sin ese dato no se sabe que arancel cobrarle.', 1;
+END;
+GO
+
+-- Y esa persona no puede quedar sin genero (o con uno invalido) mientras sea jugador.
+CREATE TRIGGER dbo.TR_PERSONAS_GENERO_DE_JUGADOR ON dbo.PERSONAS AFTER UPDATE AS
+BEGIN
+    SET NOCOUNT ON;
+    IF UPDATE(genero) AND EXISTS (
+        SELECT 1 FROM inserted i JOIN dbo.JUGADORES j ON j.FK_id_persona = i.PK_id_persona
+        WHERE i.genero IS NULL OR LTRIM(RTRIM(i.genero)) NOT IN (N'Masculino', N'Femenino'))
+        THROW 51011, N'No se puede dejar sin genero (o con uno invalido) a una persona que es jugador: sin ese dato no se sabe que arancel cobrarle.', 1;
 END;
 GO
 
