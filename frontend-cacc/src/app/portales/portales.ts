@@ -32,8 +32,10 @@ export class Portales {
   }
 
   ingresarPortalDeportivo() {
-    alert('Ingresando al Portal Deportivo...');
-    // this.router.navigate(['/deportivo/dashboard']);
+    if (!this.authService.abrirPortalDeportivo()) {
+      alert('Debes iniciar sesión para acceder al Portal Deportivo.');
+      this.router.navigate(['/']);
+    }
   }
 
   ingresarPortalPersonas() {
