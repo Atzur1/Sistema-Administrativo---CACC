@@ -93,6 +93,10 @@ builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
     new DaoLibrary.EstadisticasDao(conexionSql));
 
+// Estado de deuda de los jugadores para el Portal Deportivo (QR de ingreso y listados)
+builder.Services.AddScoped<DaoLibrary.IEstadoDeudaDao>(provider =>
+    new DaoLibrary.EstadoDeudaDao(conexionSql));
+
 // Categorías: catálogo para el selector de Deudas y Morosidad (HU-020)
 builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
     new DaoLibrary.CategoriasDao(conexionSql));
