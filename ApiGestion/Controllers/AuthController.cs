@@ -152,24 +152,10 @@ namespace ApiGestion.Controllers
             return NoContent();
         }
 
-        // Un solo token para los dos portales (misma clave, emisor y audiencia):
-        //  - Portal Administrativo: ClaimTypes.Role = rol_portal ("1" SuperAdmin, "2" Administrador), solo si la cuenta tiene acceso.
-        //  - Portal Deportivo: ClaimTypes.Role = nombre del rol de ROLES, "id_rol" y "id_categoria" (uno por categoria del staff).
-        //  - "rol_portal" ("0" si no tiene acceso al Administrativo) y "tokenVersion" son los que valida este API.
+        // Un solo token para los dos portales (ver ClaimsDelToken: el Administrador no lleva permisos del Deportivo).
         private string GenerarToken(EntityLibrary.Usuario usuario)
         {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Email, usuario.Email),
-                new Claim(ClaimTypes.NameIdentifier, usuario.IdUsuario.ToString()),
-                new Claim("idUsuario", usuario.IdUsuario.ToString()),
-                new Claim("tokenVersion", usuario.TokenVersion.ToString()),
-                new Claim("rol_portal", usuario.IdRol.ToString())
-            };
-            if (usuario.IdRol != 0) claims.Add(new Claim(ClaimTypes.Role, usuario.IdRol.ToString()));
-            if (!string.IsNullOrWhiteSpace(usuario.NombreRolDeportivo)) claims.Add(new Claim(ClaimTypes.Role, usuario.NombreRolDeportivo));
-            if (usuario.IdRolDeportivo is int idRolDeportivo) claims.Add(new Claim("id_rol", idRolDeportivo.ToString()));
-            foreach (var idCategoria in usuario.IdsCategorias) claims.Add(new Claim("id_categoria", idCategoria.ToString()));
+            var claims = ClaimsDelToken.Construir(usuario);
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
