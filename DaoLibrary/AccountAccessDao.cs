@@ -37,7 +37,7 @@ public sealed class AccountAccessDao(string connectionString)
         string? nombre;
         // TOP (2): si dos cuentas respondieran al mismo identificador no se adivina cuál es; no se manda nada.
         using (var find = new SqlCommand(
-            $@"SELECT TOP (2) PK_id_usuario, email, nombre FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK)
+            $@"SELECT TOP (2) PK_id_usuario, email, nombre FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) JOIN dbo.PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona
                WHERE {(wanted.Value.EsCorreo ? "email = @valor" : AuthDao.DniNormalizadoSql + " = @valor")}
                  AND activo = 1 AND activacion_pendiente = 0 AND acceso_portal = 1",
             connection, transaction))
@@ -62,7 +62,7 @@ public sealed class AccountAccessDao(string connectionString)
         string? email;
         string? nombre;
         using (var find = new SqlCommand(
-            "SELECT email, nombre FROM dbo.USUARIO WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND activo = 1 AND activacion_pendiente = 0 AND acceso_portal = 1",
+            "SELECT email, nombre FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) JOIN dbo.PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona WHERE PK_id_usuario = @id AND activo = 1 AND activacion_pendiente = 0 AND acceso_portal = 1",
             connection, transaction))
         {
             find.Parameters.Add("@id", SqlDbType.Int).Value = userId;
@@ -77,7 +77,7 @@ public sealed class AccountAccessDao(string connectionString)
         return new DestinatarioCorreo(email, nombre);
     }
 
-    // El nombre de USUARIO para saludar en el correo; vacío cuenta como sin cargar.
+    // El nombre de USUARIOS para saludar en el correo; vacío cuenta como sin cargar.
     private static string? LeerNombre(SqlDataReader reader, int ordinal)
     {
         if (reader.IsDBNull(ordinal)) return null;
@@ -132,7 +132,7 @@ public sealed class AccountAccessDao(string connectionString)
     {
         using var connection = SqlConnectionFactory.Open(connectionString);
         using var command = new SqlCommand(
-            "SELECT email, activacion_pendiente, nombre FROM dbo.USUARIO WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 1",
+            "SELECT email, activacion_pendiente, nombre FROM dbo.USUARIOS JOIN dbo.PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 1",
             connection);
         command.Parameters.Add("@id", SqlDbType.Int).Value = userId;
         using var reader = command.ExecuteReader();
@@ -152,8 +152,9 @@ public sealed class AccountAccessDao(string connectionString)
     public (string? Nombre, string? Apellido, string? Dni, string? Email)? ObtenerTitularDelToken(string tokenHash)
     {
         using var connection = SqlConnectionFactory.Open(connectionString);
-        using var command = new SqlCommand(@"SELECT u.nombre, u.apellido, u.dni, u.email FROM dbo.TOKEN_ACCESO_CUENTA t
-            INNER JOIN dbo.USUARIO u ON u.PK_id_usuario = t.id_usuario
+        using var command = new SqlCommand(@"SELECT pe.nombre, pe.apellido, pe.dni, u.email FROM dbo.TOKEN_ACCESO_CUENTA t
+            INNER JOIN dbo.USUARIOS u ON u.PK_id_usuario = t.id_usuario
+            INNER JOIN dbo.PERSONAS pe ON pe.PK_id_persona = u.FK_id_persona
             WHERE t.hash_token = @hash AND t.consumido_utc IS NULL AND t.vence_utc > SYSUTCDATETIME()
               AND u.activo = 1 AND u.acceso_portal = 1
               AND (t.tipo = 'ACTIVACION' OR (t.tipo = 'RECUPERACION' AND u.activacion_pendiente = 0))", connection);
@@ -182,7 +183,7 @@ public sealed class AccountAccessDao(string connectionString)
     {
         int? userId = null;
         using (var lookup = new SqlCommand(@"SELECT t.id_usuario FROM dbo.TOKEN_ACCESO_CUENTA t WITH (UPDLOCK, HOLDLOCK)
-            INNER JOIN dbo.USUARIO u ON u.PK_id_usuario = t.id_usuario
+            INNER JOIN dbo.USUARIOS u ON u.PK_id_usuario = t.id_usuario
             WHERE t.hash_token = @hash AND t.consumido_utc IS NULL AND t.vence_utc > SYSUTCDATETIME()
               AND u.activo = 1 AND u.acceso_portal = 1
               AND (t.tipo = 'ACTIVACION' OR (t.tipo = 'RECUPERACION' AND u.activacion_pendiente = 0))",
@@ -201,7 +202,7 @@ public sealed class AccountAccessDao(string connectionString)
                 setActor.Parameters.Add("@idUsuario", SqlDbType.Int).Value = userId.Value;
                 setActor.ExecuteNonQuery();
             }
-            using var update = new SqlCommand(@"UPDATE dbo.USUARIO SET password_hash = @password, contrasenia = NULL,
+            using var update = new SqlCommand(@"UPDATE dbo.USUARIOS SET contrasenia = @password,
                 token_version = token_version + 1, activacion_pendiente = 0
                 WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 1;", connection, transaction);
             update.Parameters.Add("@password", SqlDbType.NVarChar, 512).Value = passwordHash;

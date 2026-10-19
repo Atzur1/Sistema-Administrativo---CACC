@@ -114,7 +114,7 @@ namespace ApiGestion.Controllers
                     if (clave is not null) _loginThrottle.Limpiar(clave);
 
                     // Generamos el token JWT con el rol adentro
-                    string token = GenerarToken(usuarioEncontrado.IdUsuario, usuarioEncontrado.Email, usuarioEncontrado.IdRol, usuarioEncontrado.TokenVersion);
+                    string token = GenerarToken(usuarioEncontrado);
 
                     return Ok(new LoginResponseDTO
                     {
@@ -152,16 +152,10 @@ namespace ApiGestion.Controllers
             return NoContent();
         }
 
-        private string GenerarToken(int idUsuario, string email, int idRol, int tokenVersion)
+        // Un solo token para los dos portales (ver ClaimsDelToken: el Administrador no lleva permisos del Deportivo).
+        private string GenerarToken(EntityLibrary.Usuario usuario)
         {
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.Role, idRol.ToString()),
-                // Identificador de negocio usado por endpoints protegidos (ej. quién registró un cobro)
-                new Claim("idUsuario", idUsuario.ToString()),
-                new Claim("tokenVersion", tokenVersion.ToString())
-            };
+            var claims = ClaimsDelToken.Construir(usuario);
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

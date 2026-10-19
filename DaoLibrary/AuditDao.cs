@@ -54,7 +54,7 @@ public class AuditDao(string connectionString) : IAuditDao
             // club realmente quiere ver de un vistazo: pagos (incluye cuotas saldadas, que
             // viven como una acción dentro de PAGOS, no como su propia sección) y aranceles.
             // Todo el resto (Usuarios, Jugadores, Categorías, Becas, TOKEN_ACCESO_CUENTA,
-            // PERSONA) sigue existiendo y es buscable a propósito con "Sección" — esto solo
+            // PERSONAS) sigue existiendo y es buscable a propósito con "Sección" — esto solo
             // lo saca de la vista por defecto, no lo borra ni lo oculta de forma permanente.
             where.Append(" AND a.entidad IN ('PAGOS', 'ARANCELES')");
         }

@@ -85,7 +85,7 @@ public class PagosDaoAltaBajaYAnulacionIntegrationTests
             int categoria = PrimeraCategoria(connection, transaction);
             int jugador = CrearJugador(connection, transaction, alta: new DateTime(2098, 1, 1), baja: null, categoria);
             int idUsuario;
-            using (var cmd = new SqlCommand("SELECT TOP (1) PK_id_usuario FROM USUARIO ORDER BY PK_id_usuario", connection, transaction))
+            using (var cmd = new SqlCommand("SELECT TOP (1) PK_id_usuario FROM USUARIOS ORDER BY PK_id_usuario", connection, transaction))
                 idUsuario = Convert.ToInt32(cmd.ExecuteScalar());
 
             int idAbono = dao.InsertarPago(connection, transaction, new Pago
@@ -136,7 +136,10 @@ public class PagosDaoAltaBajaYAnulacionIntegrationTests
         new EstadisticasDao(Conexion).ObtenerResumenGeneral();
         new DiscountDao(Conexion).GetActiveDiscounts();
         new DiscountDao(Conexion).GetAllDiscounts();
-        new EnrollmentFeeDAO(Conexion).GetCurrentEnrollmentFee();
+        var inscripciones = new EnrollmentFeeDAO(Conexion);
+        inscripciones.GetAllEnrollmentFees();
+        inscripciones.GetCurrentEnrollmentFee(Generos.Masculino);
+        inscripciones.GetCurrentEnrollmentFee(Generos.Femenino);
         Assert.NotNull(new JugadoresDao(Conexion).ListarJugadores());
         // Consultas que ahora leen fecha_baja o cancelada_por_baja.
         pagos.ObtenerPendientesAgrupados();
@@ -165,7 +168,7 @@ public class PagosDaoAltaBajaYAnulacionIntegrationTests
                 DECLARE @nueva TABLE (id INT);
                 INSERT INTO JUGADORES_DESCUENTOS (FK_id_jugador, FK_id_descuento, tipo_valor, porcentaje, fecha_inicio, fecha_fin)
                 OUTPUT INSERTED.PK_id_jugador_descuento INTO @nueva (id)
-                VALUES (@j, (SELECT TOP (1) PK_id_descuento FROM TIPO_DESCUENTO ORDER BY PK_id_descuento), '%', 50, '2098-01-01', '2098-12-31');
+                VALUES (@j, (SELECT TOP (1) PK_id_descuento FROM TIPOS_DESCUENTO ORDER BY PK_id_descuento), '%', 50, '2098-01-01', '2098-12-31');
                 SELECT id FROM @nueva;", connection, transaction))
             {
                 beca.Parameters.AddWithValue("@j", jugador);

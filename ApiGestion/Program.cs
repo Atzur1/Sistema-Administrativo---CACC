@@ -50,7 +50,10 @@ builder.Services.AddCors(options =>
         policy =>
         {
             var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                ?? (builder.Environment.IsDevelopment() ? new[] { "http://localhost:4200" } : Array.Empty<string>());
+                ?? (builder.Environment.IsDevelopment()
+                    // 4300: Portal Deportivo en desarrollo (al cerrar sesión allá, invalida el token acá).
+                    ? new[] { "http://localhost:4200", "http://127.0.0.1:4200", "http://localhost:4300", "http://127.0.0.1:4300" }
+                    : Array.Empty<string>());
             policy.WithOrigins(origins)
                 .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .WithHeaders("Authorization", "Content-Type")
@@ -92,6 +95,10 @@ builder.Services.AddScoped<DaoLibrary.IJugadoresDao>(provider =>
 
 builder.Services.AddScoped<DaoLibrary.IEstadisticasDao>(provider =>
     new DaoLibrary.EstadisticasDao(conexionSql));
+
+// Estado de deuda de los jugadores para el Portal Deportivo (QR de ingreso y listados)
+builder.Services.AddScoped<DaoLibrary.IEstadoDeudaDao>(provider =>
+    new DaoLibrary.EstadoDeudaDao(conexionSql));
 
 // Categorías: catálogo para el selector de Deudas y Morosidad (HU-020)
 builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
@@ -171,7 +178,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnTokenValidated = async context =>
             {
                 var idClaim = context.Principal?.FindFirst("idUsuario")?.Value;
-                var roleClaim = context.Principal?.FindFirst(ClaimTypes.Role)?.Value;
+                var roleClaim = context.Principal?.FindFirst("rol_portal")?.Value;
                 var versionClaim = context.Principal?.FindFirst("tokenVersion")?.Value;
                 if (!int.TryParse(idClaim, out var id) || !int.TryParse(roleClaim, out var role) || !int.TryParse(versionClaim, out var tokenVersion))
                 {

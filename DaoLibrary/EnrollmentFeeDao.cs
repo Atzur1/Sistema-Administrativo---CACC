@@ -3,9 +3,9 @@ namespace DaoLibrary;
 using Microsoft.Data.SqlClient;
 using EntityLibrary;
 
-// Enrollment fee of the men's squad (HU-033). Kept in its own table and not as one
-// more gender in ARANCELES, because everything that reads ARANCELES would take it
-// for a monthly fee.
+// Enrollment fee (HU-033), one history per gender. Kept in its own table and not as one
+// more row of ARANCELES, because everything that reads ARANCELES would take it for a
+// monthly fee. A gender with no fee in force (or with a fee of 0) is not charged.
 //
 // Methods are virtual so the controller tests can replace the database.
 public class EnrollmentFeeDAO
@@ -17,13 +17,14 @@ public class EnrollmentFeeDAO
     private const string SelectWithStatus = $@"
         SELECT
             PK_id_arancel_inscripcion,
+            genero,
             monto,
             vigente_desde,
-            DATEADD(DAY, -1, LEAD(vigente_desde) OVER (ORDER BY vigente_desde)) AS vigente_hasta,
+            DATEADD(DAY, -1, LEAD(vigente_desde) OVER (PARTITION BY genero ORDER BY vigente_desde)) AS vigente_hasta,
             CASE
                 WHEN vigente_desde > {SqlReloj.Hoy} THEN 0
-                WHEN LEAD(vigente_desde) OVER (ORDER BY vigente_desde) IS NULL
-                  OR LEAD(vigente_desde) OVER (ORDER BY vigente_desde) > {SqlReloj.Hoy} THEN 1
+                WHEN LEAD(vigente_desde) OVER (PARTITION BY genero ORDER BY vigente_desde) IS NULL
+                  OR LEAD(vigente_desde) OVER (PARTITION BY genero ORDER BY vigente_desde) > {SqlReloj.Hoy} THEN 1
                 ELSE 2
             END AS estado,
             actor.nombre_usuario AS responsable_nombre,
@@ -44,17 +45,21 @@ public class EnrollmentFeeDAO
         _connectionString = connectionString;
     }
 
-    // Newest first, the same order the fee table on the screen uses
+    // Newest first, the same order the fee table on the screen uses (both genders together)
     public virtual List<EnrollmentFee> GetAllEnrollmentFees()
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        return GetAllCore(connection, null);
+    }
+
+    internal static List<EnrollmentFee> GetAllCore(SqlConnection connection, SqlTransaction? transaction)
     {
         List<EnrollmentFee> fees = new List<EnrollmentFee>();
         string query = $@"
             SELECT * FROM ({SelectWithStatus}) f
-            ORDER BY f.vigente_desde DESC;";
+            ORDER BY f.vigente_desde DESC, f.genero;";
 
-        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
-
-        using SqlCommand command = new SqlCommand(query, connection);
+        using SqlCommand command = new SqlCommand(query, connection, transaction);
         using SqlDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -64,15 +69,21 @@ public class EnrollmentFeeDAO
         return fees;
     }
 
-    public virtual EnrollmentFee? GetCurrentEnrollmentFee()
+    // The fee in force today for one gender, or null if that gender has none (it is not charged)
+    public virtual EnrollmentFee? GetCurrentEnrollmentFee(string gender)
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        return GetCurrentCore(connection, null, gender);
+    }
+
+    internal static EnrollmentFee? GetCurrentCore(SqlConnection connection, SqlTransaction? transaction, string gender)
     {
         string query = $@"
             SELECT * FROM ({SelectWithStatus}) f
-            WHERE f.estado = 1;";
+            WHERE f.estado = 1 AND f.genero = @gender;";
 
-        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
-
-        using SqlCommand command = new SqlCommand(query, connection);
+        using SqlCommand command = new SqlCommand(query, connection, transaction);
+        command.Parameters.AddWithValue("@gender", gender);
         using SqlDataReader reader = command.ExecuteReader();
         if (!reader.Read())
         {
@@ -82,15 +93,16 @@ public class EnrollmentFeeDAO
         return MapEnrollmentFee(reader);
     }
 
-    public virtual EnrollmentFee? GetEnrollmentFeeByStartDate(DateTime startDate)
+    public virtual EnrollmentFee? GetEnrollmentFeeByStartDate(string gender, DateTime startDate)
     {
         string query = $@"
             SELECT * FROM ({SelectWithStatus}) f
-            WHERE f.vigente_desde = @startDate;";
+            WHERE f.genero = @gender AND f.vigente_desde = @startDate;";
 
         using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
 
         using SqlCommand command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@gender", gender);
         command.Parameters.AddWithValue("@startDate", startDate.Date);
 
         using SqlDataReader reader = command.ExecuteReader();
@@ -107,19 +119,20 @@ public class EnrollmentFeeDAO
     public virtual EnrollmentFee CreateEnrollmentFee(EnrollmentFee fee)
     {
         string query = @"
-            INSERT INTO ARANCELES_INSCRIPCION (monto, vigente_desde)
-            VALUES (@amount, @startDate);";
+            INSERT INTO ARANCELES_INSCRIPCION (genero, monto, vigente_desde)
+            VALUES (@gender, @amount, @startDate);";
 
         using (SqlConnection connection = SqlConnectionFactory.Open(_connectionString))
         {
 
             using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@gender", fee.Gender);
             command.Parameters.AddWithValue("@amount", fee.Amount);
             command.Parameters.AddWithValue("@startDate", fee.StartDate.Date);
             command.ExecuteNonQuery();
         }
 
-        return GetEnrollmentFeeByStartDate(fee.StartDate)!;
+        return GetEnrollmentFeeByStartDate(fee.Gender, fee.StartDate)!;
     }
 
     private static EnrollmentFee MapEnrollmentFee(SqlDataReader reader)
@@ -127,6 +140,7 @@ public class EnrollmentFeeDAO
         return new EnrollmentFee
         {
             Id = Convert.ToInt64(reader["PK_id_arancel_inscripcion"]),
+            Gender = reader["genero"].ToString()!.Trim(),
             Amount = Convert.ToDecimal(reader["monto"]),
             StartDate = Convert.ToDateTime(reader["vigente_desde"]),
             EndDate = reader["vigente_hasta"] != DBNull.Value ? Convert.ToDateTime(reader["vigente_hasta"]) : null,

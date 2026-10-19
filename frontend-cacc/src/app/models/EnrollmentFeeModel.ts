@@ -1,8 +1,11 @@
-// Contract returned by api/enrollmentfees (HU-033): the one-time enrollment fee of
-// the men's squad. The backend resolves end date and status against its own
-// clock; the front end only renders them.
+// Contract returned by api/enrollmentfees (HU-033): the one-time enrollment fee, one history
+// per gender. A gender with no fee in force, or with one of 0, is not charged (today: women).
+// The backend resolves end date and status against its own clock; the front end only renders them.
+export type EnrollmentFeeGender = 'Masculino' | 'Femenino';
+
 export interface EnrollmentFeeModel {
     id: number;
+    gender: EnrollmentFeeGender;
     amount: number;
 
     // yyyy-MM-dd
@@ -19,8 +22,9 @@ export interface EnrollmentFeeModel {
 
 export type EnrollmentFeeStatus = 'Scheduled' | 'Current' | 'Previous';
 
-// Body sent to schedule a new enrollment fee
+// Body sent to schedule a new enrollment fee (amount 0 = that gender is not charged from that date)
 export interface EnrollmentFeeRequest {
+    gender: EnrollmentFeeGender;
     amount: number;
     startDate: string;
 }
@@ -48,19 +52,23 @@ export function enrollmentFeeStatusClass(status: EnrollmentFeeStatus): string {
     return STATUS_CLASSES[status] ?? 'status-previous';
 }
 
-export function findCurrentEnrollmentFee(fees: EnrollmentFeeModel[]): EnrollmentFeeModel | null {
-    return fees.find((f) => f.status === 'Current') ?? null;
+export function enrollmentFeeLabel(gender: EnrollmentFeeGender): string {
+    return gender === 'Femenino' ? 'Inscripción femenina' : 'Inscripción masculina';
+}
+
+export function findCurrentEnrollmentFee(fees: EnrollmentFeeModel[], gender: EnrollmentFeeGender = 'Masculino'): EnrollmentFeeModel | null {
+    return fees.find((f) => f.status === 'Current' && f.gender === gender) ?? null;
 }
 
 // The closest fee still waiting to start
-export function findNextEnrollmentFee(fees: EnrollmentFeeModel[]): EnrollmentFeeModel | null {
+export function findNextEnrollmentFee(fees: EnrollmentFeeModel[], gender: EnrollmentFeeGender = 'Masculino'): EnrollmentFeeModel | null {
     const scheduled = fees
-        .filter((f) => f.status === 'Scheduled')
+        .filter((f) => f.status === 'Scheduled' && f.gender === gender)
         .sort((a, b) => a.startDate.localeCompare(b.startDate));
     return scheduled[0] ?? null;
 }
 
-// Only one fee can start on a given day: the API refuses the second one
-export function isEnrollmentFeeDateTaken(fees: EnrollmentFeeModel[], startDate: string): boolean {
-    return fees.some((f) => f.startDate === startDate);
+// Only one fee per gender can start on a given day: the API refuses the second one
+export function isEnrollmentFeeDateTaken(fees: EnrollmentFeeModel[], startDate: string, gender: EnrollmentFeeGender = 'Masculino'): boolean {
+    return fees.some((f) => f.startDate === startDate && f.gender === gender);
 }

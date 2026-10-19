@@ -20,7 +20,8 @@ namespace ServiceLibrary
     //  - Cuota del mes: solo si el alta es desde el día 10 (CalendarioCuotas), cuando la del mes ya se generó para
     //    todos. Un alta antes del 10 la recibe ese día con el resto, o la paga por adelantado. Sin arancel vigente
     //    (ni de su categoría ni de su género) no se cobra, igual que en el generador mensual.
-    //  - Inscripción: solo la rama masculina y es obligatoria: sin un arancel de inscripción vigente, no hay alta.
+    //  - Inscripción: la de su género. En la rama masculina es obligatoria: sin un arancel de inscripción vigente,
+    //    no hay alta. Un género sin arancel vigente, o con uno de $0, no paga inscripción (hoy: las mujeres).
     // Los dos cargos quedan como deudas pendientes separadas, grabadas junto con el jugador (todo o nada).
     public class JugadoresAltaService : IJugadoresAltaService
     {
@@ -54,14 +55,14 @@ namespace ServiceLibrary
             }
 
             decimal? montoInscripcion = null;
-            if (solicitud.Genero == Generos.Masculino)
+            EnrollmentFee? inscripcion = _enrollmentFeeDao.GetCurrentEnrollmentFee(solicitud.Genero);
+            if (inscripcion == null && solicitud.Genero == Generos.Masculino)
             {
-                EnrollmentFee? inscripcion = _enrollmentFeeDao.GetCurrentEnrollmentFee();
-                if (inscripcion == null)
-                {
-                    return ResultadoOperacion<AltaJugadorRegistrada>.Falla(TipoResultado.Invalido,
-                        "No hay un arancel de inscripción vigente. Cargalo en Actualización de aranceles antes de dar de alta a un jugador de la rama masculina.");
-                }
+                return ResultadoOperacion<AltaJugadorRegistrada>.Falla(TipoResultado.Invalido,
+                    "No hay un arancel de inscripción vigente. Cargalo en Actualización de aranceles antes de dar de alta a un jugador de la rama masculina.");
+            }
+            if (inscripcion is { Amount: > 0 })
+            {
                 montoInscripcion = inscripcion.Amount;
             }
 

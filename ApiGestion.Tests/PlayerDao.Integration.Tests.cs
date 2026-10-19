@@ -23,8 +23,20 @@ public sealed class IntegracionFactAttribute : FactAttribute
     }
 }
 
+// Igual que IntegracionFact, para pruebas con varios casos (Theory).
+public sealed class IntegracionTheoryAttribute : TheoryAttribute
+{
+    public IntegracionTheoryAttribute()
+    {
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(IntegracionFactAttribute.Variable)))
+        {
+            Skip = $"Prueba de integración: definí la variable de entorno {IntegracionFactAttribute.Variable} con la conexión a una base de desarrollo.";
+        }
+    }
+}
+
 // HU-033: las pruebas del controlador usan un PlayerDAO falso, así que no ejecutan este SQL. Esta sí lo hace,
-// sobre una base real con los triggers de auditoría puestos. Cubre el error 334 de "OUTPUT sin INTO" en PERSONA,
+// sobre una base real con los triggers de auditoría puestos. Cubre el error 334 de "OUTPUT sin INTO" en PERSONAS,
 // que dejaba el alta de jugadores fallando en toda base con la auditoría aplicada.
 [Collection(BaseDeDatosCollection.Nombre)]
 public class PlayerDaoIntegrationTests
@@ -57,7 +69,7 @@ public class PlayerDaoIntegrationTests
 
             PlayerDAO.InsertPendingCharge(connection, transaction, playerId, 85000m, new DateTime(2026, 10, 1), "Cuota");
 
-            Assert.Equal(1, Count(connection, transaction, "SELECT COUNT(*) FROM PERSONA WHERE PK_id_persona = @id", personId));
+            Assert.Equal(1, Count(connection, transaction, "SELECT COUNT(*) FROM PERSONAS WHERE PK_id_persona = @id", personId));
             Assert.Equal(1, Count(connection, transaction, "SELECT COUNT(*) FROM JUGADORES WHERE PK_id_jugador = @id", playerId));
             Assert.Equal(1, Count(connection, transaction,
                 "SELECT COUNT(*) FROM PAGOS WHERE FK_id_jugador = @id AND concepto = 'Cuota' AND estado = 0", playerId));

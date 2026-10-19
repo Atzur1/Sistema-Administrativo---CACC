@@ -27,10 +27,14 @@ public class AuthDao
         // todavía no completó el enlace de activación: sin esto, una contraseña vieja
         // que el otro equipo haya dejado cargada serviría para entrar antes de tiempo.
         // TOP (2): si dos cuentas respondieran al mismo identificador no se adivina cuál es; no se deja entrar a ninguna.
-        string query = $@"SELECT TOP (2) PK_id_usuario, email, nombre, apellido, dni, password_hash, token_version, acceso_portal, rol_portal
-            FROM USUARIO
+        // Unificada: nombre, apellido y DNI viven en PERSONAS. Entra quien tiene acceso al Portal Administrativo o un rol del
+        // Portal Deportivo (FK_id_rol); el Administrativo sigue autorizando solo con acceso_portal / rol_portal.
+        string query = $@"SELECT TOP (2) PK_id_usuario, email, nombre, apellido, dni, contrasenia, token_version, acceso_portal, rol_portal,
+                   FK_id_rol, ROLES.nombre_rol AS nombre_rol_deportivo
+            FROM USUARIOS JOIN PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona
+                 LEFT JOIN ROLES ON ROLES.PK_id_rol = USUARIOS.FK_id_rol
             WHERE {(buscado.Value.EsCorreo ? "email = @valor" : DniNormalizadoSql + " = @valor")}
-              AND activo = 1 AND acceso_portal = 1 AND activacion_pendiente = 0";
+              AND activo = 1 AND (acceso_portal = 1 OR FK_id_rol IS NOT NULL) AND activacion_pendiente = 0";
         using var comando = new SqlCommand(query, conexion);
         comando.Parameters.Add("@valor", System.Data.SqlDbType.NVarChar, 254).Value = buscado.Value.Valor;
         using var reader = comando.ExecuteReader();
@@ -42,7 +46,7 @@ public class AuthDao
             return null;
         }
 
-        var hash = reader["password_hash"] as string;
+        var hash = reader["contrasenia"] as string;
 
         var usuario = new Usuario
         {
@@ -53,15 +57,17 @@ public class AuthDao
             Dni = reader["dni"] as string ?? string.Empty,
             AccesoPortal = Convert.ToBoolean(reader["acceso_portal"]),
             RolPortal = reader["rol_portal"] != DBNull.Value ? Convert.ToInt32(reader["rol_portal"]) : null,
-            TokenVersion = Convert.ToInt32(reader["token_version"])
+            TokenVersion = Convert.ToInt32(reader["token_version"]),
+            IdRolDeportivo = reader["FK_id_rol"] != DBNull.Value ? Convert.ToInt32(reader["FK_id_rol"]) : null,
+            NombreRolDeportivo = reader["nombre_rol_deportivo"] as string
         };
         // La constraint CK_USUARIO_acceso_portal_requiere_rol garantiza que rol_portal
         // no sea NULL cuando acceso_portal = 1, que es lo único que llega hasta acá.
-        usuario.IdRol = usuario.RolPortal!.Value;
+        usuario.IdRol = usuario.AccesoPortal ? usuario.RolPortal!.Value : 0;
         if (reader.Read()) return null; // identificador ambiguo
 
         // Solo contraseñas con hash (BCrypt, o PBKDF2 de antes del cambio). La columna contrasenia en texto plano ya
-        // no se lee: una cuenta sin password_hash no puede entrar hasta crear su contraseña con el enlace de
+        // no se lee: una cuenta sin contrasenia no puede entrar hasta crear su contraseña con el enlace de
         // activación o de "¿Olvidaste tu contraseña?". Se gasta igual el tiempo de una verificación para no delatarla.
         if (hash is null)
         {
@@ -81,7 +87,21 @@ public class AuthDao
             UpdatePasswordHash(usuario.IdUsuario, hash, PasswordHasher.HashPassword(contrasenia));
         }
 
+        usuario.IdsCategorias = CategoriasDelStaff(usuario.IdUsuario);
         return usuario;
+    }
+
+    // Categorías que tiene asignadas (Director Técnico / Preparador Físico): las usa el Portal Deportivo para acotar lo que ve.
+    private List<int> CategoriasDelStaff(int idUsuario)
+    {
+        var ids = new List<int>();
+        using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
+        using var comando = new SqlCommand(@"SELECT sc.FK_id_categoria FROM STAFF s JOIN STAFF_CATEGORIAS sc ON sc.FK_id_staff = s.PK_id_staff
+            WHERE s.FK_id_usuario = @id AND sc.FK_id_categoria IS NOT NULL", conexion);
+        comando.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idUsuario;
+        using var lector = comando.ExecuteReader();
+        while (lector.Read()) ids.Add(lector.GetInt32(0));
+        return ids;
     }
 
     // Hash válido de una contraseña al azar, solo para gastar el mismo tiempo que una verificación real.
@@ -95,7 +115,7 @@ public class AuthDao
         {
             using var connection = SqlConnectionFactory.Open(_cadenaConexion);
             using var command = new SqlCommand(
-                "UPDATE dbo.USUARIO SET password_hash = @newHash WHERE PK_id_usuario = @id AND password_hash = @currentHash",
+                "UPDATE dbo.USUARIOS SET contrasenia = @newHash WHERE PK_id_usuario = @id AND contrasenia = @currentHash",
                 connection);
             command.Parameters.Add("@newHash", System.Data.SqlDbType.NVarChar, 512).Value = newHash;
             command.Parameters.Add("@currentHash", System.Data.SqlDbType.NVarChar, 512).Value = currentHash;
@@ -109,15 +129,18 @@ public class AuthDao
     public void InvalidarSesiones(int idUsuario)
     {
         using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
-        using var comando = new SqlCommand("UPDATE USUARIO SET token_version = token_version + 1 WHERE PK_id_usuario = @id", conexion);
+        using var comando = new SqlCommand("UPDATE USUARIOS SET token_version = token_version + 1 WHERE PK_id_usuario = @id", conexion);
         comando.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idUsuario;
         comando.ExecuteNonQuery();
     }
 
+    // idRol 0 = cuenta sin acceso al Portal Administrativo (solo Portal Deportivo): se valida solo que siga activa.
     public bool UsuarioActivoConRol(int idUsuario, int idRol, int tokenVersion)
     {
         using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
-        using var comando = new SqlCommand("SELECT 1 FROM USUARIO WHERE PK_id_usuario = @id AND rol_portal = @rol AND acceso_portal = 1 AND activo = 1 AND token_version = @version", conexion);
+        using var comando = new SqlCommand(idRol == 0
+            ? "SELECT 1 FROM USUARIOS WHERE PK_id_usuario = @id AND @rol = 0 AND activo = 1 AND token_version = @version"
+            : "SELECT 1 FROM USUARIOS WHERE PK_id_usuario = @id AND rol_portal = @rol AND acceso_portal = 1 AND activo = 1 AND token_version = @version", conexion);
         comando.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idUsuario;
         comando.Parameters.Add("@rol", System.Data.SqlDbType.Int).Value = idRol;
         comando.Parameters.Add("@version", System.Data.SqlDbType.Int).Value = tokenVersion;

@@ -4,4 +4,6 @@
 export const environment = {
   production: true,
   apiUrl: 'https://TU_PROYECTO.up.railway.app/api',
+  // PENDIENTE ANTES DE DESPLEGAR: la URL pública real del Portal Deportivo.
+  deportivoUrl: 'https://TU_PORTAL_DEPORTIVO.example.com',
 };

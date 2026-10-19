@@ -9,6 +9,8 @@ import { PagosService } from '../../services/pagos';
 import { EnrollmentFeeService } from '../../services/enrollment-fees';
 import {
     EnrollmentFeeModel,
+    EnrollmentFeeGender,
+    enrollmentFeeLabel,
     enrollmentFeeStatusLabel,
     enrollmentFeeStatusClass,
 } from '../../models/EnrollmentFeeModel';
@@ -63,11 +65,12 @@ export class ActualizacionAranceles implements OnInit {
 
     // What the fee applies to: a gender, the enrollment fee, or one category. A category fee
     // wins over the gender fee for the players of that category, whatever their gender.
-    // Values: 'genero:Masculino' | 'genero:Femenino' | 'inscripcion' | 'categoria:<id>'
+    // Values: 'genero:Masculino' | 'genero:Femenino' | 'inscripcion:Masculino' | 'inscripcion:Femenino' | 'categoria:<id>'
     targets: CustomSelectOption[] = [
         { value: 'genero:Masculino', label: 'Masculino' },
         { value: 'genero:Femenino', label: 'Femenino' },
-        { value: 'inscripcion', label: 'Inscripción masculina' },
+        { value: 'inscripcion:Masculino', label: 'Inscripción masculina' },
+        { value: 'inscripcion:Femenino', label: 'Inscripción femenina' },
     ];
 
     enviando = false;
@@ -164,9 +167,11 @@ export class ActualizacionAranceles implements OnInit {
     ) {
         this.feeForm = this.fb.group({
             target: ['', [Validators.required]],
-            amount: ['', [Validators.required, Validators.min(1)]],
+            amount: ['', [Validators.required, this.montoMinimo]],
             validFrom: ['', [Validators.required, this.noAnteriorAHoy]],
         });
+        // El mínimo del monto depende del destino (la inscripción admite $0): se revalida al cambiarlo.
+        this.feeForm.get('target')?.valueChanges.subscribe(() => this.feeForm.get('amount')?.updateValueAndValidity());
     }
 
     // Regla del club: no se programan aranceles (mensuales ni de inscripción) con fecha pasada. El servidor
@@ -180,6 +185,14 @@ export class ActualizacionAranceles implements OnInit {
     get fechaPasada(): boolean {
         return !!this.feeForm?.get('validFrom')?.hasError('fechaPasada');
     }
+
+    // La cuota y el arancel de una categoría tienen que ser mayores a $0. La inscripción admite $0: significa que ese
+    // género no paga inscripción desde esa fecha (hoy, las mujeres).
+    private montoMinimo = (control: AbstractControl): ValidationErrors | null => {
+        const destino = this.feeForm?.get('target')?.value;
+        const minimo = typeof destino === 'string' && destino.startsWith('inscripcion:') ? 0 : 1;
+        return Number(control.value) < minimo ? { min: { min: minimo, actual: Number(control.value) } } : null;
+    };
 
     private noAnteriorAHoy = (control: AbstractControl): ValidationErrors | null => {
         const valor = control.value as string;
@@ -340,8 +353,11 @@ export class ActualizacionAranceles implements OnInit {
 
     get formSubtitle(): string {
         const target = this.feeForm.get('target')?.value;
-        if (target === 'inscripcion') {
-            return 'Definí el próximo valor de inscripción. Solo se cobra una vez al dar de alta al jugador.';
+        if (target === 'inscripcion:Masculino') {
+            return 'Definí el próximo valor de la inscripción masculina. Solo se cobra una vez, al dar de alta al jugador.';
+        }
+        if (target === 'inscripcion:Femenino') {
+            return 'Hoy las mujeres no pagan inscripción. Si el club decide cobrarla, programá acá su valor; con $0 deja de cobrarse. Solo se cobra una vez, al dar de alta a la jugadora.';
         }
         if (typeof target === 'string' && target.startsWith('categoria:')) {
             return 'Definí la cuota de esta categoría. Reemplaza al arancel de género para sus jugadores, sea cual sea su género. Los cambios no son retroactivos.';
@@ -435,13 +451,19 @@ export class ActualizacionAranceles implements OnInit {
 
         this.enviando = true;
 
-        if (target === 'inscripcion') {
-            this.enrollmentFeeService.createEnrollmentFee({ amount: Number(amount), startDate: validFrom }).subscribe({
+        if (typeof target === 'string' && target.startsWith('inscripcion:')) {
+            const gender = target.slice('inscripcion:'.length) as EnrollmentFeeGender;
+            this.enrollmentFeeService.createEnrollmentFee({ gender, amount: Number(amount), startDate: validFrom }).subscribe({
                 next: () => {
                     this.enviando = false;
                     this.feeForm.reset({ target: '', amount: '', validFrom: '' });
                     this.montoDisplay = '';
-                    this.notifications.notify('Nuevo valor de inscripción masculina programado correctamente.', 'success');
+                    this.notifications.notify(
+                        Number(amount) === 0
+                            ? `Desde esa fecha no se cobra la ${enrollmentFeeLabel(gender).toLowerCase()}.`
+                            : `Nuevo valor de la ${enrollmentFeeLabel(gender).toLowerCase()} programado correctamente.`,
+                        'success',
+                    );
                     this.cargarDatos();
                     this.cdr.detectChanges();
                 },
@@ -509,8 +531,8 @@ function mapEnrollmentFeeItem(fee: EnrollmentFeeModel): FeeRow {
     return {
         id: fee.id,
         category: 'enrollment',
-        categoryLabel: 'Inscripción masculina',
-        amount: `$${fee.amount.toLocaleString('es-AR')}`,
+        categoryLabel: enrollmentFeeLabel(fee.gender),
+        amount: fee.amount === 0 ? 'No se cobra' : `$${fee.amount.toLocaleString('es-AR')}`,
         validFrom: fee.startDate.slice(0, 10),
         validTo: fee.endDate ? fee.endDate.slice(0, 10) : '',
         estado: estadoMap[fee.status] ?? 'Anterior',

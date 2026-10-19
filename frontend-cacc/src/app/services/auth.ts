@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Router, CanActivateFn, ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { API_BASE_URL } from './api-url';
+import { environment } from '../../environments/environment';
+import { navegador } from './navegador';
 import { LoginModel, LoginResponseModel } from '../models/LoginModel';
 
 const SESSION_KEY = 'cacc-session';
@@ -85,8 +87,24 @@ export class AuthService {
   // Donde cae cada cuenta recien logueada (y a donde se la devuelve si pide una pantalla que no es suya):
   //  - SuperAdmin (1): la eleccion de portales; es el unico que la ve.
   //  - Administrador (2): directo al Portal Administrativo, sin pasar por la eleccion.
+  //  - Cuenta sin acceso al Administrativo (rol 0: Médico, Director Técnico, Don QR…): directo al Portal Deportivo.
   irAlInicio(router: Router): void {
+    if (this.getRol() === 0) {
+      this.abrirPortalDeportivo();
+      return;
+    }
     router.navigate([this.isSuperAdmin() ? '/portales' : '/admin/portal']);
+  }
+
+  // El Portal Deportivo es otro sitio y no comparte el almacenamiento del navegador: se le entrega la sesión en el
+  // fragmento de la dirección (#sso=<token>), que no viaja al servidor. Su pantalla de ingreso la recibe y la borra de la barra.
+  // `destino` es una ruta del Deportivo a la que ir al entrar (por ejemplo '/admin/registro-personas').
+  abrirPortalDeportivo(destino?: string): boolean {
+    const token = this.getToken();
+    if (!token) return false;
+    const volverA = destino ? `?returnUrl=${encodeURIComponent(destino)}` : '';
+    navegador.irA(`${environment.deportivoUrl.replace(/\/+$/, '')}/login${volverA}#sso=${encodeURIComponent(token)}`);
+    return true;
   }
 
   // Solo borra la sesión del navegador (lo usa el interceptor cuando el servidor ya rechazó el token).

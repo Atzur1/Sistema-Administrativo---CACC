@@ -32,7 +32,7 @@ namespace DaoLibrary
                 SELECT m.mes, COUNT(*) AS cantidad, SUM(arancel.monto) AS monto_total
                 FROM meses m
                 JOIN JUGADORES j ON {SqlCuotaMensual.JugadorEnElClub("m.mes")}
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                 CROSS APPLY ({SqlCuotaMensual.ArancelDelJugador("m.mes")}) AS arancel
                 WHERE {SqlCuotaMensual.SinCuotaEnElMes("m.mes")}
                 GROUP BY m.mes
@@ -67,7 +67,7 @@ namespace DaoLibrary
             string query = $@"
                 SELECT j.PK_id_jugador, p.nombre, p.apellido, p.Dni, c.nombre_categoria, arancel.monto
                 FROM JUGADORES j
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                 JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                 CROSS APPLY ({SqlCuotaMensual.ArancelDelJugador("@mes")}) AS arancel
                 WHERE {SqlCuotaMensual.JugadorEnElClub("@mes")}

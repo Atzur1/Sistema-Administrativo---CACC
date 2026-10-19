@@ -16,7 +16,7 @@ public static class AuditReferences
     public const string Beneficio = "beneficio";
 
     // Qué tabla nombra cada campo numérico de la copia guardada. idTipo es el motivo de la bonificación
-    // (TIPO_DESCUENTO) y idDescuento, en un pago, la bonificación aplicada (JUGADORES_DESCUENTOS).
+    // (TIPOS_DESCUENTO) y idDescuento, en un pago, la bonificación aplicada (JUGADORES_DESCUENTOS).
     private static readonly Dictionary<string, string> TipoPorCampo = new(StringComparer.Ordinal)
     {
         ["idJugador"] = Jugador,
@@ -31,10 +31,10 @@ public static class AuditReferences
     private static readonly Dictionary<string, string> TipoPorEntidad = new(StringComparer.Ordinal)
     {
         ["JUGADORES"] = Jugador,
-        ["PERSONA"] = Persona,
-        ["USUARIO"] = Usuario,
+        ["PERSONAS"] = Persona,
+        ["USUARIOS"] = Usuario,
         ["CATEGORIAS"] = Categoria,
-        ["TIPO_DESCUENTO"] = Tipo,
+        ["TIPOS_DESCUENTO"] = Tipo,
     };
 
     public static string Clave(string tipo, long id) => $"{tipo}:{id}";

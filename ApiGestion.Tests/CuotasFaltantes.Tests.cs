@@ -84,7 +84,7 @@ public class CuotasFaltantesDaoIntegrationTests
             // Una categoría propia de la prueba, para que los jugadores reales no cuenten.
             int categoria;
             using (var cmd = new SqlCommand(
-                "DECLARE @id INT = (SELECT ISNULL(MAX(PK_id_categoria), 0) + 1 FROM CATEGORIAS); INSERT INTO CATEGORIAS (PK_id_categoria, nombre_categoria) VALUES (@id, 'Prueba faltantes'); SELECT @id;", connection, transaction))
+                "DECLARE @n TABLE (id INT); INSERT INTO CATEGORIAS (nombre_categoria) OUTPUT INSERTED.PK_id_categoria INTO @n VALUES ('Prueba faltantes'); SELECT id FROM @n;", connection, transaction))
             {
                 categoria = Convert.ToInt32(cmd.ExecuteScalar());
             }

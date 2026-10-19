@@ -7,7 +7,7 @@ namespace DaoLibrary
     // "a quién le corresponde la cuota de un mes y por cuánto" se define una sola vez.
     internal static class SqlCuotaMensual
     {
-        // Arancel del jugador `j` (con su PERSONA `p`) para el mes que empieza en `primerDiaMes`. Un arancel
+        // Arancel del jugador `j` (con su PERSONAS `p`) para el mes que empieza en `primerDiaMes`. Un arancel
         // cargado el 5 de enero cubre igual TODO enero: por eso se compara contra el último día del mes. Primero
         // el arancel de la categoría del jugador; si no tiene, el de su género. Devuelve la columna `monto`.
         public static string ArancelDelJugador(string primerDiaMes) => $@"
@@ -47,7 +47,7 @@ namespace DaoLibrary
                 INSERT INTO PAGOS (FK_id_jugador, monto_base, FK_id_jugador_descuento, monto_final, fecha_pago, metodo_pago, fecha_vencimiento, estado)
                 SELECT j.PK_id_jugador, arancel.monto, NULL, arancel.monto, NULL, NULL, @primerDiaMes, 0
                 FROM JUGADORES j
-                JOIN PERSONA p ON j.FK_id_persona = p.PK_id_persona
+                JOIN PERSONAS p ON j.FK_id_persona = p.PK_id_persona
                 CROSS APPLY ({ArancelDelJugador("@primerDiaMes")}) AS arancel
                 WHERE (@genero IS NULL OR LTRIM(RTRIM(p.genero)) = @genero)
                   AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)

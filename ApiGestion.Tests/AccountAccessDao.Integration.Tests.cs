@@ -24,7 +24,7 @@ public class AccountAccessDaoIntegrationTests
     private static (int Id, string Email) AdministradorHabilitado(SqlConnection connection, SqlTransaction transaction)
     {
         using var command = new SqlCommand(
-            @"SELECT TOP (1) PK_id_usuario, email FROM dbo.USUARIO
+            @"SELECT TOP (1) PK_id_usuario, email FROM dbo.USUARIOS
               WHERE rol_portal = 2 AND acceso_portal = 1 AND activo = 1 AND activacion_pendiente = 0
               ORDER BY PK_id_usuario", connection, transaction);
         using var reader = command.ExecuteReader();
@@ -65,7 +65,7 @@ public class AccountAccessDaoIntegrationTests
 
     private static string DniDe(SqlConnection connection, SqlTransaction transaction, int id)
     {
-        using var command = new SqlCommand("SELECT dni FROM dbo.USUARIO WHERE PK_id_usuario = @id", connection, transaction);
+        using var command = new SqlCommand("SELECT p.dni FROM dbo.USUARIOS u JOIN dbo.PERSONAS p ON p.PK_id_persona = u.FK_id_persona WHERE u.PK_id_usuario = @id", connection, transaction);
         command.Parameters.AddWithValue("@id", id);
         var dni = command.ExecuteScalar() as string;
         Assert.False(string.IsNullOrWhiteSpace(dni), "La cuenta Administrador de la base de prueba necesita tener DNI cargado.");
@@ -143,7 +143,7 @@ public class AccountAccessDaoIntegrationTests
 
             Assert.True(AccountAccessDao.CompleteAccountAccessCore(connection, transaction, hash, "hash-de-prueba"));
             Assert.Equal(1, Contar(connection, transaction,
-                "SELECT COUNT(*) FROM dbo.USUARIO WHERE PK_id_usuario = @id AND password_hash = 'hash-de-prueba'", id));
+                "SELECT COUNT(*) FROM dbo.USUARIOS WHERE PK_id_usuario = @id AND contrasenia = 'hash-de-prueba'", id));
 
             // De un solo uso: el mismo enlace no sirve una segunda vez.
             Assert.False(AccountAccessDao.CompleteAccountAccessCore(connection, transaction, hash, "otro-hash"));
@@ -215,7 +215,7 @@ public class AccountAccessDaoIntegrationTests
     private static (int Id, string Email) CuentaConContrasena(SqlConnection connection, SqlTransaction transaction)
     {
         using var command = new SqlCommand(
-            @"SELECT TOP (1) PK_id_usuario, email FROM dbo.USUARIO
+            @"SELECT TOP (1) PK_id_usuario, email FROM dbo.USUARIOS
               WHERE acceso_portal = 1 AND activo = 1 AND activacion_pendiente = 0 AND email IS NOT NULL
               ORDER BY PK_id_usuario", connection, transaction);
         using var reader = command.ExecuteReader();
@@ -230,7 +230,7 @@ public class AccountAccessDaoIntegrationTests
         try
         {
             var (id, _) = AdministradorHabilitado(connection, transaction);
-            Ejecutar(connection, transaction, "UPDATE dbo.USUARIO SET activacion_pendiente = 1 WHERE PK_id_usuario = @id", id);
+            Ejecutar(connection, transaction, "UPDATE dbo.USUARIOS SET activacion_pendiente = 1 WHERE PK_id_usuario = @id", id);
 
             // Esa cuenta recibe el correo de "Crea tu contraseña", no el de reestablecer.
             Assert.Null(AccountAccessDao.CreateResetTokenForUserCore(connection, transaction, id, NuevoHash(), Vence));
@@ -245,7 +245,7 @@ public class AccountAccessDaoIntegrationTests
         try
         {
             var (id, _) = AdministradorHabilitado(connection, transaction);
-            Ejecutar(connection, transaction, "UPDATE dbo.USUARIO SET activo = 0 WHERE PK_id_usuario = @id", id);
+            Ejecutar(connection, transaction, "UPDATE dbo.USUARIOS SET activo = 0 WHERE PK_id_usuario = @id", id);
 
             Assert.Null(AccountAccessDao.CreateResetTokenForUserCore(connection, transaction, id, NuevoHash(), Vence));
         }

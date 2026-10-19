@@ -51,7 +51,7 @@ public class Discount
         set { type = value; }
     }
 
-    // Id of the row in TIPO_DESCUENTO. Since HU-011 that table is a closed
+    // Id of the row in TIPOS_DESCUENTO. Since HU-011 that table is a closed
     // catalogue of reasons, so this is what ties an assignment to its reason.
     public long TypeId
     {

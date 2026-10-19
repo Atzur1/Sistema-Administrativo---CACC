@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
 import { PagosService } from '../../services/pagos';
 import { ArancelesService } from '../../services/aranceles';
 import { EnrollmentFeeService } from '../../services/enrollment-fees';
-import { findCurrentEnrollmentFee } from '../../models/EnrollmentFeeModel';
+import { EnrollmentFeeGender, findCurrentEnrollmentFee } from '../../models/EnrollmentFeeModel';
 import { EnrollmentService } from '../../services/enrollment';
 import { EnrollmentModel } from '../../models/EnrollmentModel';
 import { formatCompactCurrency } from '../../shared/format-currency';
@@ -142,7 +142,10 @@ export class CuotasPagos implements OnInit, OnDestroy {
   arancelMasculinoTexto = '';
   arancelFemeninoTexto = '';
   inscripcionTexto = '';
-  private currentEnrollmentFeeAmount: number | null = null;
+  // Solo si el club cobra inscripción a las mujeres (hoy no): con $0 o sin arancel no se muestra.
+  inscripcionFemeninaTexto = '';
+  // Arancel de inscripción vigente por género; sin entrada (o en 0) = ese género no paga inscripción.
+  private currentEnrollmentFees: Partial<Record<EnrollmentFeeGender, number>> = {};
 
   // ===== PANEL MODE TOGGLE =====
   panelMode: 'cuota' | 'inscripcion' = 'cuota';
@@ -375,15 +378,17 @@ export class CuotasPagos implements OnInit, OnDestroy {
         this.cargandoEnrollment.set(false);
         if (err.status === 404) {
           this.enrollmentSinRegistro.set(true);
-          if (this.currentEnrollmentFeeAmount != null) {
-            const monto = Math.round(this.currentEnrollmentFeeAmount);
+          const nombre = this.selectedInscripcionPlayer?.nombreCompleto ?? 'El jugador';
+          const genero: EnrollmentFeeGender = this.selectedInscripcionPlayer?.genero === 'Femenino' ? 'Femenino' : 'Masculino';
+          const vigente = this.currentEnrollmentFees[genero];
+          if (vigente != null && vigente > 0) {
+            const monto = Math.round(vigente);
             this.inscripcionForm.patchValue({ amount: String(monto) });
             this.inscripcionMontoDisplay = monto.toLocaleString('es-AR');
+            this.notifications.notify(`${nombre} no tiene inscripción registrada. Se generará al registrar el primer pago.`, 'cancelled');
+          } else {
+            this.notifications.notify(`${nombre} no paga inscripción: no hay un arancel de inscripción vigente para su género.`, 'cancelled');
           }
-          this.notifications.notify(
-            `${this.selectedInscripcionPlayer?.nombreCompleto ?? 'El jugador'} no tiene inscripción registrada. Se generará al registrar el primer pago.`,
-            'cancelled'
-          );
         }
       },
     });
@@ -470,10 +475,17 @@ export class CuotasPagos implements OnInit, OnDestroy {
 
     this.enrollmentFeeService.getAllEnrollmentFees().subscribe({
       next: (fees) => {
-        const current = findCurrentEnrollmentFee(fees);
-        this.currentEnrollmentFeeAmount = current?.amount ?? null;
-        this.inscripcionTexto = current != null
-          ? `Inscripción ${CURRENCY_ARANCEL.format(current.amount)}`
+        const masculina = findCurrentEnrollmentFee(fees, 'Masculino');
+        const femenina = findCurrentEnrollmentFee(fees, 'Femenino');
+        this.currentEnrollmentFees = {
+          ...(masculina != null ? { Masculino: masculina.amount } : {}),
+          ...(femenina != null ? { Femenino: femenina.amount } : {}),
+        };
+        this.inscripcionTexto = masculina != null && masculina.amount > 0
+          ? `Inscripción masculina ${CURRENCY_ARANCEL.format(masculina.amount)}`
+          : '';
+        this.inscripcionFemeninaTexto = femenina != null && femenina.amount > 0
+          ? `Inscripción femenina ${CURRENCY_ARANCEL.format(femenina.amount)}`
           : '';
         this.cdr.detectChanges();
       },
