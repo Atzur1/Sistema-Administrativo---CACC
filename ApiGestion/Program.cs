@@ -66,7 +66,40 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(opciones =>
+{
+    // Contrato de integración con el Portal Deportivo (HU-054): solo las rutas versionadas /api/integracion/v1/...
+    opciones.SwaggerDoc("integracion-v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "API de integración con el Portal Deportivo",
+        Version = "v1",
+        Description = "Estado de habilitación de los jugadores para el QR de ingreso y los listados del Portal Deportivo. " +
+            "Autenticación: el token (JWT) del usuario, el mismo en los dos portales. La respuesta nunca incluye montos."
+    });
+    opciones.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Portal Administrativo", Version = "v1" });
+    opciones.DocInclusionPredicate((documento, api) =>
+    {
+        bool esIntegracion = api.RelativePath?.StartsWith("api/integracion/", StringComparison.OrdinalIgnoreCase) == true;
+        return documento == "integracion-v1" ? esIntegracion : !esIntegracion;
+    });
+    opciones.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Token del usuario (el que entrega el login del Portal Administrativo)."
+    });
+    opciones.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddScoped<DaoLibrary.AuthDao>(provider =>
     new DaoLibrary.AuthDao(conexionSql));
@@ -256,7 +289,11 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(opciones =>
+    {
+        opciones.SwaggerEndpoint("/swagger/integracion-v1/swagger.json", "Integración con el Deportivo v1");
+        opciones.SwaggerEndpoint("/swagger/v1/swagger.json", "Portal Administrativo");
+    });
 }
 else
 {

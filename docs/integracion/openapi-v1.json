@@ -1,0 +1,263 @@
+{
+    "openapi":  "3.0.1",
+    "info":  {
+                 "title":  "API de integración con el Portal Deportivo",
+                 "description":  "Estado de habilitación de los jugadores para el QR de ingreso y los listados del Portal Deportivo. Autenticación: el token (JWT) del usuario, el mismo en los dos portales. La respuesta nunca incluye montos.",
+                 "version":  "v1"
+             },
+    "paths":  {
+                  "/api/integracion/v1/estado-deuda/dni/{dni}":  {
+                                                                     "get":  {
+                                                                                 "tags":  [
+                                                                                              "EstadoDeuda"
+                                                                                          ],
+                                                                                 "parameters":  [
+                                                                                                    {
+                                                                                                        "name":  "dni",
+                                                                                                        "in":  "path",
+                                                                                                        "required":  true,
+                                                                                                        "schema":  {
+                                                                                                                       "type":  "string"
+                                                                                                                   }
+                                                                                                    }
+                                                                                                ],
+                                                                                 "responses":  {
+                                                                                                   "200":  {
+                                                                                                               "description":  "OK",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/EstadoDeudaResponseDTO"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           },
+                                                                                                   "400":  {
+                                                                                                               "description":  "Bad Request",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           },
+                                                                                                   "401":  {
+                                                                                                               "description":  "Unauthorized",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           },
+                                                                                                   "403":  {
+                                                                                                               "description":  "Forbidden",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           },
+                                                                                                   "404":  {
+                                                                                                               "description":  "Not Found",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           },
+                                                                                                   "409":  {
+                                                                                                               "description":  "Conflict",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           }
+                                                                                               }
+                                                                             }
+                                                                 },
+                  "/api/integracion/v1/estado-deuda/lote":  {
+                                                                "post":  {
+                                                                             "tags":  [
+                                                                                          "EstadoDeuda"
+                                                                                      ],
+                                                                             "requestBody":  {
+                                                                                                 "content":  {
+                                                                                                                 "application/json":  {
+                                                                                                                                          "schema":  {
+                                                                                                                                                         "$ref":  "#/components/schemas/EstadoDeudaLoteRequestDTO"
+                                                                                                                                                     }
+                                                                                                                                      },
+                                                                                                                 "text/json":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "$ref":  "#/components/schemas/EstadoDeudaLoteRequestDTO"
+                                                                                                                                              }
+                                                                                                                               },
+                                                                                                                 "application/*+json":  {
+                                                                                                                                            "schema":  {
+                                                                                                                                                           "$ref":  "#/components/schemas/EstadoDeudaLoteRequestDTO"
+                                                                                                                                                       }
+                                                                                                                                        }
+                                                                                                             }
+                                                                                             },
+                                                                             "responses":  {
+                                                                                               "200":  {
+                                                                                                           "description":  "OK",
+                                                                                                           "content":  {
+                                                                                                                           "application/json":  {
+                                                                                                                                                    "schema":  {
+                                                                                                                                                                   "$ref":  "#/components/schemas/EstadoDeudaLoteResponseDTO"
+                                                                                                                                                               }
+                                                                                                                                                }
+                                                                                                                       }
+                                                                                                       },
+                                                                                               "400":  {
+                                                                                                           "description":  "Bad Request",
+                                                                                                           "content":  {
+                                                                                                                           "application/json":  {
+                                                                                                                                                    "schema":  {
+                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                               }
+                                                                                                                                                }
+                                                                                                                       }
+                                                                                                       },
+                                                                                               "401":  {
+                                                                                                           "description":  "Unauthorized",
+                                                                                                           "content":  {
+                                                                                                                           "application/json":  {
+                                                                                                                                                    "schema":  {
+                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                               }
+                                                                                                                                                }
+                                                                                                                       }
+                                                                                                       },
+                                                                                               "403":  {
+                                                                                                           "description":  "Forbidden",
+                                                                                                           "content":  {
+                                                                                                                           "application/json":  {
+                                                                                                                                                    "schema":  {
+                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                               }
+                                                                                                                                                }
+                                                                                                                       }
+                                                                                                       }
+                                                                                           }
+                                                                         }
+                                                            }
+              },
+    "components":  {
+                       "schemas":  {
+                                       "EstadoDeudaLoteRequestDTO":  {
+                                                                         "type":  "object",
+                                                                         "properties":  {
+                                                                                            "dnis":  {
+                                                                                                         "type":  "array",
+                                                                                                         "items":  {
+                                                                                                                       "type":  "string"
+                                                                                                                   },
+                                                                                                         "nullable":  true
+                                                                                                     }
+                                                                                        },
+                                                                         "additionalProperties":  false
+                                                                     },
+                                       "EstadoDeudaLoteResponseDTO":  {
+                                                                          "type":  "object",
+                                                                          "properties":  {
+                                                                                             "items":  {
+                                                                                                           "type":  "array",
+                                                                                                           "items":  {
+                                                                                                                         "$ref":  "#/components/schemas/EstadoDeudaResponseDTO"
+                                                                                                                     },
+                                                                                                           "nullable":  true
+                                                                                                       },
+                                                                                             "noEncontrados":  {
+                                                                                                                   "type":  "array",
+                                                                                                                   "items":  {
+                                                                                                                                 "type":  "string"
+                                                                                                                             },
+                                                                                                                   "nullable":  true
+                                                                                                               }
+                                                                                         },
+                                                                          "additionalProperties":  false
+                                                                      },
+                                       "EstadoDeudaResponseDTO":  {
+                                                                      "type":  "object",
+                                                                      "properties":  {
+                                                                                         "dni":  {
+                                                                                                     "type":  "string",
+                                                                                                     "nullable":  true
+                                                                                                 },
+                                                                                         "idJugador":  {
+                                                                                                           "type":  "integer",
+                                                                                                           "format":  "int32"
+                                                                                                       },
+                                                                                         "estado":  {
+                                                                                                        "type":  "string",
+                                                                                                        "nullable":  true
+                                                                                                    },
+                                                                                         "accesoPermitido":  {
+                                                                                                                 "type":  "boolean"
+                                                                                                             },
+                                                                                         "fechaBaja":  {
+                                                                                                           "type":  "string",
+                                                                                                           "nullable":  true
+                                                                                                       }
+                                                                                     },
+                                                                      "additionalProperties":  false
+                                                                  },
+                                       "ProblemDetails":  {
+                                                              "type":  "object",
+                                                              "properties":  {
+                                                                                 "type":  {
+                                                                                              "type":  "string",
+                                                                                              "nullable":  true
+                                                                                          },
+                                                                                 "title":  {
+                                                                                               "type":  "string",
+                                                                                               "nullable":  true
+                                                                                           },
+                                                                                 "status":  {
+                                                                                                "type":  "integer",
+                                                                                                "format":  "int32",
+                                                                                                "nullable":  true
+                                                                                            },
+                                                                                 "detail":  {
+                                                                                                "type":  "string",
+                                                                                                "nullable":  true
+                                                                                            },
+                                                                                 "instance":  {
+                                                                                                  "type":  "string",
+                                                                                                  "nullable":  true
+                                                                                              }
+                                                                             },
+                                                              "additionalProperties":  {
+
+                                                                                       }
+                                                          }
+                                   },
+                       "securitySchemes":  {
+                                               "Bearer":  {
+                                                              "type":  "http",
+                                                              "description":  "Token del usuario (el que entrega el login del Portal Administrativo).",
+                                                              "scheme":  "bearer",
+                                                              "bearerFormat":  "JWT"
+                                                          }
+                                           }
+                   },
+    "security":  [
+                     {
+                         "Bearer":  [
+
+                                    ]
+                     }
+                 ]
+}
