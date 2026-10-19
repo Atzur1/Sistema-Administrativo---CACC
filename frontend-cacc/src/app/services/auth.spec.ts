@@ -60,6 +60,17 @@ describe('AuthService', () => {
       expect(irA.mock.calls[0][0]).not.toContain('?');
     });
 
+    it('puede abrir el Deportivo directo en una pantalla (por ejemplo, el alta de personas)', () => {
+      const irA = vi.spyOn(navegador, 'irA').mockImplementation(() => {});
+      const token = iniciarSesion(1);
+
+      service.abrirPortalDeportivo('/admin/registro-personas');
+
+      expect(irA).toHaveBeenCalledWith(
+        `${environment.deportivoUrl}/login?returnUrl=${encodeURIComponent('/admin/registro-personas')}#sso=${encodeURIComponent(token)}`,
+      );
+    });
+
     it('sin sesión no abre el Portal Deportivo', () => {
       const irA = vi.spyOn(navegador, 'irA').mockImplementation(() => {});
       expect(service.abrirPortalDeportivo()).toBe(false);

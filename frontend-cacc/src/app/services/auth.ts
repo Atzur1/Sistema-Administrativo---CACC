@@ -98,10 +98,12 @@ export class AuthService {
 
   // El Portal Deportivo es otro sitio y no comparte el almacenamiento del navegador: se le entrega la sesión en el
   // fragmento de la dirección (#sso=<token>), que no viaja al servidor. Su pantalla de ingreso la recibe y la borra de la barra.
-  abrirPortalDeportivo(): boolean {
+  // `destino` es una ruta del Deportivo a la que ir al entrar (por ejemplo '/admin/registro-personas').
+  abrirPortalDeportivo(destino?: string): boolean {
     const token = this.getToken();
     if (!token) return false;
-    navegador.irA(`${environment.deportivoUrl.replace(/\/+$/, '')}/login#sso=${encodeURIComponent(token)}`);
+    const volverA = destino ? `?returnUrl=${encodeURIComponent(destino)}` : '';
+    navegador.irA(`${environment.deportivoUrl.replace(/\/+$/, '')}/login${volverA}#sso=${encodeURIComponent(token)}`);
     return true;
   }
 

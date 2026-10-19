@@ -50,7 +50,10 @@ builder.Services.AddCors(options =>
         policy =>
         {
             var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                ?? (builder.Environment.IsDevelopment() ? new[] { "http://localhost:4200" } : Array.Empty<string>());
+                ?? (builder.Environment.IsDevelopment()
+                    // 4300: Portal Deportivo en desarrollo (al cerrar sesión allá, invalida el token acá).
+                    ? new[] { "http://localhost:4200", "http://127.0.0.1:4200", "http://localhost:4300", "http://127.0.0.1:4300" }
+                    : Array.Empty<string>());
             policy.WithOrigins(origins)
                 .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .WithHeaders("Authorization", "Content-Type")

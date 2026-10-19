@@ -38,9 +38,12 @@ export class Portales {
     }
   }
 
+  // El alta de personas (jugadores y staff) la hace el Portal Deportivo: se entra con la misma sesión, directo a esa pantalla.
   ingresarPortalPersonas() {
-    alert('Ingresando al Portal de Personas (Alta de Usuarios)...');
-    // this.router.navigate(['/personas/alta']); // Ajusta la ruta cuando esté lista
+    if (!this.authService.abrirPortalDeportivo('/admin/registro-personas')) {
+      alert('Debes iniciar sesión para acceder al Portal de Personas.');
+      this.router.navigate(['/']);
+    }
   }
 
   cerrarSesion() {
