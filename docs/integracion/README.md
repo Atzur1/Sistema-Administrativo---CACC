@@ -1,6 +1,6 @@
-# API de integración v1: estado de habilitación de los jugadores
+# API de integración v1 con el Portal Deportivo
 
-Contrato entre el Portal Administrativo (que la ofrece) y el Portal Deportivo (que la consume) para el QR de ingreso y los listados.
+Contrato entre el Portal Administrativo (que la ofrece) y el Portal Deportivo (que la consume): el estado de habilitación de los jugadores (QR de ingreso y listados) y los cargos de alta de los jugadores nuevos.
 El Administrativo es la **única fuente de verdad** de lo que debe un jugador: aplica becas y descuentos, abonos parciales y el
 vencimiento de la cuota el **día 10 del mes siguiente**. El Deportivo solo recibe **el estado**.
 
@@ -53,6 +53,31 @@ Para los listados. Hasta 500 DNI por pedido.
 ```
 Responde `{ "items": [ ...igual que arriba... ], "noEncontrados": ["42000002"] }`. En `noEncontrados` van los DNI inválidos,
 los que no son de un jugador y los que están fuera del alcance de quien consulta.
+
+## `POST /api/integracion/v1/jugadores/{idJugador}/cargos-alta`
+Cuando el Portal Deportivo da de alta a un jugador lo graba directo en la base compartida. Después llama acá, con el token del usuario, para que
+el Administrativo le genere su **inscripción** y su **cuota del mes** con las reglas de siempre (las de nuestro alta): la cuota solo desde el día 10
+(antes la recibe con la generación mensual), con el arancel de su categoría o, si no, el de su género; la inscripción es la de su género y en $0 no
+se cobra. No se duplica nada: se puede llamar más de una vez.
+
+Pueden llamarla el SuperAdmin del Administrativo y el `Administrador (Tesorero)`; el resto de los roles recibe 403.
+
+| Respuesta | Cuándo |
+|---|---|
+| `200` | Se procesó (aunque no hubiera nada nuevo para generar). |
+| `400` | El id no es válido. |
+| `404` | No existe el jugador. Este 404 **trae un mensaje** (`{ "exito": false, "mensaje": ... }`); un 404 sin cuerpo es una ruta que no existe. |
+| `422` | El jugador está dado de baja, o su alta no es reciente (solo se generan cargos de altas de los últimos 7 días). |
+| `401` / `403` | Sin token (o sesión cerrada) / el rol no puede. |
+
+```json
+{ "idJugador": 42, "inscripcionGenerada": true, "cuotaGenerada": true }
+```
+Dice **solo si** se generó cada cargo en esa llamada; nunca montos. `false` significa que ya existía, que no corresponde (por ejemplo, la inscripción de
+las mujeres en $0) o que todavía no se generan las cuotas del mes.
+
+**Si la llamada falla, el alta del Deportivo no se deshace.** La cuota sale con la próxima generación mensual (al iniciar la API del Administrativo y cada
+6 horas) y la inscripción se genera al registrar el primer pago, con el monto correcto. Cuando el Administrativo vuelve, se puede repetir la llamada.
 
 ## Campos
 | Campo | Qué es |

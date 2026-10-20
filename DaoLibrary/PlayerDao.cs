@@ -212,6 +212,83 @@ public class PlayerDAO
         }
     }
 
+    // Datos de un jugador que ya existe (por ejemplo, dado de alta desde el Portal Deportivo) para decidir sus cargos.
+    // Null si no existe.
+    public virtual JugadorParaCargos? ObtenerParaCargos(int idJugador)
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        using SqlCommand command = new SqlCommand(@"
+            SELECT j.PK_id_jugador, p.genero, j.FK_id_categoria, j.fecha_alta, j.fecha_baja
+            FROM JUGADORES j
+            INNER JOIN PERSONAS p ON p.PK_id_persona = j.FK_id_persona
+            WHERE j.PK_id_jugador = @id;", connection);
+        command.Parameters.AddWithValue("@id", idJugador);
+
+        using SqlDataReader reader = command.ExecuteReader();
+        if (!reader.Read()) return null;
+
+        return new JugadorParaCargos(
+            reader.GetInt32(0),
+            reader.IsDBNull(1) ? "" : reader.GetString(1).Trim(),
+            reader.GetInt32(2),
+            reader.GetDateTime(3),
+            reader.IsDBNull(4) ? null : reader.GetDateTime(4));
+    }
+
+    // Graba los cargos de alta que le faltan a un jugador que ya existe, en una transacción. Es idempotente:
+    // lo que el jugador ya tiene no se repite (la cuota se identifica por su mes; la inscripción es una sola).
+    public virtual CargosGenerados GenerarCargosDeAlta(int idJugador, decimal? montoCuota, DateTime primerDiaDelMes,
+        decimal? montoInscripcion, DateTime fechaInscripcion)
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        using SqlTransaction transaction = connection.BeginTransaction();
+        BloqueoEscrituraPagos.Tomar(connection, transaction);
+
+        try
+        {
+            CargosGenerados generados = GenerarCargos(connection, transaction, idJugador, montoCuota, primerDiaDelMes, montoInscripcion, fechaInscripcion);
+            transaction.Commit();
+            return generados;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    internal static CargosGenerados GenerarCargos(SqlConnection connection, SqlTransaction transaction, int idJugador,
+        decimal? montoCuota, DateTime primerDiaDelMes, decimal? montoInscripcion, DateTime fechaInscripcion)
+    {
+        bool inscripcion = false;
+        bool cuota = false;
+
+        if (montoInscripcion != null && !ExisteCargo(connection, transaction, idJugador, EnrollmentFeeConcept, null))
+        {
+            InsertPendingCharge(connection, transaction, idJugador, montoInscripcion.Value, fechaInscripcion.Date, EnrollmentFeeConcept);
+            inscripcion = true;
+        }
+
+        if (montoCuota != null && !ExisteCargo(connection, transaction, idJugador, MonthlyFeeConcept, primerDiaDelMes.Date))
+        {
+            InsertPendingCharge(connection, transaction, idJugador, montoCuota.Value, primerDiaDelMes.Date, MonthlyFeeConcept);
+            cuota = true;
+        }
+
+        return new CargosGenerados(inscripcion, cuota);
+    }
+
+    private static bool ExisteCargo(SqlConnection connection, SqlTransaction transaction, int idJugador, string concepto, DateTime? vencimiento)
+    {
+        using SqlCommand command = new SqlCommand(@"
+            SELECT COUNT(*) FROM PAGOS
+            WHERE FK_id_jugador = @id AND concepto = @concepto AND (@vencimiento IS NULL OR fecha_vencimiento = @vencimiento);", connection, transaction);
+        command.Parameters.AddWithValue("@id", idJugador);
+        command.Parameters.AddWithValue("@concepto", concepto);
+        command.Parameters.AddWithValue("@vencimiento", (object?)vencimiento ?? DBNull.Value);
+        return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
     // The three insert helpers are internal (not private) so the integration test can run them inside a
     // transaction it rolls back.
     //

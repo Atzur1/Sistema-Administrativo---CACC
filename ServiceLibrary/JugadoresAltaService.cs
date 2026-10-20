@@ -14,6 +14,10 @@ namespace ServiceLibrary
     public interface IJugadoresAltaService
     {
         ResultadoOperacion<AltaJugadorRegistrada> Registrar(SolicitudAltaJugador solicitud);
+
+        // Genera los cargos de alta (inscripción y cuota del mes) de un jugador que YA existe, por ejemplo uno que dio
+        // de alta el Portal Deportivo directamente en la base. Aplica las mismas reglas que Registrar y es idempotente.
+        ResultadoOperacion<CargosGenerados> GenerarCargosDeAlta(int idJugador);
     }
 
     // Alta de un jugador (HU-033) y los cargos que genera:
@@ -96,6 +100,51 @@ namespace ServiceLibrary
                 // Otra alta con el mismo DNI ganó la carrera entre la verificación de arriba y la transacción.
                 return DniRepetido(dni);
             }
+        }
+
+        // Solo para altas recientes: esta operación existe para completar un alta que se acaba de hacer en otro portal, no para
+        // regularizar jugadores viejos (a quienes no se les debe generar una inscripción de alta hoy).
+        public const int DiasParaGenerarCargosDeAlta = 7;
+
+        public ResultadoOperacion<CargosGenerados> GenerarCargosDeAlta(int idJugador)
+        {
+            JugadorParaCargos? jugador = _playerDao.ObtenerParaCargos(idJugador);
+            if (jugador == null)
+            {
+                return ResultadoOperacion<CargosGenerados>.Falla(TipoResultado.NoEncontrado, $"No existe el jugador {idJugador}.");
+            }
+            if (jugador.FechaBaja != null)
+            {
+                return ResultadoOperacion<CargosGenerados>.Falla(TipoResultado.NoProcesable, "El jugador está dado de baja: no se le generan cargos de alta.");
+            }
+
+            DateTime hoy = _hoy().Date;
+            if (jugador.FechaAlta.Date < hoy.AddDays(-DiasParaGenerarCargosDeAlta))
+            {
+                return ResultadoOperacion<CargosGenerados>.Falla(TipoResultado.NoProcesable,
+                    $"Solo se generan cargos de alta para jugadores dados de alta en los últimos {DiasParaGenerarCargosDeAlta} días.");
+            }
+
+            // La inscripción de su género; un género sin arancel vigente, o con uno de $0, no paga (hoy: las mujeres).
+            decimal? montoInscripcion = null;
+            EnrollmentFee? inscripcion = _enrollmentFeeDao.GetCurrentEnrollmentFee(jugador.Genero);
+            if (inscripcion is { Amount: > 0 })
+            {
+                montoInscripcion = inscripcion.Amount;
+            }
+
+            // La cuota del mes solo desde el día 10 (antes la recibe con el resto en la generación mensual), con el arancel de
+            // su categoría si tiene uno o, si no, el de su género; sin arancel vigente no se cobra.
+            DateTime primerDiaDelMes = CalendarioCuotas.PrimerDiaDelMes(hoy);
+            decimal? montoCuota = null;
+            if (CalendarioCuotas.YaSeGeneraElMesEnCurso(hoy))
+            {
+                DateTime ultimoDiaDelMes = primerDiaDelMes.AddMonths(1).AddDays(-1);
+                montoCuota = _arancelesDao.ObtenerMontoVigente(jugador.Genero, jugador.IdCategoria, ultimoDiaDelMes);
+            }
+
+            return ResultadoOperacion<CargosGenerados>.Ok(
+                _playerDao.GenerarCargosDeAlta(idJugador, montoCuota, primerDiaDelMes, montoInscripcion, jugador.FechaAlta));
         }
 
         private static ResultadoOperacion<AltaJugadorRegistrada> DniRepetido(string dni)
