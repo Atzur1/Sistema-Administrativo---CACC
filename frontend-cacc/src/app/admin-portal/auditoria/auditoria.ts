@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { ChangeDetectorRef, Component, HostListener, NgZone, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { API_BASE_URL } from '../../services/api-url';
 import { AuthService } from '../../services/auth';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
+import { Ventana } from '../../shared/ventana/ventana';
 
 interface AuditEvent {
   id: number;
@@ -150,7 +151,7 @@ type Datos = Record<string, unknown>;
 @Component({
   selector: 'app-auditoria',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect, CustomDatepicker],
+  imports: [CommonModule, FormsModule, CustomSelect, CustomDatepicker, Ventana],
   templateUrl: './auditoria.html',
   styleUrl: './auditoria.css',
 })
@@ -361,7 +362,7 @@ export class Auditoria {
     this.mostrarIguales = false;
   }
 
-  @HostListener('document:keydown.escape')
+  // Esc, la × y tocar afuera los resuelve la ventana compartida (app-ventana).
   cerrarDetalle(): void {
     this.seleccionado = null;
     this.detalleActual = null;

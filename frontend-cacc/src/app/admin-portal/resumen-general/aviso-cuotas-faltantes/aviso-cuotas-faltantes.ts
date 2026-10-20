@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CuotasFaltantesService } from '../../../services/cuotas-faltantes';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { estaVencida, vencimientoDelPeriodo } from '../../../shared/calendario-cuotas';
+import { Ventana } from '../../../shared/ventana/ventana';
 import { MissingFeeModel, MonthWithMissingFeesModel } from '../../../models/MissingFeeModel';
 
 const NOMBRES_MES = [
@@ -22,6 +23,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-aviso-cuotas-faltantes',
   standalone: true,
+  imports: [Ventana],
   templateUrl: './aviso-cuotas-faltantes.html',
   styleUrl: './aviso-cuotas-faltantes.css',
 })

@@ -1,0 +1,61 @@
+<div class="ventana-fondo" [class.ventana-fondo-lateral]="forma === 'lateral'" (click)="alTocarFondo($event)">
+  <section
+    class="ventana"
+    [class.ventana-angosta]="forma === 'angosta'"
+    [class.ventana-ancha]="forma === 'ancha'"
+    [class.ventana-lateral]="forma === 'lateral'"
+    [class.ventana-peligro]="peligro"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="tituloId"
+    [attr.aria-describedby]="subtitulo ? subtituloId : null"
+    [attr.aria-busy]="enCurso"
+    cdkTrapFocus
+    [cdkTrapFocusAutoCapture]="true"
+  >
+    <header class="ventana-cabecera">
+      <div class="ventana-titulos">
+        <ng-content select="[ventanaEtiqueta]"></ng-content>
+        <h2 class="ventana-titulo" [id]="tituloId">{{ titulo }}</h2>
+        @if (subtitulo) {
+          <p class="ventana-subtitulo" [id]="subtituloId">{{ subtitulo }}</p>
+        }
+      </div>
+      <button type="button" class="ventana-cerrar" (click)="intentarCerrar()" [disabled]="enCurso" [attr.aria-label]="textoCerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+    </header>
+
+    <div class="ventana-cuerpo">
+      <ng-content></ng-content>
+    </div>
+
+    @if (error) {
+      <p class="ventana-error" role="alert">{{ error }}</p>
+    }
+
+    <footer class="ventana-acciones">
+      <ng-content select="[ventanaAcciones]"></ng-content>
+      @if (conAcciones) {
+        <button type="button" class="boton boton-fantasma ventana-volver" (click)="alVolver()" [disabled]="enCurso">
+          {{ textoVolver }}
+        </button>
+        <button
+          [type]="formulario ? 'submit' : 'button'"
+          [attr.form]="formulario"
+          class="boton boton-principal ventana-confirmar"
+          [class.es-peligro]="peligro"
+          [class.en-curso]="enCurso"
+          [attr.aria-busy]="enCurso"
+          [disabled]="enCurso || confirmarDeshabilitado"
+          (click)="alConfirmar()"
+        >
+          {{ enCurso && textoEnCurso ? textoEnCurso : textoConfirmar }}
+        </button>
+      }
+    </footer>
+  </section>
+</div>

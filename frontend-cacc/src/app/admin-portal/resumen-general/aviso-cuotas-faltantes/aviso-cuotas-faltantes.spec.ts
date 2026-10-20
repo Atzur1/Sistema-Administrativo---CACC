@@ -91,7 +91,7 @@ describe('AvisoCuotasFaltantes', () => {
     component.abrir(SEPTIEMBRE);
     fixture.detectChanges();
 
-    const dialogo = element.querySelector('.dialog')?.textContent?.replace(/\s+/g, ' ') ?? '';
+    const dialogo = element.querySelector('[role="dialog"]')?.textContent?.replace(/\s+/g, ' ') ?? '';
     expect(dialogo).toContain('una cuota de septiembre 2026');
     expect(dialogo).toContain('arancel de septiembre 2026');
     expect(dialogo).toContain('10/10/2026'); // vencen el 10 del mes siguiente

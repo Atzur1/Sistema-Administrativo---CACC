@@ -572,10 +572,9 @@
 }
 
 /* ===== CUOTAS (HU-025): tabla de selección + barra de cobro ===== */
-/* Mismas variables de estado que .cuota-list, redeclaradas acá (y en el dialog) porque esta
-   sección y el popup viven fuera de esa lista. Pagado usa el verde de "Cubierta". */
-.panel-cuotas,
-.dialog {
+/* Mismas variables de estado que .cuota-list, redeclaradas acá porque esta sección vive fuera de
+   esa lista. Pagado usa el verde de "Cubierta". */
+.panel-cuotas {
   --state-vencida-bg: #f5e3e2;
   --state-vencida-text: #7a2a28;
   --state-proxima-bg: #e8eaed;
@@ -727,82 +726,9 @@
   flex: 0 0 auto;
 }
 
-/* ===== CONFIRMACIÓN DE PAGO (mismo popup que Becados y Descuentos, en la paleta de deuda) ===== */
-.dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-5);
-  background: rgba(17, 24, 20, 0.45);
-  backdrop-filter: blur(2px);
-  animation: dialogFade 0.18s ease both;
-}
-
-.dialog {
-  width: 100%;
-  max-width: 460px;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
-  padding: var(--space-5) var(--space-5);
-  box-sizing: border-box;
-  background: linear-gradient(180deg, #ffffff 0%, var(--aviso-bg-suave) 100%);
-  border: 1px solid var(--aviso-borde-solido);
-  border-top: 4px solid var(--action);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-floating);
-  animation: dialogRise 0.22s ease both;
-}
-
-@keyframes dialogFade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes dialogRise {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.dialog-head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  margin-bottom: 14px;
-}
-
-.dialog-head-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-  flex: 1;
-}
-
-.dialog-title {
-  margin: 0;
-  font-size: var(--font-lg);
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.dialog-subtitle {
-  font-size: var(--font-base);
-  color: var(--color-text-muted);
-}
-
+/* ===== CONFIRMACIÓN DE PAGO =====
+   La ventana en sí es el componente compartido app-ventana (shared/ventana, HU-094); acá solo el resumen
+   del cobro que va adentro. */
 .dialog-confirm {
   margin: 0 0 8px;
   font-size: var(--font-md);
@@ -836,12 +762,6 @@
   padding-top: var(--space-3);
   border-top: 1px solid var(--aviso-borde-solido);
   font-size: var(--font-lg);
-}
-
-.dialog-actions {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: 16px;
 }
 
 @media (max-width: 520px) {

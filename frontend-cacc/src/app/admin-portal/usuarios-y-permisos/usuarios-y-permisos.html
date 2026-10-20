@@ -360,237 +360,176 @@
 <!-- Un cambio de rol da o quita permisos: no se aplica al elegirlo en la lista sino al confirmarlo acá. -->
 @if (cambioDeRol(); as cambio) {
   @if (textoCambioDeRol; as texto) {
-    <div class="dialog-backdrop" (click)="cancelarCambioDeRol()">
-      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="cambioRolTitulo" (click)="$event.stopPropagation()">
-        <header class="dialog-head">
-          <div class="dialog-head-text">
-            <h2 class="dialog-title" id="cambioRolTitulo">{{ texto.titulo }}</h2>
-            <span class="dialog-subtitle">{{ cambio.usuario.nombre }} {{ cambio.usuario.apellido }}</span>
-          </div>
-          <button type="button" class="dialog-close" (click)="cancelarCambioDeRol()" aria-label="Cerrar">✕</button>
-        </header>
-
-        <p class="dialog-confirm">
-          Rol actual: <strong>{{ rolLabels[cambio.usuario.rolPortal] }}</strong> → nuevo rol:
-          <strong>{{ rolLabels[cambio.rol] }}</strong>.
-        </p>
-        <p class="dialog-confirm">{{ texto.cuerpo }}</p>
-        @if (texto.advertencia) {
-          <p class="dialog-confirm dialog-confirm-warning">{{ texto.advertencia }}</p>
-        }
-
-        <footer class="dialog-actions">
-          <button type="button" class="boton boton-fantasma" (click)="cancelarCambioDeRol()" [disabled]="rolSubmitting()">
-            Cancelar
-          </button>
-          <button type="button" class="boton boton-principal" (click)="confirmarCambioDeRol()" [disabled]="rolSubmitting()" [class.en-curso]="rolSubmitting()" [attr.aria-busy]="rolSubmitting()">
-            {{ rolSubmitting() ? 'Guardando…' : 'Confirmar cambio' }}
-          </button>
-        </footer>
-      </div>
-    </div>
+    <app-ventana
+      [titulo]="texto.titulo"
+      [subtitulo]="cambio.usuario.nombre + ' ' + cambio.usuario.apellido"
+      textoVolver="Cancelar"
+      textoConfirmar="Confirmar cambio"
+      textoEnCurso="Guardando…"
+      [enCurso]="rolSubmitting()"
+      (confirmar)="confirmarCambioDeRol()"
+      (cerrar)="cancelarCambioDeRol()"
+    >
+      <p class="dialog-confirm">
+        Rol actual: <strong>{{ rolLabels[cambio.usuario.rolPortal] }}</strong> → nuevo rol:
+        <strong>{{ rolLabels[cambio.rol] }}</strong>.
+      </p>
+      <p class="dialog-confirm">{{ texto.cuerpo }}</p>
+      @if (texto.advertencia) {
+        <p class="dialog-confirm dialog-confirm-warning">{{ texto.advertencia }}</p>
+      }
+    </app-ventana>
   }
 }
 
 <!-- ===== EDITAR CANDIDATO: nombre / apellido / DNI (el mail se muestra pero no se modifica) ===== -->
 @if (dialogEditar(); as candidato) {
-  <div class="dialog-backdrop" (click)="cerrarEditar()">
-    <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <header class="dialog-head">
-        <div class="dialog-head-text">
-          <h2 class="dialog-title">Corregir datos</h2>
-          <span class="dialog-subtitle">{{ candidato.nombre }} {{ candidato.apellido }}</span>
-        </div>
-        <button type="button" class="dialog-close" (click)="cerrarEditar()" aria-label="Cerrar">✕</button>
-      </header>
+  <app-ventana
+    titulo="Corregir datos"
+    [subtitulo]="candidato.nombre + ' ' + candidato.apellido"
+    textoVolver="Cancelar"
+    textoConfirmar="Guardar"
+    textoEnCurso="Guardando…"
+    [enCurso]="editarSubmitting()"
+    [error]="editarError()"
+    (confirmar)="guardarEdicion()"
+    (cerrar)="cerrarEditar()"
+  >
+    <p class="dialog-confirm">
+      Con esto podés editar estos datos por si son incorrectos. El DNI es el usuario con el que la
+      persona va a ingresar al portal. Solo corrige lo que se ve acá, no toca ningún otro dato del padrón.
+    </p>
 
-      <p class="dialog-confirm">
-        Con esto podés editar estos datos por si son incorrectos. El DNI es el usuario con el que la
-        persona va a ingresar al portal. Solo corrige lo que se ve acá, no toca ningún otro dato del padrón.
-      </p>
-
-      <div class="field-group">
-        <label class="field-label" for="editar-nombre">Nombre</label>
-        <input id="editar-nombre" type="text" class="field-input" [(ngModel)]="editarNombre" [disabled]="editarSubmitting()" />
-      </div>
-
-      <div class="field-group">
-        <label class="field-label" for="editar-apellido">Apellido</label>
-        <input id="editar-apellido" type="text" class="field-input" [(ngModel)]="editarApellido" [disabled]="editarSubmitting()" />
-      </div>
-
-      <div class="field-group">
-        <label class="field-label" for="editar-dni">DNI</label>
-        <input id="editar-dni" type="text" inputmode="numeric" class="field-input" [(ngModel)]="editarDni" [disabled]="editarSubmitting()" />
-      </div>
-
-      <div class="field-group">
-        <label class="field-label" for="editar-email">Mail</label>
-        <input id="editar-email" type="email" class="field-input" [value]="candidato.email" disabled />
-        <span class="field-hint">
-          El mail no se modifica desde el portal: a esa dirección llega el enlace de activación. Si está mal
-          cargado, lo corrige el equipo que administra las cuentas.
-        </span>
-      </div>
-
-      @if (editarError()) {
-        <p class="dialog-form-error" role="alert">{{ editarError() }}</p>
-      }
-
-      <footer class="dialog-actions">
-        <button type="button" class="boton boton-fantasma" (click)="cerrarEditar()" [disabled]="editarSubmitting()">
-          Cancelar
-        </button>
-        <button type="button" class="boton boton-principal" (click)="guardarEdicion()" [disabled]="editarSubmitting()" [class.en-curso]="editarSubmitting()" [attr.aria-busy]="editarSubmitting()">
-          {{ editarSubmitting() ? 'Guardando…' : 'Guardar' }}
-        </button>
-      </footer>
+    <div class="field-group">
+      <label class="field-label" for="editar-nombre">Nombre</label>
+      <input id="editar-nombre" type="text" class="field-input" [(ngModel)]="editarNombre" [disabled]="editarSubmitting()" />
     </div>
-  </div>
+
+    <div class="field-group">
+      <label class="field-label" for="editar-apellido">Apellido</label>
+      <input id="editar-apellido" type="text" class="field-input" [(ngModel)]="editarApellido" [disabled]="editarSubmitting()" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="editar-dni">DNI</label>
+      <input id="editar-dni" type="text" inputmode="numeric" class="field-input" [(ngModel)]="editarDni" [disabled]="editarSubmitting()" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="editar-email">Mail</label>
+      <input id="editar-email" type="email" class="field-input" [value]="candidato.email" disabled />
+      <span class="field-hint">
+        El mail no se modifica desde el portal: a esa dirección llega el enlace de activación. Si está mal
+        cargado, lo corrige el equipo que administra las cuentas.
+      </span>
+    </div>
+  </app-ventana>
 }
 
 <!-- ===== HABILITAR: popup de confirmación ===== -->
 @if (dialogCandidato(); as candidato) {
-  <div class="dialog-backdrop" (click)="cerrarHabilitar()">
-    <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <header class="dialog-head">
-        <div class="dialog-head-text">
-          <h2 class="dialog-title">Habilitar acceso</h2>
-          <span class="dialog-subtitle">{{ candidato.nombre }} {{ candidato.apellido }}</span>
-        </div>
-        <button type="button" class="dialog-close" (click)="cerrarHabilitar()" aria-label="Cerrar">✕</button>
-      </header>
+  <app-ventana
+    titulo="Habilitar acceso"
+    [subtitulo]="candidato.nombre + ' ' + candidato.apellido"
+    textoVolver="Cancelar"
+    textoConfirmar="Confirmar y habilitar"
+    textoEnCurso="Habilitando…"
+    [enCurso]="dialogSubmitting()"
+    [error]="dialogError()"
+    (confirmar)="confirmarHabilitar()"
+    (cerrar)="cerrarHabilitar()"
+  >
+    <p class="dialog-confirm">
+      Va a ingresar al portal con su DNI <strong>{{ candidato.dni || 'sin cargar' }}</strong>. Se va a enviar
+      un correo de activación a <strong>{{ candidato.email }}</strong> para que cree su contraseña. Confirmá que el mail es correcto antes de continuar: si está mal, el acceso de
+      administrador le llegaría a otra persona. Podés corregirlo con el lápiz antes de habilitar.
+    </p>
 
-      <p class="dialog-confirm">
-        Va a ingresar al portal con su DNI <strong>{{ candidato.dni || 'sin cargar' }}</strong>. Se va a enviar
-        un correo de activación a <strong>{{ candidato.email }}</strong> para que cree su contraseña. Confirmá que el mail es correcto antes de continuar: si está mal, el acceso de
-        administrador le llegaría a otra persona. Podés corregirlo con el lápiz antes de habilitar.
-      </p>
-
-      <div class="field-group">
-        <label class="field-label">Rol a asignar</label>
-        <app-custom-select
-          [options]="rolOptions"
-          [ngModel]="rolParaCandidato(candidato)"
-          (ngModelChange)="onRolCandidatoChange(candidato, $event)"
-        ></app-custom-select>
-      </div>
-
-      @if (dialogError()) {
-        <p class="dialog-form-error" role="alert">{{ dialogError() }}</p>
-      }
-
-      <footer class="dialog-actions">
-        <button type="button" class="boton boton-fantasma" (click)="cerrarHabilitar()" [disabled]="dialogSubmitting()">
-          Cancelar
-        </button>
-        <button type="button" class="boton boton-principal" (click)="confirmarHabilitar()" [disabled]="dialogSubmitting()" [class.en-curso]="dialogSubmitting()" [attr.aria-busy]="dialogSubmitting()">
-          {{ dialogSubmitting() ? 'Habilitando…' : 'Confirmar y habilitar' }}
-        </button>
-      </footer>
+    <div class="field-group">
+      <label class="field-label">Rol a asignar</label>
+      <app-custom-select
+        [options]="rolOptions"
+        [ngModel]="rolParaCandidato(candidato)"
+        (ngModelChange)="onRolCandidatoChange(candidato, $event)"
+      ></app-custom-select>
     </div>
-  </div>
+  </app-ventana>
 }
 
 <!-- ===== DESHABILITAR: confirmación ===== -->
 @if (confirmarBaja(); as usuario) {
-  <div class="dialog-backdrop" (click)="cancelarBaja()">
-    <div class="dialog dialog-narrow" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <header class="dialog-head">
-        <div class="dialog-head-text">
-          <h2 class="dialog-title">Deshabilitar acceso</h2>
-          <span class="dialog-subtitle">{{ usuario.nombre }} {{ usuario.apellido }}</span>
-        </div>
-        <button type="button" class="dialog-close" (click)="cancelarBaja()" aria-label="Cerrar">✕</button>
-      </header>
+  <app-ventana
+    forma="angosta"
+    titulo="Deshabilitar acceso"
+    [subtitulo]="usuario.nombre + ' ' + usuario.apellido"
+    [peligro]="true"
+    textoVolver="Cancelar"
+    textoConfirmar="Deshabilitar"
+    textoEnCurso="Deshabilitando…"
+    [enCurso]="bajaSubmitting()"
+    (confirmar)="confirmarBajaAccion()"
+    (cerrar)="cancelarBaja()"
+  >
+    <p class="dialog-confirm dialog-confirm-warning">
+      Corta el acceso de esta persona al Portal Administrativo de inmediato: si tiene una sesión abierta,
+      se cierra en su próxima acción.
+    </p>
+  </app-ventana>
+}
 
-      <p class="dialog-confirm dialog-confirm-warning">
-        Corta el acceso de esta persona al Portal Administrativo de inmediato: si tiene una sesión abierta,
-        se cierra en su próxima acción.
+<!-- ===== REENVIAR ENLACE: confirmación ===== -->
+@if (confirmarEnlace(); as usuario) {
+  <app-ventana
+    forma="angosta"
+    [titulo]="textoAccionEnlace(usuario)"
+    [subtitulo]="usuario.nombre + ' ' + usuario.apellido"
+    textoVolver="Cancelar"
+    textoConfirmar="Enviar correo"
+    textoEnCurso="Enviando…"
+    [enCurso]="enlaceSubmitting()"
+    (confirmar)="confirmarEnlaceAccion()"
+    (cerrar)="cancelarEnlace()"
+  >
+    @if (usuario.activacionPendiente) {
+      <p class="dialog-confirm">
+        Se le envía a <strong>{{ usuario.email }}</strong> un correo nuevo para que cree su contraseña por
+        primera vez. El enlace anterior deja de valer.
       </p>
-
-      <footer class="dialog-actions">
-        <button type="button" class="boton boton-fantasma" (click)="cancelarBaja()" [disabled]="bajaSubmitting()">
-          Cancelar
-        </button>
-        <button type="button" class="boton boton-principal es-peligro" (click)="confirmarBajaAccion()" [disabled]="bajaSubmitting()" [class.en-curso]="bajaSubmitting()" [attr.aria-busy]="bajaSubmitting()">
-          {{ bajaSubmitting() ? 'Deshabilitando…' : 'Deshabilitar' }}
-        </button>
-      </footer>
-    </div>
-  </div>
+    } @else {
+      <p class="dialog-confirm">
+        Se le envía a <strong>{{ usuario.email }}</strong> un enlace para que elija una contraseña nueva. Vale
+        30 minutos y sirve una sola vez. Su contraseña actual sigue funcionando hasta que la cambie.
+      </p>
+    }
+    <p class="dialog-confirm">Vos no ves ni elegís la contraseña: la define la propia persona desde el enlace.</p>
+  </app-ventana>
 }
 
 <!-- ===== REACTIVAR: confirmación ===== -->
-@if (confirmarEnlace(); as usuario) {
-  <div class="dialog-backdrop" (click)="cancelarEnlace()">
-    <div class="dialog dialog-narrow" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <header class="dialog-head">
-        <div class="dialog-head-text">
-          <h2 class="dialog-title">{{ textoAccionEnlace(usuario) }}</h2>
-          <span class="dialog-subtitle">{{ usuario.nombre }} {{ usuario.apellido }}</span>
-        </div>
-        <button type="button" class="dialog-close" (click)="cancelarEnlace()" aria-label="Cerrar">✕</button>
-      </header>
-
-      @if (usuario.activacionPendiente) {
-        <p class="dialog-confirm">
-          Se le envía a <strong>{{ usuario.email }}</strong> un correo nuevo para que cree su contraseña por
-          primera vez. El enlace anterior deja de valer.
-        </p>
-      } @else {
-        <p class="dialog-confirm">
-          Se le envía a <strong>{{ usuario.email }}</strong> un enlace para que elija una contraseña nueva. Vale
-          30 minutos y sirve una sola vez. Su contraseña actual sigue funcionando hasta que la cambie.
-        </p>
-      }
-      <p class="dialog-confirm">Vos no ves ni elegís la contraseña: la define la propia persona desde el enlace.</p>
-
-      <footer class="dialog-actions">
-        <button type="button" class="boton boton-fantasma" (click)="cancelarEnlace()" [disabled]="enlaceSubmitting()">
-          Cancelar
-        </button>
-        <button type="button" class="boton boton-principal" (click)="confirmarEnlaceAccion()" [disabled]="enlaceSubmitting()" [class.en-curso]="enlaceSubmitting()" [attr.aria-busy]="enlaceSubmitting()">
-          {{ enlaceSubmitting() ? 'Enviando…' : 'Enviar correo' }}
-        </button>
-      </footer>
-    </div>
-  </div>
-}
-
 @if (confirmarReactivar(); as usuario) {
-  <div class="dialog-backdrop" (click)="cancelarReactivar()">
-    <div class="dialog dialog-narrow" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <header class="dialog-head">
-        <div class="dialog-head-text">
-          <h2 class="dialog-title">Reactivar acceso</h2>
-          <span class="dialog-subtitle">{{ usuario.nombre }} {{ usuario.apellido }}</span>
-        </div>
-        <button type="button" class="dialog-close" (click)="cancelarReactivar()" aria-label="Cerrar">✕</button>
-      </header>
+  <app-ventana
+    forma="angosta"
+    titulo="Reactivar acceso"
+    [subtitulo]="usuario.nombre + ' ' + usuario.apellido"
+    textoVolver="Cancelar"
+    textoConfirmar="Reactivar"
+    textoEnCurso="Reactivando…"
+    [enCurso]="reactivarSubmitting()"
+    (confirmar)="confirmarReactivarAccion()"
+    (cerrar)="cancelarReactivar()"
+  >
+    <p class="dialog-confirm">
+      Le devuelve el acceso con la misma contraseña que ya tenía. No se envía ningún correo. Elegí con qué rol
+      vuelve: está seleccionado el que tenía (<strong>{{ rolLabels[usuario.rolPortal] }}</strong>).
+    </p>
 
-      <p class="dialog-confirm">
-        Le devuelve el acceso con la misma contraseña que ya tenía. No se envía ningún correo. Elegí con qué rol
-        vuelve: está seleccionado el que tenía (<strong>{{ rolLabels[usuario.rolPortal] }}</strong>).
-      </p>
-
-      <div class="field-group">
-        <label class="field-label">Rol con el que vuelve</label>
-        <app-custom-select
-          [options]="rolOptions"
-          [ngModel]="rolReactivar()"
-          (ngModelChange)="rolReactivar.set($event)"
-        ></app-custom-select>
-      </div>
-
-      <footer class="dialog-actions">
-        <button type="button" class="boton boton-fantasma" (click)="cancelarReactivar()" [disabled]="reactivarSubmitting()">
-          Cancelar
-        </button>
-        <button type="button" class="boton boton-principal" (click)="confirmarReactivarAccion()" [disabled]="reactivarSubmitting()" [class.en-curso]="reactivarSubmitting()" [attr.aria-busy]="reactivarSubmitting()">
-          {{ reactivarSubmitting() ? 'Reactivando…' : 'Reactivar' }}
-        </button>
-      </footer>
+    <div class="field-group">
+      <label class="field-label">Rol con el que vuelve</label>
+      <app-custom-select
+        [options]="rolOptions"
+        [ngModel]="rolReactivar()"
+        (ngModelChange)="rolReactivar.set($event)"
+      ></app-custom-select>
     </div>
-  </div>
+  </app-ventana>
 }

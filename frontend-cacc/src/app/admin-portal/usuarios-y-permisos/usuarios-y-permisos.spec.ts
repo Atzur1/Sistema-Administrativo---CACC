@@ -99,7 +99,7 @@ describe('Usuarios - Resetear contraseña', () => {
     component.pedirEnlace(ADMIN);
     fixture.detectChanges();
 
-    expect(element.querySelector('.dialog')?.textContent).toContain('camila@cacc.test');
+    expect(element.querySelector('[role="dialog"]')?.textContent).toContain('camila@cacc.test');
   });
 
   it('confirmar manda el correo, avisa con el mensaje del servidor y cierra la confirmación', async () => {
