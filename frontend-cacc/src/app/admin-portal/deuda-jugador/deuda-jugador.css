@@ -10,7 +10,7 @@
   width: 100%;
   max-width: 1040px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--space-5);
   min-height: 100%;
   box-sizing: border-box;
   background: var(--color-bg-page);
@@ -39,13 +39,13 @@
 .back-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--pending-strong);
   cursor: pointer;
@@ -70,7 +70,7 @@
 .loading-text,
 .error-text {
   margin: 16px 0 0;
-  font-size: 13px;
+  font-size: var(--font-md);
   color: var(--color-text-muted);
 }
 
@@ -84,17 +84,16 @@
    es una tarjeta más, con una franja superior de acento del color del estado. */
 .profile-card {
   position: relative;
-  padding: 18px 18px 16px;
+  padding: var(--space-4) var(--space-4) var(--space-4);
   margin-top: 16px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.05),
-    0 12px 28px rgba(15, 23, 42, 0.06);
+    var(--shadow-rest);
   animation: fadeSlideUp 0.4s ease both;
   animation-delay: 60ms;
 }
@@ -112,7 +111,7 @@
 .profile-header {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .profile-avatar {
@@ -121,32 +120,31 @@
   justify-content: center;
   width: 60px;
   height: 60px;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: linear-gradient(150deg, var(--pending-bg) 0%, var(--pending-bg-alt) 100%);
   color: var(--pending-strong);
-  font-size: 19px;
+  font-size: var(--font-xl);
   font-weight: 700;
   flex-shrink: 0;
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.6),
-    0 3px 10px rgba(var(--pending-shadow), 0.22);
+    var(--shadow-rest);
 }
 
 .profile-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
 .profile-name {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--font-xl);
   font-weight: 700;
 }
 
 .profile-meta {
-  font-size: 12px;
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -154,20 +152,20 @@
 .profile-stats {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: var(--space-4);
   margin-top: 16px;
-  padding-top: 14px;
+  padding-top: var(--space-4);
   border-top: 1px dashed rgba(var(--pending-shadow), 0.3);
 }
 
 .profile-stat {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .profile-stat-value {
-  font-size: 18px;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--color-text);
 }
@@ -182,7 +180,7 @@
 }
 
 .profile-stat-label {
-  font-size: 10.5px;
+  font-size: var(--font-sm);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -197,19 +195,18 @@
 .panel {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: var(--space-4);
   margin-top: 14px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   /* Sombra más marcada que la variable global --glass-shadow (pensada para convivir con
        otros elementos vistosos al lado): acá el panel es prácticamente todo el contenido de
        la pantalla, así que necesita su propia elevación para no leerse plano. */
   box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.05),
-    0 14px 32px rgba(15, 23, 42, 0.07);
+    var(--shadow-rest);
   min-width: 0;
   animation: fadeSlideUp 0.4s ease both;
   animation-delay: 120ms;
@@ -218,14 +215,14 @@
 .panel-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 14px;
 }
 
 .panel-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   flex-shrink: 0;
 }
 
@@ -235,22 +232,22 @@
 
 .panel-title {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--font-lg);
   font-weight: 600;
 }
 
 .panel-count {
   margin-left: auto;
-  font-size: 13px;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--color-text-muted);
 }
 
 .deuda-empty {
   margin: 0;
-  padding: 24px 0;
+  padding: var(--space-5) 0;
   text-align: center;
-  font-size: 12.5px;
+  font-size: var(--font-md);
   color: var(--color-text-muted);
 }
 
@@ -259,8 +256,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 34px 20px;
+  gap: var(--space-3);
+  padding: calc(var(--space-6) + var(--space-1)) var(--space-5);
   text-align: center;
 }
 
@@ -270,7 +267,7 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: var(--color-brand-tint);
   color: var(--color-brand);
 }
@@ -282,7 +279,7 @@
 
 .empty-state p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--font-md);
   color: var(--color-text-muted);
 }
 
@@ -293,7 +290,7 @@
 .cuota-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -318,20 +315,20 @@
 }
 
 .cuota-row {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   background: #fafafa;
   border: 1px solid #e5e7eb;
   /* Barra de acento a la izquierda, más marcada que el borde parejo del resto — el mismo
      recurso que ya usa "Deuda por categoría" para la fila activa, ahora aplicado acá. */
   border-left: 4px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition:
     box-shadow 0.2s ease,
     border-color 0.2s ease;
 }
 
 .cuota-row:hover {
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-raised);
 }
 
 /* Único toque de color fuerte de la fila (aparte del botón): la barra de la vencida, que es
@@ -349,13 +346,13 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .cuota-row-identity {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 2 1 260px;
   min-width: 0;
 }
@@ -363,7 +360,7 @@
 .cuota-row-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -374,9 +371,9 @@
 
 .estado-pill {
   flex-shrink: 0;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 10px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -411,19 +408,19 @@
 }
 
 .cuota-vencida-desde {
-  font-size: 11px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--state-vencida-text);
 }
 
 .cuota-periodo {
-  font-size: 14.5px;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: #16181d;
 }
 
 .cuota-original {
-  font-size: 11.5px;
+  font-size: var(--font-base);
   color: #6b7280;
 }
 
@@ -432,7 +429,7 @@
   display: flex;
   flex-direction: column;
   margin: 10px 0 0;
-  padding: 10px 0 0;
+  padding: var(--space-3) 0 0;
   list-style: none;
   border-top: 1px solid #eceef1;
 }
@@ -441,17 +438,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 6px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
 }
 
 .abono-meta {
-  font-size: 11px;
+  font-size: var(--font-sm);
   color: #6b7280;
 }
 
 .abono-monto {
-  font-size: 12px;
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--color-brand);
 }
@@ -460,17 +457,17 @@
 .cuota-beneficio-badge {
   display: inline-block;
   margin-top: 10px;
-  padding: 3px 8px;
+  padding: var(--space-1) var(--space-2);
   background: var(--color-brand-tint);
-  border-radius: 6px;
-  font-size: 10.5px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #00874a;
 }
 
 .cuota-cubierta {
   margin: 0;
-  font-size: 11.5px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: #00874a;
   text-align: right;
@@ -481,13 +478,13 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: var(--space-1);
   flex: 1 1 120px;
   text-align: right;
 }
 
 .saldo-label {
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -498,7 +495,7 @@
    monto en rojo chillón — más elegante y menos "alarma" para una pantalla que ya de por sí
    trata de dinero adeudado. */
 .saldo-monto {
-  font-size: 18px;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: #16181d;
 }
@@ -510,19 +507,19 @@
 .pagar-button {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   flex-shrink: 0;
-  padding: 0 16px;
+  padding: 0 var(--space-4);
   height: 34px;
   background: var(--action);
   border: none;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-rest);
   transition:
     background 0.2s ease,
     box-shadow 0.2s ease;
@@ -536,7 +533,7 @@
 
 .pagar-button:hover {
   background: var(--action-hover);
-  box-shadow: 0 2px 6px rgba(181, 84, 31, 0.28);
+  box-shadow: var(--shadow-raised);
 }
 
 /* Fila ya de ancho completo: Monto + Método comparten una línea en vez de apilarse en una
@@ -545,21 +542,21 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 10px;
+  gap: var(--space-3);
   margin-top: 14px;
-  padding-top: 14px;
+  padding-top: var(--space-4);
   border-top: 1px solid #eceef1;
 }
 
 .pagar-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   flex: 1 1 200px;
 }
 
 .pagar-label {
-  font-size: 9.5px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -568,13 +565,13 @@
 
 .pagar-input {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   box-sizing: border-box;
   background: var(--color-bg-card);
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--font-md);
   color: var(--color-text);
   outline: none;
   transition: border-color 0.2s ease;
@@ -593,29 +590,29 @@
   top: 50%;
   left: 10px;
   transform: translateY(-50%);
-  font-size: 12.5px;
+  font-size: var(--font-md);
   color: var(--color-text-muted);
   pointer-events: none;
 }
 
 .pagar-amount-input {
-  padding-left: 22px;
+  padding-left: var(--space-5);
 }
 
 .pagar-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex: 1 1 220px;
 }
 
 .pagar-cancelar {
   flex: 1;
-  padding: 9px;
+  padding: var(--space-2);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-text-muted);
   cursor: pointer;
@@ -630,7 +627,7 @@
 .seleccionar-todas {
   flex: none;
   margin-left: 12px;
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .seleccionar-todas:disabled {
@@ -640,16 +637,16 @@
 
 .pagar-confirmar {
   flex: 1.4;
-  padding: 9px;
+  padding: var(--space-2);
   background: var(--color-brand);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-bg-card);
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-rest);
   transition:
     background 0.2s ease,
     opacity 0.2s ease,
@@ -659,7 +656,7 @@
 
 .pagar-confirmar:hover:not(:disabled) {
   background: var(--color-brand-hover);
-  box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+  box-shadow: var(--shadow-raised);
   transform: translateY(-1px);
 }
 
@@ -671,7 +668,7 @@
 .pagar-error {
   flex: 1 1 100%;
   margin: 0;
-  font-size: 10.5px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-danger);
 }
@@ -679,12 +676,12 @@
 .pago-exito-global {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0 0 12px;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   background: var(--color-brand-tint);
-  border-radius: 9px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-brand);
   animation: fadeSlideUp 0.3s ease both;
@@ -699,7 +696,7 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 520px) {
   .dashboard {
-    padding: 14px;
+    padding: var(--space-4);
   }
 
   .profile-header {
@@ -746,19 +743,19 @@
 .cuotas-table-wrapper {
   overflow-x: auto;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .cuotas-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: var(--font-md);
 }
 
 .cuotas-table th {
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   background: #f5f6f7;
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -768,7 +765,7 @@
 }
 
 .cuotas-table td {
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   border-top: 1px solid #eef0f2;
   color: #16181d;
   white-space: nowrap;
@@ -815,21 +812,21 @@
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--space-4);
   margin-top: 14px;
 }
 
 .cobro-total {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   flex: 1 1 160px;
 }
 
 .cobro-metodo {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
   flex: 1 1 200px;
 }
 
@@ -849,18 +846,18 @@
 
 .cobro-error {
   margin: 12px 0 0;
-  padding: 9px 11px;
+  padding: var(--space-2) var(--space-3);
   background: var(--color-danger-bg);
   border: 1px solid rgba(192, 57, 43, 0.3);
-  border-radius: 9px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   color: var(--color-danger-strong);
 }
 
 /* ===== HU-026: estado de cuenta después del cobro ===== */
 .actualizando-estado {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--font-sm);
   color: var(--color-text-muted);
 }
 
@@ -870,13 +867,13 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 0 0 12px;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   background: var(--pending-bg);
   border: 1px solid var(--pending-border);
-  border-radius: 9px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   color: var(--pending-strong);
 }
 
@@ -886,7 +883,7 @@
 
 .reintentar-actualizacion {
   flex: 0 0 auto;
-  padding: 7px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 /* ===== CONFIRMACIÓN DE PAGO (mismo popup que Becados y Descuentos, en la paleta de deuda) ===== */
@@ -897,7 +894,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: var(--space-5);
   background: rgba(17, 24, 20, 0.45);
   backdrop-filter: blur(2px);
   animation: dialogFade 0.18s ease both;
@@ -908,13 +905,13 @@
   max-width: 460px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  padding: 24px 26px;
+  padding: var(--space-5) var(--space-5);
   box-sizing: border-box;
   background: linear-gradient(180deg, #ffffff 0%, var(--aviso-bg-suave) 100%);
   border: 1px solid var(--aviso-borde-solido);
   border-top: 4px solid var(--action);
-  border-radius: 18px;
-  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.08), 0 20px 44px rgba(180, 83, 9, 0.16);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
   animation: dialogRise 0.22s ease both;
 }
 
@@ -941,40 +938,40 @@
 .dialog-head {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--space-3);
   margin-bottom: 14px;
 }
 
 .dialog-head-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
   flex: 1;
 }
 
 .dialog-title {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--color-text);
 }
 
 .dialog-subtitle {
-  font-size: 12px;
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
 .dialog-confirm {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: var(--font-md);
   color: var(--color-text);
 }
 
 .cobro-resumen {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin: 0 0 12px;
   padding: 0;
   list-style: none;
@@ -983,9 +980,9 @@
 .cobro-resumen-fila {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  padding: 6px 0;
-  font-size: 13px;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  font-size: var(--font-md);
   color: var(--color-text);
 }
 
@@ -995,14 +992,14 @@
 
 .cobro-resumen-total {
   margin-top: 4px;
-  padding-top: 10px;
+  padding-top: var(--space-3);
   border-top: 1px solid var(--aviso-borde-solido);
-  font-size: 15px;
+  font-size: var(--font-lg);
 }
 
 .dialog-actions {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   margin-top: 16px;
 }
 
@@ -1021,11 +1018,11 @@
 .profile-baja {
   align-self: flex-start;
   margin-top: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
   background: var(--color-danger-bg);
   color: var(--color-danger);
-  font-size: 11px;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
@@ -1034,11 +1031,11 @@
   display: inline-block;
   margin-top: 10px;
   margin-left: 6px;
-  padding: 3px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-hover);
   color: var(--color-text-muted);
-  font-size: 10.5px;
+  font-size: var(--font-sm);
   font-weight: 700;
 }

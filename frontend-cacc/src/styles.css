@@ -120,6 +120,52 @@ html, body {
   --action-badge-fg: var(--color-brand-deep);
   --action-label: #475569;
   --action-focus-ring: 0 0 0 3px rgba(0, 127, 62, 0.16);
+
+  /* ===== Escala de diseño del Portal Administrativo (HU-092) =====
+     Letra, esquinas, sombras y espacios salen SOLO de estas variables: en las pantallas del portal no se escribe
+     un px suelto para estas propiedades. Si una medida no está en la escala, se usa la más cercana; si de verdad
+     hace falta una nueva, se agrega acá y no en la pantalla. Cambiar un valor acá cambia todo el portal.
+
+     Ejemplo de uso:
+       .mi-tarjeta {
+         padding: var(--space-4) var(--space-5);
+         gap: var(--space-2);
+         border-radius: var(--radius-md);
+         box-shadow: var(--shadow-rest);
+         font-size: var(--font-base);
+       }
+       .mi-tarjeta:hover { box-shadow: var(--shadow-raised); }
+       .mi-campo:focus   { box-shadow: var(--shadow-focus); }
+       .mi-insignia      { border-radius: var(--radius-pill); }
+       .mi-reserva-icono { padding-left: calc(var(--space-6) + var(--space-1)); }   (más de 32: sumar pasos) */
+
+  /* Tipografía: 6 niveles */
+  --font-xs: 10px;    /* etiquetas en mayúscula, insignias, rótulos de métricas */
+  --font-sm: 11px;    /* texto secundario, ayudas, encabezados de tabla */
+  --font-base: 12px;  /* texto normal: tablas, formularios, botones */
+  --font-md: 13px;    /* texto destacado, títulos de panel */
+  --font-lg: 15px;    /* subtítulos y títulos de diálogo */
+  --font-xl: 20px;    /* títulos de pantalla y números grandes */
+
+  /* Radios: 3 tamaños más la pastilla */
+  --radius-sm: 6px;       /* chico: chips, celdas, botones de ícono */
+  --radius-md: 9px;       /* medio: botones, campos, filas */
+  --radius-lg: 16px;      /* grande: tarjetas, paneles, diálogos */
+  --radius-pill: 999px;   /* pastilla: insignias, avatares y puntos redondos */
+
+  /* Sombras: 4 con nombre */
+  --shadow-rest: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);       /* reposo: tarjetas, paneles, botones */
+  --shadow-raised: 0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.12);    /* elevada: hover y elemento activo */
+  --shadow-floating: 0 4px 10px rgba(15, 23, 42, 0.06), 0 20px 40px rgba(15, 23, 42, 0.16); /* flotante: menús, diálogos, avisos, barra lateral */
+  --shadow-focus: 0 0 0 3px rgba(0, 127, 62, 0.16);                                        /* foco: campos y botones con foco, anillos */
+
+  /* Espacios (gap y padding) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
 }
 
 /* =====================================================================
@@ -141,7 +187,7 @@ html, body {
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 15px;
-  padding-right: 30px !important;
+  padding-right: var(--space-6) !important;
   cursor: pointer;
 }
 
@@ -166,7 +212,7 @@ html, body {
 }
 
 .field-input-icon {
-  padding-left: 32px !important;
+  padding-left: var(--space-6) !important;
 }
 
 /* Etiqueta discreta sobre el título de un panel de acción */
@@ -174,11 +220,11 @@ html, body {
   display: inline-block;
   width: fit-content;
   margin-bottom: 2px;
-  padding: 2px 9px;
-  border-radius: 999px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
   background: var(--action-badge-bg);
   color: var(--action-badge-fg);
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -246,7 +292,7 @@ html, body {
 .action-with-help {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Si el contenedor lo estira (footers de diálogo en columna, en pantallas chicas), el botón
@@ -274,13 +320,19 @@ html, body {
   animation: fadeSlideUp 0.4s ease both;
 }
 
+/* Dentro del Portal Administrativo el espacio sale de la escala. La regla de arriba no se cambia porque
+   también la usa la pantalla de elección de portales, que está fuera del portal. */
+app-admin-portal .page-header {
+  gap: var(--space-4);
+}
+
 .header-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: var(--section-accent-bg, var(--color-brand-tint));
   color: var(--section-accent, var(--color-brand));
   flex-shrink: 0;
@@ -294,18 +346,18 @@ html, body {
 .header-text {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
 .header-title {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--font-xl);
   font-weight: 700;
 }
 
 .header-subtitle {
-  font-size: 12px;
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -320,8 +372,8 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 0 18px;
+  gap: var(--space-1);
+  padding: 0 var(--space-4);
 }
 
 .header-metric + .header-metric {
@@ -329,13 +381,13 @@ html, body {
 }
 
 .header-metric-value {
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 700;
   line-height: 1.1;
 }
 
 .header-metric-label {
-  font-size: 9.5px;
+  font-size: var(--font-xs);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -359,7 +411,7 @@ html, body {
   }
 
   .header-metric {
-    padding: 0 18px 0 0;
+    padding: 0 var(--space-4) 0 0;
   }
 }
 
