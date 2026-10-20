@@ -5,7 +5,7 @@
 .dashboard {
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: var(--space-5);
     min-height: 100%;
     box-sizing: border-box;
     background: var(--color-bg-page);
@@ -27,13 +27,13 @@
    desentonaba con el resto de la paleta — ver styles.css). */
 .form-panel {
     position: relative;
-    padding: 18px 16px 16px;
+    padding: var(--space-4) var(--space-4) var(--space-4);
     margin-bottom: 14px;
     background: var(--action-bg);
     border: 1px solid var(--action-border);
     border-top: 4px solid var(--action-accent);
-    border-radius: 16px;
-    box-shadow: var(--action-shadow);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-rest);
     animation: fadeSlideUp 0.4s ease both;
     animation-delay: 60ms;
 }
@@ -41,7 +41,7 @@
 .form-head {
     display: flex;
     align-items: center;
-    gap: 11px;
+    gap: var(--space-3);
     margin-bottom: 14px;
 }
 
@@ -52,7 +52,7 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 11px;
+    border-radius: var(--radius-md);
     background: var(--action-badge-bg);
     color: var(--action-badge-fg);
     flex-shrink: 0;
@@ -66,26 +66,26 @@
 .form-head-text {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-1);
     min-width: 0;
 }
 
 .form-title {
     margin: 0;
-    font-size: 15px;
+    font-size: var(--font-lg);
     font-weight: 700;
     color: var(--color-text-dark);
 }
 
 .form-subtitle {
-    font-size: 11px;
+    font-size: var(--font-sm);
     color: var(--color-text-muted);
 }
 
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
+    gap: var(--space-3);
     /* The hint under the date field must not stretch the other two */
     align-items: start;
 }
@@ -93,12 +93,12 @@
 .field {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: var(--space-1);
     min-width: 0;
 }
 
 .field-label {
-    font-size: 10px;
+    font-size: var(--font-xs);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -107,13 +107,13 @@
 
 .field-input {
     width: 100%;
-    padding: 9px 11px;
+    padding: var(--space-2) var(--space-3);
     box-sizing: border-box;
     background: var(--action-bg);
     border: 1px solid var(--action-border-strong);
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 12px;
+    font-size: var(--font-base);
     color: var(--color-text);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -130,7 +130,7 @@
 
 .field-input:focus {
     border-color: var(--action-accent);
-    box-shadow: var(--action-focus-ring);
+    box-shadow: var(--shadow-focus);
 }
 
 /* ===== NUEVO MONTO: signo $ fijo + formato con puntos de miles ===== */
@@ -143,23 +143,23 @@
     top: 50%;
     left: 11px;
     transform: translateY(-50%);
-    font-size: 12px;
+    font-size: var(--font-base);
     color: var(--color-text-muted);
     pointer-events: none;
 }
 
 .amount-input {
-    padding-left: 22px;
+    padding-left: var(--space-5);
 }
 
 .field-hint {
-    font-size: 10.5px;
+    font-size: var(--font-sm);
     color: var(--color-text-muted);
 }
 
 /* Replaces the hint in place, so showing it never shifts the layout */
 .field-error {
-    font-size: 10.5px;
+    font-size: var(--font-sm);
     font-weight: 600;
     color: var(--color-danger);
 }
@@ -172,28 +172,28 @@
 
 .submit-button {
     grid-column: span 3;
-    padding: 11px;
+    padding: var(--space-3);
     background: var(--action-accent);
     border: none;
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     color: var(--color-bg-card);
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--font-md);
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
+    box-shadow: var(--shadow-rest);
     transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 .submit-button:hover:not(:disabled) {
     background: var(--action-accent-hover);
-    box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
+    box-shadow: var(--shadow-raised);
     transform: translateY(-1px);
 }
 
 .submit-button:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(0, 79, 39, 0.2);
+    box-shadow: var(--shadow-rest);
 }
 
 .submit-button:disabled {
@@ -205,11 +205,11 @@
 .form-feedback {
     grid-column: span 3;
     margin: 0;
-    padding: 9px 11px;
+    padding: var(--space-2) var(--space-3);
     background: var(--color-brand-tint);
     border: 1px solid rgba(0, 166, 81, 0.3);
-    border-radius: 9px;
-    font-size: 12px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-base);
     font-weight: 600;
     color: var(--color-brand-deep);
     animation: fadeIn 0.3s ease both;
@@ -230,7 +230,7 @@
 .main-grid {
     display: grid;
     grid-template-columns: 1.6fr 1fr;
-    gap: 12px;
+    gap: var(--space-3);
     /* Fills the remaining height, but each panel keeps its own height instead
        of stretching the shorter one into a hollow card */
     flex: 1;
@@ -242,11 +242,11 @@
 .panel {
     display: flex;
     flex-direction: column;
-    padding: 16px;
+    padding: var(--space-4);
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-rest);
     min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
 }
@@ -263,18 +263,18 @@
 .panel-head {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-1);
     margin-bottom: 14px;
 }
 
 .panel-title {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--font-lg);
     font-weight: 600;
 }
 
 .panel-subtitle {
-    font-size: 11px;
+    font-size: var(--font-sm);
     color: var(--color-text-muted);
 }
 
@@ -290,9 +290,9 @@
 }
 
 .fees-table th {
-    padding: 0 10px 8px;
+    padding: 0 var(--space-3) var(--space-2);
     border-bottom: 1px solid var(--color-border);
-    font-size: 10px;
+    font-size: var(--font-xs);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -302,9 +302,9 @@
 }
 
 .fees-table td {
-    padding: 9px 10px;
+    padding: var(--space-2) var(--space-3);
     border-bottom: 1px solid var(--color-bg-page);
-    font-size: 12px;
+    font-size: var(--font-base);
     vertical-align: middle;
 }
 
@@ -347,12 +347,12 @@
 }
 
 .row-action {
-    padding: 4px 10px;
+    padding: var(--space-1) var(--space-3);
     border: 1px solid var(--color-danger);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: transparent;
     font-family: inherit;
-    font-size: 11px;
+    font-size: var(--font-sm);
     font-weight: 600;
     color: var(--color-danger);
     cursor: pointer;
@@ -369,39 +369,39 @@
     z-index: 900;
     display: grid;
     place-items: center;
-    padding: 16px;
+    padding: var(--space-4);
     background: rgba(15, 23, 42, 0.45);
     animation: fadeIn 0.15s ease both;
 }
 
 .confirm-dialog {
     width: min(440px, 100%);
-    padding: 22px 22px 18px;
+    padding: var(--space-5) var(--space-5) var(--space-4);
     box-sizing: border-box;
     background: var(--action-bg);
-    border-radius: 16px;
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-floating);
 }
 
 .confirm-title {
     margin: 0 0 6px;
-    font-size: 17px;
+    font-size: var(--font-lg);
     font-weight: 700;
     color: var(--color-text);
 }
 
 .confirm-detail {
     margin: 0 0 12px;
-    font-size: 13px;
+    font-size: var(--font-md);
     color: var(--color-text-muted);
 }
 
 .confirm-list {
     margin: 0 0 18px;
-    padding-left: 18px;
+    padding-left: var(--space-4);
     display: grid;
-    gap: 6px;
-    font-size: 12.5px;
+    gap: var(--space-2);
+    font-size: var(--font-md);
     line-height: 1.4;
     color: var(--color-text);
 }
@@ -409,15 +409,15 @@
 .confirm-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: var(--space-3);
 }
 
 .confirm-back,
 .confirm-danger {
-    padding: 9px 16px;
-    border-radius: 10px;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--font-md);
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s ease, opacity 0.15s ease;
@@ -453,9 +453,9 @@
 .category-pill,
 .status-pill {
     display: inline-block;
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 11px;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-sm);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -540,18 +540,18 @@
     }
 
     .header-metric {
-        padding: 0 18px 0 0;
+        padding: 0 var(--space-4) 0 0;
     }
 
     .header-metric + .header-metric {
-        padding-left: 18px;
+        padding-left: var(--space-4);
     }
 }
 
 /* Small mobile: one field per row, tighter padding */
 @media (max-width: 520px) {
     .dashboard {
-        padding: 14px;
+        padding: var(--space-4);
     }
 
     .form-grid {
@@ -565,6 +565,6 @@
 
     .header-metrics {
         flex-wrap: wrap;
-        row-gap: 10px;
+        row-gap: var(--space-3);
     }
 }

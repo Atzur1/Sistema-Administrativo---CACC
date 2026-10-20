@@ -9,7 +9,7 @@
   width: 100%;
   max-width: 1040px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--space-5);
   min-height: 100%;
   box-sizing: border-box;
   background: var(--color-bg-page);
@@ -27,13 +27,13 @@
 .back-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-brand);
   cursor: pointer;
@@ -58,7 +58,7 @@
 .loading-text,
 .error-text {
   margin: 16px 0 0;
-  font-size: 13px;
+  font-size: var(--font-md);
   color: var(--color-text-muted);
 }
 
@@ -72,17 +72,16 @@
    es una tarjeta más, con una franja superior de acento del color del estado. */
 .profile-card {
   position: relative;
-  padding: 18px 18px 16px;
+  padding: var(--space-4) var(--space-4) var(--space-4);
   margin-top: 16px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.05),
-    0 12px 28px rgba(15, 23, 42, 0.06);
+    var(--shadow-rest);
   animation: fadeSlideUp 0.4s ease both;
   animation-delay: 60ms;
 }
@@ -100,7 +99,7 @@
 .profile-header {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .profile-avatar {
@@ -109,32 +108,31 @@
   justify-content: center;
   width: 60px;
   height: 60px;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: linear-gradient(150deg, var(--color-brand-tint) 0%, #d3f2e2 100%);
   color: var(--color-brand);
-  font-size: 19px;
+  font-size: var(--font-xl);
   font-weight: 700;
   flex-shrink: 0;
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.6),
-    0 3px 10px rgba(0, 127, 62, 0.2);
+    var(--shadow-rest);
 }
 
 .profile-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
 .profile-name {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--font-xl);
   font-weight: 700;
 }
 
 .profile-meta {
-  font-size: 12px;
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -142,26 +140,26 @@
 .profile-stats {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: var(--space-4);
   margin-top: 16px;
-  padding-top: 14px;
+  padding-top: var(--space-4);
   border-top: 1px dashed rgba(0, 127, 62, 0.18);
 }
 
 .profile-stat {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .profile-stat-value {
-  font-size: 18px;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--color-text);
 }
 
 .profile-stat-label {
-  font-size: 10.5px;
+  font-size: var(--font-sm);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -170,19 +168,18 @@
 .panel {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: var(--space-4);
   margin-top: 14px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   /* Sombra más marcada que la variable global --glass-shadow (pensada para convivir con
        otros elementos vistosos al lado): acá el panel es prácticamente todo el contenido de
        la pantalla, así que necesita su propia elevación para no leerse plano. */
   box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.05),
-    0 14px 32px rgba(15, 23, 42, 0.07);
+    var(--shadow-rest);
   min-width: 0;
   animation: fadeSlideUp 0.4s ease both;
   animation-delay: 120ms;
@@ -191,14 +188,14 @@
 .panel-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 14px;
 }
 
 .panel-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   flex-shrink: 0;
 }
 
@@ -208,22 +205,22 @@
 
 .panel-title {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--font-lg);
   font-weight: 600;
 }
 
 .panel-count {
   margin-left: auto;
-  font-size: 13px;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--color-text-muted);
 }
 
 .historial-empty {
   margin: 0;
-  padding: 24px 0;
+  padding: var(--space-5) 0;
   text-align: center;
-  font-size: 12.5px;
+  font-size: var(--font-md);
   color: var(--color-text-muted);
 }
 
@@ -232,8 +229,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 34px 20px;
+  gap: var(--space-3);
+  padding: calc(var(--space-6) + var(--space-1)) var(--space-5);
   text-align: center;
 }
 
@@ -243,7 +240,7 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: var(--color-brand-tint);
   color: var(--color-brand);
 }
@@ -255,7 +252,7 @@
 
 .empty-state p {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--font-md);
   color: var(--color-text-muted);
 }
 
@@ -266,36 +263,36 @@
 .periodo-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .periodo-row {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   background: #fafafa;
   border: 1px solid #e5e7eb;
   border-left: 4px solid var(--color-brand);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: box-shadow 0.2s ease;
 }
 
 .periodo-row:hover {
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-raised);
 }
 
 .periodo-row-main {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .periodo-row-identity {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 2 1 260px;
   min-width: 0;
 }
@@ -303,7 +300,7 @@
 .periodo-row-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -316,16 +313,16 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: var(--space-1);
   flex: 1 1 120px;
   text-align: right;
 }
 
 .estado-pill {
   flex-shrink: 0;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 10px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -339,32 +336,32 @@
 
 .periodo-concepto-badge {
   display: inline-block;
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.03em;
   background: #e3edfb;
   color: #1d4f91;
   border: 1px solid #c5d9f2;
-  border-radius: 4px;
-  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-1);
   margin-left: 6px;
   vertical-align: middle;
   font-style: normal;
 }
 
 .periodo-nombre {
-  font-size: 14.5px;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: #16181d;
 }
 
 .periodo-cuota-original {
-  font-size: 11.5px;
+  font-size: var(--font-base);
   color: #6b7280;
 }
 
 .periodo-total-label {
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -372,17 +369,17 @@
 }
 
 .periodo-total {
-  font-size: 16px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--color-brand);
 }
 
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
 .periodo-beneficio-badge {
-  padding: 3px 8px;
+  padding: var(--space-1) var(--space-2);
   background: var(--color-brand-tint);
-  border-radius: 6px;
-  font-size: 10.5px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #00874a;
 }
@@ -392,7 +389,7 @@
   display: flex;
   flex-direction: column;
   margin: 10px 0 0;
-  padding: 10px 0 0;
+  padding: var(--space-3) 0 0;
   list-style: none;
   border-top: 1px solid #eceef1;
 }
@@ -401,17 +398,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 4px 0;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
 }
 
 .abono-meta {
-  font-size: 11px;
+  font-size: var(--font-sm);
   color: #6b7280;
 }
 
 .abono-monto {
-  font-size: 12px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-brand);
 }
@@ -421,23 +418,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: var(--space-4);
   margin-top: 14px;
-  padding-top: 14px;
+  padding-top: var(--space-4);
   border-top: 1px solid var(--color-bg-page);
 }
 
 .pagination-button {
-  padding: 7px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-brand);
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-rest);
   transition:
     background 0.2s ease,
     opacity 0.2s ease,
@@ -446,7 +443,7 @@
 
 .pagination-button:hover:not(:disabled) {
   background: var(--color-brand-tint);
-  box-shadow: 0 3px 8px rgba(0, 127, 62, 0.16);
+  box-shadow: var(--shadow-raised);
 }
 
 .pagination-button:disabled {
@@ -456,14 +453,14 @@
 }
 
 .pagination-status {
-  font-size: 11.5px;
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 520px) {
   .dashboard {
-    padding: 14px;
+    padding: var(--space-4);
   }
 }
 
@@ -471,11 +468,11 @@
 .profile-baja {
   align-self: flex-start;
   margin-top: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
   background: var(--color-danger-bg);
   color: var(--color-danger);
-  font-size: 11px;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
@@ -483,18 +480,18 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Misma forma que "Volver" (borde fino, 9px de radio, 12px), para que la cabecera se lea como un
    solo grupo de acciones. */
 .profile-action {
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-4);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-brand);
   cursor: pointer;
@@ -520,18 +517,18 @@
 .abono-end {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-shrink: 0;
 }
 
 /* Discreto a propósito: es una corrección excepcional, no una acción del día a día. */
 .abono-anular {
-  padding: 2px 9px;
+  padding: var(--space-1) var(--space-2);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: 11px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-text-subtle);
   cursor: pointer;
@@ -555,7 +552,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: var(--space-5);
   background: rgba(17, 24, 20, 0.45);
   backdrop-filter: blur(2px);
   animation: dialogFade 0.18s ease both;
@@ -566,7 +563,7 @@
   max-width: 480px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  padding: 24px 26px;
+  padding: var(--space-5) var(--space-5);
   box-sizing: border-box;
 
   --dialog-accent: var(--color-brand-deep);
@@ -576,8 +573,8 @@
   background: linear-gradient(180deg, #ffffff 0%, var(--dialog-tint) 100%);
   border: 1px solid var(--dialog-border);
   border-top: 4px solid var(--dialog-accent);
-  border-radius: 18px;
-  box-shadow: 0 2px 6px rgba(0, 79, 39, 0.08), 0 20px 44px rgba(0, 79, 39, 0.16);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
   animation: dialogRise 0.22s ease both;
 }
 
@@ -610,27 +607,27 @@
 .dialog-head {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--space-3);
   margin-bottom: 14px;
 }
 
 .dialog-head-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
   flex: 1;
 }
 
 .dialog-title {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--color-text);
 }
 
 .dialog-subtitle {
-  font-size: 12px;
+  font-size: var(--font-base);
   color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -646,7 +643,7 @@
   padding: 0;
   background: transparent;
   border: 1px solid var(--dialog-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-text-muted);
   cursor: pointer;
   transition:
@@ -666,39 +663,39 @@
 
 .dialog-error {
   margin: 0 0 12px;
-  padding: 9px 11px;
+  padding: var(--space-2) var(--space-3);
   background: var(--color-danger-bg);
   border: 1px solid rgba(192, 57, 43, 0.3);
-  border-radius: 9px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   color: var(--color-danger-strong);
 }
 
 .dialog-confirm {
   margin: 0 0 14px;
-  font-size: 13px;
+  font-size: var(--font-md);
   line-height: 1.55;
   color: var(--color-text);
 }
 
 .dialog-confirm-warning {
-  padding: 9px 11px;
+  padding: var(--space-2) var(--space-3);
   background: var(--color-danger-bg);
   border: 1px solid rgba(192, 57, 43, 0.25);
-  border-radius: 9px;
-  font-size: 12.5px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
   color: var(--color-danger-strong);
 }
 
 .anular-detalle {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
+  gap: var(--space-3) var(--space-4);
   margin: 0 0 14px;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
   background: var(--color-bg-card);
   border: 1px solid var(--dialog-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .anular-detalle div:last-child {
@@ -706,7 +703,7 @@
 }
 
 .anular-detalle dt {
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -715,7 +712,7 @@
 
 .anular-detalle dd {
   margin: 2px 0 0;
-  font-size: 13px;
+  font-size: var(--font-md);
   color: var(--color-text);
 }
 
@@ -727,12 +724,12 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
   margin-bottom: 14px;
 }
 
 .field-label {
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -741,13 +738,13 @@
 
 .field-input {
   width: 100%;
-  padding: 9px 11px;
+  padding: var(--space-2) var(--space-3);
   box-sizing: border-box;
   background: var(--action-bg);
   border: 1px solid var(--action-border-strong);
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--font-base);
   color: var(--color-text);
   outline: none;
   transition:
@@ -766,7 +763,7 @@
 
 .field-input:focus {
   border-color: var(--color-brand-deep);
-  box-shadow: 0 0 0 3px rgba(0, 127, 62, 0.14);
+  box-shadow: var(--shadow-focus);
 }
 
 .field-textarea {
@@ -776,7 +773,7 @@
 }
 
 .field-hint {
-  font-size: 10.5px;
+  font-size: var(--font-sm);
   color: var(--color-text-muted);
 }
 
@@ -787,17 +784,17 @@
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 9px;
+  gap: var(--space-2);
   margin-top: 16px;
 }
 
 .button-primary,
 .button-ghost,
 .button-danger {
-  padding: 9px 16px;
-  border-radius: 9px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--font-md);
   font-weight: 600;
   cursor: pointer;
   transition:
@@ -811,12 +808,12 @@
   background: var(--action-accent);
   border: none;
   color: var(--color-bg-card);
-  box-shadow: 0 2px 8px rgba(0, 79, 39, 0.18);
+  box-shadow: var(--shadow-rest);
 }
 
 .button-primary:hover:not(:disabled) {
   background: var(--action-accent-hover);
-  box-shadow: 0 4px 14px rgba(0, 79, 39, 0.28);
+  box-shadow: var(--shadow-raised);
 }
 
 .button-ghost {
@@ -834,11 +831,11 @@
   background: var(--color-danger-strong);
   border: none;
   color: var(--color-bg-card);
-  box-shadow: 0 2px 8px rgba(192, 57, 43, 0.2);
+  box-shadow: var(--shadow-rest);
 }
 
 .button-danger:hover:not(:disabled) {
-  box-shadow: 0 4px 14px rgba(192, 57, 43, 0.3);
+  box-shadow: var(--shadow-raised);
 }
 
 .button-primary:disabled,
@@ -862,7 +859,7 @@
 
 @media (max-width: 480px) {
   .dialog {
-    padding: 20px 18px;
+    padding: var(--space-5) var(--space-4);
   }
 
   .anular-detalle {

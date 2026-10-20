@@ -5,13 +5,13 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.15rem 0.55rem;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border: 1px solid #c4b5fd;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #ede9fe;
   color: #5b21b6;
-  font-size: 0.7rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
@@ -22,7 +22,7 @@
 .discount-dot {
   width: 0.4rem;
   height: 0.4rem;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: #7c3aed;
   flex-shrink: 0;
 }
@@ -34,7 +34,7 @@
 /* The amount, shown only where the badge stands on its own and there is no
    column next to it already carrying the value. */
 .discount-value {
-  padding-left: 0.4rem;
+  padding-left: var(--space-2);
   margin-left: 0.1rem;
   border-left: 1px solid currentColor;
   font-variant-numeric: tabular-nums;
@@ -70,11 +70,11 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
-  padding: 0.3rem 0.6rem;
-  border-radius: 0.35rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   background: #312e81;
   color: #ffffff;
-  font-size: 0.68rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   white-space: nowrap;
   opacity: 0;

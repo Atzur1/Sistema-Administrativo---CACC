@@ -5,7 +5,7 @@
 .dashboard {
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: var(--space-5);
     min-height: 100%;
     box-sizing: border-box;
     background: var(--color-bg-page);
@@ -22,7 +22,7 @@
 .header-lead {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: var(--space-4);
     min-width: 0;
 }
 
@@ -30,16 +30,16 @@
 .header-aranceles-vigentes {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     margin-left: auto;
     flex-wrap: wrap;
     flex-shrink: 0;
 }
 
 .arancel-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-base);
     font-weight: 600;
     color: var(--color-bg-card);
     white-space: nowrap;
@@ -74,13 +74,13 @@
 .form-panel {
     position: relative;
     z-index: 2;
-    padding: 22px 20px 20px;
+    padding: var(--space-5) var(--space-5) var(--space-5);
     margin-bottom: 14px;
     background: var(--action-bg);
     border: 1px solid var(--action-border);
     border-top: 4px solid var(--action-accent);
-    border-radius: 16px;
-    box-shadow: var(--action-shadow);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-rest);
     animation: fadeSlideUp 0.4s ease both;
     animation-delay: 60ms;
 }
@@ -88,7 +88,7 @@
 .form-head {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3);
     margin-bottom: 18px;
 }
 
@@ -99,7 +99,7 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 11px;
+    border-radius: var(--radius-md);
     background: var(--action-badge-bg);
     color: var(--action-badge-fg);
     flex-shrink: 0;
@@ -113,19 +113,19 @@
 .form-head-text {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-1);
     min-width: 0;
 }
 
 .form-title {
     margin: 0;
-    font-size: 15px;
+    font-size: var(--font-lg);
     font-weight: 700;
     color: var(--color-text-dark);
 }
 
 .form-subtitle {
-    font-size: 11px;
+    font-size: var(--font-sm);
     color: var(--color-text-muted);
 }
 
@@ -149,13 +149,13 @@
 .form-grid {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding-top: 16px;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
 }
 
 .form-row {
     display: grid;
-    gap: 12px;
+    gap: var(--space-3);
 }
 
 .form-row-lookup {
@@ -170,7 +170,7 @@
 .field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--space-2);
     min-width: 0;
 }
 
@@ -180,7 +180,7 @@
 }
 
 .field-label {
-    font-size: 10px;
+    font-size: var(--font-xs);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -190,13 +190,13 @@
 .field-input {
     width: 100%;
     height: 44px;
-    padding: 0 12px;
+    padding: 0 var(--space-3);
     box-sizing: border-box;
     background: var(--action-field-bg);
     border: 1px solid var(--action-border);
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--font-md);
     color: var(--color-text);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
@@ -214,7 +214,7 @@
 .field-input:focus {
     background: var(--action-bg);
     border-color: var(--action-accent);
-    box-shadow: var(--action-focus-ring);
+    box-shadow: var(--shadow-focus);
 }
 
 /* ===== MONTO: signo $ fijo + formato con puntos de miles ===== */
@@ -227,14 +227,14 @@
     top: 50%;
     left: 12px;
     transform: translateY(-50%);
-    font-size: 14px;
+    font-size: var(--font-lg);
     font-weight: 800;
     color: var(--action-accent);
     pointer-events: none;
 }
 
 .amount-input {
-    padding-left: 24px;
+    padding-left: var(--space-5);
 }
 
 /* ===== PLAYER SUGGESTIONS ===== */
@@ -245,26 +245,26 @@
     right: 0;
     z-index: 5;
     margin: 4px 0 0;
-    padding: 4px;
+    padding: var(--space-1);
     list-style: none;
     max-height: 180px;
     overflow-y: auto;
     background: var(--action-bg);
     border: 1px solid var(--action-border);
-    border-radius: 9px;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-floating);
     animation: fadeIn 0.15s ease both;
 }
 
 .suggestion {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: var(--space-1);
     width: 100%;
-    padding: 7px 9px;
+    padding: var(--space-2) var(--space-2);
     background: none;
     border: none;
-    border-radius: 7px;
+    border-radius: var(--radius-sm);
     font-family: inherit;
     text-align: left;
     cursor: pointer;
@@ -278,12 +278,12 @@
 }
 
 .suggestion-name {
-    font-size: 12px;
+    font-size: var(--font-base);
     font-weight: 600;
 }
 
 .suggestion-meta {
-    font-size: 10.5px;
+    font-size: var(--font-sm);
     color: var(--color-text-muted);
 }
 
@@ -295,22 +295,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: var(--space-2);
     height: 44px;
-    padding: 0 22px;
+    padding: 0 var(--space-5);
     /* Verde institucional pleno (el mismo que ya usan los CTA del resto del
        sistema), no la variante oscura del acento del panel: contra blanco da
        más contraste y se siente "lleno", no apagado. */
     background: var(--color-brand);
     border: none;
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     color: var(--color-bg-card);
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--font-md);
     font-weight: 700;
     white-space: nowrap;
     cursor: pointer;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    box-shadow: var(--shadow-rest);
     transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
@@ -322,18 +322,18 @@
 
 .submit-button:hover:not(:disabled) {
     background: var(--color-brand-hover);
-    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+    box-shadow: var(--shadow-raised);
     transform: translateY(-1px);
 }
 
 .submit-button:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(0, 127, 62, 0.2);
+    box-shadow: var(--shadow-rest);
 }
 
 .submit-button:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--action-bg), 0 0 0 4px var(--color-brand);
+    box-shadow: var(--shadow-focus);
 }
 
 .submit-button:disabled {
@@ -344,11 +344,11 @@
 /* Simulated confirmation: fades in, then fades out before being removed */
 .form-feedback {
     margin: 0;
-    padding: 9px 11px;
+    padding: var(--space-2) var(--space-3);
     background: var(--color-brand-tint);
     border: 1px solid rgba(0, 166, 81, 0.3);
-    border-radius: 9px;
-    font-size: 12px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-base);
     font-weight: 600;
     color: var(--color-brand-deep);
     animation: fadeIn 0.3s ease both;
@@ -385,11 +385,11 @@
 }
 
 .panel-tab {
-    padding: 8px 22px;
+    padding: var(--space-2) var(--space-5);
     border: none;
     background: none;
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--font-md);
     font-weight: 600;
     color: var(--color-text-muted);
     font-family: inherit;
@@ -419,23 +419,23 @@
 .insc-grid {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding-top: 16px;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
 }
 
 .insc-loading {
-    font-size: 12px;
+    font-size: var(--font-base);
     color: var(--color-text-muted);
-    padding: 8px 0;
+    padding: var(--space-2) 0;
 }
 
 .insc-sin-registro {
-    font-size: 13px;
+    font-size: var(--font-md);
     color: #1d4f91;
     background: #e3edfb;
     border: 1px solid #c5d9f2;
-    border-radius: 8px;
-    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
 }
 
 /* Fila 1: jugador | monto | método */
@@ -450,10 +450,10 @@
 .insc-info-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3);
     border: 1px solid var(--color-border, #e5e7eb);
-    border-radius: 10px;
-    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-4);
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
@@ -479,14 +479,14 @@
 }
 
 .insc-monto-box {
-    padding: 10px 12px;
-    border-radius: 8px;
+    padding: var(--space-3) var(--space-3);
+    border-radius: var(--radius-md);
     min-width: 0;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-1);
 }
 
 .insc-monto-box.insc-monto-saldo {
@@ -494,7 +494,7 @@
 }
 
 .insc-monto-label {
-    font-size: 9.5px;
+    font-size: var(--font-xs);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--color-text-muted);
@@ -505,7 +505,7 @@
 }
 
 .insc-monto-value {
-    font-size: 16px;
+    font-size: var(--font-lg);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
@@ -515,7 +515,7 @@
 }
 
 .insc-monto-sub {
-    font-size: 10px;
+    font-size: var(--font-xs);
     color: var(--color-text-muted);
 }
 
@@ -530,11 +530,11 @@
 
 .submit-button-inscripcion:hover:not(:disabled) {
     background: var(--color-brand-hover);
-    box-shadow: 0 4px 12px rgba(0, 127, 62, 0.3);
+    box-shadow: var(--shadow-raised);
 }
 
 .submit-button-inscripcion:focus-visible {
-    box-shadow: 0 0 0 2px var(--action-bg), 0 0 0 4px var(--color-brand);
+    box-shadow: var(--shadow-focus);
 }
 
 /* ===== MAIN GRID ===== */
@@ -543,7 +543,7 @@
     /* Un solo panel ("Pendientes de cobro"): "Últimos pagos" se mudó entero a
        Actividad y Movimientos, no queda una segunda columna que balancear. */
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: var(--space-3);
     /* Fills the remaining height so nothing is left empty below */
     flex: 1;
     min-height: 0;
@@ -553,11 +553,11 @@
 .panel {
     display: flex;
     flex-direction: column;
-    padding: 16px;
+    padding: var(--space-4);
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-rest);
     min-width: 0;
     animation: fadeSlideUp 0.4s ease both;
 }
@@ -569,7 +569,7 @@
 .panel-head {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     margin-bottom: 14px;
     flex-wrap: wrap;
 }
@@ -577,7 +577,7 @@
 .panel-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: var(--radius-pill);
     flex-shrink: 0;
 }
 
@@ -587,13 +587,13 @@
 
 .panel-title {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--font-lg);
     font-weight: 600;
 }
 
 .panel-count {
     margin-left: auto;
-    font-size: 13px;
+    font-size: var(--font-md);
     font-weight: 700;
     color: var(--color-text-muted);
 }
@@ -601,7 +601,7 @@
 .panel-head-filters {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     flex-wrap: wrap;
     margin-left: auto;
 }
@@ -610,7 +610,7 @@
 .filter-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     flex-wrap: wrap;
     margin-bottom: 10px;
 }
@@ -640,13 +640,13 @@
 .search-control input {
     width: 100%;
     height: 38px;
-    padding: 0 12px 0 34px;
+    padding: 0 var(--space-3) 0 calc(var(--space-6) + var(--space-1));
     box-sizing: border-box;
     background: var(--action-field-bg);
     border: 1px solid var(--action-border);
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 12px;
+    font-size: var(--font-base);
     color: var(--color-text);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
@@ -664,16 +664,16 @@
 .search-control input:focus {
     background: var(--action-bg);
     border-color: var(--action-accent);
-    box-shadow: var(--action-focus-ring);
+    box-shadow: var(--shadow-focus);
 }
 
 .clear-filter-btn {
-    padding: 0 12px;
+    padding: 0 var(--space-3);
     height: 38px;
     background: transparent;
     border: 1px solid var(--color-border);
-    border-radius: 9px;
-    font-size: 12px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-base);
     font-weight: 600;
     color: var(--color-text-muted);
     cursor: pointer;
@@ -689,7 +689,7 @@
 
 .filter-count {
     margin: 0 2px 10px;
-    font-size: 11px;
+    font-size: var(--font-sm);
     color: var(--color-text-muted);
 }
 
@@ -698,13 +698,13 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: var(--space-3);
     margin: 0 0 14px;
-    padding: 10px 12px;
+    padding: var(--space-3) var(--space-3);
     background: var(--color-danger-bg);
     border: 1px solid var(--color-danger);
-    border-radius: 9px;
-    font-size: 12.5px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
     color: var(--color-danger);
     animation: fadeIn 0.25s ease both;
 }
@@ -720,9 +720,9 @@
 
 .empty-state {
     margin: 0;
-    padding: 24px 4px;
+    padding: var(--space-5) var(--space-1);
     color: var(--color-text-muted);
-    font-size: 12.5px;
+    font-size: var(--font-md);
     text-align: center;
 }
 
@@ -741,9 +741,9 @@
 }
 
 .debtors-table th {
-    padding: 0 10px 8px;
+    padding: 0 var(--space-3) var(--space-2);
     border-bottom: 1px solid var(--color-border);
-    font-size: 10px;
+    font-size: var(--font-xs);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -760,9 +760,9 @@
 }
 
 .debtors-table td {
-    padding: 9px 10px;
+    padding: var(--space-2) var(--space-3);
     border-bottom: 1px solid var(--color-bg-page);
-    font-size: 12px;
+    font-size: var(--font-base);
     vertical-align: middle;
 }
 
@@ -788,10 +788,10 @@
     justify-content: center;
     width: 22px;
     height: 22px;
-    border-radius: 50%;
+    border-radius: var(--radius-pill);
     background: var(--color-bg-page);
     color: var(--color-text-muted);
-    font-size: 11px;
+    font-size: var(--font-sm);
     font-weight: 600;
 }
 
@@ -841,7 +841,7 @@
 @media (max-width: 1100px) {
     .page-header {
         flex-wrap: wrap;
-        row-gap: 12px;
+        row-gap: var(--space-3);
     }
 
     .header-lead {
@@ -892,11 +892,11 @@
     }
 
     .header-metric {
-        padding: 0 18px 0 0;
+        padding: 0 var(--space-4) 0 0;
     }
 
     .header-metric + .header-metric {
-        padding-left: 18px;
+        padding-left: var(--space-4);
     }
 
     .panel-head {
@@ -908,7 +908,7 @@
    importe pasa debajo del nombre en vez de quedar a la derecha. */
 @media (max-width: 520px) {
     .dashboard {
-        padding: 14px;
+        padding: var(--space-4);
     }
 
     .form-row-lookup,
@@ -936,12 +936,12 @@
 .tag-baja {
     display: inline-block;
     margin-left: 6px;
-    padding: 1px 7px;
+    padding: var(--space-1) var(--space-2);
     border: 1px solid var(--color-border);
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     background: var(--color-bg-hover);
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-xs);
     font-weight: 600;
     vertical-align: middle;
 }
@@ -949,9 +949,9 @@
 /* Aviso de pago por adelantado (antes del día 10, cuando la cuota del mes todavía no se generó). */
 .form-hint {
     margin: 2px 0 0;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 12px;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-base);
     line-height: 1.4;
     background: var(--color-info-bg);
     color: var(--color-text-muted);

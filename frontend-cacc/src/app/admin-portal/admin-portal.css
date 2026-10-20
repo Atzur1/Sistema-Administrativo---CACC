@@ -45,8 +45,8 @@
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   /* Redondeado del lado del contenido, como el resto de los botones/tarjetas
      de la app — no es un panel a los golpes pegado al borde. */
-  border-radius: 0 20px 20px 0;
-  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  box-shadow: var(--shadow-floating);
   transition: box-shadow 0.3s ease;
 }
 
@@ -59,7 +59,7 @@
 .sidebar:hover,
 .sidebar:focus-within,
 .sidebar.is-open {
-  box-shadow: 8px 0 30px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-floating);
 }
 
 /* Un solo scroll: el de .sidebar-nav. Antes este contenedor y el nav tenían
@@ -122,8 +122,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
-  padding: 18px 16px 18px 18px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-4);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -131,7 +131,7 @@
 .sidebar:hover .sidebar-header,
 .sidebar:focus-within .sidebar-header,
 .sidebar.is-open .sidebar-header {
-  padding-left: 16px;
+  padding-left: var(--space-4);
 }
 
 .sidebar-logo {
@@ -153,14 +153,14 @@
 
 .brand-name {
   color: #ffffff;
-  font-size: 15px;
+  font-size: var(--font-lg);
   font-weight: 700;
   letter-spacing: -0.2px;
 }
 
 .brand-role {
   color: #8edeb1;
-  font-size: 11px;
+  font-size: var(--font-sm);
   font-weight: 500;
   letter-spacing: 0.5px;
 }
@@ -168,7 +168,7 @@
 /* ===== NAVIGATION ===== */
 .sidebar-nav {
   flex: 1;
-  padding: 14px 0;
+  padding: var(--space-4) 0;
   overflow-y: auto;
   /* Sin esto, el navegador fuerza overflow-x a "auto" solo por tener
      overflow-y en "auto" (si un eje no es "visible" el otro tampoco puede
@@ -193,7 +193,7 @@
 
 .sidebar-nav::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.22);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 /* Siempre en columna (nunca cambia a "block"/flex — "display" tampoco es
@@ -201,7 +201,7 @@
    el padding-left del propio .nav-item (ver más abajo), así que acá no hace
    falta distinguir reposo/expandido en absoluto — un solo layout constante. */
 .nav-group {
-  padding: 6px 0;
+  padding: var(--space-2) 0;
 }
 
 /* Separación fija entre grupos — antes cambiaba (8px reposo / 0 expandido)
@@ -217,12 +217,12 @@
    cualquier título real) sí se puede animar de verdad. */
 .nav-group-title {
   display: block;
-  padding: 0 16px;
+  padding: 0 var(--space-4);
   max-height: 0;
   margin-bottom: 0;
   overflow: hidden;
   opacity: 0;
-  font-size: 11px;
+  font-size: var(--font-sm);
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -257,13 +257,13 @@
      "activo" (border-left) no choca contra una esquina curva. Redondeado
      solo del lado del contenido. */
   margin: 0 8px 0 0;
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   /* Centra un ícono de 18px en los 72px del riel colapsado, descontando los
      3px reservados del border-left: (72 - 18) / 2 - 3 = 24px. */
-  padding-left: 24px;
-  gap: 12px;
+  padding-left: var(--space-5);
+  gap: var(--space-3);
   color: rgba(255, 255, 255, 0.88);
-  font-size: 13.5px;
+  font-size: var(--font-md);
   font-weight: 500;
   text-decoration: none;
   border: none;
@@ -280,13 +280,13 @@
 .sidebar:hover .nav-item,
 .sidebar:focus-within .nav-item,
 .sidebar.is-open .nav-item {
-  padding-left: 16px;
+  padding-left: var(--space-4);
 }
 
 .sidebar:hover .nav-item:hover,
 .sidebar:focus-within .nav-item:hover,
 .sidebar.is-open .nav-item:hover {
-  padding-left: 20px;
+  padding-left: var(--space-5);
 }
 
 /* Ítem activo: brillo verde esmeralda y borde iluminado — visible siempre
@@ -296,7 +296,7 @@
   color: #ffffff;
   font-weight: 600;
   border-left: 3px solid #00d666;
-  box-shadow: inset 0 0 15px rgba(0, 214, 102, 0.12);
+  box-shadow: var(--shadow-raised);
 }
 
 .nav-icon {
@@ -339,11 +339,11 @@
   /* Sin padding horizontal: los botones se alinean solos (margin de
      .nav-item), igual que los íconos de navegación de arriba — con padding
      acá quedarían corridos respecto a esos íconos. */
-  padding: 10px 0;
+  padding: var(--space-3) 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Botones de pie: mismo cuadro que .nav-item (ancho, alto, padding-left,
@@ -384,7 +384,7 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-raised);
 }
 
 /* ===== SIDEBAR TOGGLE (MÓVILES) ===== */
@@ -398,7 +398,7 @@
   padding: 0;
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--color-text-muted);
   cursor: pointer;
   flex-shrink: 0;
@@ -435,22 +435,22 @@
   grid-area: topbar;
   background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-border);
-  padding: 0 24px;
+  padding: 0 var(--space-5);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-rest);
 }
 
 .topbar-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .breadcrumb-portal {
   color: var(--color-text-subtle);
-  font-size: 12.5px;
+  font-size: var(--font-md);
   background: none;
   border: none;
   padding: 0;
@@ -460,19 +460,19 @@
 
 .breadcrumb-separator {
   color: #c4c7c4;
-  font-size: 14px;
+  font-size: var(--font-lg);
 }
 
 .breadcrumb-current {
   color: var(--color-text-dark);
-  font-size: 13px;
+  font-size: var(--font-md);
   font-weight: 600;
 }
 
 .topbar-user {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .user-info {
@@ -483,14 +483,14 @@
 
 .user-name {
   color: var(--color-text-dark);
-  font-size: 13px;
+  font-size: var(--font-md);
   font-weight: 600;
   line-height: 1.3;
 }
 
 .user-email {
   color: var(--color-text-subtle);
-  font-size: 11px;
+  font-size: var(--font-sm);
   line-height: 1.3;
 }
 
@@ -498,15 +498,15 @@
 .user-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-green) 100%);
   color: var(--color-bg-card);
-  font-size: 12px;
+  font-size: var(--font-base);
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 127, 62, 0.35);
+  box-shadow: var(--shadow-rest);
   border: 2px solid var(--color-bg-card);
 }
 
@@ -519,13 +519,13 @@
      24px de margen): sin esto, al llegar al fondo tapa la última fila o el
      borde de la última tarjeta. Las pantallas usan min-height: 100% del área
      de contenido, así que este padding no agrega scroll si todo entra. */
-  padding-bottom: 72px;
+  padding-bottom: calc(var(--space-6) + var(--space-6) + var(--space-2));
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1100px) {
   .admin-topbar {
-    padding: 0 16px;
+    padding: 0 var(--space-4);
   }
 }
 
@@ -551,7 +551,7 @@
     height: 100vh;
     height: 100dvh;
     transform: translateX(-100%);
-    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-floating);
     transition: transform 0.28s ease;
   }
 
@@ -577,7 +577,7 @@
 
 @media (max-width: 520px) {
   .admin-topbar {
-    padding: 0 12px;
+    padding: 0 var(--space-3);
   }
 
   .user-info,
@@ -587,7 +587,7 @@
   }
 
   .breadcrumb-current {
-    font-size: 12px;
+    font-size: var(--font-base);
   }
 }
 
@@ -600,8 +600,8 @@
    transiciones de expandir/colapsar siguen funcionando igual. */
 @media (max-height: 800px) {
   .sidebar-header {
-    padding-top: 12px;
-    padding-bottom: 12px;
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
   }
 
   .sidebar-logo {
@@ -610,16 +610,16 @@
   }
 
   .brand-name {
-    font-size: 13.5px;
+    font-size: var(--font-md);
     line-height: 1.25;
   }
 
   .sidebar-nav {
-    padding: 8px 0;
+    padding: var(--space-2) 0;
   }
 
   .nav-group {
-    padding: 4px 0;
+    padding: var(--space-1) 0;
   }
 
   .nav-group + .nav-group {
@@ -637,27 +637,27 @@
   }
 
   .sidebar-footer {
-    padding: 8px 0;
-    gap: 4px;
+    padding: var(--space-2) 0;
+    gap: var(--space-1);
   }
 }
 
 @media (max-height: 660px) {
   .sidebar-header {
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
   }
 
   .brand-name {
-    font-size: 12.5px;
+    font-size: var(--font-md);
   }
 
   .sidebar-nav {
-    padding: 4px 0;
+    padding: var(--space-1) 0;
   }
 
   .nav-group {
-    padding: 2px 0;
+    padding: var(--space-1) 0;
   }
 
   .nav-group + .nav-group {
@@ -669,7 +669,7 @@
   }
 
   .sidebar-footer {
-    padding: 6px 0;
+    padding: var(--space-2) 0;
   }
 }
 

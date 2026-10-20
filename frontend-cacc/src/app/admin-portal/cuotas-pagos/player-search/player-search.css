@@ -2,13 +2,13 @@
 .player-search {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--space-3);
     margin-bottom: 16px;
-    padding: 16px;
+    padding: var(--space-4);
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-rest);
     animation: fadeSlideUp 0.4s ease both;
 }
 
@@ -16,23 +16,23 @@
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
-    gap: 4px 10px;
+    gap: var(--space-1) var(--space-3);
 }
 
 .search-title {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--font-lg);
     font-weight: 600;
 }
 
 .search-subtitle {
-    font-size: 12px;
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
 .search-bar {
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .search-field {
@@ -56,13 +56,13 @@
 .search-field input {
     width: 100%;
     height: 38px;
-    padding: 0 36px 0 34px;
+    padding: 0 calc(var(--space-6) + var(--space-1)) 0 calc(var(--space-6) + var(--space-1));
     box-sizing: border-box;
     background: var(--action-field-bg);
     border: 1px solid var(--action-border);
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 12.5px;
+    font-size: var(--font-md);
     color: var(--color-text);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
@@ -85,7 +85,7 @@
 .search-field input:focus {
     background: var(--action-bg);
     border-color: var(--action-accent);
-    box-shadow: var(--action-focus-ring);
+    box-shadow: var(--shadow-focus);
 }
 
 .search-spinner {
@@ -97,7 +97,7 @@
     margin-top: -9px;
     border: 2px solid var(--color-border);
     border-top-color: var(--color-brand);
-    border-radius: 50%;
+    border-radius: var(--radius-pill);
     animation: playerSearchSpin 0.7s linear infinite;
 }
 
@@ -117,8 +117,8 @@
     padding: 0;
     background: transparent;
     border: none;
-    border-radius: 6px;
-    font-size: 18px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-xl);
     line-height: 1;
     color: var(--color-text-muted);
     cursor: pointer;
@@ -133,12 +133,12 @@
 .select-btn {
     flex-shrink: 0;
     height: 38px;
-    padding: 0 16px;
+    padding: 0 var(--space-4);
     background: var(--color-brand);
     border: none;
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 12px;
+    font-size: var(--font-base);
     font-weight: 600;
     color: #ffffff;
     cursor: pointer;
@@ -157,7 +157,7 @@
 
 .search-hint {
     margin: 0;
-    font-size: 12px;
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -178,11 +178,11 @@
 }
 
 .search-empty {
-    padding: 18px 12px;
+    padding: var(--space-4) var(--space-3);
     background: var(--color-bg-page-alt);
     border: 1px dashed var(--color-border);
-    border-radius: 10px;
-    font-size: 12.5px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
     color: var(--color-text-muted);
     text-align: center;
     animation: fadeIn 0.25s ease both;
@@ -204,9 +204,9 @@
 }
 
 .search-table th {
-    padding: 0 10px 8px;
+    padding: 0 var(--space-3) var(--space-2);
     border-bottom: 1px solid var(--color-border);
-    font-size: 10px;
+    font-size: var(--font-xs);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -216,9 +216,9 @@
 }
 
 .search-table td {
-    padding: 8px 10px;
+    padding: var(--space-2) var(--space-3);
     border-bottom: 1px solid var(--color-bg-page);
-    font-size: 12px;
+    font-size: var(--font-base);
     vertical-align: middle;
 }
 
@@ -249,8 +249,8 @@
 
 .select-btn {
     height: 30px;
-    padding: 0 12px;
-    font-size: 11.5px;
+    padding: 0 var(--space-3);
+    font-size: var(--font-base);
     white-space: nowrap;
 }
 
@@ -278,12 +278,12 @@
 .tag-baja {
     display: inline-block;
     margin-left: 6px;
-    padding: 1px 7px;
+    padding: var(--space-1) var(--space-2);
     border: 1px solid var(--color-border);
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     background: var(--color-bg-hover);
     color: var(--color-text-muted);
-    font-size: 10px;
+    font-size: var(--font-xs);
     font-weight: 600;
     vertical-align: middle;
 }

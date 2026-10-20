@@ -13,11 +13,11 @@
   height: 18px;
   padding: 0;
   border: 1px solid var(--color-border, #e4e7e4);
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: var(--color-bg-card, #ffffff);
   color: var(--color-text-muted, #555a55);
   font: inherit;
-  font-size: 0.7rem;
+  font-size: var(--font-sm);
   font-weight: 700;
   line-height: 1;
   cursor: help;
@@ -42,15 +42,15 @@
   z-index: 1100;
   box-sizing: border-box;
   max-width: min(300px, calc(100vw - 16px));
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
   background: #1f2937;
   color: #ffffff;
-  font-size: 0.8rem;
+  font-size: var(--font-md);
   font-weight: 400;
   line-height: 1.45;
   text-align: left;
   white-space: normal;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+  box-shadow: var(--shadow-floating);
   pointer-events: none;
 }
