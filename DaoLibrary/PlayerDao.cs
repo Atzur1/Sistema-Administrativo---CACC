@@ -257,6 +257,68 @@ public class PlayerDAO
         }
     }
 
+    // Inscripción que empieza a regir después de que el jugador entró. Se cobra a quien entró MIENTRAS ya estaba programada
+    // (entre el día en que se cargó el arancel y el día en que empieza a regir) y todavía no tiene ninguna inscripción:
+    // queda como deuda pendiente con vencimiento el día en que empieza a regir. A quien entró antes de que se programara no se
+    // le cobra (por ejemplo, las jugadoras que ya estaban cuando la inscripción femenina pasó de $0 a un monto).
+    // Es idempotente: quien ya tiene una inscripción (pendiente, pagada o anulada) no recibe otra. Devuelve cuántas generó.
+    public virtual int GenerarInscripcionesProgramadas()
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        using SqlTransaction transaction = connection.BeginTransaction();
+        BloqueoEscrituraPagos.Tomar(connection, transaction);
+
+        try
+        {
+            int generadas = GenerarInscripcionesProgramadas(connection, transaction);
+            transaction.Commit();
+            return generadas;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    internal static int GenerarInscripcionesProgramadas(SqlConnection connection, SqlTransaction transaction)
+    {
+        // La inscripción vigente de cada género, con el momento en que se cargó (auditoría). Sin ese dato no se sabe
+        // quién entró después de la carga, así que no se genera nada.
+        string query = $@"
+            SELECT j.PK_id_jugador, f.monto, f.vigente_desde, f.registrado_utc, j.fecha_alta
+            FROM ({EnrollmentFeeDAO.SelectWithStatus}) f
+            JOIN PERSONAS p ON p.genero = f.genero
+            JOIN JUGADORES j ON j.FK_id_persona = p.PK_id_persona
+            WHERE f.estado = 1
+              AND f.monto > 0
+              AND f.registrado_utc IS NOT NULL
+              AND j.fecha_baja IS NULL
+              AND j.fecha_alta < f.vigente_desde
+              AND NOT EXISTS (SELECT 1 FROM PAGOS pg WHERE pg.FK_id_jugador = j.PK_id_jugador AND pg.concepto = @concepto);";
+
+        List<(int IdJugador, decimal Monto, DateTime VigenteDesde)> pendientes = new();
+        using (SqlCommand command = new SqlCommand(query, connection, transaction))
+        {
+            command.Parameters.AddWithValue("@concepto", EnrollmentFeeConcept);
+            using SqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                DateTime cargada = RelojNegocio.FechaDelClub(reader.GetDateTime(3));
+                if (reader.GetDateTime(4).Date >= cargada)
+                {
+                    pendientes.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.GetDateTime(2)));
+                }
+            }
+        }
+
+        foreach (var (idJugador, monto, vigenteDesde) in pendientes)
+        {
+            InsertPendingCharge(connection, transaction, idJugador, monto, vigenteDesde.Date, EnrollmentFeeConcept);
+        }
+        return pendientes.Count;
+    }
+
     internal static CargosGenerados GenerarCargos(SqlConnection connection, SqlTransaction transaction, int idJugador,
         decimal? montoCuota, DateTime primerDiaDelMes, decimal? montoInscripcion, DateTime fechaInscripcion)
     {
