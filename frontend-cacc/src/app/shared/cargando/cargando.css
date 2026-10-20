@@ -1,0 +1,113 @@
+:host {
+  display: block;
+}
+
+.cargando {
+  padding: var(--space-2) 0;
+}
+
+/* El texto solo lo leen los lectores de pantalla. */
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.cargando-bloques {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Un brillo que recorre los bloques de izquierda a derecha: el mismo que ya usaba Usuarios y Permisos. */
+.bloque {
+  display: block;
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-bg-page) 25%, #e9eee9 50%, var(--color-bg-page) 75%);
+  background-size: 200% 100%;
+  animation: cargandoBrillo 1.3s ease-in-out infinite;
+}
+
+@keyframes cargandoBrillo {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ===== Tabla: filas con varias columnas, la primera más ancha (el nombre) ===== */
+.cargando-fila-tabla {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-bg-page);
+}
+
+.cargando-fila-tabla .bloque {
+  flex: 1;
+}
+
+.cargando-fila-tabla .bloque-ancho {
+  flex: 2;
+}
+
+/* ===== Tarjetas: grilla de cajas con un rótulo, un número y una línea corta ===== */
+.cargando-tarjetas .cargando-bloques {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
+.cargando-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+}
+
+/* ===== Lista: un círculo (avatar o ícono) y dos líneas de texto ===== */
+.cargando-fila-lista {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cargando-textos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bloque-redondo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+}
+
+.bloque-chico {
+  width: 40%;
+  height: 10px;
+}
+
+.bloque-grande {
+  height: 22px;
+}
+
+.bloque-corto {
+  width: 60%;
+}
+
+/* Movimiento reducido del sistema operativo: los bloques quedan quietos. */
+@media (prefers-reduced-motion: reduce) {
+  .bloque {
+    animation: none;
+  }
+}

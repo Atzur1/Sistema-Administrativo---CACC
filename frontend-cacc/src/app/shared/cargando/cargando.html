@@ -1,0 +1,37 @@
+<div class="cargando" [class.cargando-tarjetas]="forma === 'tarjetas'" role="status" aria-live="polite">
+  <span class="solo-lector">{{ texto }}</span>
+
+  <div class="cargando-bloques" aria-hidden="true">
+    @switch (forma) {
+      @case ('tabla') {
+        @for (fila of listaFilas; track fila) {
+          <div class="cargando-fila-tabla">
+            @for (columna of listaColumnas; track columna) {
+              <span class="bloque" [class.bloque-ancho]="columna === 0"></span>
+            }
+          </div>
+        }
+      }
+      @case ('tarjetas') {
+        @for (fila of listaFilas; track fila) {
+          <div class="cargando-tarjeta">
+            <span class="bloque bloque-chico"></span>
+            <span class="bloque bloque-grande"></span>
+            <span class="bloque bloque-corto"></span>
+          </div>
+        }
+      }
+      @default {
+        @for (fila of listaFilas; track fila) {
+          <div class="cargando-fila-lista">
+            <span class="bloque bloque-redondo"></span>
+            <span class="cargando-textos">
+              <span class="bloque"></span>
+              <span class="bloque bloque-corto"></span>
+            </span>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

@@ -243,14 +243,7 @@
     color: var(--color-text-muted);
 }
 
-/* ===== EMPTY / LOADING STATES ===== */
-.empty-state {
-    margin: 0;
-    padding: var(--space-4) var(--space-1);
-    font-size: var(--font-base);
-    color: var(--color-text-muted);
-    text-align: center;
-}
+/* Carga y vacío: componentes compartidos app-cargando y app-estado-vacio (HU-095). */
 
 /* Explica qué significa cada estado de la columna "Estado" */
 .table-legend {

@@ -32,14 +32,20 @@
     @if (tooShort) {
       <p class="search-hint">Ingresá al menos {{ minLength }} caracteres del DNI, del nombre o del apellido.</p>
     } @else if (loading() && results() === null) {
-      <p class="search-hint">Buscando jugadores…</p>
+      <app-cargando texto="Buscando jugadores…" forma="tabla" [filas]="3" [columnas]="4" />
     } @else if (failed()) {
       <p class="search-hint search-hint-error">No se pudo completar la búsqueda.
         <button type="button" class="search-retry" (click)="submit()">Reintentar</button>
       </p>
     } @else if (results(); as list) {
       @if (list.length === 0) {
-        <div class="search-empty">No se encontraron jugadores con ese criterio de búsqueda</div>
+        <app-estado-vacio
+          icono="busqueda"
+          mensaje="Ningún resultado coincide con la búsqueda"
+          detalle="Probá con otro DNI, nombre o apellido."
+          textoAccion="Limpiar búsqueda"
+          (accion)="clear()"
+        />
       } @else {
         <div class="search-table-wrapper" [class.is-refreshing]="loading()">
           <table class="search-table">

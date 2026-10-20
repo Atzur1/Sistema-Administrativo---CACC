@@ -117,13 +117,18 @@
       </header>
 
       @if (cargando) {
-        <p class="empty-state">Cargando morosos…</p>
+        <app-cargando texto="Cargando deudores…" forma="tabla" [filas]="6" [columnas]="6" />
       } @else if (totalJugadores === 0) {
         <!-- HU-029: nobody in the club owes anything -->
-        <p class="empty-state">No se registran jugadores con cuotas atrasadas en este momento.</p>
+        <app-estado-vacio icono="listo" mensaje="No hay jugadores con cuotas atrasadas" />
       } @else if (debtors.length === 0) {
         <!-- There are debtors, but none matches the search or the active filters -->
-        <p class="empty-state">Ningún deudor coincide con la búsqueda o los filtros aplicados.</p>
+        <app-estado-vacio
+          icono="busqueda"
+          mensaje="Ningún resultado coincide con la búsqueda o los filtros"
+          textoAccion="Limpiar filtros"
+          (accion)="limpiarFiltros()"
+        />
       } @else {
         <div class="table-wrapper">
           <table class="debtors-table">
@@ -176,8 +181,10 @@
           <span class="panel-subtitle">2 o más cuotas impagas · mayor deuda primero</span>
         </header>
 
-        @if (!cargando && topInhabilitados.length === 0) {
-          <p class="empty-state">Sin jugadores inhabilitados actualmente.</p>
+        @if (cargando) {
+          <app-cargando texto="Cargando jugadores inhabilitados…" forma="lista" [filas]="3" />
+        } @else if (topInhabilitados.length === 0) {
+          <app-estado-vacio icono="listo" [compacto]="true" mensaje="No hay jugadores inhabilitados" />
         } @else {
           <div class="suspended-list">
             @for (player of topInhabilitados; track player.player; let i = $index) {
@@ -216,9 +223,9 @@
         </header>
 
         @if (categoriaCargando) {
-          <p class="empty-state">Cargando…</p>
+          <app-cargando texto="Cargando la deuda por categoría…" forma="lista" [filas]="4" />
         } @else if (categoriaBreakdown.length === 0) {
-          <p class="empty-state">Sin deuda registrada en este período.</p>
+          <app-estado-vacio [compacto]="true" mensaje="No hay deuda en este período" />
         } @else {
           <div class="categoria-list">
             @for (fila of categoriaBreakdown; track fila.categoria; let i = $index) {

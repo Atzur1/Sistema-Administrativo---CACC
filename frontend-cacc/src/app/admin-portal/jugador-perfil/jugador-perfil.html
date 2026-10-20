@@ -18,7 +18,7 @@
   </header>
 
   @if (cargandoJugador) {
-    <p class="loading-text">Cargando jugador...</p>
+    <app-cargando texto="Cargando el jugador…" forma="tarjetas" [filas]="3" />
   } @else if (jugador) {
     <div class="profile-card">
       <div class="profile-header">
@@ -71,26 +71,9 @@
     </header>
 
     @if (cargandoHistorial) {
-      <p class="historial-empty">Cargando historial...</p>
+      <app-cargando texto="Cargando el historial de pagos…" forma="lista" [filas]="4" />
     } @else if (!historial || historial.items.length === 0) {
-      <div class="empty-state">
-        <span class="empty-state-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-        </span>
-        <p>No se registran pagos realizados para este jugador.</p>
-      </div>
+      <app-estado-vacio mensaje="No hay pagos registrados para este jugador" />
     } @else {
       <ul class="periodo-list">
         @for (item of historial.items; track item.periodo + item.concepto) {

@@ -106,8 +106,8 @@ describe('PlayerSearch (HU-023)', () => {
     type('zzzz');
     waitDebounce();
 
-    expect(el().querySelector('.search-empty')?.textContent?.trim())
-      .toBe('No se encontraron jugadores con ese criterio de búsqueda');
+    expect(el().querySelector('.vacio-mensaje')?.textContent?.trim())
+      .toBe('Ningún resultado coincide con la búsqueda');
     expect(el().querySelector('table')).toBeNull();
   });
 
@@ -151,7 +151,7 @@ describe('PlayerSearch (HU-023)', () => {
       'error',
     );
     expect(text()).toContain('No se pudo completar la búsqueda');
-    expect(text()).not.toContain('No se encontraron jugadores');
+    expect(text()).not.toContain('Ningún resultado coincide');
 
     fails = false;
     (el().querySelector('.search-retry') as HTMLButtonElement).click();
@@ -206,6 +206,6 @@ describe('PlayerSearch (HU-023)', () => {
     fixture.detectChanges();
 
     expect(el().querySelector('table')).toBeNull();
-    expect(text()).not.toContain('No se encontraron');
+    expect(text()).not.toContain('Ningún resultado coincide');
   });
 });

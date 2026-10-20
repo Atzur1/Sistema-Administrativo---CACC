@@ -113,10 +113,17 @@
             <p>No se pudieron cargar los pagos. Puede ser una demora del servidor.</p>
             <button type="button" class="retry-btn" (click)="reintentarPagos()">Reintentar</button>
           </div>
-        } @else if (paymentsLoaded && totalPagos === 0) {
-          <p class="panel-empty">No hay pagos registrados.</p>
-        } @else if (paymentsLoaded && totalFiltrados === 0) {
-          <p class="panel-empty">Ningún pago coincide con la búsqueda o los filtros aplicados.</p>
+        } @else if (!paymentsLoaded) {
+          <app-cargando texto="Cargando pagos registrados…" forma="tabla" [filas]="6" [columnas]="5" />
+        } @else if (totalPagos === 0) {
+          <app-estado-vacio mensaje="No hay pagos registrados" />
+        } @else if (totalFiltrados === 0) {
+          <app-estado-vacio
+            icono="busqueda"
+            mensaje="Ningún resultado coincide con la búsqueda o los filtros"
+            textoAccion="Limpiar filtros"
+            (accion)="limpiarFiltros()"
+          />
         }
       </div>
 
@@ -174,8 +181,10 @@
             <p>No se pudo cargar la actividad. Puede ser una demora del servidor.</p>
             <button type="button" class="retry-btn" (click)="reintentarActividad()">Reintentar</button>
           </div>
-        } @else if (activityLoaded && activity.length === 0) {
-          <p class="panel-empty">Sin actividad reciente.</p>
+        } @else if (!activityLoaded) {
+          <app-cargando texto="Cargando la actividad reciente…" forma="lista" [filas]="4" />
+        } @else if (activity.length === 0) {
+          <app-estado-vacio [compacto]="true" mensaje="No hay actividad reciente" />
         }
       </article>
 

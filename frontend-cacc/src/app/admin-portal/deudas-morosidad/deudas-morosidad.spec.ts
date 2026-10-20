@@ -92,9 +92,7 @@ describe('DeudasMorosidad - debtors list (HU-029)', () => {
   it('shows the empty-state message when no student owes anything', async () => {
     const fixture = await create([]);
 
-    expect(textOf(fixture)).toContain(
-      'No se registran jugadores con cuotas atrasadas en este momento.',
-    );
+    expect(textOf(fixture)).toContain('No hay jugadores con cuotas atrasadas');
     expect(tablePlayers(fixture)).toEqual([]);
   });
 
@@ -122,10 +120,15 @@ describe('DeudasMorosidad - debtors list (HU-029)', () => {
     component.onFiltrosChange();
     fixture.detectChanges();
 
-    expect(textOf(fixture)).toContain(
-      'Ningún deudor coincide con la búsqueda o los filtros aplicados.',
-    );
-    expect(textOf(fixture)).not.toContain('No se registran jugadores con cuotas atrasadas');
+    expect(textOf(fixture)).toContain('Ningún resultado coincide con la búsqueda o los filtros');
+    expect(textOf(fixture)).not.toContain('No hay jugadores con cuotas atrasadas');
+
+    // HU-095: el vacío por filtros ofrece limpiarlos, y al tocarlo vuelve la lista.
+    const limpiar = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.vacio-accion')!;
+    expect(limpiar.textContent?.trim()).toBe('Limpiar filtros');
+    limpiar.click();
+    fixture.detectChanges();
+    expect(tablePlayers(fixture)).toEqual(['PRUEBA, SANTIAGO']);
   });
 
   it('shows every debtor again after clearing the filters', async () => {

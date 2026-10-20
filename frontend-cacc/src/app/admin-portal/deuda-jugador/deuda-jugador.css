@@ -36,14 +36,9 @@
   animation: fadeSlideUp 0.4s ease both;
 }
 
-.loading-text,
 .error-text {
   margin: 16px 0 0;
   font-size: var(--font-md);
-  color: var(--color-text-muted);
-}
-
-.error-text {
   color: var(--color-danger-strong);
 }
 
@@ -212,45 +207,7 @@
   color: var(--color-text-muted);
 }
 
-.deuda-empty {
-  margin: 0;
-  padding: var(--space-5) 0;
-  text-align: center;
-  font-size: var(--font-md);
-  color: var(--color-text-muted);
-}
-
-/* ===== ESTADO VACÍO ===== */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  padding: calc(var(--space-6) + var(--space-1)) var(--space-5);
-  text-align: center;
-}
-
-.empty-state-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-pill);
-  background: var(--color-brand-tint);
-  color: var(--color-brand);
-}
-
-.empty-state-icon svg {
-  width: 22px;
-  height: 22px;
-}
-
-.empty-state p {
-  margin: 0;
-  font-size: var(--font-md);
-  color: var(--color-text-muted);
-}
+/* Carga y vacío: componentes compartidos app-cargando y app-estado-vacio (HU-095). */
 
 /* ===== CUOTAS ===== */
 /* Lista vertical de filas de ancho completo (no una grilla de tarjetas): cada cuota es una

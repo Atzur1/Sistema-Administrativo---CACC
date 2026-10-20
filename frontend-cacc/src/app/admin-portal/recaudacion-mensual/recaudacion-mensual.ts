@@ -4,6 +4,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
+import { Cargando } from '../../shared/cargando/cargando';
+import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { RecaudacionService } from '../../services/recaudacion';
 import { CollectionPeriodModel, PeriodPaymentModel } from '../../models/CollectionPeriodModel';
@@ -44,7 +46,7 @@ const DONUT_CIRCUNFERENCIA = 2 * Math.PI * DONUT_RADIO;
 @Component({
     selector: 'app-recaudacion-mensual',
     standalone: true,
-    imports: [CommonModule, FormsModule, CustomSelect],
+    imports: [CommonModule, FormsModule, CustomSelect, Cargando, EstadoVacio],
     templateUrl: './recaudacion-mensual.html',
     styleUrl: './recaudacion-mensual.css',
 })

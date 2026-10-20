@@ -379,12 +379,6 @@
     padding-top: var(--space-4);
 }
 
-.insc-loading {
-    font-size: var(--font-base);
-    color: var(--color-text-muted);
-    padding: var(--space-2) 0;
-}
-
 .insc-sin-registro {
     font-size: var(--font-md);
     color: #1d4f91;

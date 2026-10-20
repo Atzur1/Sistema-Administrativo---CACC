@@ -9,6 +9,8 @@ import { formatCompactCurrency } from '../../shared/format-currency';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { HelpHint } from '../../shared/help-hint/help-hint';
+import { Cargando } from '../../shared/cargando/cargando';
+import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 import { PaymentHistoryItemModel, PaymentHistoryModel, PaymentHistoryPartialPaymentModel } from '../../models/PaymentHistoryModel';
 
@@ -23,7 +25,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-jugador-perfil',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomDatepicker, HelpHint],
+  imports: [CommonModule, FormsModule, CustomDatepicker, HelpHint, Cargando, EstadoVacio],
   templateUrl: './jugador-perfil.html',
   styleUrl: './jugador-perfil.css',
 })
