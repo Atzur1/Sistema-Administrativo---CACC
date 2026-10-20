@@ -79,6 +79,15 @@ las mujeres en $0) o que todavía no se generan las cuotas del mes.
 **Si la llamada falla, el alta del Deportivo no se deshace.** La cuota sale con la próxima generación mensual (al iniciar la API del Administrativo y cada
 6 horas) y la inscripción se genera al registrar el primer pago, con el monto correcto. Cuando el Administrativo vuelve, se puede repetir la llamada.
 
+## Inscripción que empieza a regir después de que el jugador entró
+Si un jugador entra cuando su género todavía no tiene inscripción en vigencia (nunca se cargó, o está en $0) pero **ya hay una programada con fecha futura**,
+el Administrativo se la genera **el día en que empieza a regir**, como deuda pendiente con vencimiento ese día. Lo hace el proceso automático que ya emite las
+cuotas (al iniciar la API y cada 6 horas), sin que el Deportivo haga nada.
+- **Quién la recibe:** quien entró desde el día en que se cargó ese arancel hasta el día en que rige, y todavía no tiene ninguna inscripción (pendiente, pagada ni anulada).
+  Quien ya estaba antes de que se cargara no recibe ningún cobro (por ejemplo, las jugadoras que ya estaban cuando la inscripción femenina pasó de $0 a un monto).
+- **Quién no:** los jugadores dados de baja y las inscripciones de $0.
+- Es idempotente: repetir el proceso no duplica nada. Para el Deportivo no cambia el contrato: `cargos-alta` sigue respondiendo lo mismo.
+
 ## Campos
 | Campo | Qué es |
 |---|---|

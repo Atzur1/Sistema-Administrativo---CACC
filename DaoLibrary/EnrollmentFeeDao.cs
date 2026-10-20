@@ -14,7 +14,7 @@ public class EnrollmentFeeDAO
 
     // End date and status are resolved here and nowhere else, against the clock of
     // the database server: a fee ends the day before the next one starts.
-    private const string SelectWithStatus = $@"
+    internal const string SelectWithStatus = $@"
         SELECT
             PK_id_arancel_inscripcion,
             genero,

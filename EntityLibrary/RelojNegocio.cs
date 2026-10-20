@@ -12,6 +12,10 @@ namespace EntityLibrary
 
         public static DateTime Hoy => Ahora.Date;
 
+        // El día del club (Argentina) en que ocurrió un instante guardado en UTC.
+        public static DateTime FechaDelClub(DateTime utc)
+            => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), ZonaClub).Date;
+
         // .NET 6+ acepta el id IANA también en Windows; el id de Windows queda de respaldo por si el
         // sistema no tiene los datos de ICU. Argentina no tiene horario de verano desde 2009.
         private static TimeZoneInfo ResolverZona()

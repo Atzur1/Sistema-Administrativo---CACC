@@ -53,6 +53,24 @@ public sealed class GeneradorCuotasMensuales : BackgroundService
         {
             _logger.LogError(ex, "No se pudieron generar las cuotas del mes {Mes:00}/{Anio}; se reintenta en el próximo turno.", periodo.Month, periodo.Year);
         }
+
+        GenerarInscripcionesProgramadas();
+    }
+
+    // Inscripción que empezó a regir después de que el jugador entró: se le genera el día en que rige (ver
+    // PlayerDAO.GenerarInscripcionesProgramadas). Va separada de las cuotas: un error en una no frena a la otra.
+    internal void GenerarInscripcionesProgramadas()
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            int generadas = scope.ServiceProvider.GetRequiredService<PlayerDAO>().GenerarInscripcionesProgramadas();
+            if (generadas > 0) _logger.LogInformation("Se generaron {Cantidad} inscripciones que empezaron a regir.", generadas);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "No se pudieron generar las inscripciones programadas; se reintenta en el próximo turno.");
+        }
     }
 
     private static async Task<bool> SiguienteTurnoAsync(PeriodicTimer timer, CancellationToken cancellationToken)
