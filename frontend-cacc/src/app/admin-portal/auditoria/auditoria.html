@@ -154,13 +154,15 @@
     </div>
 
     @if (loading) {
-      <div class="loading-state"><span class="spinner"></span><span>Cargando actividad administrativa…</span></div>
+      <app-cargando texto="Cargando la actividad administrativa…" forma="tabla" [filas]="8" [columnas]="3" />
     } @else if (!error && items.length === 0) {
-      <div class="empty-state">
-        <div class="empty-mark">✓</div>
-        <h3>No hay operaciones para mostrar</h3>
-        <p>Probá ampliar el período o quitar alguno de los filtros.</p>
-      </div>
+      <app-estado-vacio
+        icono="busqueda"
+        mensaje="Ningún resultado coincide con la búsqueda o los filtros"
+        detalle="Probá ampliar el período o quitar alguno de los filtros."
+        textoAccion="Limpiar filtros"
+        (accion)="limpiarFiltros()"
+      />
     } @else if (items.length > 0) {
       <div class="table-scroll">
         <table>

@@ -180,9 +180,7 @@ describe('JugadorPerfil - historial de pagos', () => {
     it('muestra el mensaje claro cuando el jugador no tiene pagos', async () => {
       const { el } = await crear({ historialPorPagina: () => historial([]) });
 
-      expect(texto(el.querySelector('.empty-state p'))).toBe(
-        'No se registran pagos realizados para este jugador.',
-      );
+      expect(texto(el.querySelector('.vacio-mensaje'))).toBe('No hay pagos registrados para este jugador');
       expect(el.querySelectorAll('.periodo-row').length).toBe(0);
     });
 

@@ -5,6 +5,8 @@ import { PlayerSearchService } from '../../../services/player-search';
 import { PlayerSearchResultModel } from '../../../models/PlayerSearchResultModel';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { financialLoadErrorMessage } from '../../../shared/http-error-message';
+import { Cargando } from '../../../shared/cargando/cargando';
+import { EstadoVacio } from '../../../shared/estado-vacio/estado-vacio';
 
 // Resultado de una búsqueda: la lista (vacía = sin coincidencias), o null si falló.
 type SearchOutcome = { term: string; results: PlayerSearchResultModel[] | null };
@@ -15,6 +17,7 @@ type SearchOutcome = { term: string; results: PlayerSearchResultModel[] | null }
 @Component({
   selector: 'app-player-search',
   standalone: true,
+  imports: [Cargando, EstadoVacio],
   templateUrl: './player-search.html',
   styleUrl: './player-search.css',
 })

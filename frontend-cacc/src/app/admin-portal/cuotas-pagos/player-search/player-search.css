@@ -156,17 +156,6 @@
     cursor: pointer;
 }
 
-.search-empty {
-    padding: var(--space-4) var(--space-3);
-    background: var(--color-bg-page-alt);
-    border: 1px dashed var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-md);
-    color: var(--color-text-muted);
-    text-align: center;
-    animation: fadeIn 0.25s ease both;
-}
-
 .search-table-wrapper {
     overflow-x: auto;
     transition: opacity 0.2s ease;

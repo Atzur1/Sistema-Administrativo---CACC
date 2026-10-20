@@ -163,6 +163,6 @@ describe('CuotasPagos - carga y errores (HU-022)', () => {
 
     expect(pagosService.getPendientes).toHaveBeenCalledTimes(2);
     expect(fixture.nativeElement.querySelector('.load-error')).toBeNull();
-    expect(textOf(fixture)).toContain('No hay cobros pendientes en este momento.');
+    expect(textOf(fixture)).toContain('No hay cobros pendientes');
   });
 });

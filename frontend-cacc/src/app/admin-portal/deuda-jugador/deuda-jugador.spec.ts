@@ -658,7 +658,7 @@ describe('DeudaJugador - estado de cuenta (HU-024)', () => {
   it('muestra el indicador de carga mientras el estado de cuenta no llegó', async () => {
     const { el } = await crear({ cuotas: [new Subject<PlayerStatementModel>()] });
 
-    expect(texto(el)).toContain('Cargando cuotas...');
+    expect(texto(el)).toContain('Cargando cuotas…');
     expect(el.querySelector('.total-adeudado')).toBeNull();
   });
 

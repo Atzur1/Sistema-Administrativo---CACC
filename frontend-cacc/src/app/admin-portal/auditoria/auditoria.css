@@ -473,57 +473,7 @@ tbody tr:hover {
   height: 15px;
 }
 
-.loading-state,
-.empty-state {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-2);
-  padding: calc(var(--space-6) + var(--space-4)) var(--space-5);
-  color: var(--color-text-subtle);
-  font-size: var(--font-md);
-  text-align: center;
-}
-
-.empty-state h3 {
-  margin: 0;
-  color: var(--color-text-dark);
-  font-size: var(--font-lg);
-}
-
-.empty-state p {
-  margin: 0;
-}
-
-.empty-mark {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: var(--radius-pill);
-  background: var(--color-brand-tint);
-  color: var(--color-brand-deep);
-  font-size: var(--font-xl);
-}
-
-.loading-state {
-  grid-auto-flow: column;
-  justify-content: center;
-}
-
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-brand-deep);
-  border-radius: var(--radius-pill);
-  animation: giro 0.8s linear infinite;
-}
-
-@keyframes giro {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Carga y vacío: componentes compartidos app-cargando y app-estado-vacio (HU-095). */
 
 .pagination {
   display: flex;
@@ -741,8 +691,3 @@ tbody tr:hover {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .spinner {
-    animation: none;
-  }
-}

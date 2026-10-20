@@ -16,6 +16,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { animateCountUp } from '../../shared/count-up';
 import { formatElapsedPrecise } from '../../shared/format-elapsed';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { Cargando } from '../../shared/cargando/cargando';
+import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { PagosService } from '../../services/pagos';
 import { RecentPaymentModel } from '../../models/PaymentModel';
 
@@ -64,7 +66,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
     selector: 'app-actividad-movimientos',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, CustomSelect],
+    imports: [CommonModule, ReactiveFormsModule, CustomSelect, Cargando, EstadoVacio],
     templateUrl: './actividad-movimientos.html',
     styleUrl: './actividad-movimientos.css',
 })

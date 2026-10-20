@@ -14,6 +14,8 @@ import { PagosService } from '../../services/pagos';
 import { PlayerAccountModel } from '../../models/PlayerAccountModel';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
+import { Cargando } from '../../shared/cargando/cargando';
+import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { ReportesService } from '../../services/reportes';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { triggerBlobDownload } from '../../shared/download-file';
@@ -125,7 +127,7 @@ const SITUACION_BAJA = 'Dados de baja';
 @Component({
   selector: 'app-deudas-morosidad',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect],
+  imports: [CommonModule, FormsModule, CustomSelect, Cargando, EstadoVacio],
   templateUrl: './deudas-morosidad.html',
   styleUrl: './deudas-morosidad.css',
 })

@@ -139,8 +139,17 @@
 
       @if (huboError) {
         <p class="tabla-vacia">No se pudo cargar la recaudación del período. Intentá de nuevo.</p>
+      } @else if (cargando) {
+        <app-cargando texto="Cargando los cobros del período…" forma="tabla" [filas]="6" [columnas]="4" />
+      } @else if (filas.length === 0 && hayFiltros) {
+        <app-estado-vacio
+          icono="busqueda"
+          mensaje="Ningún resultado coincide con la búsqueda o los filtros"
+          textoAccion="Limpiar filtros"
+          (accion)="limpiarFiltros()"
+        />
       } @else if (filas.length === 0) {
-        <p class="tabla-vacia">No hay cobros registrados en {{ periodoLabel }}.</p>
+        <app-estado-vacio [mensaje]="'No hay cobros en ' + periodoLabel" />
       } @else {
         <div class="tabla-scroll">
           <table class="tabla">
@@ -236,7 +245,9 @@
         <span class="panel-subtitle">Distribución de los pagos de {{ periodoLabel }}</span>
       </header>
 
-      @if (hayCobros) {
+      @if (cargando) {
+        <app-cargando texto="Cargando el desglose por medio de pago…" forma="lista" [filas]="2" />
+      } @else if (hayCobros) {
         <div class="desglose-body">
           <!-- El arco se dibuja encima del anillo de fondo: dos círculos alcanzan
                para una distribución de dos categorías -->
@@ -269,17 +280,11 @@
           </ul>
         </div>
       } @else {
-        <div class="desglose-vacio">
-          <span class="empty-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="M12 7v5l3 2"></path>
-            </svg>
-          </span>
-          <p class="empty-title">Sin recaudación en {{ periodoLabel }}</p>
-          <p class="empty-text">No se registraron cobros en este período.</p>
-        </div>
+        <app-estado-vacio
+          [compacto]="true"
+          [mensaje]="'No hay recaudación en ' + periodoLabel"
+          detalle="No se registraron cobros en este período."
+        />
       }
     </article>
     </div>

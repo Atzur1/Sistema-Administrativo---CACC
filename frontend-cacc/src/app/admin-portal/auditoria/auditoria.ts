@@ -6,6 +6,8 @@ import { API_BASE_URL } from '../../services/api-url';
 import { AuthService } from '../../services/auth';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
+import { Cargando } from '../../shared/cargando/cargando';
+import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { Ventana } from '../../shared/ventana/ventana';
 
 interface AuditEvent {
@@ -151,7 +153,7 @@ type Datos = Record<string, unknown>;
 @Component({
   selector: 'app-auditoria',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect, CustomDatepicker, Ventana],
+  imports: [CommonModule, FormsModule, CustomSelect, CustomDatepicker, Ventana, Cargando, EstadoVacio],
   templateUrl: './auditoria.html',
   styleUrl: './auditoria.css',
 })

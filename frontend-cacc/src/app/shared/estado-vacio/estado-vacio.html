@@ -1,0 +1,32 @@
+<div class="vacio" [class.vacio-compacto]="compacto" role="status" aria-live="polite">
+  <span class="vacio-icono" [class.vacio-icono-listo]="icono === 'listo'" aria-hidden="true">
+    @switch (icono) {
+      @case ('busqueda') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+      }
+      @case ('listo') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      }
+      @default {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-6l-2 3h-4l-2-3H2"></path>
+          <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+        </svg>
+      }
+    }
+  </span>
+  <p class="vacio-mensaje">{{ mensaje }}</p>
+  @if (detalle) {
+    <p class="vacio-detalle">{{ detalle }}</p>
+  }
+  @if (textoAccion) {
+    <button type="button" class="boton boton-fantasma vacio-accion" (click)="accion.emit()">{{ textoAccion }}</button>
+  }
+</div>

@@ -257,7 +257,7 @@
 
       <!-- Fila 2: info + botón en una sola fila unificada -->
       @if (cargandoEnrollment()) {
-        <div class="insc-loading field-reveal">Cargando datos de inscripción…</div>
+        <app-cargando class="field-reveal" texto="Cargando los datos de inscripción…" forma="lista" [filas]="1" />
       }
       @if (enrollmentData) {
         <div class="insc-info-row field-reveal">
@@ -337,13 +337,18 @@
 
 
       @if (!pendingLoaded) {
-        <p class="empty-state" aria-live="polite">Cargando cobros pendientes…</p>
+        <app-cargando texto="Cargando cobros pendientes…" forma="tabla" [filas]="6" [columnas]="5" />
       } @else if (pendingFailed) {
         <p class="empty-state">No se pudieron cargar los cobros pendientes.</p>
       } @else if (pendingRows.length === 0) {
-        <p class="empty-state">No hay cobros pendientes en este momento.</p>
+        <app-estado-vacio icono="listo" mensaje="No hay cobros pendientes" />
       } @else if (filteredPendingRows.length === 0) {
-        <p class="empty-state">Ningún pendiente coincide con la búsqueda.</p>
+        <app-estado-vacio
+          icono="busqueda"
+          mensaje="Ningún resultado coincide con la búsqueda o los filtros"
+          textoAccion="Limpiar filtros"
+          (accion)="limpiarFiltrosPendientes()"
+        />
       } @else {
         <div class="table-wrapper">
           <table class="debtors-table">

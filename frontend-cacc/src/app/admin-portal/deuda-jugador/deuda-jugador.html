@@ -19,7 +19,7 @@
   </header>
 
   @if (cargandoJugador) {
-    <p class="loading-text">Cargando jugador...</p>
+    <app-cargando texto="Cargando el jugador…" forma="tarjetas" [filas]="3" />
   } @else if (jugador) {
     <div class="profile-card">
       <div class="profile-header">
@@ -85,7 +85,7 @@
         </button>
       }
       @if (actualizandoEstadoCuenta) {
-        <span class="actualizando-estado" role="status">Actualizando estado de cuenta...</span>
+        <span class="actualizando-estado" role="status">Actualizando el estado de cuenta…</span>
       }
     </header>
 
@@ -105,11 +105,11 @@
     }
 
     @if (cargandoCuotas && cuotasJugador.length === 0) {
-      <p class="deuda-empty">Cargando cuotas...</p>
+      <app-cargando texto="Cargando cuotas…" forma="tabla" [filas]="4" [columnas]="5" />
     } @else if (errorCuotas) {
       <p class="cobro-error">{{ errorCuotas }}</p>
     } @else if (cuotasJugador.length === 0) {
-      <p class="deuda-empty">Este jugador no tiene cuotas emitidas.</p>
+      <app-estado-vacio mensaje="No hay cuotas emitidas para este jugador" />
     } @else {
       <div class="cuotas-table-wrapper">
         <table class="cuotas-table">
@@ -226,24 +226,9 @@
     }
 
     @if (cargandoDeuda) {
-      <p class="deuda-empty">Cargando deuda...</p>
+      <app-cargando texto="Cargando la deuda…" forma="lista" [filas]="3" />
     } @else if (cuotas.length === 0) {
-      <div class="empty-state">
-        <span class="empty-state-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-        </span>
-        <p>Este jugador no tiene cuotas pendientes.</p>
-      </div>
+      <app-estado-vacio icono="listo" mensaje="Este jugador no tiene cuotas pendientes" />
     } @else {
       <ul class="cuota-list">
         @for (cuota of cuotas; track cuota.idPago) {
