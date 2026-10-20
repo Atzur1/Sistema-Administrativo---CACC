@@ -94,8 +94,41 @@ public class EstadoDeudaControllerTests
         Assert.Equal(new[] { "41000001" }, dao.UltimosDni);
         Assert.Equal("solo_entrenamientos", dto.Estado);
         Assert.True(dto.AccesoPermitido);
-        Assert.Equal(1, dto.CuotasVencidas);
-        Assert.Equal(170_000m, dto.DeudaTotal);
+    }
+
+    // Contrato v1 (HU-028): el Deportivo recibe solo el estado. Si alguien agrega un dato financiero a la respuesta, esta prueba falla.
+    [Fact]
+    public void LaRespuestaNoTieneNingunDatoFinanciero()
+    {
+        var propiedades = typeof(EstadoDeudaResponseDTO).GetProperties().Select(p => p.Name).OrderBy(n => n).ToArray();
+
+        Assert.Equal(new[] { "AccesoPermitido", "Dni", "Estado", "FechaBaja", "IdJugador" }, propiedades);
+    }
+
+    [Fact]
+    public void LaRespuestaSerializadaNoDejaVerLaDeudaDeNadie()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            EstadoDeudaResponseDTO.FromEntity(new EstadoDeudaJugador(5, "41000001", 2, 255_000m, null)),
+            new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+
+        Assert.Contains("\"estado\":\"inhabilitado\"", json);
+        Assert.DoesNotContain("255000", json);
+        Assert.DoesNotContain("deuda", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("cuotas", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ElControladorExponeLaRutaVersionadaYLaAnteriorComoAlias()
+    {
+        var rutas = typeof(EstadoDeudaController)
+            .GetCustomAttributes(typeof(Microsoft.AspNetCore.Mvc.RouteAttribute), false)
+            .Cast<Microsoft.AspNetCore.Mvc.RouteAttribute>()
+            .Select(r => r.Template)
+            .ToArray();
+
+        Assert.Contains("api/integracion/v1/estado-deuda", rutas);
+        Assert.Contains("api/estado-deuda", rutas);
     }
 
     [Theory]

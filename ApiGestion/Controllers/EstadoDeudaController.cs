@@ -9,7 +9,10 @@ namespace ApiGestion.Controllers
     // Estado de deuda de los jugadores para el Portal Deportivo (QR de ingreso y listados). El Deportivo reenvía el token
     // del usuario: es el mismo en los dos portales. Ver RolesDelDeportivo para quién puede consultar y qué ve cada rol.
     [ApiController]
+    [Route("api/integracion/v1/estado-deuda")]
+    // Ruta anterior, sin versión: se mantiene solo mientras el Portal Deportivo migra a la v1 y se retira después.
     [Route("api/estado-deuda")]
+    [Produces("application/json")]
     [Authorize(Roles = RolesDelDeportivo.QuienConsulta)]
     public class EstadoDeudaController : ControllerBase
     {
@@ -27,6 +30,12 @@ namespace ApiGestion.Controllers
         // GET api/estado-deuda/dni/41000001 -> 200 con el estado | 400 DNI inválido | 404 no es un jugador (o no es de tu
         // alcance) | 409 el DNI corresponde a más de un jugador.
         [HttpGet("dni/{dni}")]
+        [ProducesResponseType(typeof(EstadoDeudaResponseDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public IActionResult PorDni(string dni)
         {
             string? normalizado = IdentificadorCuenta.NormalizarDni(dni);
@@ -57,6 +66,10 @@ namespace ApiGestion.Controllers
 
         // POST api/estado-deuda/lote  { "dnis": ["41000001", "42.000.002"] } -> el estado de cada uno, para los listados.
         [HttpPost("lote")]
+        [ProducesResponseType(typeof(EstadoDeudaLoteResponseDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public IActionResult PorLote([FromBody] EstadoDeudaLoteRequestDTO request)
         {
             if (request?.Dnis is null || request.Dnis.Count == 0)
