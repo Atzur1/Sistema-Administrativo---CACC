@@ -152,10 +152,106 @@
                                                                                                        }
                                                                                            }
                                                                          }
-                                                            }
+                                                            },
+                  "/api/integracion/v1/jugadores/{idJugador}/cargos-alta":  {
+                                                                                "post":  {
+                                                                                             "tags":  [
+                                                                                                          "IntegracionJugadores"
+                                                                                                      ],
+                                                                                             "parameters":  [
+                                                                                                                {
+                                                                                                                    "name":  "idJugador",
+                                                                                                                    "in":  "path",
+                                                                                                                    "required":  true,
+                                                                                                                    "schema":  {
+                                                                                                                                   "type":  "integer",
+                                                                                                                                   "format":  "int32"
+                                                                                                                               }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "responses":  {
+                                                                                                               "200":  {
+                                                                                                                           "description":  "OK",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/CargosAltaResponseDTO"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       },
+                                                                                                               "400":  {
+                                                                                                                           "description":  "Bad Request",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       },
+                                                                                                               "401":  {
+                                                                                                                           "description":  "Unauthorized",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       },
+                                                                                                               "403":  {
+                                                                                                                           "description":  "Forbidden",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       },
+                                                                                                               "404":  {
+                                                                                                                           "description":  "Not Found",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       },
+                                                                                                               "422":  {
+                                                                                                                           "description":  "Unprocessable Content",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       }
+                                                                                                           }
+                                                                                         }
+                                                                            }
               },
     "components":  {
                        "schemas":  {
+                                       "CargosAltaResponseDTO":  {
+                                                                     "type":  "object",
+                                                                     "properties":  {
+                                                                                        "idJugador":  {
+                                                                                                          "type":  "integer",
+                                                                                                          "format":  "int32"
+                                                                                                      },
+                                                                                        "inscripcionGenerada":  {
+                                                                                                                    "type":  "boolean"
+                                                                                                                },
+                                                                                        "cuotaGenerada":  {
+                                                                                                              "type":  "boolean"
+                                                                                                          }
+                                                                                    },
+                                                                     "additionalProperties":  false
+                                                                 },
                                        "EstadoDeudaLoteRequestDTO":  {
                                                                          "type":  "object",
                                                                          "properties":  {
