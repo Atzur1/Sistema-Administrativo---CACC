@@ -214,40 +214,10 @@
   color: var(--color-text-muted);
 }
 
-/* ===== SUBMIT ===== */
+/* ===== SUBMIT =====
+   El aspecto viene de .boton-principal (styles.css); acá solo su lugar en la grilla. */
 .submit-button {
   grid-column: span 5;
-  padding: var(--space-3);
-  background: var(--action-accent);
-  border: none;
-  border-radius: var(--radius-md);
-  color: var(--color-bg-card);
-  font-family: inherit;
-  font-size: var(--font-md);
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: var(--shadow-rest);
-  transition:
-    background 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-
-.submit-button:hover:not(:disabled) {
-  background: var(--action-accent-hover);
-  box-shadow: var(--shadow-raised);
-  transform: translateY(-1px);
-}
-
-.submit-button:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--shadow-rest);
-}
-
-.submit-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 /* Confirmation of a persisted operation: fades in, then fades out before being
@@ -387,29 +357,6 @@
   color: var(--color-text-muted);
 }
 
-.clear-filter-btn {
-  padding: 0 var(--space-3);
-  height: 40px;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-base);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    border-color 0.2s ease,
-    color 0.2s ease,
-    background 0.2s ease;
-}
-
-.clear-filter-btn:hover {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-  background: var(--color-danger-bg);
-}
-
 /* ===== PAGINACIÓN ===== */
 .pagination {
   display: flex;
@@ -419,30 +366,6 @@
   margin-top: 14px;
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-bg-page);
-}
-
-.pagination-button {
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: var(--font-base);
-  font-weight: 600;
-  color: var(--color-brand);
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.pagination-button:hover:not(:disabled) {
-  background: var(--color-brand-tint);
-}
-
-.pagination-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .pagination-status {
@@ -569,8 +492,8 @@
 }
 
 /* ===== PILLS ===== */
-.type-pill,
-.status-pill {
+/* Tipo de beneficio (beca o descuento): es una categoría, no un estado, por eso no usa .etiqueta-estado. */
+.type-pill {
   display: inline-block;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-lg);
@@ -587,17 +510,6 @@
 .type-discount {
   background: var(--color-info-bg);
   color: var(--color-info);
-}
-
-/* A benefit still inside its range reads as valid, an old one as neutral */
-.status-active {
-  background: var(--color-brand-tint);
-  color: var(--color-brand);
-}
-
-.status-expired {
-  background: var(--color-bg-page);
-  color: var(--color-text-muted);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -675,37 +587,6 @@
   color: #64748b;
   font-size: var(--font-md);
   text-align: center;
-}
-
-/* ===== ROW ACTION ===== */
-.row-action {
-  padding: var(--space-1) var(--space-3);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-brand);
-  border-radius: var(--radius-sm);
-  color: var(--color-brand);
-  font-family: inherit;
-  font-size: var(--font-sm);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-
-.row-action:hover:not(:disabled) {
-  background: var(--color-brand);
-  color: var(--color-bg-card);
-}
-
-/* Una bonificación cancelada es historia cerrada: nada que gestionar o editar ahí. Para
-   asignar una nueva se usa "Asignar bonificación" arriba, no este botón. */
-.row-action:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  border-color: var(--color-border);
-  color: var(--color-text-muted);
 }
 
 /* ===== BENEFIT POPUP (HU-011) =====
@@ -983,97 +864,6 @@
   margin-top: 16px;
 }
 
-.button-primary,
-.button-ghost,
-.button-danger {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: var(--font-md);
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease,
-    color 0.2s ease;
-}
-
-.button-primary {
-  background: var(--action-accent);
-  border: none;
-  color: var(--color-bg-card);
-  box-shadow: var(--shadow-rest);
-}
-
-.button-primary:hover:not(:disabled) {
-  background: var(--action-accent-hover);
-  box-shadow: var(--shadow-raised);
-}
-
-/* Sombra del botón primario dentro del popup: el verde de arriba es para el resto de la
-   pantalla (fuera del dialog); acá adentro todo es violeta, sombra incluida. */
-.dialog .button-primary {
-  box-shadow: var(--shadow-rest);
-}
-
-.dialog .button-primary:hover:not(:disabled) {
-  box-shadow: var(--shadow-raised);
-}
-
-.button-ghost {
-  background: transparent;
-  border: 1px solid var(--action-border-strong);
-  color: var(--color-text-muted);
-}
-
-.button-ghost:hover:not(:disabled) {
-  background: var(--color-brand-tint);
-  color: var(--color-text);
-}
-
-.button-danger {
-  background: var(--color-danger-strong);
-  border: none;
-  color: var(--color-bg-card);
-}
-
-.button-danger:hover:not(:disabled) {
-  background: var(--color-danger-strong);
-}
-
-/* Mismo tamaño/forma que .button-ghost, pero en rojo: distinto de "Cancelar"/"Asignar otro
-   período" a propósito — anular es la acción más seria de las tres, hay que poder
-   distinguirla de un vistazo sin que sea un botón sólido lleno de rojo como .button-danger
-   (ese queda para la confirmación en sí, no para el disparador). */
-.button-void {
-  padding: var(--space-2) var(--space-4);
-  background: transparent;
-  border: 1px solid rgba(192, 57, 43, 0.35);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: var(--font-md);
-  font-weight: 600;
-  color: var(--color-danger-strong);
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.button-void:hover:not(:disabled) {
-  background: var(--color-danger-bg);
-  border-color: var(--color-danger-strong);
-}
-
-.button-primary:disabled,
-.button-ghost:disabled,
-.button-danger:disabled,
-.button-void:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* ===== NARROW SCREENS ===== */
 @media (max-width: 640px) {
   .lookup-grid {
@@ -1091,31 +881,6 @@
   .dialog-actions button {
     width: 100%;
   }
-}
-
-/* ===== VALIDITY STATES (HU-012) =====
-   status-active and status-expired already existed and are reused as they are.
-   These two complete the set the server can answer. */
-
-/* Granted but not started yet: amber, the colour of something pending */
-.status-scheduled {
-  background: #e3edfb;
-  color: #1d4f91;
-}
-
-/* Taken down por mano del administrador — se muestra en rojo suave (mismo criterio que el
-   resto del sistema usa para "inactivo/rechazado"), no como el gris tachado de antes: se leía
-   apagado en vez de claro, y una raya sobre el texto de un pill así de chico se ve rota. */
-.status-cancelled {
-  background: var(--color-danger-bg);
-  color: var(--color-danger-strong);
-}
-
-/* Anulada: gris neutro, no rojo como Cancelada — no es un estado "activo hasta hace poco",
-   es más bien "esto no debería haber pasado", ya resuelto. */
-.status-voided {
-  background: var(--color-bg-page);
-  color: var(--color-text-muted);
 }
 
 /* ===== BENEFIT CARD ===== */
@@ -1242,15 +1007,9 @@
   }
 }
 
-/* Jugador dado de baja en el buscador: no se le asignan becas ni descuentos. */
+/* Jugador dado de baja en el buscador: no se le asignan becas ni descuentos. El aspecto viene de
+   .etiqueta-estado (styles.css); acá solo su lugar en la sugerencia. */
 .tag-baja {
   align-self: flex-start;
   margin-top: 2px;
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-hover);
-  color: var(--color-text-muted);
-  font-size: var(--font-xs);
-  font-weight: 600;
 }

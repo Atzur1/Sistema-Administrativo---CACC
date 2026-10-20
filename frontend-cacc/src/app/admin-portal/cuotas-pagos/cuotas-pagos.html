@@ -55,8 +55,9 @@
   @if (errorCarga) {
     <div class="load-error" role="alert">
       <span>{{ errorCarga }}</span>
-      <button type="button" class="clear-filter-btn" (click)="reintentarCarga()" [disabled]="cargandoListas">
-        Reintentar
+      <button type="button" class="boton boton-secundario" (click)="reintentarCarga()" [disabled]="cargandoListas"
+              [class.en-curso]="cargandoListas" [attr.aria-busy]="cargandoListas">
+        {{ cargandoListas ? 'Cargando…' : 'Reintentar' }}
       </button>
     </div>
   }
@@ -173,8 +174,9 @@
 
         <!-- Botón: aparece con el método -->
         @if (showMethod) {
-          <button type="submit" class="submit-button field-reveal" style="animation-delay: 60ms"
-                  [disabled]="paymentForm.invalid || enviando">
+          <button type="submit" class="boton boton-principal submit-button field-reveal" style="animation-delay: 60ms"
+                  [disabled]="paymentForm.invalid || enviando"
+                  [class.en-curso]="enviando" [attr.aria-busy]="enviando">
             @if (!enviando) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -182,7 +184,7 @@
                 <path d="M5 12h14"></path>
               </svg>
             }
-            {{ enviando ? 'Registrando...' : 'Registrar pago' }}
+            {{ enviando ? 'Registrando…' : 'Registrar pago' }}
           </button>
         }
       </div>
@@ -275,9 +277,10 @@
             <span class="insc-monto-sub insc-monto-sub-warn">Para completar el total</span>
           </div>
           @if (showInscripcionMethod) {
-            <button type="submit" class="submit-button submit-button-inscripcion field-reveal"
+            <button type="submit" class="boton boton-principal submit-button submit-button-inscripcion field-reveal"
                     style="animation-delay: 60ms"
-                    [disabled]="!inscripcionFormValid || enviandoInscripcion">
+                    [disabled]="!inscripcionFormValid || enviandoInscripcion"
+                    [class.en-curso]="enviandoInscripcion" [attr.aria-busy]="enviandoInscripcion">
               @if (!enviandoInscripcion) {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -285,7 +288,7 @@
                   <path d="M5 12h14"></path>
                 </svg>
               }
-              {{ enviandoInscripcion ? 'Registrando...' : 'Registrar pago de inscripción' }}
+              {{ enviandoInscripcion ? 'Registrando…' : 'Registrar pago de inscripción' }}
             </button>
           }
         </div>
@@ -328,7 +331,7 @@
           </div>
 
           @if (hayFiltrosPendientesActivos) {
-            <button type="button" class="clear-filter-btn" (click)="limpiarFiltrosPendientes()">
+            <button type="button" class="boton boton-fantasma clear-filter-btn" (click)="limpiarFiltrosPendientes()">
               Limpiar filtros
             </button>
           }
@@ -366,7 +369,7 @@
                   <td class="cell-player">
                     {{ row.name }}
                     @if (row.dadoDeBaja) {
-                      <span class="tag-baja" title="Dejó el club: no genera cuotas nuevas, pero se le cobra lo que debe">Baja</span>
+                      <span class="etiqueta-estado tono-neutro tag-baja" title="Dejó el club: no genera cuotas nuevas, pero se le cobra lo que debe">Baja</span>
                     }
                   </td>
                   <td class="cell-muted">{{ row.dni }}</td>

@@ -84,7 +84,7 @@
                     >DNI {{ player.document }} · {{ player.category }}</span
                   >
                   @if (player.leaveDate) {
-                    <span class="tag-baja">Baja</span>
+                    <span class="etiqueta-estado tono-neutro tag-baja">Baja</span>
                   }
                 </button>
               </li>
@@ -99,7 +99,7 @@
         }
       </div>
 
-      <button type="submit" class="submit-button" [disabled]="selectedPlayer === null || !!selectedPlayer.leaveDate">
+      <button type="submit" class="boton boton-principal submit-button" [disabled]="selectedPlayer === null || !!selectedPlayer.leaveDate">
         Asignar Bonificación
       </button>
     </form>
@@ -149,7 +149,7 @@
         </div>
 
         @if (hayFiltrosActivos) {
-          <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">
+          <button type="button" class="boton boton-fantasma clear-filter-btn" (click)="limpiarFiltros()">
             Limpiar filtros
           </button>
         }
@@ -205,7 +205,7 @@
                 <td>
                   <!-- The state comes resolved from the server: nothing is worked
                        out here from the browser clock -->
-                  <span class="status-pill" [ngClass]="statusClassOf(row)">
+                  <span class="etiqueta-estado" [ngClass]="statusClassOf(row)">
                     {{ statusOf(row) }}
                   </span>
                 </td>
@@ -214,7 +214,7 @@
                        no tiene ya nada que hacer. -->
                   <button
                     type="button"
-                    class="row-action"
+                    class="boton boton-secundario row-action"
                     (click)="openDialogForRow(row)"
                     [disabled]="row.status === 'Voided'"
                     [title]="row.status === 'Voided' ? 'Esta bonificación fue anulada' : ''"
@@ -240,7 +240,7 @@
         <div class="pagination">
           <button
             type="button"
-            class="pagination-button"
+            class="boton boton-secundario pagination-button"
             (click)="irAPagina(page - 1)"
             [disabled]="page <= 1"
           >
@@ -249,7 +249,7 @@
           <span class="pagination-status">Página {{ page }} de {{ totalPaginas }}</span>
           <button
             type="button"
-            class="pagination-button"
+            class="boton boton-secundario pagination-button"
             (click)="irAPagina(page + 1)"
             [disabled]="page >= totalPaginas"
           >
@@ -323,7 +323,7 @@
         <div class="benefit-card">
           <div class="benefit-card-head">
             <app-discount-badge [discount]="discount" [showValue]="true" />
-            <span class="status-pill" [ngClass]="statusClassOf(discount)">
+            <span class="etiqueta-estado" [ngClass]="statusClassOf(discount)">
               {{ statusOf(discount) }}
             </span>
           </div>
@@ -371,13 +371,13 @@
                       {{ benefitValueOf(item) }} · {{ validityOf(item) }}
                     </span>
                   </div>
-                  <span class="status-pill" [ngClass]="statusClassOf(item)">{{
+                  <span class="etiqueta-estado" [ngClass]="statusClassOf(item)">{{
                     statusOf(item)
                   }}</span>
                   @if (puedeEditar) {
                     <button
                       type="button"
-                      class="row-action"
+                      class="boton boton-secundario row-action"
                       (click)="startEditing(item)"
                       [disabled]="!esEditable(item)"
                       [title]="esEditable(item) ? '' : motivoNoEditable"
@@ -394,7 +394,7 @@
         <footer class="dialog-actions">
           @if (discount.status === 'Active' || discount.status === 'Scheduled') {
             <span class="action-with-help">
-              <button type="button" class="button-ghost" (click)="askCancelConfirmation()">
+              <button type="button" class="boton boton-secundario" (click)="askCancelConfirmation()">
                 Cancelar bonificación
               </button>
               <app-help-hint
@@ -409,7 +409,7 @@
                  cumplió su fecha de cierre sin que nadie la cortara antes, esos meses ya se
                  dieron por saldados y no se tocan. -->
             <span class="action-with-help">
-              <button type="button" class="button-void" (click)="askVoidConfirmation()">
+              <button type="button" class="boton boton-secundario es-peligro" (click)="askVoidConfirmation()">
                 Anular
               </button>
               <app-help-hint
@@ -421,13 +421,13 @@
           <!-- Possible since HU-012: what the API refuses is an overlapping
                period, not a second benefit -->
           @if (!dialogPlayer()?.leaveDate) {
-            <button type="button" class="button-ghost" (click)="startNewBenefit()">
+            <button type="button" class="boton boton-secundario" (click)="startNewBenefit()">
               Asignar otro período
             </button>
           }
           @if (esEditable(discount)) {
             <span class="action-with-help">
-              <button type="button" class="button-primary" (click)="startEditing()">
+              <button type="button" class="boton boton-principal" (click)="startEditing()">
                 Editar bonificación
               </button>
               <app-help-hint
@@ -448,14 +448,16 @@
         </p>
 
         <footer class="dialog-actions">
-          <button type="button" class="button-ghost" (click)="backToActive()" [disabled]="saving()">
+          <button type="button" class="boton boton-fantasma" (click)="backToActive()" [disabled]="saving()">
             Volver
           </button>
           <button
             type="button"
-            class="button-danger"
+            class="boton boton-principal es-peligro"
             (click)="confirmCancelBenefit()"
             [disabled]="saving()"
+            [class.en-curso]="saving()"
+            [attr.aria-busy]="saving()"
           >
             {{ saving() ? 'Cancelando…' : 'Sí, cancelar' }}
           </button>
@@ -477,14 +479,16 @@
         </p>
 
         <footer class="dialog-actions">
-          <button type="button" class="button-ghost" (click)="backToActive()" [disabled]="saving()">
+          <button type="button" class="boton boton-fantasma" (click)="backToActive()" [disabled]="saving()">
             Volver
           </button>
           <button
             type="button"
-            class="button-danger"
+            class="boton boton-principal es-peligro"
             (click)="confirmVoidBenefit()"
             [disabled]="saving()"
+            [class.en-curso]="saving()"
+            [attr.aria-busy]="saving()"
           >
             {{ saving() ? 'Anulando…' : 'Sí, anular' }}
           </button>
@@ -611,15 +615,17 @@
           }
 
           <footer class="dialog-actions">
-            <button type="button" class="button-ghost" (click)="cancelForm()" [disabled]="saving()">
+            <button type="button" class="boton boton-fantasma" (click)="cancelForm()" [disabled]="saving()">
               Cancelar
             </button>
             <!-- Stays disabled while any required field is missing or the date
                  range is invalid: benefitForm.invalid covers both -->
             <button
               type="submit"
-              class="button-primary"
+              class="boton boton-principal"
               [disabled]="benefitForm.invalid || saving()"
+              [class.en-curso]="saving()"
+              [attr.aria-busy]="saving()"
             >
               {{ saving() ? 'Guardando…' : 'Guardar bonificación' }}
             </button>

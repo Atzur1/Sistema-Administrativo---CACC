@@ -155,9 +155,9 @@ describe('DeudasMorosidad - jugadores dados de baja (HU-081)', () => {
   it('muestra al dado de baja con su fecha en lugar del estado deportivo', async () => {
     const fixture = await create([baja(1, 'SANTIAGO', 3, 276000)]);
 
-    const pill = (fixture.nativeElement as HTMLElement).querySelector('.status-pill');
+    const pill = (fixture.nativeElement as HTMLElement).querySelector('.etiqueta-estado');
     expect(pill?.textContent?.trim()).toBe('Dado de baja 15/09/2026');
-    expect(pill?.classList).toContain('status-left');
+    expect(pill?.classList).toContain('tono-neutro');
   });
 
   it('filtra activos y dados de baja', async () => {
@@ -192,7 +192,7 @@ describe('DeudasMorosidad - jugadores dados de baja (HU-081)', () => {
 // vencidas. Quien debe la cuota del mes pero todavía no venció sigue habilitado ("En término").
 describe('DeudasMorosidad - estado deportivo por cuotas vencidas', () => {
   const pills = (fixture: Awaited<ReturnType<typeof create>>) =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.status-pill')).map((p) => p.textContent?.trim());
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.etiqueta-estado')).map((p) => p.textContent?.trim());
 
   it('sin cuotas vencidas está en término; con 1 solo entrena; con 2 o más inhabilitado', async () => {
     const fixture = await create([

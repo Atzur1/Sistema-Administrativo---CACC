@@ -388,14 +388,20 @@ export class DeudaJugador implements OnInit, OnDestroy {
     return new Date(anio, mes - 1, dia).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
+  // HU-093: tono de la etiqueta de estado compartida (styles.css).
   estadoCuotaClase(cuota: PlayerFeeModel): string {
-    if (cuota.estado === 'Pagado') {
-      return 'estado-pagado';
+    if (cuota.estado === 'Pagado' || cuota.cubiertaPorBeneficio) {
+      return 'tono-exito';
     }
-    if (cuota.cubiertaPorBeneficio) {
-      return 'estado-cubierta';
+    return cuota.estado === 'Vencido' ? 'tono-peligro' : 'tono-info';
+  }
+
+  // Vencida es un problema, parcial pide atención y próxima es un dato a futuro (todavía no vence).
+  tonoCuotaPendiente(estado: EstadoCuota): string {
+    if (estado === 'vencida') {
+      return 'tono-peligro';
     }
-    return cuota.estado === 'Vencido' ? 'estado-vencida' : 'estado-pendiente';
+    return estado === 'parcial' ? 'tono-aviso' : 'tono-info';
   }
 
   estadoCuotaTexto(cuota: PlayerFeeModel): string {

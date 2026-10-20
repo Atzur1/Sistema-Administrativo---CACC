@@ -61,9 +61,19 @@ export function statusLabel(status: DiscountStatus): string {
     return STATUS_LABELS[status] ?? status;
 }
 
-// Modifier for the pill that shows the state
+// Tone of the shared status tag (.etiqueta-estado in styles.css, HU-093). Keeps the colours this
+// screen already used on purpose: cancelled (taken down by an admin) in red, voided ("should not
+// have happened", already resolved) and expired in neutral grey, scheduled as a future fact.
+const STATUS_TONES: Record<DiscountStatus, string> = {
+    Active: 'tono-exito',
+    Scheduled: 'tono-info',
+    Expired: 'tono-neutro',
+    Cancelled: 'tono-peligro',
+    Voided: 'tono-neutro',
+};
+
 export function statusToneClass(status: DiscountStatus): string {
-    return `status-${status.toLowerCase()}`;
+    return STATUS_TONES[status] ?? 'tono-neutro';
 }
 
 // Body sent to assign or edit a benefit. The player travels in the URL, so it is

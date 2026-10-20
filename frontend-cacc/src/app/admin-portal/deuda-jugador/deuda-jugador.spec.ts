@@ -421,7 +421,12 @@ describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () =
 
     expect(ctx.notificaciones.notify).not.toHaveBeenCalled();
     expect(ctx.el.querySelector('[role="dialog"]')).not.toBeNull();
-    expect(texto(ctx.el.querySelector('.cobro-confirmar'))).toBe('Registrando...');
+    expect(texto(ctx.el.querySelector('.cobro-confirmar'))).toBe('Registrando…');
+    // HU-093: mientras el cobro está en curso el botón muestra la rueda y no se puede tocar dos veces.
+    const confirmar = ctx.el.querySelector<HTMLButtonElement>('.cobro-confirmar')!;
+    expect(confirmar.disabled).toBe(true);
+    expect(confirmar.classList).toContain('en-curso');
+    expect(confirmar.getAttribute('aria-busy')).toBe('true');
     expect(filaDe(ctx.el, 'Marzo 2026')).toContain('Vencido');
 
     respuestaPendiente.next(RESPUESTA_COBRO);
@@ -471,7 +476,7 @@ describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () =
     expect(filaDe(ctx.el, 'Marzo 2026')).toContain('Pagado');
     expect(filaDe(ctx.el, 'Abril 2026')).toContain('Pagado');
     expect(filaDe(ctx.el, 'Mayo 2026')).toContain('Pendiente');
-    expect(ctx.el.querySelectorAll('.cuotas-table .estado-pagado')).toHaveLength(2);
+    expect(ctx.el.querySelectorAll('.cuotas-table .etiqueta-estado.tono-exito')).toHaveLength(2);
     expect(checkbox(ctx.el, 10).disabled).toBe(true);
     expect(checkbox(ctx.el, 13).disabled).toBe(false);
   });
@@ -630,16 +635,16 @@ describe('DeudaJugador - estado de cuenta (HU-024)', () => {
     expect(cantidad).toEqual(['2', 'Cuotas adeudadas']);
   });
 
-  it('pinta cada estado con su color: Pagado verde, Pendiente ámbar, Vencido rojo', async () => {
+  it('pinta cada estado con su tono: Pagado éxito, Pendiente información, Vencido peligro', async () => {
     const { el } = await crear({ cuotas: [[ENERO_PAGADA, MARZO, ABRIL]] });
 
     const pill = (periodo: string) =>
       Array.from(el.querySelectorAll('.cuotas-table tbody tr'))
         .find((tr) => texto(tr).includes(periodo))!
-        .querySelector('.estado-pill')!;
-    expect(pill('Enero 2026').classList).toContain('estado-pagado');
-    expect(pill('Marzo 2026').classList).toContain('estado-vencida');
-    expect(pill('Abril 2026').classList).toContain('estado-pendiente');
+        .querySelector('.etiqueta-estado')!;
+    expect(pill('Enero 2026').classList).toContain('tono-exito');
+    expect(pill('Marzo 2026').classList).toContain('tono-peligro');
+    expect(pill('Abril 2026').classList).toContain('tono-info');
     expect(texto(pill('Abril 2026'))).toBe('Pendiente');
   });
 
