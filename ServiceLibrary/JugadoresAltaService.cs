@@ -84,8 +84,8 @@ namespace ServiceLibrary
             {
                 Player creado = _playerDao.CreatePlayer(new Player
                 {
-                    FirstName = solicitud.Nombre.Trim(),
-                    LastName = solicitud.Apellido.Trim(),
+                    FirstName = NombresPropios.Normalizar(solicitud.Nombre),
+                    LastName = NombresPropios.Normalizar(solicitud.Apellido),
                     Dni = dni,
                     BirthDate = solicitud.FechaNacimiento.Date,
                     Gender = solicitud.Genero,

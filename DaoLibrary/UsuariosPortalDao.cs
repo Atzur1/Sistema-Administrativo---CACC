@@ -158,8 +158,8 @@ namespace DaoLibrary
                 @"UPDATE dbo.PERSONAS SET nombre = @nombre, apellido = @apellido, dni = @dni
                   WHERE PK_id_persona = (SELECT FK_id_persona FROM dbo.USUARIOS WHERE PK_id_usuario = @id AND activo = 1 AND acceso_portal = 0)",
                 conexion, transaccion);
-            comando.Parameters.Add("@nombre", SqlDbType.NVarChar, 100).Value = nombre.Trim();
-            comando.Parameters.Add("@apellido", SqlDbType.NVarChar, 100).Value = apellido.Trim();
+            comando.Parameters.Add("@nombre", SqlDbType.NVarChar, 100).Value = NombresPropios.Normalizar(nombre);
+            comando.Parameters.Add("@apellido", SqlDbType.NVarChar, 100).Value = NombresPropios.Normalizar(apellido);
             comando.Parameters.Add("@dni", SqlDbType.NVarChar, 40).Value = dniNormalizado;
             comando.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
             return comando.ExecuteNonQuery() == 1 ? EditarCandidatoResultado.Ok : EditarCandidatoResultado.NoEncontrado;
