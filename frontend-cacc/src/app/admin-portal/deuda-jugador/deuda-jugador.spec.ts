@@ -279,7 +279,7 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
     botonRegistrar(el).click();
     await refrescar();
 
-    el.querySelector<HTMLButtonElement>('.cobro-cancelar')!.click();
+    el.querySelector<HTMLButtonElement>('.ventana-volver')!.click();
     await refrescar();
 
     expect(el.querySelector('[role="dialog"]')).toBeNull();
@@ -301,7 +301,7 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
     botonRegistrar(el).click();
     await refrescar();
 
-    el.querySelector<HTMLButtonElement>('.cobro-confirmar')!.click();
+    el.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
     await refrescar();
 
     expect(pagos.cobrarCuotas).toHaveBeenCalledWith(3, [10, 11], 'Transferencia');
@@ -325,10 +325,10 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
     botonRegistrar(el).click();
     await refrescar();
 
-    el.querySelector<HTMLButtonElement>('.cobro-confirmar')!.click();
+    el.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
     await refrescar();
 
-    expect(texto(el.querySelector('.cobro-error'))).toContain('ya fueron abonadas');
+    expect(texto(el.querySelector('[role="dialog"] .ventana-error'))).toContain('ya fueron abonadas');
     expect(notificaciones.notify).not.toHaveBeenCalledWith(expect.anything(), 'success');
     expect(texto(el.querySelectorAll('.cuotas-table tbody tr')[1])).toContain('Vencido');
   });
@@ -341,10 +341,10 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
     botonRegistrar(el).click();
     await refrescar();
 
-    el.querySelector<HTMLButtonElement>('.cobro-confirmar')!.click();
+    el.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
     await refrescar();
 
-    expect(texto(el.querySelector('.cobro-error'))).toContain('No se pudo conectar');
+    expect(texto(el.querySelector('[role="dialog"] .ventana-error'))).toContain('No se pudo conectar');
   });
 
   it('informa un error interno sin mostrar éxito', async () => {
@@ -358,10 +358,10 @@ describe('DeudaJugador - registro de pago de cuotas (HU-025)', () => {
     botonRegistrar(el).click();
     await refrescar();
 
-    el.querySelector<HTMLButtonElement>('.cobro-confirmar')!.click();
+    el.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
     await refrescar();
 
-    expect(texto(el.querySelector('.cobro-error'))).toContain('Error interno al procesar el cobro.');
+    expect(texto(el.querySelector('[role="dialog"] .ventana-error'))).toContain('Error interno al procesar el cobro.');
     expect(notificaciones.notify).not.toHaveBeenCalledWith(expect.anything(), 'success');
   });
 });
@@ -408,7 +408,7 @@ async function pagar(ctx: Contexto, ids: number[], metodo = 'Transferencia') {
   await ctx.elegirMetodo(metodo);
   botonRegistrar(ctx.el).click();
   await ctx.refrescar();
-  ctx.el.querySelector<HTMLButtonElement>('.cobro-confirmar')!.click();
+  ctx.el.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
   await ctx.refrescar();
 }
 
@@ -421,9 +421,9 @@ describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () =
 
     expect(ctx.notificaciones.notify).not.toHaveBeenCalled();
     expect(ctx.el.querySelector('[role="dialog"]')).not.toBeNull();
-    expect(texto(ctx.el.querySelector('.cobro-confirmar'))).toBe('Registrando…');
+    expect(texto(ctx.el.querySelector('.ventana-confirmar'))).toBe('Registrando…');
     // HU-093: mientras el cobro está en curso el botón muestra la rueda y no se puede tocar dos veces.
-    const confirmar = ctx.el.querySelector<HTMLButtonElement>('.cobro-confirmar')!;
+    const confirmar = ctx.el.querySelector<HTMLButtonElement>('.ventana-confirmar')!;
     expect(confirmar.disabled).toBe(true);
     expect(confirmar.classList).toContain('en-curso');
     expect(confirmar.getAttribute('aria-busy')).toBe('true');
@@ -582,7 +582,7 @@ describe('DeudaJugador - confirmación visual y estado de cuenta (HU-026)', () =
 
     expect(ctx.notificaciones.notify).not.toHaveBeenCalledWith(expect.anything(), 'success');
     expect(ctx.el.querySelector('[role="dialog"]')).not.toBeNull();
-    expect(texto(ctx.el.querySelector('.cobro-error'))).toContain('Error interno al procesar el cobro.');
+    expect(texto(ctx.el.querySelector('[role="dialog"] .ventana-error'))).toContain('Error interno al procesar el cobro.');
     expect(totalAdeudado(ctx.el)).toMatch(/\$\s*255\.000/);
     expect(filaDe(ctx.el, 'Marzo 2026')).toContain('Vencido');
     expect(ctx.el.querySelector('.aviso-actualizacion')).toBeNull();

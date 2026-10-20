@@ -10,6 +10,7 @@ import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { financialLoadErrorMessage } from '../../shared/http-error-message';
 import { estaVencida, vencimientoDelPeriodo } from '../../shared/calendario-cuotas';
+import { Ventana } from '../../shared/ventana/ventana';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 import { PendingFeeDetailModel, PlayerFeeModel, PlayerStatementModel } from '../../models/PaymentModel';
 
@@ -42,7 +43,7 @@ export type EstadoCuota = 'vencida' | 'parcial' | 'proxima';
 @Component({
   selector: 'app-deuda-jugador',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect],
+  imports: [CommonModule, FormsModule, CustomSelect, Ventana],
   templateUrl: './deuda-jugador.html',
   styleUrl: './deuda-jugador.css',
 })

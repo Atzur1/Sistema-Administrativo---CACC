@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
 import { normalizeText } from '../../shared/normalize-text';
+import { Ventana } from '../../shared/ventana/ventana';
 import { PortalUserCandidateModel, PortalUserModel, ROL_PORTAL_LABELS, RolPortal } from '../../models/PortalUserModel';
 
 const ROL_OPTIONS: CustomSelectOption[] = [
@@ -25,7 +26,7 @@ export interface CambioDeRol {
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect],
+  imports: [CommonModule, FormsModule, CustomSelect, Ventana],
   templateUrl: './usuarios-y-permisos.html',
   styleUrl: './usuarios-y-permisos.css',
 })

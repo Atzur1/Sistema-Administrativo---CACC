@@ -590,37 +590,10 @@
 }
 
 /* ===== BENEFIT POPUP (HU-011) =====
-   Sits above the dashboard. The backdrop closes it on click; the panel stops the
-   propagation so clicking inside never dismisses a half filled form. */
-.dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-5);
-  background: rgba(17, 24, 20, 0.45);
-  backdrop-filter: blur(2px);
-  animation: dialogFade 0.18s ease both;
-}
-
-/* Violeta claro en vez del verde institucional: es el mismo tono que ya usa el badge
-   "Becado" de la tabla, así el popup se siente parte de esta sección puntual y no de
-   cualquier otra pantalla del sistema. Ancho subido de 460px a 640px — con Motivo, Tipo
-   de valor y el rango de fechas adentro, 460px quedaba apretado y complicaba completarlo.
-   Las variables de acá abajo son las MISMAS que ya usan los botones, el selector y los
-   inputs del formulario (--action-*, --color-brand-tint, --color-brand-deep) — al
-   redefinirlas en este scope, todo lo de adentro se retematiza solo, sin tocar esos
-   componentes compartidos ni afectar al resto de la pantalla. */
-.dialog {
-  width: 100%;
-  max-width: 640px;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
-  padding: var(--space-5) var(--space-6);
-  box-sizing: border-box;
-
+   La ventana en sí es el componente compartido app-ventana (shared/ventana, HU-094). Estas variables retematizan
+   en violeta lo que va adentro (campos, selector y botones usan --action-* y --color-brand-*), como el popup
+   propio que había antes: es el mismo tono del badge "Becado", así se siente parte de esta sección. */
+app-ventana {
   --action-bg: #faf9ff;
   --action-field-bg: #f5f3ff;
   --action-border: #ddd6fe;
@@ -628,109 +601,24 @@
   --action-accent: #7c3aed;
   --action-accent-hover: #6d28d9;
   --action-focus-ring: 0 0 0 3px rgba(124, 58, 237, 0.16);
-  --action-shadow: 0 2px 6px rgba(124, 58, 237, 0.08), 0 20px 44px rgba(124, 58, 237, 0.16);
   --color-brand-tint: #ede9fe;
   --color-brand-deep: #5b21b6;
-
-  background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%);
-  border: 1px solid var(--action-border);
-  border-top: 4px solid var(--action-accent);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-rest);
-  animation: dialogRise 0.22s ease both;
 }
 
-@keyframes dialogFade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes dialogRise {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.dialog-head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  margin-bottom: 14px;
-}
-
-.dialog-head-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-  flex: 1;
-}
-
-.dialog-title {
-  margin: 0;
-  font-size: var(--font-lg);
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.dialog-subtitle {
-  font-size: var(--font-base);
-  color: var(--color-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dialog-close {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  background: transparent;
-  border: 1px solid var(--action-border-strong);
-  border-radius: var(--radius-md);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-
-.dialog-close svg {
-  width: 14px;
-  height: 14px;
-}
-
-.dialog-close:hover {
-  background: var(--color-brand-tint);
-  color: var(--color-text);
+/* Botones propios de la bonificación activa: se acomodan en el pie de la ventana como si fueran suyos. */
+.acciones-bonificacion {
+  display: contents;
 }
 
 /* ===== POPUP MESSAGES ===== */
-.dialog-error,
 .dialog-form-error {
-  margin: 0 0 12px;
+  margin: 4px 0 0;
   padding: var(--space-2) var(--space-3);
   background: var(--color-danger-bg);
   border: 1px solid rgba(192, 57, 43, 0.3);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
   color: var(--color-danger-strong);
-}
-
-.dialog-form-error {
-  margin: 4px 0 0;
 }
 
 .dialog-loading {
@@ -856,14 +744,6 @@
   padding-right: var(--space-3);
 }
 
-/* ===== POPUP ACTIONS ===== */
-.dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  margin-top: 16px;
-}
-
 /* ===== NARROW SCREENS ===== */
 @media (max-width: 640px) {
   .lookup-grid {
@@ -872,14 +752,6 @@
 
   .benefit-detail {
     grid-template-columns: 1fr;
-  }
-
-  .dialog-actions {
-    flex-direction: column-reverse;
-  }
-
-  .dialog-actions button {
-    width: 100%;
   }
 }
 

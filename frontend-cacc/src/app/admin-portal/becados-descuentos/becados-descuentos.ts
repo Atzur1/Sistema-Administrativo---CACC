@@ -11,6 +11,7 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, forkJoin, of } from 'rxjs';
 import { DiscountBadge } from '../../shared/discount-badge/discount-badge';
+import { Ventana } from '../../shared/ventana/ventana';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { HelpHint } from '../../shared/help-hint/help-hint';
 import { NotificationService } from '../../shared/notifications/notification.service';
@@ -73,7 +74,7 @@ type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel' | 'confirmVoid
 @Component({
   selector: 'app-becados-descuentos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DiscountBadge, CustomSelect, HelpHint],
+  imports: [CommonModule, ReactiveFormsModule, DiscountBadge, CustomSelect, HelpHint, Ventana],
   templateUrl: './becados-descuentos.html',
   styleUrl: './becados-descuentos.css',
 })
@@ -475,6 +476,73 @@ export class BecadosDescuentos implements OnInit {
     this.dialogOpen.set(false);
     this.dialogError.set('');
     this.saving.set(false);
+  }
+
+  // ===== VENTANA (HU-094) =====
+  // El popup es la ventana compartida (app-ventana); cambia de título y de botones según la vista.
+
+  get tituloDialogo(): string {
+    switch (this.dialogView()) {
+      case 'active':
+        return 'Bonificación activa';
+      case 'confirmCancel':
+        return 'Cancelar bonificación';
+      case 'confirmVoid':
+        return 'Anular bonificación';
+      default:
+        return this.isEditing ? 'Editar bonificación' : 'Asignar bonificación';
+    }
+  }
+
+  // Volver / Confirmar solo en las confirmaciones y en el formulario; la vista de la bonificación activa
+  // trae sus propios botones y la de carga no tiene ninguno.
+  get dialogoConAcciones(): boolean {
+    const view = this.dialogView();
+    return view === 'confirmCancel' || view === 'confirmVoid' || view === 'form';
+  }
+
+  get dialogoDePeligro(): boolean {
+    const view = this.dialogView();
+    return view === 'confirmCancel' || view === 'confirmVoid';
+  }
+
+  get textoConfirmarDialogo(): string {
+    switch (this.dialogView()) {
+      case 'confirmCancel':
+        return 'Sí, cancelar';
+      case 'confirmVoid':
+        return 'Sí, anular';
+      default:
+        return 'Guardar bonificación';
+    }
+  }
+
+  get textoEnCursoDialogo(): string {
+    switch (this.dialogView()) {
+      case 'confirmCancel':
+        return 'Cancelando…';
+      case 'confirmVoid':
+        return 'Anulando…';
+      default:
+        return 'Guardando…';
+    }
+  }
+
+  volverDialogo() {
+    if (this.dialogView() === 'form') {
+      this.cancelForm();
+    } else {
+      this.backToActive();
+    }
+  }
+
+  // El formulario se envía solo (Confirmar es su botón de envío); las confirmaciones llaman a su acción.
+  confirmarDialogo() {
+    if (this.dialogView() === 'confirmCancel') {
+      this.confirmCancelBenefit();
+    } else if (this.dialogView() === 'confirmVoid') {
+      this.confirmVoidBenefit();
+    }
   }
 
   // Switches the popup from showing a benefit to editing it. Without an

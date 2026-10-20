@@ -328,15 +328,15 @@ describe('Auditoria - panel lateral', () => {
     el.querySelector<HTMLElement>('tbody tr')!.click();
     fixture.detectChanges();
 
-    const panel = el.querySelector('.drawer');
+    const panel = el.querySelector('[role="dialog"]');
     expect(panel).not.toBeNull();
     expect(panel!.textContent).toContain('Anuló una bonificación');
     expect(panel!.querySelector('.diff-before')!.textContent).toContain('No');
     expect(panel!.querySelector('.diff-after')!.textContent).toContain('Sí');
 
-    el.querySelector<HTMLElement>('.drawer-close')!.click();
+    el.querySelector<HTMLElement>('.ventana-cerrar')!.click();
     fixture.detectChanges();
-    expect(el.querySelector('.drawer')).toBeNull();
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
   });
 
   it('se cierra con la tecla Esc', async () => {
@@ -344,11 +344,11 @@ describe('Auditoria - panel lateral', () => {
 
     component.abrirDetalle(ANULACION);
     fixture.detectChanges();
-    expect(el.querySelector('.drawer')).not.toBeNull();
+    expect(el.querySelector('[role="dialog"]')).not.toBeNull();
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
-    expect(el.querySelector('.drawer')).toBeNull();
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
   });
 
   it('los datos sin cambios están plegados hasta que se piden', async () => {

@@ -1,0 +1,201 @@
+/* Fondo oscurecido sin desenfoque: blur() se recalcula en cada cuadro y en notebooks se nota (HU-094). */
+.ventana-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: rgba(17, 24, 20, 0.45);
+  animation: ventanaAparece 0.18s ease both;
+}
+
+.ventana {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 2 * var(--space-5));
+  overflow-y: auto;
+  padding: var(--space-5);
+  box-sizing: border-box;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  /* El borde superior toma el color de la sección (verde, violeta, rojo, azul) que define cada pantalla. */
+  border-top: 4px solid var(--section-accent, var(--color-brand));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
+  color: var(--color-text);
+  animation: ventanaSube 0.22s ease both;
+}
+
+.ventana-angosta {
+  max-width: 420px;
+}
+
+.ventana-ancha {
+  max-width: 640px;
+}
+
+.ventana-peligro {
+  border-top-color: var(--color-danger-strong);
+}
+
+@keyframes ventanaAparece {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ventanaSube {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ventana-cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.ventana-titulos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.ventana-titulo {
+  margin: 0;
+  font-size: var(--font-lg);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ventana-subtitulo {
+  margin: 0;
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 40px como los botones (HU-093): área táctil mínima. */
+.ventana-cerrar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: calc(var(--space-6) + var(--space-2));
+  height: calc(var(--space-6) + var(--space-2));
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ventana-cerrar svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ventana-cerrar:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-dark);
+}
+
+.ventana-cerrar:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.ventana-cerrar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ventana-cuerpo {
+  font-size: var(--font-md);
+  line-height: 1.55;
+}
+
+.ventana-error {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-danger-bg);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  color: var(--color-danger-strong);
+}
+
+.ventana-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+/* Sin botones (por ejemplo, el panel de detalle de Auditoría): no deja un hueco abajo. */
+.ventana-acciones:empty {
+  display: none;
+}
+
+/* ===== Forma lateral: panel a la derecha, para ver un detalle (Auditoría) ===== */
+.ventana-fondo-lateral {
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 0;
+}
+
+.ventana-lateral {
+  max-width: min(540px, 100vw);
+  max-height: none;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  animation-name: ventanaEntraDeCostado;
+}
+
+.ventana-lateral .ventana-cabecera {
+  margin: 0;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ventana-lateral .ventana-titulo {
+  font-size: var(--font-xl);
+}
+
+.ventana-lateral .ventana-acciones {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+@keyframes ventanaEntraDeCostado {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 640px) {
+  .ventana-acciones {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ventana-fondo,
+  .ventana {
+    animation: none;
+  }
+}

@@ -227,22 +227,17 @@
 
 <!-- ===== PANEL DE DETALLE ===== -->
 <!-- Un cajón a la derecha en vez de abrir el detalle dentro de la fila: la lista queda a la vista y el detalle
-     tiene todo el ancho que necesita. Se cierra con la ×, con Esc o tocando afuera. -->
+     tiene todo el ancho que necesita. Es la ventana compartida (HU-094) en su forma lateral y sin Confirmar:
+     se cierra con la ×, con Esc o tocando afuera. -->
 @if (seleccionado; as evento) {
-  <div class="drawer-backdrop" (click)="cerrarDetalle()"></div>
-  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="detalleTitulo">
-    <header class="drawer-head">
-      <div class="drawer-title">
-        <span class="action-chip" [class]="'action-chip ' + claseAccion(evento)">{{ accionLegible(evento) }}</span>
-        <h2 id="detalleTitulo">{{ resumen(evento) }}</h2>
-      </div>
-      <button type="button" class="drawer-close" (click)="cerrarDetalle()" aria-label="Cerrar detalle">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="M18 6 6 18"></path>
-          <path d="m6 6 12 12"></path>
-        </svg>
-      </button>
-    </header>
+  <app-ventana
+    forma="lateral"
+    [titulo]="resumen(evento)"
+    textoCerrar="Cerrar detalle"
+    [conAcciones]="false"
+    (cerrar)="cerrarDetalle()"
+  >
+    <span ventanaEtiqueta class="action-chip" [class]="'action-chip ' + claseAccion(evento)">{{ accionLegible(evento) }}</span>
 
     <dl class="drawer-meta">
       <div>
@@ -324,5 +319,5 @@
         }
       </div>
     }
-  </aside>
+  </app-ventana>
 }

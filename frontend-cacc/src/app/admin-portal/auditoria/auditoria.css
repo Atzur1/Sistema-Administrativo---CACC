@@ -551,88 +551,9 @@ tbody tr:hover {
   cursor: not-allowed;
 }
 
-/* ===== PANEL DE DETALLE ===== */
-.drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 79;
-  background: rgb(15 23 42 / 40%);
-  animation: aparecer 0.2s ease both;
-}
-
-.drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 80;
-  display: flex;
-  flex-direction: column;
-  width: min(540px, 100vw);
-  background: var(--color-bg-card);
-  box-shadow: var(--shadow-floating);
-  animation: entrar 0.22s ease both;
-  overflow-y: auto;
-}
-
-@keyframes entrar {
-  from {
-    transform: translateX(40px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes aparecer {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.drawer-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-5) var(--space-5) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.drawer-title h2 {
-  margin: 8px 0 0;
-  font-size: var(--font-xl);
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.drawer-close {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-card);
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.drawer-close:hover {
-  background: var(--color-bg-hover);
-}
-
-.drawer-close svg {
-  width: 18px;
-  height: 18px;
-}
-
+/* ===== PANEL DE DETALLE =====
+   El panel en sí (fondo, cajón a la derecha, título y ×) es el componente compartido app-ventana en su forma
+   lateral (shared/ventana, HU-094); acá solo lo que muestra adentro. */
 .drawer-meta {
   display: grid;
   gap: var(--space-3);
@@ -821,8 +742,6 @@ tbody tr:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drawer,
-  .drawer-backdrop,
   .spinner {
     animation: none;
   }

@@ -397,68 +397,39 @@
 <!-- ===== CONFIRMACIÓN DE PAGO (HU-025) =====
      Nada se cobra hasta "Confirmar pago". El backend vuelve a validar cada cuota. -->
 @if (confirmacionAbierta) {
-  <div class="dialog-backdrop" (click)="cerrarConfirmacion()">
-    <div
-      class="dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cobroTitulo"
-      (click)="$event.stopPropagation()"
-    >
-      <header class="dialog-head">
-        <div class="dialog-head-text">
-          <h2 class="dialog-title" id="cobroTitulo">Registrar pago</h2>
-          <span class="dialog-subtitle">{{ jugador?.nombreCompleto }}</span>
-        </div>
-      </header>
+  <app-ventana
+    titulo="Registrar pago"
+    [subtitulo]="jugador?.nombreCompleto"
+    textoVolver="Cancelar"
+    textoConfirmar="Confirmar pago"
+    textoEnCurso="Registrando…"
+    [enCurso]="enviandoCobro"
+    [confirmarDeshabilitado]="cuotasSeleccionadas.length === 0"
+    [error]="errorCobro"
+    (confirmar)="confirmarCobro()"
+    (cerrar)="cerrarConfirmacion()"
+  >
+    <p class="dialog-confirm">
+      {{ cuotasSeleccionadas.length }}
+      {{ cuotasSeleccionadas.length === 1 ? 'cuota seleccionada' : 'cuotas seleccionadas' }}:
+    </p>
 
-      <p class="dialog-confirm">
-        {{ cuotasSeleccionadas.length }}
-        {{ cuotasSeleccionadas.length === 1 ? 'cuota seleccionada' : 'cuotas seleccionadas' }}:
-      </p>
-
-      <ul class="cobro-resumen">
-        @for (cuota of cuotasSeleccionadas; track cuota.idPago) {
-          <li class="cobro-resumen-fila">
-            <span>{{ cuota.periodo }}</span>
-            <span>{{ formatMonto(cuota.saldoPendiente) }}</span>
-          </li>
-        }
-      </ul>
-
-      <div class="cobro-resumen-fila cobro-resumen-metodo">
-        <span>Método</span>
-        <strong>{{ metodoCobro }}</strong>
-      </div>
-      <div class="cobro-resumen-fila cobro-resumen-total">
-        <span>Total</span>
-        <strong>{{ formatMonto(totalSeleccionado) }}</strong>
-      </div>
-
-      @if (errorCobro) {
-        <p class="cobro-error">{{ errorCobro }}</p>
+    <ul class="cobro-resumen">
+      @for (cuota of cuotasSeleccionadas; track cuota.idPago) {
+        <li class="cobro-resumen-fila">
+          <span>{{ cuota.periodo }}</span>
+          <span>{{ formatMonto(cuota.saldoPendiente) }}</span>
+        </li>
       }
+    </ul>
 
-      <footer class="dialog-actions">
-        <button
-          type="button"
-          class="boton boton-fantasma pagar-cancelar cobro-cancelar"
-          (click)="cerrarConfirmacion()"
-          [disabled]="enviandoCobro"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          class="boton boton-principal pagar-confirmar cobro-confirmar"
-          (click)="confirmarCobro()"
-          [disabled]="enviandoCobro || cuotasSeleccionadas.length === 0"
-          [class.en-curso]="enviandoCobro"
-          [attr.aria-busy]="enviandoCobro"
-        >
-          {{ enviandoCobro ? 'Registrando…' : 'Confirmar pago' }}
-        </button>
-      </footer>
+    <div class="cobro-resumen-fila cobro-resumen-metodo">
+      <span>Método</span>
+      <strong>{{ metodoCobro }}</strong>
     </div>
-  </div>
+    <div class="cobro-resumen-fila cobro-resumen-total">
+      <span>Total</span>
+      <strong>{{ formatMonto(totalSeleccionado) }}</strong>
+    </div>
+  </app-ventana>
 }
