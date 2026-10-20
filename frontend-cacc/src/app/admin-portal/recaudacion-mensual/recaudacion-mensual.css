@@ -81,34 +81,6 @@
     margin-left: auto;
 }
 
-.export-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    height: 38px;
-    padding: 0 var(--space-4);
-    background: linear-gradient(135deg, var(--color-brand), var(--color-brand-deep));
-    border: none;
-    border-radius: var(--radius-md);
-    color: #ffffff;
-    font-family: inherit;
-    font-size: var(--font-md);
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: var(--shadow-rest);
-    transition: transform 0.15s ease, box-shadow 0.2s ease;
-}
-
-.export-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-raised);
-}
-
-.export-btn:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-}
-
 .export-icon {
     width: 15px;
     height: 15px;
@@ -262,34 +234,6 @@
     color: var(--color-text-subtle);
     opacity: 0.45;
     cursor: not-allowed;
-}
-
-.btn-limpiar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    height: 38px;
-    padding: 0 var(--space-4);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
-    background: var(--color-bg-card);
-    color: var(--color-text-muted);
-    font-family: inherit;
-    font-size: var(--font-md);
-    font-weight: 700;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
-}
-
-.btn-limpiar svg {
-    width: 15px;
-    height: 15px;
-}
-
-.btn-limpiar:hover {
-    background: var(--color-bg-hover);
-    color: var(--color-text-dark);
 }
 
 /* ===== COLUMNA DERECHA: KPIs arriba, desglose abajo ===== */

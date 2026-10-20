@@ -186,6 +186,17 @@ export class DeudasMorosidad implements OnInit {
   exportMenuOpen = false;
   exportando = false;
 
+  // HU-093: tono de la etiqueta de estado compartida (styles.css). Dado de baja va en neutro,
+  // no en peligro: sigue debiendo, pero no es un problema deportivo sino que ya no juega.
+  tonoEstado(status: DebtorRow['status']): string {
+    switch (status) {
+      case 'suspended': return 'tono-peligro';
+      case 'partial': return 'tono-aviso';
+      case 'left': return 'tono-neutro';
+      default: return 'tono-exito';
+    }
+  }
+
   // HU-029: la tabla muestra solo a los alumnos deudores (api/pagos/player-accounts),
   // del que más cuotas debe al que menos (a igual cantidad, el de mayor monto primero).
   // allPendientes sigue cargándose aparte: alimenta el banner y el idCategoria del export.

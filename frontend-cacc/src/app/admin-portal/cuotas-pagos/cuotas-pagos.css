@@ -290,55 +290,11 @@
 /* ===== SUBMIT =====
    Botón compacto y firme, no una barra que ocupa todo el ancho: se ubica
    solo (columna "auto") a la derecha de la fila 2, a la misma altura que
-   los campos gracias a align-items: end en .form-row-action. */
+   los campos gracias a align-items: end en .form-row-action.
+   El aspecto viene de .boton-principal (styles.css); acá solo la altura de los campos. */
 .submit-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
     height: 44px;
     padding: 0 var(--space-5);
-    /* Verde institucional pleno (el mismo que ya usan los CTA del resto del
-       sistema), no la variante oscura del acento del panel: contra blanco da
-       más contraste y se siente "lleno", no apagado. */
-    background: var(--color-brand);
-    border: none;
-    border-radius: var(--radius-md);
-    color: var(--color-bg-card);
-    font-family: inherit;
-    font-size: var(--font-md);
-    font-weight: 700;
-    white-space: nowrap;
-    cursor: pointer;
-    box-shadow: var(--shadow-rest);
-    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
-}
-
-.submit-button svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-}
-
-.submit-button:hover:not(:disabled) {
-    background: var(--color-brand-hover);
-    box-shadow: var(--shadow-raised);
-    transform: translateY(-1px);
-}
-
-.submit-button:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: var(--shadow-rest);
-}
-
-.submit-button:focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-focus);
-}
-
-.submit-button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
 }
 
 /* Simulated confirmation: fades in, then fades out before being removed */
@@ -523,20 +479,6 @@
     color: inherit;
 }
 
-/* Botón de inscripción (violeta, mismo tamaño que el verde) */
-.submit-button-inscripcion {
-    background: var(--color-brand);
-}
-
-.submit-button-inscripcion:hover:not(:disabled) {
-    background: var(--color-brand-hover);
-    box-shadow: var(--shadow-raised);
-}
-
-.submit-button-inscripcion:focus-visible {
-    box-shadow: var(--shadow-focus);
-}
-
 /* ===== MAIN GRID ===== */
 .main-grid {
     display: grid;
@@ -665,26 +607,6 @@
     background: var(--action-bg);
     border-color: var(--action-accent);
     box-shadow: var(--shadow-focus);
-}
-
-.clear-filter-btn {
-    padding: 0 var(--space-3);
-    height: 38px;
-    background: transparent;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-base);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
-}
-
-.clear-filter-btn:hover {
-    border-color: var(--color-danger);
-    color: var(--color-danger);
-    background: var(--color-danger-bg);
 }
 
 .filter-count {
@@ -932,17 +854,10 @@
     }
 }
 
-/* Jugador dado de baja: se lista porque puede deber, con el mismo gris que en Deudas y Morosidad. */
+/* Jugador dado de baja: se lista porque puede deber. El aspecto viene de .etiqueta-estado (styles.css),
+   en neutro como en Deudas y Morosidad; acá solo su lugar al lado del nombre. */
 .tag-baja {
-    display: inline-block;
     margin-left: 6px;
-    padding: var(--space-1) var(--space-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    background: var(--color-bg-hover);
-    color: var(--color-text-muted);
-    font-size: var(--font-xs);
-    font-weight: 600;
     vertical-align: middle;
 }
 

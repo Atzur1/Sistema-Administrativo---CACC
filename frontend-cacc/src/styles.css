@@ -231,6 +231,183 @@ html, body {
 }
 
 /* =====================================================================
+   BOTONES Y ETIQUETAS DE ESTADO DEL PORTAL (HU-093)
+   Los botones de las pantallas del portal usan estas clases en vez de
+   definir los suyos. Tres variantes, combinables con dos modificadores:
+     <button class="boton boton-principal">   acción principal (Registrar pago, Guardar)
+     <button class="boton boton-secundario">  acción común (Exportar, Volver)
+     <button class="boton boton-fantasma">    acción menor (Cancelar, Limpiar filtros)
+     .es-peligro  la acción borra o corta algo: principal en rojo, las otras con texto rojo
+     .en-curso    la acción se está ejecutando: va siempre con [disabled] y con el texto
+                  que la describe ("Generando…"), así no se puede tocar dos veces.
+   Ejemplo: <button class="boton boton-secundario" [class.en-curso]="exportando"
+                    [disabled]="exportando" [attr.aria-busy]="exportando">
+              {{ exportando ? 'Generando…' : 'Exportar' }}
+            </button>
+   Nombres en castellano a propósito: .btn-primary ya existe en crear/restablecer
+   contraseña, que no es del portal, y una regla global la alteraría.
+   ===================================================================== */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: calc(var(--space-6) + var(--space-2)); /* 40px: área táctil mínima */
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-base);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.boton svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.boton:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.boton.en-curso {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+/* Rueda chica a la izquierda del texto mientras la acción está en curso */
+.boton.en-curso::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: botonGira 0.7s linear infinite;
+}
+
+@keyframes botonGira {
+  to { transform: rotate(360deg); }
+}
+
+/* Principal: fondo verde institucional */
+.boton-principal {
+  background: var(--action-accent);
+  color: var(--color-bg-card);
+  box-shadow: var(--shadow-rest);
+}
+
+.boton-principal:hover:not(:disabled) {
+  background: var(--action-accent-hover);
+  box-shadow: var(--shadow-raised);
+}
+
+.boton-principal:active:not(:disabled) {
+  box-shadow: none;
+}
+
+/* Secundario: blanco con borde */
+.boton-secundario {
+  background: var(--color-bg-card);
+  border-color: var(--action-border-strong);
+  color: var(--color-text-dark);
+}
+
+.boton-secundario:hover:not(:disabled) {
+  background: var(--color-brand-tint);
+  border-color: var(--action-accent);
+  color: var(--action-accent);
+}
+
+.boton-secundario:active:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+/* Fantasma: sin fondo ni borde hasta el hover */
+.boton-fantasma {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.boton-fantasma:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-dark);
+}
+
+.boton-fantasma:active:not(:disabled) {
+  background: var(--color-border);
+}
+
+/* Peligro: el principal pasa a rojo; secundario y fantasma, texto rojo */
+.boton-principal.es-peligro {
+  background: var(--color-danger-strong);
+}
+
+.boton-principal.es-peligro:hover:not(:disabled) {
+  background: var(--color-danger);
+}
+
+.boton-secundario.es-peligro,
+.boton-fantasma.es-peligro {
+  color: var(--color-danger-strong);
+}
+
+.boton-secundario.es-peligro {
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.boton-secundario.es-peligro:hover:not(:disabled),
+.boton-fantasma.es-peligro:hover:not(:disabled) {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-strong);
+  color: var(--color-danger-strong);
+}
+
+/* Etiqueta de estado: una pastilla con punto y cinco tonos.
+     <span class="etiqueta-estado tono-exito">Activo</span>
+   exito = todo bien (activo, al día, pagada) · aviso = requiere atención (parcial, falta activar)
+   peligro = problema (vencida, suspendido, anulado, de baja) · neutro = terminado o sin efecto
+   (cancelado, inactivo) · info = dato a futuro (programado) */
+.etiqueta-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.etiqueta-estado::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.tono-exito { background: var(--color-brand-tint); color: var(--color-brand-deep); }
+.tono-aviso { background: var(--aviso-bg); color: var(--aviso-texto); }
+.tono-peligro { background: var(--color-danger-bg); color: var(--color-danger); }
+.tono-neutro { background: var(--color-bg-page); color: var(--color-text-muted); }
+.tono-info { background: var(--color-info-bg); color: var(--color-info); }
+
+/* =====================================================================
    ANIMACIONES COMPARTIDAS
    Antes vivían duplicadas (o, en el caso de "barGrow", con el MISMO
    nombre pero comportamiento distinto en dos archivos - una colisión

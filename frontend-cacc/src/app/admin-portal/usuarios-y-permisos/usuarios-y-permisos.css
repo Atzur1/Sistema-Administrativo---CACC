@@ -451,39 +451,6 @@
     color: var(--color-info);
 }
 
-/* Estado de la cuenta: verde = activa, ámbar = falta que cree su contraseña, gris = inactiva. */
-.status {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    white-space: nowrap;
-    font-weight: 500;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: var(--radius-pill);
-    background: var(--color-brand);
-    flex-shrink: 0;
-}
-
-.status-pending {
-    color: var(--color-warning-text);
-}
-
-.status-pending .status-dot {
-    background: var(--aviso-punto);
-}
-
-.status-off {
-    color: var(--color-text-muted);
-}
-
-.status-off .status-dot {
-    background: #c4c7c4;
-}
-
 .cell-muted {
     color: var(--color-text-muted);
     padding: var(--space-4) var(--space-3);
@@ -654,72 +621,6 @@
    no se descubre — el SuperAdmin tiene que ver de entrada que puede corregir. */
 .icon-edit-visible {
     opacity: 1;
-}
-
-/* ===== BUTTONS ===== */
-.button-primary,
-.button-ghost,
-.button-danger,
-.button-void {
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-md);
-    font-family: inherit;
-    font-size: var(--font-base);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-.button-primary {
-    background: var(--color-brand);
-    border: none;
-    color: var(--color-bg-card);
-    box-shadow: var(--shadow-rest);
-}
-
-.button-primary:hover:not(:disabled) {
-    background: var(--color-brand-deep, var(--color-brand));
-    box-shadow: var(--shadow-raised);
-}
-
-.button-ghost {
-    background: transparent;
-    border: 1px solid var(--color-border);
-    color: var(--color-text-muted);
-}
-
-.button-ghost:hover:not(:disabled) {
-    background: var(--color-brand-tint);
-    color: var(--color-text);
-}
-
-.button-danger {
-    background: var(--color-danger-strong);
-    border: none;
-    color: var(--color-bg-card);
-}
-
-.button-danger:hover:not(:disabled) {
-    opacity: 0.9;
-}
-
-.button-void {
-    background: transparent;
-    border: 1px solid rgba(192, 57, 43, 0.35);
-    color: var(--color-danger-strong);
-}
-
-.button-void:hover:not(:disabled) {
-    background: var(--color-danger-bg);
-    border-color: var(--color-danger-strong);
-}
-
-.button-primary:disabled,
-.button-ghost:disabled,
-.button-danger:disabled,
-.button-void:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 /* ===== DIALOG (habilitar / deshabilitar) ===== */

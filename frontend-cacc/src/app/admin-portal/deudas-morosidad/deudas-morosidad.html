@@ -42,7 +42,8 @@
 
           <!-- HU-021: exporta la lista respetando el filtro de categoría activo -->
           <div class="export-wrap">
-            <button type="button" class="export-btn" (click)="toggleExportMenu()" [disabled]="exportando"
+            <button type="button" class="boton boton-principal" (click)="toggleExportMenu()" [disabled]="exportando"
+                    [class.en-curso]="exportando" [attr.aria-busy]="exportando"
                     [attr.aria-expanded]="exportMenuOpen">
               <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -106,7 +107,7 @@
           </div>
 
           @if (hayFiltrosActivos) {
-            <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">Limpiar filtros</button>
+            <button type="button" class="boton boton-fantasma clear-filter-btn" (click)="limpiarFiltros()">Limpiar filtros</button>
           }
         </div>
 
@@ -151,8 +152,8 @@
                   <td class="align-right cell-muted">{{ debtor.instalments }}</td>
                   <td class="align-right cell-debt">{{ debtor.debt }}</td>
                   <td>
-                    <span class="status-pill"
-                          [ngClass]="'status-' + debtor.status">{{ debtor.statusLabel }}</span>
+                    <span class="etiqueta-estado"
+                          [ngClass]="tonoEstado(debtor.status)">{{ debtor.statusLabel }}</span>
                   </td>
                 </tr>
               }
