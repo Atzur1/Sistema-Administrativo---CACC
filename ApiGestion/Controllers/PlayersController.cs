@@ -276,6 +276,8 @@ public class PlayersController : ControllerBase
             StartDate = discount.StartDate.ToString("yyyy-MM-dd"),
             EndDate = discount.EndDate.ToString("yyyy-MM-dd"),
             AssignmentDate = discount.AssignmentDate?.ToString("yyyy-MM-dd"),
+            ResponsableNombre = discount.ResponsableNombre,
+            ResponsableApellido = discount.ResponsableApellido,
             // The state the server resolved, and IsActive read off it. Both come
             // from the same value, so they cannot contradict each other.
             Status = discount.Status.ToString(),

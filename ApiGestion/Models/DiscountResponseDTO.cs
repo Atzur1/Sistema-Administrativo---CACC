@@ -29,6 +29,11 @@ public class DiscountResponseDTO
     // The day it was loaded, in yyyy-MM-dd (the system sets it). Null for the ones loaded before it was recorded.
     public string? AssignmentDate { get; set; }
 
+    // Who loaded it (name and surname, read from the audit trail); the client shows it as "Asignado por".
+    // Null for the ones loaded before the audit recorded it.
+    public string? ResponsableNombre { get; set; }
+    public string? ResponsableApellido { get; set; }
+
     // Where the benefit stands today: "Scheduled", "Active" or "Expired".
     //
     // The server resolves it against its own clock and it is the only thing the

@@ -199,6 +199,39 @@ public class PlayersControllerVoidDiscountTests
 
     // ---- Fakes ----
 
+    // El frontend arma "Asignado por" con estos dos campos: si la API no los devuelve, muestra "Sin registro histórico".
+    [Fact]
+    public void GetDiscountsByPlayer_ReturnsWhoLoadedTheBenefit()
+    {
+        var (controller, _) = CreateController(new Discount
+        {
+            Id = DiscountId,
+            PlayerId = PlayerId,
+            StartDate = new DateTime(2026, 10, 1),
+            EndDate = new DateTime(2026, 12, 31),
+            ResponsableNombre = "Super Admin",
+            ResponsableApellido = "Prueba",
+        });
+
+        var ok = Assert.IsType<OkObjectResult>(controller.GetDiscountsByPlayer(PlayerId));
+        var dto = Assert.Single(Assert.IsAssignableFrom<IEnumerable<DiscountResponseDTO>>(ok.Value));
+
+        Assert.Equal("Super Admin", dto.ResponsableNombre);
+        Assert.Equal("Prueba", dto.ResponsableApellido);
+    }
+
+    [Fact]
+    public void GetDiscountsByPlayer_WithoutAuditTrail_ReturnsNullResponsable()
+    {
+        var (controller, _) = CreateController(new Discount { Id = DiscountId, PlayerId = PlayerId, StartDate = new DateTime(2026, 10, 1), EndDate = new DateTime(2026, 12, 31) });
+
+        var ok = Assert.IsType<OkObjectResult>(controller.GetDiscountsByPlayer(PlayerId));
+        var dto = Assert.Single(Assert.IsAssignableFrom<IEnumerable<DiscountResponseDTO>>(ok.Value));
+
+        Assert.Null(dto.ResponsableNombre);
+        Assert.Null(dto.ResponsableApellido);
+    }
+
     private class FakeDiscountDao : DiscountDao
     {
         private readonly Discount? _stored;
