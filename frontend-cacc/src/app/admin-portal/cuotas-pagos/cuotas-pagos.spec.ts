@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NEVER, Observable, from, throwError } from 'rxjs';
 
-import { CuotasPagos } from './cuotas-pagos';
+import { CuotasPagos, mensajeSinInscripcion } from './cuotas-pagos';
 import { PagosService } from '../../services/pagos';
 import { ArancelesService } from '../../services/aranceles';
 import { NotificationService } from '../../shared/notifications/notification.service';
@@ -164,5 +164,19 @@ describe('CuotasPagos - carga y errores (HU-022)', () => {
     expect(pagosService.getPendientes).toHaveBeenCalledTimes(2);
     expect(fixture.nativeElement.querySelector('.load-error')).toBeNull();
     expect(textOf(fixture)).toContain('No hay cobros pendientes');
+  });
+});
+
+describe('mensajeSinInscripcion', () => {
+  it('si el arancel de inscripción de su género está en $0, dice que no se cobra', () => {
+    expect(mensajeSinInscripcion('Mujer, Prueba', 'Femenino', 0)).toBe(
+      'Mujer, Prueba no paga inscripción: la inscripción femenina está en $0 (no se cobra).',
+    );
+  });
+
+  it('sin arancel de inscripción cargado, lo dice como tal', () => {
+    expect(mensajeSinInscripcion('Varón, Prueba', 'Masculino', undefined)).toBe(
+      'Varón, Prueba no paga inscripción: no hay un arancel de inscripción vigente para su género.',
+    );
   });
 });

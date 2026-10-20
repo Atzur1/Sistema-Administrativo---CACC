@@ -389,7 +389,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
             this.inscripcionMontoDisplay = monto.toLocaleString('es-AR');
             this.notifications.notify(`${nombre} no tiene inscripción registrada. Se generará al registrar el primer pago.`, 'cancelled');
           } else {
-            this.notifications.notify(`${nombre} no paga inscripción: no hay un arancel de inscripción vigente para su género.`, 'cancelled');
+            this.notifications.notify(mensajeSinInscripcion(nombre, genero, vigente), 'cancelled');
           }
         }
       },
@@ -680,6 +680,14 @@ export class CuotasPagos implements OnInit, OnDestroy {
 // como el caracter combinante real en vez del patrón de regex.
 const DIACRITICS_PATTERN = String.fromCharCode(91, 92, 117, 48, 51, 48, 48, 45, 92, 117, 48, 51, 54, 102, 93);
 const DIACRITICS_REGEX = new RegExp(DIACRITICS_PATTERN, 'g');
+
+// Un arancel de inscripción en $0 existe: ese género simplemente no la paga. "Sin arancel cargado" es otro caso.
+export function mensajeSinInscripcion(nombre: string, genero: EnrollmentFeeGender, vigente: number | undefined): string {
+  if (vigente === 0) {
+    return `${nombre} no paga inscripción: la inscripción ${genero === 'Femenino' ? 'femenina' : 'masculina'} está en $0 (no se cobra).`;
+  }
+  return `${nombre} no paga inscripción: no hay un arancel de inscripción vigente para su género.`;
+}
 
 function normalizeTexto(texto: string): string {
   return texto.normalize('NFD').replace(DIACRITICS_REGEX, '');
