@@ -319,6 +319,103 @@ public class PlayerDAO
         return pendientes.Count;
     }
 
+    // Inscripción ANUAL (ver EntityLibrary.InscripcionAnual): cada jugador activo recibe una nueva cuando se cumple un año de
+    // su última inscripción (o de su alta, si nunca tuvo una). Se emite con vencimiento el día del aniversario y con el
+    // arancel de inscripción de su género que rige hoy; un género sin arancel o con $0 no paga. Quien está de baja no recibe la
+    // siguiente: solo cuenta hasta terminar el año que ya tenía. Es idempotente: una vez emitida, el último vencimiento pasa
+    // a ser el aniversario y no vuelve a salir hasta el año siguiente. Devuelve cuántas generó.
+    public virtual int GenerarInscripcionesAnuales()
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        using SqlTransaction transaction = connection.BeginTransaction();
+        BloqueoEscrituraPagos.Tomar(connection, transaction);
+
+        try
+        {
+            int generadas = GenerarInscripcionesAnuales(connection, transaction, RelojNegocio.Hoy);
+            transaction.Commit();
+            return generadas;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    internal static int GenerarInscripcionesAnuales(SqlConnection connection, SqlTransaction transaction, DateTime hoy)
+    {
+        string query = $@"
+            SELECT j.PK_id_jugador, f.monto, f.vigente_desde, COALESCE(u.ultima, j.fecha_alta) AS ancla
+            FROM JUGADORES j
+            JOIN PERSONAS p ON p.PK_id_persona = j.FK_id_persona
+            JOIN ({EnrollmentFeeDAO.SelectWithStatus}) f ON f.genero = p.genero AND f.estado = 1 AND f.monto > 0
+            OUTER APPLY (
+                SELECT MAX(pg.fecha_vencimiento) AS ultima FROM PAGOS pg
+                WHERE pg.FK_id_jugador = j.PK_id_jugador AND pg.concepto = @concepto
+            ) u
+            WHERE j.fecha_baja IS NULL;";
+
+        List<(int IdJugador, decimal Monto, DateTime Aniversario)> pendientes = new();
+        using (SqlCommand command = new SqlCommand(query, connection, transaction))
+        {
+            command.Parameters.AddWithValue("@concepto", EnrollmentFeeConcept);
+            using SqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                if (reader.IsDBNull(3)) continue;
+
+                DateTime? aniversario = InscripcionAnual.UltimoAniversario(reader.GetDateTime(3), hoy);
+                // Que ya haya llegado, pero no hace tanto (ni antes de que rigiera el arancel actual): un año viejo no se cobra ahora.
+                if (aniversario == null
+                    || (hoy.Date - aniversario.Value).Days > InscripcionAnual.DiasParaEmitir
+                    || reader.GetDateTime(2).Date > aniversario.Value)
+                {
+                    continue;
+                }
+                pendientes.Add((reader.GetInt32(0), reader.GetDecimal(1), aniversario.Value));
+            }
+        }
+
+        foreach (var (idJugador, monto, aniversario) in pendientes)
+        {
+            InsertPendingCharge(connection, transaction, idJugador, monto, aniversario, EnrollmentFeeConcept);
+        }
+        return pendientes.Count;
+    }
+
+    // Reingreso de un jugador dado de baja: si todavía está dentro del año de su última inscripción (o, si nunca tuvo una, del año
+    // de su alta anterior) no la paga de nuevo; si ese año ya terminó, empieza un año nuevo hoy y se le asigna la inscripción de su
+    // género que rige.
+    internal static bool GenerarInscripcionAlReingreso(SqlConnection connection, SqlTransaction transaction, int idJugador, DateTime hoy, DateTime? altaAnterior)
+    {
+        const string query = $@"
+            SELECT f.monto, u.ultima
+            FROM JUGADORES j
+            JOIN PERSONAS p ON p.PK_id_persona = j.FK_id_persona
+            JOIN ({EnrollmentFeeDAO.SelectWithStatus}) f ON f.genero = p.genero AND f.estado = 1 AND f.monto > 0
+            OUTER APPLY (
+                SELECT MAX(pg.fecha_vencimiento) AS ultima FROM PAGOS pg
+                WHERE pg.FK_id_jugador = j.PK_id_jugador AND pg.concepto = @concepto
+            ) u
+            WHERE j.PK_id_jugador = @id;";
+
+        decimal monto;
+        using (SqlCommand command = new SqlCommand(query, connection, transaction))
+        {
+            command.Parameters.AddWithValue("@concepto", EnrollmentFeeConcept);
+            command.Parameters.AddWithValue("@id", idJugador);
+            using SqlDataReader reader = command.ExecuteReader();
+            if (!reader.Read()) return false; // su género no paga inscripción
+            DateTime? inicioDelAnio = reader.IsDBNull(1) ? altaAnterior : reader.GetDateTime(1);
+            if (inicioDelAnio != null && InscripcionAnual.Cubre(inicioDelAnio.Value, hoy)) return false; // sigue en su año
+            monto = reader.GetDecimal(0);
+        }
+
+        InsertPendingCharge(connection, transaction, idJugador, monto, hoy.Date, EnrollmentFeeConcept);
+        return true;
+    }
+
     internal static CargosGenerados GenerarCargos(SqlConnection connection, SqlTransaction transaction, int idJugador,
         decimal? montoCuota, DateTime primerDiaDelMes, decimal? montoInscripcion, DateTime fechaInscripcion)
     {

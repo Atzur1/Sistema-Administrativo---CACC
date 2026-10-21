@@ -71,6 +71,24 @@ public sealed class GeneradorCuotasMensuales : BackgroundService
         {
             _logger.LogError(ex, "No se pudieron generar las inscripciones programadas; se reintenta en el próximo turno.");
         }
+
+        GenerarInscripcionesAnuales();
+    }
+
+    // La inscripción es anual: cada jugador activo recibe la siguiente al cumplirse el año de la anterior (ver
+    // PlayerDAO.GenerarInscripcionesAnuales). Es idempotente.
+    internal void GenerarInscripcionesAnuales()
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            int generadas = scope.ServiceProvider.GetRequiredService<PlayerDAO>().GenerarInscripcionesAnuales();
+            if (generadas > 0) _logger.LogInformation("Se generaron {Cantidad} inscripciones anuales.", generadas);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "No se pudieron generar las inscripciones anuales; se reintenta en el próximo turno.");
+        }
     }
 
     private static async Task<bool> SiguienteTurnoAsync(PeriodicTimer timer, CancellationToken cancellationToken)

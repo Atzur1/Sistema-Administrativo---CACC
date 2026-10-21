@@ -79,6 +79,17 @@ las mujeres en $0) o que todavía no se generan las cuotas del mes.
 **Si la llamada falla, el alta del Deportivo no se deshace.** La cuota sale con la próxima generación mensual (al iniciar la API del Administrativo y cada
 6 horas) y la inscripción se genera al registrar el primer pago, con el monto correcto. Cuando el Administrativo vuelve, se puede repetir la llamada.
 
+## La inscripción es anual
+Cada jugador paga **una inscripción por año**. Su año empieza el día en que se le asignó la inscripción (su alta) y se renueva sola en cada aniversario, con el arancel de
+inscripción de su género que rige ese día (con $0 o sin arancel no se cobra). La emite el mismo proceso automático que genera las cuotas (al iniciar la API y cada 6 horas),
+solo para jugadores activos. No hay una fecha única para todo el club: cada jugador tiene la suya.
+- **Baja:** sigue cubierto hasta que termina su año y no se le asigna la siguiente.
+- **Reingreso:** si vuelve dentro de su año no la paga de nuevo; si ese año ya terminó, empieza uno nuevo ese día con el arancel vigente.
+- **Sin pagar:** si el año anterior quedó impago y llega el aniversario, conviven las dos; se cobra primero la más vieja, como las cuotas.
+- **API apagada:** la inscripción se emite hasta 31 días después del aniversario; pasado ese plazo ese año no se cobra y la siguiente sale al año siguiente.
+- Cada inscripción queda en `PAGOS` con `fecha_vencimiento` = el día en que empieza su año, que la identifica.
+- Para el Portal Deportivo no cambia el contrato: `cargos-alta` genera la del primer año y nada más.
+
 ## Inscripción que empieza a regir después de que el jugador entró
 Si un jugador entra cuando su género todavía no tiene inscripción en vigencia (nunca se cargó, o está en $0) pero **ya hay una programada con fecha futura**,
 el Administrativo se la genera **el día en que empieza a regir**, como deuda pendiente con vencimiento ese día. Lo hace el proceso automático que ya emite las

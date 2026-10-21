@@ -23,7 +23,9 @@ public class EnrollmentDAO
         _connectionString = connectionString;
     }
 
-    // Null when the player was never charged an enrollment fee: women's squad, or
+    // La inscripción es anual: un jugador tiene una por año (cada una identificada por su fecha de vencimiento, el día
+    // en que empieza su año). Acá se devuelve la que corresponde atender: la más vieja que todavía tiene saldo, o, si
+    // todas están pagas, la última. Null when the player was never charged an enrollment fee: women's squad, or
     // players registered before HU-033.
     public virtual Enrollment? GetEnrollmentByPlayerId(long playerId)
     {
@@ -39,16 +41,22 @@ public class EnrollmentDAO
         command.Parameters.AddWithValue("@playerId", playerId);
         command.Parameters.AddWithValue("@concept", EnrollmentConcept);
 
-        Enrollment? enrollment = null;
+        // Un Enrollment por año (fecha de vencimiento), en el orden en que se emitieron
+        Dictionary<DateTime, Enrollment> porAnio = new();
         using SqlDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
-            enrollment ??= new Enrollment
+            DateTime dueDate = Convert.ToDateTime(reader["fecha_vencimiento"]).Date;
+            if (!porAnio.TryGetValue(dueDate, out Enrollment? enrollment))
             {
-                PlayerId = playerId,
-                Amount = Convert.ToDecimal(reader["monto_base"]),
-                DueDate = Convert.ToDateTime(reader["fecha_vencimiento"])
-            };
+                enrollment = new Enrollment
+                {
+                    PlayerId = playerId,
+                    Amount = Convert.ToDecimal(reader["monto_base"]),
+                    DueDate = dueDate
+                };
+                porAnio[dueDate] = enrollment;
+            }
 
             bool isPaid = Convert.ToBoolean(reader["estado"]);
             if (isPaid)
@@ -67,7 +75,8 @@ public class EnrollmentDAO
             }
         }
 
-        return enrollment;
+        return porAnio.OrderBy(a => a.Key).Select(a => a.Value).FirstOrDefault(e => e.PendingBalance > 0)
+            ?? porAnio.OrderBy(a => a.Key).Select(a => a.Value).LastOrDefault();
     }
 
     // Returns null when, by the time the pending row is locked, there is no balance
@@ -84,9 +93,10 @@ public class EnrollmentDAO
         try
         {
             string pendingQuery = @"
-                SELECT PK_id_pago, monto_base, monto_final, fecha_vencimiento
+                SELECT TOP (1) PK_id_pago, monto_base, monto_final, fecha_vencimiento
                 FROM PAGOS WITH (UPDLOCK, HOLDLOCK)
-                WHERE FK_id_jugador = @playerId AND concepto = @concept AND estado = 0;";
+                WHERE FK_id_jugador = @playerId AND concepto = @concept AND estado = 0
+                ORDER BY fecha_vencimiento, PK_id_pago;";
 
             bool found = false;
             long pendingId = 0;

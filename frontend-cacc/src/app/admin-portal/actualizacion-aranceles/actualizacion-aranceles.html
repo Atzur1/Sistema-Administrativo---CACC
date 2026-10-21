@@ -13,11 +13,13 @@
 
     <div class="header-text">
       <h1 class="header-title">Actualización de Aranceles</h1>
-      <span class="header-subtitle">Definí y programá los valores de cuota del club</span>
+      <span class="header-subtitle">{{ vista === 'inscripcion'
+        ? 'Definí y programá el valor de la inscripción: se cobra una vez por año a cada jugador'
+        : 'Definí y programá los valores de la cuota mensual del club' }}</span>
     </div>
 
     <div class="header-metrics">
-      @for (metric of headerMetrics; track metric.label) {
+      @for (metric of metricasVista; track metric.label) {
         <div class="header-metric">
           <span class="header-metric-value">{{ metric.value }}</span>
           <span class="header-metric-label">{{ metric.label }}</span>
@@ -27,6 +29,20 @@
   </header>
 
   <div class="header-divider"></div>
+
+  <!-- ===== CUOTA MENSUAL / INSCRIPCIÓN: dos conceptos distintos en el mismo tablero ===== -->
+  <nav class="view-tabs" role="tablist" aria-label="Tipo de arancel">
+    <button type="button" role="tab" class="view-tab" [class.active]="vista === 'cuota'"
+            [attr.aria-selected]="vista === 'cuota'" (click)="setVista('cuota')">
+      <span class="view-tab-title">Cuota mensual</span>
+      <span class="view-tab-hint">Se cobra todos los meses</span>
+    </button>
+    <button type="button" role="tab" class="view-tab" [class.active]="vista === 'inscripcion'"
+            [attr.aria-selected]="vista === 'inscripcion'" (click)="setVista('inscripcion')">
+      <span class="view-tab-title">Inscripción</span>
+      <span class="view-tab-hint">Se cobra una vez por año a cada jugador</span>
+    </button>
+  </nav>
 
   <!-- ===== SCHEDULING FORM ===== -->
   <section class="form-panel">
@@ -39,7 +55,7 @@
         </svg>
       </span>
       <div class="form-head-text">
-        <h2 class="form-title">Programar nuevo arancel</h2>
+        <h2 class="form-title">{{ vista === 'inscripcion' ? 'Programar nueva inscripción' : 'Programar nueva cuota mensual' }}</h2>
         <span class="form-subtitle">{{ formSubtitle }}</span>
       </div>
     </header>
@@ -47,8 +63,9 @@
     <form class="form-grid" [formGroup]="feeForm" (ngSubmit)="onSubmit()">
 
       <div class="field">
-        <label class="field-label" for="target">Aplicar a</label>
-        <app-custom-select id="target" [options]="targets" placeholder="Seleccionar género o categoría"
+        <label class="field-label" for="target">{{ vista === 'inscripcion' ? 'Género' : 'Aplicar a' }}</label>
+        <app-custom-select id="target" [options]="targetsVista"
+                            [placeholder]="vista === 'inscripcion' ? 'Seleccionar género' : 'Seleccionar género o categoría'"
                             formControlName="target"></app-custom-select>
       </div>
 
@@ -75,12 +92,19 @@
 
       <div class="submit-row action-with-help">
         <button type="submit" class="submit-button" [disabled]="feeForm.invalid || enviando">
-          Programar actualización
+          {{ vista === 'inscripcion' ? 'Programar inscripción' : 'Programar actualización' }}
         </button>
-        <app-help-hint
-          label="Programar actualización"
-          text="Carga el nuevo monto de la cuota desde la fecha elegida. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago. No se pueden programar fechas pasadas. Solo puede haber un arancel por mes para el mismo género o categoría."
-        />
+        @if (vista === 'inscripcion') {
+          <app-help-hint
+            label="Programar inscripción"
+            text="Carga el valor de la inscripción desde la fecha elegida. Se cobra una vez por año a cada jugador y no cambia lo que ya pagó: la renovación de cada uno usa el valor vigente el día de su aniversario. Con $0 ese género deja de pagarla. Si la programás para una fecha futura, también la paga quien entre desde hoy hasta esa fecha: se le genera el día que empieza a regir. No se pueden programar fechas pasadas."
+          />
+        } @else {
+          <app-help-hint
+            label="Programar actualización"
+            text="Carga el nuevo monto de la cuota desde la fecha elegida. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago. No se pueden programar fechas pasadas. Solo puede haber un arancel por mes para el mismo género o categoría."
+          />
+        }
       </div>
 
     </form>
@@ -92,15 +116,17 @@
     <!-- Every fee change, newest first, both categories in a single table -->
     <article class="panel panel-history">
       <header class="panel-head">
-        <h2 class="panel-title">Historial y aranceles programados</h2>
-        <span class="panel-subtitle">Todos los cambios de cuota (por género y por categoría), del más reciente al más antiguo</span>
+        <h2 class="panel-title">{{ vista === 'inscripcion' ? 'Historial de la inscripción' : 'Historial y aranceles programados' }}</h2>
+        <span class="panel-subtitle">{{ vista === 'inscripcion'
+          ? 'Todos los cambios de la inscripción por género, del más reciente al más antiguo'
+          : 'Todos los cambios de cuota (por género y por categoría), del más reciente al más antiguo' }}</span>
       </header>
 
       <div class="table-wrapper">
         <table class="fees-table">
           <thead>
             <tr>
-              <th>Género / categoría</th>
+              <th>{{ vista === 'inscripcion' ? 'Género' : 'Género / categoría' }}</th>
               <th>Monto</th>
               <th>Vigente desde</th>
               <th>Reemplazado el</th>
@@ -110,7 +136,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (row of feeRows; track row.id) {
+            @for (row of filasVista; track row.id) {
               <tr>
                 <td>
                   <span class="category-pill" [ngClass]="'category-' + row.category">
@@ -145,19 +171,37 @@
     </article>
 
     <!-- Both series over the season, read off the same history as the table -->
-    <article class="panel panel-evolution">
-      <header class="panel-head">
-        <h2 class="panel-title">Evolución de aranceles</h2>
-        <span class="panel-subtitle">Comparativa masculino vs femenino — temporada 2026</span>
-      </header>
+    @if (vista === 'cuota') {
+      <article class="panel panel-evolution">
+        <header class="panel-head">
+          <h2 class="panel-title">Evolución de aranceles</h2>
+          <span class="panel-subtitle">Comparativa masculino vs femenino — temporada 2026</span>
+        </header>
 
-      <div class="evolution-canvas">
-        <canvas baseChart
-                type="line"
-                [data]="feeChartData"
-                [options]="feeChartOptions"></canvas>
-      </div>
-    </article>
+        <div class="evolution-canvas">
+          <canvas baseChart
+                  type="line"
+                  [data]="feeChartData"
+                  [options]="feeChartOptions"></canvas>
+        </div>
+      </article>
+    } @else {
+      <article class="panel panel-evolution panel-info">
+        <header class="panel-head">
+          <h2 class="panel-title">Cómo funciona la inscripción</h2>
+          <span class="panel-subtitle">Es distinta de la cuota mensual</span>
+        </header>
+
+        <ul class="info-list">
+          <li>Se cobra <strong>una vez por año</strong> a cada jugador. Su año empieza el día en que se le asignó la inscripción (su alta) y se renueva sola en cada aniversario, con el valor de su género vigente ese día.</li>
+          <li>Quien se da de <strong>baja</strong> sigue cubierto hasta que termine su año y no se le asigna la siguiente. Si <strong>vuelve dentro de ese año</strong> no la paga de nuevo; si vuelve después, empieza un año nuevo.</li>
+          <li>Con <strong>$0</strong> ese género no la paga (hoy, las mujeres).</li>
+          <li>Un cambio de valor <strong>no es retroactivo</strong>: no modifica lo que un jugador ya pagó ni lo que ya tiene pendiente.</li>
+          <li>Si programás una inscripción para una <strong>fecha futura</strong>, quien entre desde hoy hasta esa fecha la paga: se le genera el día que empieza a regir. Quien ya estaba en el club no.</li>
+          <li>Se paga y se anula desde <strong>Cuotas y Pagos</strong>, igual que cualquier otra deuda.</li>
+        </ul>
+      </article>
+    }
   </section>
 
   <!-- ===== CONFIRMAR CANCELACIÓN DE UN ARANCEL ===== -->

@@ -55,7 +55,7 @@ namespace ServiceLibrary
 
             if (inscripcion.PendingBalance == 0)
             {
-                return Falla(TipoResultado.Invalido, "La inscripción de este jugador ya está totalmente pagada.");
+                return Falla(TipoResultado.Invalido, "La inscripción de este jugador ya está totalmente pagada. La del año siguiente se genera sola cuando se cumple el año.");
             }
             if (monto > inscripcion.PendingBalance)
             {

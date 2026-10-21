@@ -145,7 +145,8 @@ namespace DaoLibrary
         // Vuelve a dejar activo a un jugador dado de baja. Se toma como un reingreso: la fecha de alta pasa a ser
         // hoy (la anterior queda en Auditoría), así los meses en que estuvo afuera nunca cuentan como cuotas
         // faltantes. Si ya pasó el día 10, se le emite la cuota del mes en curso en el momento; si no, se la
-        // genera el generador mensual el 10, como a todos.
+        // genera el generador mensual el 10, como a todos. La inscripción es anual: si vuelve dentro del año de su última
+        // inscripción no la paga de nuevo; si ese año ya terminó, se le asigna una nueva con la fecha de hoy.
         public bool Reactivar(int idJugador)
         {
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
@@ -166,6 +167,15 @@ namespace DaoLibrary
 
         internal static bool ReactivarCore(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime hoy)
         {
+            // La fecha de alta anterior define el año de la inscripción de quien nunca tuvo una: se lee antes de que el reingreso la pise.
+            DateTime? altaAnterior;
+            using (SqlCommand leer = new SqlCommand("SELECT fecha_alta FROM JUGADORES WHERE PK_id_jugador = @id", conexion, transaccion))
+            {
+                leer.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
+                object? valor = leer.ExecuteScalar();
+                altaAnterior = valor is DateTime fecha ? fecha : null;
+            }
+
             using (SqlCommand comando = new SqlCommand(
                 "UPDATE JUGADORES SET fecha_baja = NULL, fecha_alta = @hoy WHERE PK_id_jugador = @id AND fecha_baja IS NOT NULL",
                 conexion, transaccion))
@@ -182,6 +192,9 @@ namespace DaoLibrary
             {
                 SqlCuotaMensual.Generar(conexion, transaccion, null, null, idJugador, hoy.Month, hoy.Year);
             }
+
+            // La inscripción es anual: dentro del año de la última no se vuelve a pagar; fuera de él empieza un año nuevo.
+            PlayerDAO.GenerarInscripcionAlReingreso(conexion, transaccion, idJugador, hoy, altaAnterior);
             return true;
         }
 
