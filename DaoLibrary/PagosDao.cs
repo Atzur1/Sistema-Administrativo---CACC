@@ -367,13 +367,14 @@ namespace DaoLibrary
 
         public IReadOnlyList<Pago> ObtenerFilasDeLaMismaDeuda(SqlConnection conexion, SqlTransaction transaccion, Pago pago)
         {
-            // Inscripción: una sola por jugador. Cuota: el mismo mes de fecha_vencimiento (el período).
+            // Inscripción: la del mismo año (su fecha_vencimiento exacta; hay una por año). Cuota: el mismo mes de
+            // fecha_vencimiento (el período). Un pago histórico de inscripción sin fecha no tiene año: se toma todo.
             string query = $@"
                 SELECT {ColumnasPagoCompleto}
                 FROM PAGOS WITH (UPDLOCK, HOLDLOCK)
                 WHERE FK_id_jugador = @idJugador AND concepto = @concepto
-                  AND (@concepto = 'Inscripcion'
-                       OR (fecha_vencimiento >= @inicio AND fecha_vencimiento < @fin))";
+                  AND ((@concepto = 'Inscripcion' AND (@exacta IS NULL OR fecha_vencimiento = @exacta))
+                       OR (@concepto <> 'Inscripcion' AND fecha_vencimiento >= @inicio AND fecha_vencimiento < @fin))";
 
             DateTime inicio = pago.FechaVencimiento.HasValue
                 ? new DateTime(pago.FechaVencimiento.Value.Year, pago.FechaVencimiento.Value.Month, 1)
@@ -382,6 +383,7 @@ namespace DaoLibrary
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
             comando.Parameters.Add("@idJugador", System.Data.SqlDbType.Int).Value = pago.IdJugador;
             comando.Parameters.Add("@concepto", System.Data.SqlDbType.VarChar, 20).Value = pago.Concepto ?? "Cuota";
+            comando.Parameters.Add("@exacta", System.Data.SqlDbType.Date).Value = pago.FechaVencimiento.HasValue ? pago.FechaVencimiento.Value.Date : DBNull.Value;
             comando.Parameters.Add("@inicio", System.Data.SqlDbType.Date).Value = pago.FechaVencimiento.HasValue ? inicio : DBNull.Value;
             comando.Parameters.Add("@fin", System.Data.SqlDbType.Date).Value = pago.FechaVencimiento.HasValue ? inicio.AddMonths(1) : DBNull.Value;
 

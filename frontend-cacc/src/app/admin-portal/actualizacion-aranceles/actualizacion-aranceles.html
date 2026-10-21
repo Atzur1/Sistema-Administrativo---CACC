@@ -14,7 +14,7 @@
     <div class="header-text">
       <h1 class="header-title">Actualización de Aranceles</h1>
       <span class="header-subtitle">{{ vista === 'inscripcion'
-        ? 'Definí y programá el valor de la inscripción: se cobra una sola vez, al dar de alta al jugador'
+        ? 'Definí y programá el valor de la inscripción: se cobra una vez por año a cada jugador'
         : 'Definí y programá los valores de la cuota mensual del club' }}</span>
     </div>
 
@@ -40,7 +40,7 @@
     <button type="button" role="tab" class="view-tab" [class.active]="vista === 'inscripcion'"
             [attr.aria-selected]="vista === 'inscripcion'" (click)="setVista('inscripcion')">
       <span class="view-tab-title">Inscripción</span>
-      <span class="view-tab-hint">Se cobra una sola vez, al dar de alta</span>
+      <span class="view-tab-hint">Se cobra una vez por año a cada jugador</span>
     </button>
   </nav>
 
@@ -97,7 +97,7 @@
         @if (vista === 'inscripcion') {
           <app-help-hint
             label="Programar inscripción"
-            text="Carga el valor de la inscripción desde la fecha elegida. Se cobra una sola vez, al dar de alta al jugador, y no cambia lo que ya pagó. Con $0 ese género deja de pagarla. Si la programás para una fecha futura, también la paga quien entre desde hoy hasta esa fecha: se le genera el día que empieza a regir. No se pueden programar fechas pasadas."
+            text="Carga el valor de la inscripción desde la fecha elegida. Se cobra una vez por año a cada jugador y no cambia lo que ya pagó: la renovación de cada uno usa el valor vigente el día de su aniversario. Con $0 ese género deja de pagarla. Si la programás para una fecha futura, también la paga quien entre desde hoy hasta esa fecha: se le genera el día que empieza a regir. No se pueden programar fechas pasadas."
           />
         } @else {
           <app-help-hint
@@ -193,7 +193,8 @@
         </header>
 
         <ul class="info-list">
-          <li>Se cobra <strong>una sola vez</strong>, al dar de alta al jugador, con el valor de su género vigente ese día.</li>
+          <li>Se cobra <strong>una vez por año</strong> a cada jugador. Su año empieza el día en que se le asignó la inscripción (su alta) y se renueva sola en cada aniversario, con el valor de su género vigente ese día.</li>
+          <li>Quien se da de <strong>baja</strong> sigue cubierto hasta que termine su año y no se le asigna la siguiente. Si <strong>vuelve dentro de ese año</strong> no la paga de nuevo; si vuelve después, empieza un año nuevo.</li>
           <li>Con <strong>$0</strong> ese género no la paga (hoy, las mujeres).</li>
           <li>Un cambio de valor <strong>no es retroactivo</strong>: no modifica lo que un jugador ya pagó ni lo que ya tiene pendiente.</li>
           <li>Si programás una inscripción para una <strong>fecha futura</strong>, quien entre desde hoy hasta esa fecha la paga: se le genera el día que empieza a regir. Quien ya estaba en el club no.</li>

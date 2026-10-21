@@ -173,7 +173,7 @@ describe('ActualizacionAranceles - cuota mensual e inscripción en pestañas sep
     const { component } = crear();
     component.setVista('inscripcion');
 
-    expect(component.formSubtitle).toContain('una sola vez');
+    expect(component.formSubtitle).toContain('una vez por año');
   });
 
   it('desde la pestaña de inscripción se programa la inscripción, no una cuota', () => {

@@ -74,7 +74,7 @@ export class ActualizacionAranceles implements OnInit {
     ];
 
     // La cuota mensual y la inscripción son dos cosas distintas con sus propios valores, formulario e historial,
-    // aunque comparten el tablero. La inscripción se cobra una sola vez, al dar de alta al jugador.
+    // aunque comparten el tablero. La inscripción se cobra una vez por año a cada jugador (su año empieza el día de su alta).
     vista: 'cuota' | 'inscripcion' = 'cuota';
 
     enviando = false;
@@ -401,13 +401,13 @@ export class ActualizacionAranceles implements OnInit {
     get formSubtitle(): string {
         const target = this.feeForm.get('target')?.value;
         if (this.vista === 'inscripcion' && !String(target).startsWith('inscripcion:')) {
-            return 'Elegí el género y definí el valor de la inscripción. Se cobra una sola vez, al dar de alta al jugador; con $0 ese género deja de pagarla.';
+            return 'Elegí el género y definí el valor de la inscripción. Se cobra una vez por año a cada jugador; con $0 ese género deja de pagarla.';
         }
         if (target === 'inscripcion:Masculino') {
-            return 'Definí el próximo valor de la inscripción masculina. Solo se cobra una vez, al dar de alta al jugador.';
+            return 'Definí el próximo valor de la inscripción masculina. Se cobra una vez por año a cada jugador, y cada renovación usa el valor vigente el día de su aniversario.';
         }
         if (target === 'inscripcion:Femenino') {
-            return 'Hoy las mujeres no pagan inscripción. Si el club decide cobrarla, programá acá su valor; con $0 deja de cobrarse. Solo se cobra una vez, al dar de alta a la jugadora.';
+            return 'Hoy las mujeres no pagan inscripción. Si el club decide cobrarla, programá acá su valor; con $0 deja de cobrarse. Se cobra una vez por año a cada jugadora, y cada renovación usa el valor vigente el día de su aniversario.';
         }
         if (typeof target === 'string' && target.startsWith('categoria:')) {
             return 'Definí la cuota de esta categoría. Reemplaza al arancel de género para sus jugadores, sea cual sea su género. Los cambios no son retroactivos.';
