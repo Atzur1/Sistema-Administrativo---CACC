@@ -104,26 +104,66 @@ describe('RecaudacionMensual - filtros', () => {
     expect(llamadas.at(-1)!.idCategoria).toBe(5);
   });
 
-  it('las flechas recorren los meses, cruzando el año hacia atrás', async () => {
+  // HU-070: el período se elige con dos desplegables, Mes y Año, y arranca en el mes y año actuales.
+  it('arranca en el mes y el año actuales', async () => {
+    const hoy = new Date();
     const { component } = await crear([]);
-    component.mesSeleccionado = 'Enero';
-    component.anioSeleccionado = 2026;
 
-    component.mesAnterior();
-    expect(component.periodoLabel).toBe('Diciembre 2025');
-    expect(llamadas.at(-1)).toMatchObject({ anio: 2025, mes: 12 });
+    expect(llamadas[0]).toMatchObject({ anio: hoy.getFullYear(), mes: hoy.getMonth() + 1 });
+    expect(component.anioSeleccionado).toBe(hoy.getFullYear());
+  });
+
+  it('elegir otro mes o año consulta al instante', async () => {
+    const anterior = new Date().getFullYear() - 1;
+    const { component } = await crear([]);
+
+    component.onAnioChange(anterior);
+    expect(llamadas.at(-1)).toMatchObject({ anio: anterior });
+    component.onMesChange('Marzo');
+    expect(llamadas.at(-1)).toMatchObject({ anio: anterior, mes: 3 });
+    expect(component.periodoLabel).toBe(`Marzo ${anterior}`);
     await espera();
   });
 
-  it('no se puede avanzar más allá del mes actual', async () => {
+  it('volver a elegir el mismo período no repite la consulta', async () => {
     const { component } = await crear([]);
-    expect(component.puedeAvanzar).toBe(false);
+    const antes = llamadas.length;
 
-    component.mesAnterior();
-    expect(component.puedeAvanzar).toBe(true);
-    component.mesSiguiente();
-    expect(component.puedeAvanzar).toBe(false);
+    component.onMesChange(component.mesSeleccionado);
+    component.onAnioChange(component.anioSeleccionado);
+
+    expect(llamadas.length).toBe(antes);
+  });
+
+  it('en el año en curso no se ofrecen meses que todavía no llegaron', async () => {
+    const hoy = new Date();
+    const { component } = await crear([]);
+
+    expect(component.mesesOpciones).toHaveLength(hoy.getMonth() + 1);
+    component.onAnioChange(hoy.getFullYear() - 1);
+    expect(component.mesesOpciones).toHaveLength(12);
+    expect(component.aniosOpciones[0].value).toBe(hoy.getFullYear());
     await espera();
+  });
+
+  it('al pasar al año en curso con un mes futuro, se queda en el mes actual', async () => {
+    const hoy = new Date();
+    const { component } = await crear([]);
+    component.onAnioChange(hoy.getFullYear() - 1);
+    component.onMesChange('Diciembre');
+
+    component.onAnioChange(hoy.getFullYear());
+
+    expect(llamadas.at(-1)).toMatchObject({ anio: hoy.getFullYear(), mes: hoy.getMonth() + 1 });
+    await espera();
+  });
+
+  it('los desplegables de Mes y Año están en la barra de filtros, sin flechas', async () => {
+    const { el } = await crear([]);
+
+    expect(el.querySelector('.field-mes app-custom-select')).not.toBeNull();
+    expect(el.querySelector('.field-anio app-custom-select')).not.toBeNull();
+    expect(el.querySelector('.mes-flecha')).toBeNull();
   });
 
   it('el monto va a la derecha y cada medio de pago tiene su color', async () => {
@@ -135,5 +175,45 @@ describe('RecaudacionMensual - filtros', () => {
     expect(el.querySelector('.tabla tbody .celda-monto')!.classList).toContain('col-monto');
     expect(el.querySelector('.chip-transferencia')).not.toBeNull();
     expect(el.querySelector('.chip-efectivo')).not.toBeNull();
+  });
+});
+
+// HU-070: las tarjetas de Efectivo y Transferencia muestran monto, cantidad de pagos y porcentaje (por cantidad).
+describe('RecaudacionMensual - tarjetas por medio de pago', () => {
+  it('cada tarjeta muestra su cantidad de pagos y su porcentaje', async () => {
+    const { el } = await crear([
+      pago(101, 'A', '1', 100000, 'Transferencia'),
+      pago(102, 'B', '2', 100000, 'Transferencia'),
+      pago(103, 'C', '3', 50000, 'Efectivo'),
+    ]);
+
+    expect(el.querySelector('.card-detail-efectivo')!.textContent!.trim()).toBe('1 pago · 33% de los pagos');
+    expect(el.querySelector('.card-detail-transferencia')!.textContent!.trim()).toBe('2 pagos · 67% de los pagos');
+  });
+
+  it('los porcentajes siempre suman 100', async () => {
+    const { component } = await crear([
+      pago(101, 'A', '1', 1, 'Transferencia'),
+      pago(102, 'B', '2', 1, 'Efectivo'),
+      pago(103, 'C', '3', 1, 'Efectivo'),
+    ]);
+
+    expect(component.desglose.reduce((t, d) => t + d.porcentaje, 0)).toBe(100);
+  });
+
+  it('efectivo + transferencia = total', async () => {
+    const { component } = await crear([
+      pago(101, 'A', '1', 85000, 'Transferencia'),
+      pago(102, 'B', '2', 92500, 'Efectivo'),
+    ]);
+
+    expect(component.datos!.efectivo + component.datos!.transferencia).toBe(component.datos!.total);
+  });
+
+  it('un mes sin cobros muestra 0 pagos, sin porcentaje', async () => {
+    const { el } = await crear([]);
+
+    expect(el.querySelector('.card-detail-efectivo')!.textContent!.trim()).toBe('0 pagos');
+    expect(el.querySelector('.card-detail-transferencia')!.textContent!.trim()).toBe('0 pagos');
   });
 });

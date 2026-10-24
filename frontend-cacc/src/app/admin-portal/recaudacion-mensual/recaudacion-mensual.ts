@@ -38,6 +38,9 @@ const MESES = [
 // value null = sin filtro. El resto de las opciones las trae /api/categorias.
 const TODAS_LAS_CATEGORIAS: CustomSelectOption = { value: '', label: 'Todas' };
 
+// Años que ofrece el selector: el actual y los anteriores (no hay cobros futuros que consultar).
+const ANIOS_HACIA_ATRAS = 5;
+
 // Radio del donut de la distribución. La circunferencia se deriva de acá para que
 // el arco se calcule solo si algún día se cambia el tamaño del gráfico.
 const DONUT_RADIO = 54;
@@ -70,8 +73,9 @@ export class RecaudacionMensual {
     // y no un error.
     categorias: CustomSelectOption[] = [TODAS_LAS_CATEGORIAS];
 
-    // Los dos filtros se aplican al instante (la HU pide que al cambiar el mes cambien los datos): no hay botón
-    // "Aplicar". El mes se recorre con las flechas y no puede pasar del mes actual, que es lo último con cobros.
+    // Los filtros se aplican al instante (la HU pide que al cambiar el mes cambien los datos): no hay botón
+    // "Aplicar". El período se elige con dos desplegables, Mes y Año (HU-070), y no puede pasar del mes actual,
+    // que es lo último con cobros.
     mesSeleccionado: string;
     anioSeleccionado: number;
     categoriaSeleccionada: string = '';
@@ -106,17 +110,43 @@ export class RecaudacionMensual {
         this.destroyRef.onDestroy(() => this.cancelarAnimacion());
     }
 
-    mesAnterior(): void {
-        this.moverMes(-1);
-    }
-
-    mesSiguiente(): void {
-        if (this.puedeAvanzar) this.moverMes(1);
-    }
-
-    get puedeAvanzar(): boolean {
+    // En el año en curso solo se ofrecen los meses que ya empezaron.
+    get mesesOpciones(): CustomSelectOption[] {
         const hoy = new Date();
-        return this.anioSeleccionado * 12 + MESES.indexOf(this.mesSeleccionado) < hoy.getFullYear() * 12 + hoy.getMonth();
+        const ultimo = this.anioSeleccionado === hoy.getFullYear() ? hoy.getMonth() : MESES.length - 1;
+        return MESES.slice(0, ultimo + 1).map((mes) => ({ value: mes, label: mes }));
+    }
+
+    get aniosOpciones(): CustomSelectOption[] {
+        const actual = new Date().getFullYear();
+        return Array.from({ length: ANIOS_HACIA_ATRAS + 1 }, (_, i) => actual - i).map((anio) => ({ value: anio, label: String(anio) }));
+    }
+
+    onMesChange(mes: string | number | null): void {
+        if (mes == null || mes === this.mesSeleccionado) return;
+        this.mesSeleccionado = String(mes);
+        this.cargarPeriodo();
+    }
+
+    // Al pasar al año en curso con un mes que todavía no llegó, se queda en el mes actual.
+    onAnioChange(anio: string | number | null): void {
+        if (anio == null || Number(anio) === this.anioSeleccionado) return;
+        this.anioSeleccionado = Number(anio);
+        const hoy = new Date();
+        if (this.anioSeleccionado === hoy.getFullYear() && MESES.indexOf(this.mesSeleccionado) > hoy.getMonth()) {
+            this.mesSeleccionado = MESES[hoy.getMonth()];
+        }
+        this.cargarPeriodo();
+    }
+
+    // Lo que muestran las tarjetas de Efectivo y Transferencia debajo del monto: cantidad de pagos y su porcentaje,
+    // el mismo que el desglose (por cantidad de pagos).
+    detalleMedio(tono: 'efectivo' | 'transferencia'): string {
+        if (!this.datos) return '';
+        const item = this.desglose.find((d) => d.tono === tono);
+        const pagos = item?.pagos ?? 0;
+        const texto = `${pagos} ${pagos === 1 ? 'pago' : 'pagos'}`;
+        return item ? `${texto} · ${item.porcentaje}% de los pagos` : texto;
     }
 
     onCategoriaChange(categoria: string | number | null): void {
@@ -132,13 +162,6 @@ export class RecaudacionMensual {
     // La categoría se puede limpiar solo si hay una elegida.
     get hayFiltros(): boolean {
         return this.categoriaSeleccionada !== '';
-    }
-
-    private moverMes(delta: number): void {
-        const indice = this.anioSeleccionado * 12 + MESES.indexOf(this.mesSeleccionado) + delta;
-        this.anioSeleccionado = Math.floor(indice / 12);
-        this.mesSeleccionado = MESES[indice % 12];
-        this.cargarPeriodo();
     }
 
     get periodoLabel(): string {

@@ -34,26 +34,22 @@
   <div class="header-divider"></div>
 
   <!-- ===== BARRA DE FILTROS ===== -->
-  <!-- Una sola fila: el mes se recorre con las flechas y la categoría filtra al elegirla. -->
+  <!-- Una sola fila: mes, año y categoría filtran al elegirlos (HU-070). -->
   <article class="panel panel-filtros">
 
-    <div class="field">
-      <span class="field-label">Período</span>
-      <div class="mes-nav">
-        <button type="button" class="mes-flecha" aria-label="Mes anterior" (click)="mesAnterior()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <span class="mes-actual" aria-live="polite">{{ periodoLabel }}</span>
-        <button type="button" class="mes-flecha" aria-label="Mes siguiente"
-                [disabled]="!puedeAvanzar" (click)="mesSiguiente()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
+    <div class="field field-mes">
+      <span class="field-label">Mes</span>
+      <div class="filtro-campos">
+        <app-custom-select aria-label="Mes" [options]="mesesOpciones" [ngModel]="mesSeleccionado"
+                           (ngModelChange)="onMesChange($event)"></app-custom-select>
+      </div>
+    </div>
+
+    <div class="field field-anio">
+      <span class="field-label">Año</span>
+      <div class="filtro-campos">
+        <app-custom-select aria-label="Año" [options]="aniosOpciones" [ngModel]="anioSeleccionado"
+                           (ngModelChange)="onAnioChange($event)"></app-custom-select>
       </div>
     </div>
 
@@ -219,6 +215,9 @@
       <div class="card-body">
         <span class="card-value">{{ datos ? formatMonto(datos.efectivo) : '—' }}</span>
         <span class="card-label">Recaudación en efectivo</span>
+        @if (datos) {
+          <span class="card-detail card-detail-efectivo">{{ detalleMedio('efectivo') }}</span>
+        }
       </div>
     </article>
 
@@ -235,6 +234,9 @@
       <div class="card-body">
         <span class="card-value">{{ datos ? formatMonto(datos.transferencia) : '—' }}</span>
         <span class="card-label">Recaudación por transferencia</span>
+        @if (datos) {
+          <span class="card-detail card-detail-transferencia">{{ detalleMedio('transferencia') }}</span>
+        }
       </div>
     </article>
   </section>

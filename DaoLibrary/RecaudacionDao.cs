@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.Data.SqlClient;
 using EntityLibrary;
 
@@ -57,8 +58,8 @@ public class RecaudacionDao : IRecaudacionDao
             FROM PAGOS p
             JOIN JUGADORES j ON j.PK_id_jugador = p.FK_id_jugador
             WHERE p.estado = 1
-              AND YEAR(p.fecha_pago) = @anio
-              AND MONTH(p.fecha_pago) = @mes
+              AND p.fecha_pago >= @desde
+              AND p.fecha_pago < @hasta
               AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)";
 
         using SqlCommand comando = new SqlCommand(query, conexion);
@@ -96,8 +97,8 @@ public class RecaudacionDao : IRecaudacionDao
             JOIN PERSONAS pe ON pe.PK_id_persona = j.FK_id_persona
             LEFT JOIN CATEGORIAS c ON c.PK_id_categoria = j.FK_id_categoria
             WHERE p.estado = 1
-              AND YEAR(p.fecha_pago) = @anio
-              AND MONTH(p.fecha_pago) = @mes
+              AND p.fecha_pago >= @desde
+              AND p.fecha_pago < @hasta
               AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
             ORDER BY p.fecha_pago DESC, p.PK_id_pago DESC";
 
@@ -121,10 +122,13 @@ public class RecaudacionDao : IRecaudacionDao
         return filas;
     }
 
+    // El período va como rango [primer día del mes, primer día del mes siguiente) y no como YEAR()/MONTH() sobre la
+    // columna: así SQL Server puede usar un índice sobre fecha_pago en vez de calcular la función fila por fila (HU-070).
     private static void CargarParametros(SqlCommand comando, int anio, int mes, int? idCategoria)
     {
-        comando.Parameters.AddWithValue("@anio", anio);
-        comando.Parameters.AddWithValue("@mes", mes);
-        comando.Parameters.AddWithValue("@idCategoria", (object?)idCategoria ?? DBNull.Value);
+        DateTime desde = new DateTime(anio, mes, 1);
+        comando.Parameters.Add("@desde", SqlDbType.Date).Value = desde;
+        comando.Parameters.Add("@hasta", SqlDbType.Date).Value = desde.AddMonths(1);
+        comando.Parameters.Add("@idCategoria", SqlDbType.Int).Value = (object?)idCategoria ?? DBNull.Value;
     }
 }
