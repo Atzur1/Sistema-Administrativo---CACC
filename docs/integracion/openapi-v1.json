@@ -37,7 +37,7 @@
                                                                                                                "content":  {
                                                                                                                                "application/json":  {
                                                                                                                                                         "schema":  {
-                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                       "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                    }
                                                                                                                                                     }
                                                                                                                            }
@@ -47,7 +47,7 @@
                                                                                                                "content":  {
                                                                                                                                "application/json":  {
                                                                                                                                                         "schema":  {
-                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                       "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                    }
                                                                                                                                                     }
                                                                                                                            }
@@ -57,7 +57,7 @@
                                                                                                                "content":  {
                                                                                                                                "application/json":  {
                                                                                                                                                         "schema":  {
-                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                       "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                    }
                                                                                                                                                     }
                                                                                                                            }
@@ -67,7 +67,7 @@
                                                                                                                "content":  {
                                                                                                                                "application/json":  {
                                                                                                                                                         "schema":  {
-                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                       "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                    }
                                                                                                                                                     }
                                                                                                                            }
@@ -77,7 +77,37 @@
                                                                                                                "content":  {
                                                                                                                                "application/json":  {
                                                                                                                                                         "schema":  {
-                                                                                                                                                                       "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                       "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           },
+                                                                                                   "429":  {
+                                                                                                               "description":  "Too Many Requests",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           },
+                                                                                                   "500":  {
+                                                                                                               "description":  "Internal Server Error",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                   }
+                                                                                                                                                    }
+                                                                                                                           }
+                                                                                                           },
+                                                                                                   "503":  {
+                                                                                                               "description":  "Service Unavailable",
+                                                                                                               "content":  {
+                                                                                                                               "application/json":  {
+                                                                                                                                                        "schema":  {
+                                                                                                                                                                       "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                    }
                                                                                                                                                     }
                                                                                                                            }
@@ -125,7 +155,7 @@
                                                                                                            "content":  {
                                                                                                                            "application/json":  {
                                                                                                                                                     "schema":  {
-                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                }
                                                                                                                                                 }
                                                                                                                        }
@@ -135,7 +165,7 @@
                                                                                                            "content":  {
                                                                                                                            "application/json":  {
                                                                                                                                                     "schema":  {
-                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                }
                                                                                                                                                 }
                                                                                                                        }
@@ -145,7 +175,37 @@
                                                                                                            "content":  {
                                                                                                                            "application/json":  {
                                                                                                                                                     "schema":  {
-                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                               }
+                                                                                                                                                }
+                                                                                                                       }
+                                                                                                       },
+                                                                                               "429":  {
+                                                                                                           "description":  "Too Many Requests",
+                                                                                                           "content":  {
+                                                                                                                           "application/json":  {
+                                                                                                                                                    "schema":  {
+                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                               }
+                                                                                                                                                }
+                                                                                                                       }
+                                                                                                       },
+                                                                                               "500":  {
+                                                                                                           "description":  "Internal Server Error",
+                                                                                                           "content":  {
+                                                                                                                           "application/json":  {
+                                                                                                                                                    "schema":  {
+                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                               }
+                                                                                                                                                }
+                                                                                                                       }
+                                                                                                       },
+                                                                                               "503":  {
+                                                                                                           "description":  "Service Unavailable",
+                                                                                                           "content":  {
+                                                                                                                           "application/json":  {
+                                                                                                                                                    "schema":  {
+                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                }
                                                                                                                                                 }
                                                                                                                        }
@@ -185,7 +245,7 @@
                                                                                                                            "content":  {
                                                                                                                                            "application/json":  {
                                                                                                                                                                     "schema":  {
-                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                                }
                                                                                                                                                                 }
                                                                                                                                        }
@@ -195,7 +255,7 @@
                                                                                                                            "content":  {
                                                                                                                                            "application/json":  {
                                                                                                                                                                     "schema":  {
-                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                                }
                                                                                                                                                                 }
                                                                                                                                        }
@@ -205,7 +265,7 @@
                                                                                                                            "content":  {
                                                                                                                                            "application/json":  {
                                                                                                                                                                     "schema":  {
-                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                                }
                                                                                                                                                                 }
                                                                                                                                        }
@@ -215,7 +275,7 @@
                                                                                                                            "content":  {
                                                                                                                                            "application/json":  {
                                                                                                                                                                     "schema":  {
-                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                                }
                                                                                                                                                                 }
                                                                                                                                        }
@@ -225,7 +285,37 @@
                                                                                                                            "content":  {
                                                                                                                                            "application/json":  {
                                                                                                                                                                     "schema":  {
-                                                                                                                                                                                   "$ref":  "#/components/schemas/ProblemDetails"
+                                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       },
+                                                                                                               "429":  {
+                                                                                                                           "description":  "Too Many Requests",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       },
+                                                                                                               "500":  {
+                                                                                                                           "description":  "Internal Server Error",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                               }
+                                                                                                                                                                }
+                                                                                                                                       }
+                                                                                                                       },
+                                                                                                               "503":  {
+                                                                                                                           "description":  "Service Unavailable",
+                                                                                                                           "content":  {
+                                                                                                                                           "application/json":  {
+                                                                                                                                                                    "schema":  {
+                                                                                                                                                                                   "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
                                                                                                                                                                                }
                                                                                                                                                                 }
                                                                                                                                        }
@@ -310,35 +400,37 @@
                                                                                      },
                                                                       "additionalProperties":  false
                                                                   },
-                                       "ProblemDetails":  {
-                                                              "type":  "object",
-                                                              "properties":  {
-                                                                                 "type":  {
-                                                                                              "type":  "string",
-                                                                                              "nullable":  true
+                                       "IntegrationErrorResponseDTO":  {
+                                                                           "required":  [
+                                                                                            "errorCode",
+                                                                                            "message"
+                                                                                        ],
+                                                                           "type":  "object",
+                                                                           "properties":  {
+                                                                                              "errorCode":  {
+                                                                                                                "type":  "string",
+                                                                                                                "nullable":  true
+                                                                                                            },
+                                                                                              "message":  {
+                                                                                                              "type":  "string",
+                                                                                                              "nullable":  true
+                                                                                                          },
+                                                                                              "field":  {
+                                                                                                            "type":  "string",
+                                                                                                            "nullable":  true
+                                                                                                        },
+                                                                                              "exito":  {
+                                                                                                            "type":  "boolean",
+                                                                                                            "readOnly":  true
+                                                                                                        },
+                                                                                              "mensaje":  {
+                                                                                                              "type":  "string",
+                                                                                                              "nullable":  true,
+                                                                                                              "readOnly":  true
+                                                                                                          }
                                                                                           },
-                                                                                 "title":  {
-                                                                                               "type":  "string",
-                                                                                               "nullable":  true
-                                                                                           },
-                                                                                 "status":  {
-                                                                                                "type":  "integer",
-                                                                                                "format":  "int32",
-                                                                                                "nullable":  true
-                                                                                            },
-                                                                                 "detail":  {
-                                                                                                "type":  "string",
-                                                                                                "nullable":  true
-                                                                                            },
-                                                                                 "instance":  {
-                                                                                                  "type":  "string",
-                                                                                                  "nullable":  true
-                                                                                              }
-                                                                             },
-                                                              "additionalProperties":  {
-
-                                                                                       }
-                                                          }
+                                                                           "additionalProperties":  false
+                                                                       }
                                    },
                        "securitySchemes":  {
                                                "Bearer":  {

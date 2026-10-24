@@ -66,7 +66,7 @@ Pueden llamarla el SuperAdmin del Administrativo y el `Administrador (Tesorero)`
 |---|---|
 | `200` | Se procesó (aunque no hubiera nada nuevo para generar). |
 | `400` | El id no es válido. |
-| `404` | No existe el jugador. Este 404 **trae un mensaje** (`{ "exito": false, "mensaje": ... }`); un 404 sin cuerpo es una ruta que no existe. |
+| `404` | No existe el jugador. Este 404 **trae cuerpo** (`errorCode: "NOT_FOUND"`, ver [Errores](#errores)); un 404 sin cuerpo es una ruta que no existe. |
 | `422` | El jugador está dado de baja, o su alta no es reciente (solo se generan cargos de altas de los últimos 7 días). |
 | `401` / `403` | Sin token (o sesión cerrada) / el rol no puede. |
 
@@ -115,6 +115,37 @@ Cómo se llega a cada estado (lo decide el Administrativo, el Deportivo no lo ca
 Llama a `GET /api/integracion/v1/estado-deuda/dni/{dni}` con el token del usuario y usa `accesoPermitido` y `estado`: verde si `habilitado`,
 amarillo si `solo_entrenamientos`, rojo si `inhabilitado` o `baja`. Sigue siendo el Deportivo quien registra la asistencia.
 **Si esta API no responde, el QR no deja pasar a nadie** (decisión del club; `AdministrativoApi:SiNoResponde = Denegar`).
+
+## Errores
+Todo error de la API de integración tiene el mismo cuerpo:
+```json
+{ "errorCode": "INVALID_INPUT", "message": "Indicá un DNI válido (solo números, de 6 a 9 dígitos).", "field": "dni",
+  "exito": false, "mensaje": "Indicá un DNI válido (solo números, de 6 a 9 dígitos)." }
+```
+- `errorCode`: estable, para decidir por código. `message`: en español, para mostrar. `field`: solo en los `400`, el dato que no es válido (`dni`, `dnis`, `dnis[3]`, `idJugador`).
+- `exito` y `mensaje` (igual a `message`) se mantienen por compatibilidad con la v1. Lo nuevo es un agregado: quien ya leía `mensaje` no tiene que cambiar nada.
+
+| Código HTTP | `errorCode` | Cuándo |
+|---|---|---|
+| `400` | `INVALID_INPUT` | Un dato inválido, o un cuerpo que falta o no es JSON válido. |
+| `401` | `UNAUTHORIZED` | Sin token, vencido o con la sesión cerrada. |
+| `403` | `FORBIDDEN` | El rol no puede usar ese endpoint. |
+| `404` | `NOT_FOUND` | El jugador o el DNI no existen. Sin cuerpo: la ruta no existe. |
+| `405` / `415` | `METHOD_NOT_ALLOWED` / `UNSUPPORTED_MEDIA_TYPE` | Método HTTP equivocado / el cuerpo no es `application/json`. |
+| `409` | `CONFLICT` | El DNI corresponde a más de un jugador. |
+| `422` | `UNPROCESSABLE` | La regla de negocio no lo permite (jugador dado de baja, alta que no es reciente). |
+| `429` | `TOO_MANY_REQUESTS` | Se superó el cupo de consultas simultáneas de integración. Reintentar en unos segundos. |
+| `500` | `INTERNAL_ERROR` | Falla inesperada del Administrativo. |
+| `503` | `SERVICE_UNAVAILABLE` | La base de datos no responde (caída o timeout). Reintentar más tarde. |
+
+**Aislamiento.** Las consultas de integración comparten un cupo de pedidos simultáneos, aparte del resto del Portal Administrativo
+(`Integracion:ConsultasSimultaneas`, por defecto 8, y `Integracion:ConsultasEnCola`, por defecto 32). Un pico de consultas del Deportivo
+recibe `429`, pero no deja sin conexiones a la base a las pantallas de cobranzas. Una falla en un endpoint de integración siempre termina
+en una de las respuestas de arriba: nunca afecta a otra pantalla.
+
+**Registro.** Cada error queda en el log de la API con fecha y hora (`Timestamp`, UTC), endpoint (la plantilla de la ruta, por ejemplo
+`GET api/integracion/v1/estado-deuda/dni/{dni}`, nunca el valor) y motivo. Antes de escribirse, el motivo pasa por `LogSanitizer`:
+nunca se registran tokens, credenciales, correos ni DNI.
 
 ## Para quien cambie la API
 1. El cambio compatible (agregar un campo opcional que no sea financiero) se hace en la misma versión; el que rompe, en `v2`.

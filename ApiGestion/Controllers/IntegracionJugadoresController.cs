@@ -2,6 +2,8 @@ using ApiGestion.Models;
 using ApiGestion.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using EntityLibrary;
 using ServiceLibrary;
 
 namespace ApiGestion.Controllers
@@ -14,6 +16,7 @@ namespace ApiGestion.Controllers
     [Route("api/integracion/v1/jugadores")]
     [Produces("application/json")]
     [Authorize(Roles = RolesDelDeportivo.SuperAdminAdministrativo + "," + RolesDelDeportivo.Administrador)]
+    [EnableRateLimiting(IntegrationErrors.RateLimitPolicy)]
     public class IntegracionJugadoresController : ControllerBase
     {
         private readonly IJugadoresAltaService _altaService;
@@ -29,20 +32,33 @@ namespace ApiGestion.Controllers
         // | 422 dado de baja o alta que no es reciente | 401 / 403 sin sesión o sin permiso. Se puede repetir sin duplicar nada.
         [HttpPost("{idJugador:int}/cargos-alta")]
         [ProducesResponseType(typeof(CargosAltaResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status503ServiceUnavailable)]
         public IActionResult CargosDeAlta(int idJugador)
         {
             if (idJugador <= 0)
             {
-                return BadRequest(new { exito = false, mensaje = "Indicá un jugador válido." });
+                return IntegrationErrors.Respond(this, _logger, StatusCodes.Status400BadRequest, IntegrationErrorCodes.InvalidInput,
+                    "Indicá un jugador válido.", "idJugador");
             }
 
-            var resultado = _altaService.GenerarCargosDeAlta(idJugador);
-            return this.Responder(resultado, cargos =>
+            ResultadoOperacion<CargosGenerados> resultado;
+            try
+            {
+                resultado = _altaService.GenerarCargosDeAlta(idJugador);
+            }
+            catch (Exception ex)
+            {
+                // Si falla, el alta del Deportivo no se deshace: los cargos salen con la generación automática (ver el README).
+                return IntegrationErrors.FromException(this, _logger, ex);
+            }
+            return IntegrationErrors.FromResult(this, _logger, resultado, cargos =>
             {
                 _logger.LogInformation("Cargos de alta del jugador {IdJugador}: inscripción {Inscripcion}, cuota {Cuota}",
                     idJugador, cargos.Inscripcion, cargos.Cuota);

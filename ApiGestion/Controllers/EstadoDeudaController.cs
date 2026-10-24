@@ -3,6 +3,7 @@ using ApiGestion.Services;
 using DaoLibrary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ApiGestion.Controllers
 {
@@ -14,6 +15,8 @@ namespace ApiGestion.Controllers
     [Route("api/estado-deuda")]
     [Produces("application/json")]
     [Authorize(Roles = RolesDelDeportivo.QuienConsulta)]
+    // HU-058: un pico de consultas del Deportivo no puede dejar sin conexiones a la base a las pantallas de cobranzas.
+    [EnableRateLimiting(IntegrationErrors.RateLimitPolicy)]
     public class EstadoDeudaController : ControllerBase
     {
         public const int MaximoPorLote = 500;
@@ -31,17 +34,21 @@ namespace ApiGestion.Controllers
         // alcance) | 409 el DNI corresponde a más de un jugador.
         [HttpGet("dni/{dni}")]
         [ProducesResponseType(typeof(EstadoDeudaResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status503ServiceUnavailable)]
         public IActionResult PorDni(string dni)
         {
             string? normalizado = IdentificadorCuenta.NormalizarDni(dni);
             if (normalizado is null)
             {
-                return BadRequest(new { exito = false, mensaje = "Indicá un DNI válido (solo números, de 6 a 9 dígitos)." });
+                return IntegrationErrors.Respond(this, _logger, StatusCodes.Status400BadRequest, IntegrationErrorCodes.InvalidInput,
+                    "Indicá un DNI válido (solo números, de 6 a 9 dígitos).", "dni");
             }
 
             try
@@ -49,36 +56,42 @@ namespace ApiGestion.Controllers
                 var encontrados = _estadoDeudaDao.ObtenerPorDni(new[] { normalizado }, CategoriasPermitidas());
                 if (encontrados.Count == 0)
                 {
-                    return NotFound(new { exito = false, mensaje = "El DNI no pertenece a un jugador." });
+                    return IntegrationErrors.Respond(this, _logger, StatusCodes.Status404NotFound, IntegrationErrorCodes.NotFound,
+                        "El DNI no pertenece a un jugador.");
                 }
                 if (encontrados.Count > 1)
                 {
-                    return Conflict(new { exito = false, mensaje = "El DNI está asociado a más de un jugador." });
+                    return IntegrationErrors.Respond(this, _logger, StatusCodes.Status409Conflict, IntegrationErrorCodes.Conflict,
+                        "El DNI está asociado a más de un jugador.");
                 }
                 return Ok(EstadoDeudaResponseDTO.FromEntity(encontrados[0]));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al consultar el estado de deuda");
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al consultar el estado de deuda." });
+                return IntegrationErrors.FromException(this, _logger, ex);
             }
         }
 
         // POST api/estado-deuda/lote  { "dnis": ["41000001", "42.000.002"] } -> el estado de cada uno, para los listados.
         [HttpPost("lote")]
         [ProducesResponseType(typeof(EstadoDeudaLoteResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status503ServiceUnavailable)]
         public IActionResult PorLote([FromBody] EstadoDeudaLoteRequestDTO request)
         {
             if (request?.Dnis is null || request.Dnis.Count == 0)
             {
-                return BadRequest(new { exito = false, mensaje = "Indicá al menos un DNI." });
+                return IntegrationErrors.Respond(this, _logger, StatusCodes.Status400BadRequest, IntegrationErrorCodes.InvalidInput,
+                    "Indicá al menos un DNI.", "dnis");
             }
             if (request.Dnis.Count > MaximoPorLote)
             {
-                return BadRequest(new { exito = false, mensaje = $"Se pueden consultar hasta {MaximoPorLote} DNI por vez." });
+                return IntegrationErrors.Respond(this, _logger, StatusCodes.Status400BadRequest, IntegrationErrorCodes.InvalidInput,
+                    $"Se pueden consultar hasta {MaximoPorLote} DNI por vez.", "dnis");
             }
 
             var respuesta = new EstadoDeudaLoteResponseDTO();
@@ -100,8 +113,7 @@ namespace ApiGestion.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al consultar el estado de deuda por lote");
-                return StatusCode(500, new { exito = false, mensaje = "Error interno al consultar el estado de deuda." });
+                return IntegrationErrors.FromException(this, _logger, ex);
             }
         }
 

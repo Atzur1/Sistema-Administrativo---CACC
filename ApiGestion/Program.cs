@@ -32,9 +32,34 @@ if (usarCabecerasDeProxy)
 }
 
 builder.Services.AddControllers();
+// HU-058: en la API de integración un cuerpo ilegible responde con el contrato { errorCode, message, field }; el resto
+// de la API conserva la respuesta de siempre.
+builder.Services.PostConfigure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
+{
+    var respuestaOriginal = options.InvalidModelStateResponseFactory;
+    options.InvalidModelStateResponseFactory = context =>
+        ApiGestion.Services.IntegrationErrors.IsIntegrationRequest(context.HttpContext.Request.Path)
+            ? ApiGestion.Services.IntegrationErrors.FromInvalidModelState(context,
+                context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("ApiGestion.Integracion"))
+            : respuestaOriginal(context);
+});
+builder.Services.AddSingleton<Microsoft.AspNetCore.Mvc.Infrastructure.IClientErrorFactory, ApiGestion.Services.IntegrationClientErrorFactory>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // HU-058: aislamiento de la integración. Todas las consultas del Portal Deportivo comparten un cupo de pedidos
+    // simultáneos (y una cola corta); lo que excede recibe 429. Así un pico o un cliente trabado del Deportivo no
+    // acapara los hilos ni las conexiones a la base que usan las pantallas de cobranzas.
+    var integracionSimultaneas = builder.Configuration.GetValue("Integracion:ConsultasSimultaneas", 8);
+    var integracionEnCola = builder.Configuration.GetValue("Integracion:ConsultasEnCola", 32);
+    options.AddPolicy(ApiGestion.Services.IntegrationErrors.RateLimitPolicy, _ => RateLimitPartition.GetConcurrencyLimiter(
+        "integracion",
+        _ => new ConcurrencyLimiterOptions
+        {
+            PermitLimit = integracionSimultaneas,
+            QueueLimit = integracionEnCola,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+        }));
     options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -285,6 +310,11 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
     context.Response.StatusCode = StatusCodes.Status500InternalServerError;
     await context.Response.WriteAsJsonAsync(new { exito = false, mensaje = "Error interno del servidor. Intentá de nuevo en unos minutos." });
 }));
+
+// HU-058: la API de integración con el Portal Deportivo tiene su propio manejo de errores (contrato { errorCode, message,
+// field }, log sanitizado). Va antes de la autenticación y del rate limiting para dar formato también a sus 401/403/429.
+app.UseWhen(context => ApiGestion.Services.IntegrationErrors.IsIntegrationRequest(context.Request.Path),
+    integracion => integracion.UseMiddleware<ApiGestion.IntegrationErrorHandlingMiddleware>());
 
 if (app.Environment.IsDevelopment())
 {
