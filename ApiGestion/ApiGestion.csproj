@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>3b4c14b5-969a-488f-bd23-b52f01dead76</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,10 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\frontend-cacc\public\cacc-email-header.jpg"
-             Link="Assets\cacc-email-header.jpg"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\frontend-cacc\public\cacc-email-header.jpg" Link="Assets\cacc-email-header.jpg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
