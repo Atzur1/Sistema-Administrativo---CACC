@@ -62,6 +62,22 @@
 
     <form class="form-grid" [formGroup]="feeForm" (ngSubmit)="onSubmit()">
 
+      <!-- HU-069: el aumento se puede cargar como monto final, como porcentaje o como monto a sumar sobre el vigente -->
+      @if (vista === 'cuota') {
+        <fieldset class="increase-mode">
+          <legend class="field-label">Tipo de aumento</legend>
+          <div class="segmented">
+            @for (mode of increaseModes; track mode.value) {
+              <label class="segment" [class.active]="increaseMode === mode.value">
+                <input type="radio" name="increaseMode" class="segment-radio" [value]="mode.value"
+                       [checked]="increaseMode === mode.value" (change)="setIncreaseMode(mode.value)" />
+                <span>{{ mode.label }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+      }
+
       <div class="field">
         <label class="field-label" for="target">{{ vista === 'inscripcion' ? 'Género' : 'Aplicar a' }}</label>
         <app-custom-select id="target" [options]="targetsVista"
@@ -70,13 +86,31 @@
       </div>
 
       <div class="field">
-        <label class="field-label" for="amount">Nuevo monto</label>
+        <label class="field-label" for="amount">{{ amountLabel }}</label>
         <div class="amount-wrapper">
-          <span class="amount-prefix">$</span>
-          <input id="amount" type="text" inputmode="numeric" class="field-input amount-input"
-                 [value]="montoDisplay" (input)="onMontoInput($any($event.target))"
-                 placeholder="92.000" />
+          @switch (increaseMode) {
+            @case ('percentage') { <span class="amount-suffix">%</span> }
+            @case ('fixed') { <span class="amount-prefix">+$</span> }
+            @default { <span class="amount-prefix">$</span> }
+          }
+          <input id="amount" type="text" class="field-input amount-input"
+                 [class.amount-input-plus]="increaseMode === 'fixed'"
+                 [class.amount-input-percent]="increaseMode === 'percentage'"
+                 [class.invalid]="!!amountError"
+                 [attr.inputmode]="increaseMode === 'percentage' ? 'decimal' : 'numeric'"
+                 [attr.aria-invalid]="!!amountError"
+                 aria-describedby="amount-message"
+                 [value]="montoDisplay" (input)="onAmountInput($any($event.target))"
+                 (blur)="feeForm.get('amount')?.markAsTouched()"
+                 [placeholder]="amountPlaceholder" />
         </div>
+        @if (amountError) {
+          <span id="amount-message" class="field-error">{{ amountError }}</span>
+        } @else if (increaseMode === 'percentage') {
+          <span id="amount-message" class="field-hint">Sobre el arancel vigente, redondeado al peso.</span>
+        } @else if (increaseMode === 'fixed') {
+          <span id="amount-message" class="field-hint">Se suma al arancel vigente.</span>
+        }
       </div>
 
       <div class="field">
@@ -90,8 +124,25 @@
         }
       </div>
 
+      @if (tariffPreview; as preview) {
+        <div class="tariff-preview" aria-live="polite">
+          <span class="preview-item">
+            <span class="preview-label">Arancel vigente:</span>
+            <strong class="preview-current">{{ preview.current }}</strong>
+          </span>
+          <span class="preview-arrow" aria-hidden="true">➔</span>
+          <span class="preview-item">
+            <span class="preview-label">Nuevo arancel a aplicar:</span>
+            <strong class="preview-next">{{ preview.next }}</strong>
+            @if (preview.difference) {
+              <span class="preview-difference">({{ preview.difference }})</span>
+            }
+          </span>
+        </div>
+      }
+
       <div class="submit-row action-with-help">
-        <button type="submit" class="submit-button" [disabled]="feeForm.invalid || enviando">
+        <button type="submit" class="submit-button" [disabled]="feeForm.invalid || enviando || resultingAmount == null">
           {{ vista === 'inscripcion' ? 'Programar inscripción' : 'Programar actualización' }}
         </button>
         @if (vista === 'inscripcion') {
@@ -102,7 +153,7 @@
         } @else {
           <app-help-hint
             label="Programar actualización"
-            text="Carga el nuevo monto de la cuota desde la fecha elegida. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago. No se pueden programar fechas pasadas. Solo puede haber un arancel por mes para el mismo género o categoría."
+            text="Carga el nuevo monto de la cuota desde la fecha elegida. Podés escribir el monto final, un porcentaje o un monto a sumar sobre el arancel vigente; se programa siempre el monto que muestra la vista previa. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago. No se pueden programar fechas pasadas. Solo puede haber un arancel por mes para el mismo género o categoría."
           />
         }
       </div>

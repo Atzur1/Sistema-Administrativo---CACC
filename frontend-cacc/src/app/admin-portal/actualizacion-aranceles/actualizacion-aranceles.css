@@ -220,6 +220,142 @@
     color: var(--color-danger);
 }
 
+/* ===== HU-069: TIPO DE AUMENTO ===== */
+/* Fila completa arriba de los campos: tres opciones lado a lado (control segmentado) */
+.increase-mode {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    border: none;
+    min-width: 0;
+}
+
+.increase-mode legend {
+    padding: 0;
+    margin-bottom: var(--space-1);
+}
+
+.segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    align-self: flex-start;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: var(--action-field-bg, var(--action-bg));
+    border: 1px solid var(--action-border-strong);
+    border-radius: var(--radius-md);
+}
+
+.segment {
+    position: relative;
+    padding: 6px 14px;
+    border-radius: calc(var(--radius-md) - 2px);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.segment:hover {
+    color: var(--color-text);
+}
+
+.segment.active {
+    background: var(--action-accent);
+    color: var(--color-bg-card);
+}
+
+/* El radio queda accesible por teclado y lector de pantalla, pero no se ve: se ve la pastilla */
+.segment-radio {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+}
+
+.segment:has(.segment-radio:focus-visible) {
+    box-shadow: var(--shadow-focus);
+}
+
+.amount-suffix {
+    position: absolute;
+    top: 50%;
+    right: 11px;
+    transform: translateY(-50%);
+    font-size: var(--font-base);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+/* "+$" ocupa más que "$" */
+.amount-input.amount-input-plus {
+    padding-left: calc(var(--space-5) + 8px);
+}
+
+.amount-input.amount-input-percent {
+    padding-left: var(--space-3);
+    padding-right: var(--space-5);
+}
+
+.field-input.invalid {
+    border-color: var(--color-danger);
+}
+
+/* Vista previa: "Arancel vigente: $85.000 ➔ Nuevo arancel a aplicar: $95.625" */
+.tariff-preview {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-info-bg);
+    border: 1px solid var(--action-border);
+    border-left: 4px solid var(--color-info);
+    border-radius: var(--radius-md);
+    font-size: var(--font-base);
+    color: var(--color-text);
+    animation: fadeIn 0.2s ease both;
+}
+
+.preview-item {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.preview-label {
+    color: var(--color-text-muted);
+}
+
+.preview-current {
+    font-weight: 600;
+}
+
+.preview-next {
+    font-size: var(--font-lg);
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.preview-difference {
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+}
+
+.preview-arrow {
+    color: var(--color-info);
+    font-size: var(--font-lg);
+}
+
 /* ===== SUBMIT ===== */
 /* Botón + ayuda "?": la fila completa del formulario en cualquier cantidad de columnas. */
 .submit-row {
@@ -612,6 +748,16 @@
 
     .form-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Los tres modos uno debajo del otro, a todo el ancho */
+    .segmented {
+        flex-direction: column;
+        align-self: stretch;
+    }
+
+    .preview-arrow {
+        transform: rotate(90deg);
     }
 
     .submit-button,

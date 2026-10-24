@@ -19,12 +19,16 @@ import { HelpHint } from '../../shared/help-hint/help-hint';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { TariffHistoryItemModel } from '../../models/TariffModel';
+import { IncreaseMode, calculateNewTariff, needsCurrentTariff, sanitizePercentage } from './tariff-increase';
 
 Chart.register(...registerables);
 
 // One row in the "Historial y aranceles programados" table
 interface FeeRow {
     id: number;
+    // Same value as the form's target ('genero:Masculino', 'categoria:3', 'inscripcion:Femenino'), so the
+    // form can look up the current tariff of the destination it is about to change
+    target: string;
     // 'male' renders the "Masculino" pill, 'female' the "Femenino" one, 'enrollment' the "Inscripción" one
     // and 'category' the pill of a fee set for one category (it overrides the gender fee)
     category: 'male' | 'female' | 'enrollment' | 'category';
@@ -86,6 +90,16 @@ export class ActualizacionAranceles implements OnInit {
     // Lo que se ve en el input de Nuevo monto ("1.000"). El control del form (feeForm.get('amount'))
     // guarda el número limpio sin puntos ("1000"), que es lo que se valida y se manda al backend.
     montoDisplay = '';
+
+    // HU-069: cómo se interpreta lo que se escribe en el campo del monto. Solo la cuota mensual ofrece los tres;
+    // la inscripción sigue siendo siempre un monto absoluto.
+    increaseMode: IncreaseMode = 'absolute';
+
+    readonly increaseModes: { value: IncreaseMode; label: string }[] = [
+        { value: 'absolute', label: 'Monto absoluto' },
+        { value: 'percentage', label: 'Porcentaje (+%)' },
+        { value: 'fixed', label: 'Monto fijo a sumar (+$)' },
+    ];
 
     private monthLabels = [
         'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
@@ -192,11 +206,129 @@ export class ActualizacionAranceles implements OnInit {
 
     // La cuota y el arancel de una categoría tienen que ser mayores a $0. La inscripción admite $0: significa que ese
     // género no paga inscripción desde esa fecha (hoy, las mujeres).
+    // En porcentaje o monto fijo a sumar, lo escrito tiene que ser mayor a 0 y el destino necesita un arancel vigente
+    // sobre el que calcular el aumento.
     private montoMinimo = (control: AbstractControl): ValidationErrors | null => {
+        if (control.value === '' || control.value == null) {
+            return null; // De eso se ocupa Validators.required
+        }
         const destino = this.feeForm?.get('target')?.value;
+        const valor = Number(control.value);
+        if (needsCurrentTariff(this.increaseMode)) {
+            if (destino && this.arancelVigente(destino) == null) {
+                return { sinArancelVigente: true };
+            }
+            return valor > 0 ? null : { min: { min: 0, actual: valor } };
+        }
         const minimo = typeof destino === 'string' && destino.startsWith('inscripcion:') ? 0 : 1;
-        return Number(control.value) < minimo ? { min: { min: minimo, actual: Number(control.value) } } : null;
+        return valor < minimo ? { min: { min: minimo, actual: valor } } : null;
     };
+
+    // Monto del arancel que rige hoy para un destino, o null si nunca tuvo uno (o si ya no hay ninguno vigente).
+    arancelVigente(target: string): number | null {
+        const fila = this.feeRows.find(r => r.target === target && r.estado === 'Vigente');
+        return fila ? this.parseAmount(fila.amount) : null;
+    }
+
+    get currentTariff(): number | null {
+        const target = this.feeForm.get('target')?.value;
+        return target ? this.arancelVigente(target) : null;
+    }
+
+    // El monto absoluto que se programa: lo que se manda a la API, sea cual sea el modo.
+    get resultingAmount(): number | null {
+        const amount = this.feeForm.get('amount')?.value;
+        return calculateNewTariff(this.increaseMode, amount === '' || amount == null ? null : Number(amount), this.currentTariff);
+    }
+
+    // Vista previa "Arancel vigente ➔ Nuevo arancel a aplicar". Solo cuando ya hay un destino y un resultado válido.
+    get tariffPreview(): { current: string; next: string; difference: string | null } | null {
+        const resultado = this.resultingAmount;
+        if (this.vista !== 'cuota' || !this.feeForm.get('target')?.value || resultado == null || resultado <= 0) {
+            return null;
+        }
+        const vigente = this.currentTariff;
+        const diferencia = vigente == null ? null : resultado - vigente;
+        return {
+            current: vigente == null ? 'Sin definir' : this.formatAmount(vigente),
+            next: this.formatAmount(resultado),
+            difference: diferencia == null || diferencia === 0
+                ? null
+                : `${diferencia > 0 ? '+' : '−'}${this.formatAmount(Math.abs(diferencia))}`,
+        };
+    }
+
+    get amountLabel(): string {
+        switch (this.increaseMode) {
+            case 'percentage': return 'Porcentaje de aumento';
+            case 'fixed': return 'Monto a sumar';
+            default: return 'Nuevo monto';
+        }
+    }
+
+    get amountPlaceholder(): string {
+        switch (this.increaseMode) {
+            case 'percentage': return '12,5';
+            case 'fixed': return '10.000';
+            default: return '92.000';
+        }
+    }
+
+    // Mensaje debajo del campo. Que el destino no tenga arancel vigente se avisa apenas se elige (no hace falta
+    // escribir nada para saber que el porcentaje no se va a poder calcular); el resto, una vez que se tocó el campo.
+    get amountError(): string | null {
+        const target = this.feeForm.get('target')?.value;
+        if (needsCurrentTariff(this.increaseMode) && target && this.arancelVigente(target) == null) {
+            const nombre = this.targets.find(t => t.value === target)?.label ?? 'Este destino';
+            return `${nombre} no tiene un arancel vigente sobre el que calcular el aumento. Usá "Monto absoluto" para definir su primer valor.`;
+        }
+        const control = this.feeForm.get('amount');
+        if (!control || control.valid || !(control.touched || control.dirty)) {
+            return null;
+        }
+        if (control.hasError('required')) {
+            return this.increaseMode === 'percentage' ? 'Ingresá el porcentaje de aumento.'
+                : this.increaseMode === 'fixed' ? 'Ingresá el monto a sumar.'
+                : 'Ingresá el nuevo monto.';
+        }
+        if (control.hasError('min')) {
+            return this.increaseMode === 'percentage' ? 'El porcentaje tiene que ser mayor a 0.'
+                : this.increaseMode === 'fixed' ? 'El monto a sumar tiene que ser mayor a $0.'
+                : 'El monto tiene que ser mayor a $0.';
+        }
+        return null;
+    }
+
+    // Al cambiar de modo, lo escrito deja de significar lo mismo (10 no es $10 ni 10%): se limpia el campo.
+    setIncreaseMode(mode: IncreaseMode) {
+        if (this.increaseMode === mode) {
+            return;
+        }
+        this.increaseMode = mode;
+        this.montoDisplay = '';
+        const amount = this.feeForm.get('amount');
+        amount?.setValue('');
+        amount?.markAsPristine();
+        amount?.markAsUntouched();
+        this.cdr.detectChanges();
+    }
+
+    // Porcentaje con hasta dos decimales: se muestra con coma ("12,5") y el formulario guarda "12.5".
+    onPorcentajeInput(target: HTMLInputElement) {
+        const { display, value } = sanitizePercentage(target.value);
+        target.value = display;
+        this.montoDisplay = display;
+        this.feeForm.patchValue({ amount: value });
+        this.feeForm.get('amount')?.markAsDirty();
+    }
+
+    onAmountInput(target: HTMLInputElement) {
+        if (this.increaseMode === 'percentage') {
+            this.onPorcentajeInput(target);
+        } else {
+            this.onMontoInput(target);
+        }
+    }
 
     private noAnteriorAHoy = (control: AbstractControl): ValidationErrors | null => {
         const valor = control.value as string;
@@ -246,6 +378,7 @@ export class ActualizacionAranceles implements OnInit {
         }
         this.vista = vista;
         // Cada pestaña tiene su propio formulario: lo cargado en una no se arrastra a la otra.
+        this.increaseMode = 'absolute';
         this.feeForm.reset({ target: '', amount: '', validFrom: '' });
         this.montoDisplay = '';
         this.cdr.detectChanges();
@@ -283,6 +416,7 @@ export class ActualizacionAranceles implements OnInit {
         target.value = formatted;
         this.montoDisplay = formatted;
         this.feeForm.patchValue({ amount: digitsOnly });
+        this.feeForm.get('amount')?.markAsDirty();
 
         queueMicrotask(() => {
             let newPos = digitsBeforeCursor === 0 ? 0 : formatted.length;
@@ -324,11 +458,14 @@ export class ActualizacionAranceles implements OnInit {
                             b.validFrom.localeCompare(a.validFrom)
                         );
                         this.feeChartData = this.buildChartData();
+                        // El arancel vigente de cada destino pudo cambiar: el porcentaje / monto fijo se revalida
+                        this.feeForm.get('amount')?.updateValueAndValidity();
                         this.cdr.detectChanges();
                     },
                     error: () => {
                         this.feeRows = cuotaRows;
                         this.feeChartData = this.buildChartData();
+                        this.feeForm.get('amount')?.updateValueAndValidity();
                         this.cdr.detectChanges();
                     },
                 });
@@ -496,8 +633,14 @@ export class ActualizacionAranceles implements OnInit {
             return;
         }
 
-        const { target, amount, validFrom } = this.feeForm.value;
+        const { target, validFrom } = this.feeForm.value;
         const targetLabel = this.targets.find(t => t.value === target)?.label ?? '';
+        // HU-069: la API recibe siempre el monto absoluto final; el porcentaje o el monto a sumar se resuelven acá.
+        const amount = this.resultingAmount;
+        if (amount == null) {
+            this.feeForm.markAllAsTouched();
+            return;
+        }
 
         this.enviando = true;
 
@@ -561,6 +704,7 @@ function mapHistorialItem(item: TariffHistoryItemModel): FeeRow {
     const porCategoria = item.genero == null;
     return {
         id: item.idArancel,
+        target: porCategoria ? `categoria:${item.idCategoria}` : `genero:${item.genero}`,
         category: porCategoria ? 'category' : item.genero === 'Femenino' ? 'female' : 'male',
         categoryLabel: porCategoria ? `Categoría ${item.nombreCategoria ?? item.idCategoria}` : (item.genero as string),
         amount: `$${item.monto.toLocaleString('es-AR')}`,
@@ -580,6 +724,7 @@ function mapEnrollmentFeeItem(fee: EnrollmentFeeModel): FeeRow {
     };
     return {
         id: fee.id,
+        target: `inscripcion:${fee.gender}`,
         category: 'enrollment',
         categoryLabel: enrollmentFeeLabel(fee.gender),
         amount: fee.amount === 0 ? 'No se cobra' : `$${fee.amount.toLocaleString('es-AR')}`,
