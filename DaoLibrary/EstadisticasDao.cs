@@ -32,6 +32,20 @@ namespace DaoLibrary
             return info;
         }
 
+        // HU-099: jugadores activos al cierre del mes anterior, para la variación de "Jugadores activos". Sale de las
+        // permanencias (JUGADORES_PERIODOS conserva cada alta y baja): un reingreso de este mes no cuenta como activo el
+        // mes pasado, y quien se dio de baja este mes sí. Una baja con fecha del último día del mes ya no cuenta.
+        private static readonly string ActivosAlCierreDelMesAnteriorSql = $@"
+            SELECT COUNT(DISTINCT FK_id_jugador) FROM JUGADORES_PERIODOS
+            WHERE fecha_alta <  DATEADD(MONTH, DATEDIFF(MONTH, 0, {SqlReloj.Ahora}), 0)
+              AND (fecha_baja IS NULL OR fecha_baja >= DATEADD(MONTH, DATEDIFF(MONTH, 0, {SqlReloj.Ahora}), 0))";
+
+        internal static int ContarActivosAlCierreDelMesAnterior(SqlConnection conexion, SqlTransaction? transaccion)
+        {
+            using SqlCommand comando = new SqlCommand(ActivosAlCierreDelMesAnteriorSql, conexion, transaccion);
+            return Convert.ToInt32(comando.ExecuteScalar());
+        }
+
         private static void ObtenerTotales(SqlConnection conexion, ResumenGeneralInfo info)
         {
             // deuda_acumulada ya descuenta el beneficio activo de Becados y Descuentos de cada
@@ -40,6 +54,7 @@ namespace DaoLibrary
             string query = $@"
                 SELECT
                     (SELECT COUNT(*) FROM JUGADORES WHERE fecha_baja IS NULL) AS total_jugadores, -- solo activos: los dados de baja no cuentan
+                    ({ActivosAlCierreDelMesAnteriorSql}) AS jugadores_activos_mes_anterior,
                     (SELECT COUNT(DISTINCT FK_id_categoria) FROM JUGADORES WHERE fecha_baja IS NULL) AS cantidad_categorias,
                     (SELECT COUNT(*) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR({SqlReloj.Ahora}) AND MONTH(fecha_pago) = MONTH({SqlReloj.Ahora})) AS pagos_del_mes,
                     (SELECT ISNULL(SUM(monto_final), 0) FROM PAGOS WHERE estado = 1 AND YEAR(fecha_pago) = YEAR({SqlReloj.Ahora})) AS recaudado_anio,
@@ -59,6 +74,7 @@ namespace DaoLibrary
             reader.Read();
 
             info.TotalJugadores = Convert.ToInt32(reader["total_jugadores"]);
+            info.JugadoresActivosMesAnterior = Convert.ToInt32(reader["jugadores_activos_mes_anterior"]);
             info.CantidadCategorias = Convert.ToInt32(reader["cantidad_categorias"]);
             info.PagosDelMes = Convert.ToInt32(reader["pagos_del_mes"]);
             info.RecaudadoAnioActual = Convert.ToDecimal(reader["recaudado_anio"]);

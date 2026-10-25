@@ -169,20 +169,64 @@
   transition: opacity 0.25s ease;
 }
 
-.card:hover {
+/* HU-099: la tarjeta es un enlace (<a>): sin subrayado ni color de link, y con foco visible por teclado. */
+a.card {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.card:hover,
+.card:focus-visible {
   transform: translateY(-4px);
   box-shadow: var(--shadow-raised);
 }
 
-.card:hover::before {
+.card:hover::before,
+.card:focus-visible::before {
   opacity: 1;
+}
+
+.card:focus-visible {
+  outline: 3px solid var(--primary-green);
+  outline-offset: 2px;
 }
 
 .card-head {
   display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
   margin-bottom: 12px;
+  /* Mismo alto con o sin variación: el layout no salta */
+  min-height: 26px;
+}
+
+/* Variación contra el mes anterior (HU-099) */
+.card-trend {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.trend-up {
+  color: var(--primary-green);
+}
+
+.trend-down {
+  color: var(--color-danger);
+}
+
+.trend-flat {
+  color: #4b5563;
+}
+
+.trend-neutral {
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .card-badge {
@@ -298,72 +342,30 @@
   color: var(--text-muted);
 }
 
-/* ===== GRÁFICO DE RECAUDACIÓN ===== */
-.chart {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-2);
+/* ===== GRÁFICO DE RECAUDACIÓN (HU-099: Chart.js con ejes) ===== */
+.chart-canvas {
+  position: relative;
   flex: 1;
-  min-height: 190px;
+  min-height: 220px;
 }
 
-.chart-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  flex: 1;
-  min-width: 0;
-}
-
-.chart-amount {
-  font-size: var(--font-sm);
-  font-weight: 600;
-  color: #4b5563;
-}
-
-.chart-track {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 100%;
-  flex: 1;
-  border-bottom: 2px solid #e0e6e2;
-}
-
-.chart-bar {
-  width: 100%;
-  max-width: 42px;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  /* Degradé vertical en las barras */
-  background: linear-gradient(180deg, #82cf9a 0%, #a7deb7 100%);
-  transform-origin: bottom center;
-  animation: columnGrow 0.5s ease both;
-  transition: all 0.25s ease;
-}
-
-.chart-bar.current {
-  background: linear-gradient(180deg, var(--primary-hover) 0%, var(--primary-green) 100%);
-  box-shadow: var(--shadow-raised);
-}
-
-.chart-column:hover .chart-bar {
-  background: linear-gradient(180deg, #5fc17f 0%, #82cf9a 100%);
-}
-
-.chart-column:hover .chart-bar.current {
-  background: linear-gradient(180deg, var(--primary-light) 0%, var(--primary-green) 100%);
-}
-
-.chart-month {
+.chart-empty {
+  margin: auto 0;
+  text-align: center;
   font-size: var(--font-base);
-  font-weight: 500;
   color: var(--text-muted);
 }
 
-.chart-month.current {
-  color: var(--primary-green);
-  font-weight: 700;
+/* "?" de "Cuotas al día" en el banner */
+.banner-stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.banner-hint {
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 /* ===== PANEL DE HABILITACIÓN ===== */

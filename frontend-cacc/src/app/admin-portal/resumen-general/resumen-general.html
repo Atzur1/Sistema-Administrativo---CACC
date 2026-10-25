@@ -13,7 +13,12 @@
       @for (stat of bannerStats; track stat.label) {
         <div class="banner-stat">
           <span class="banner-stat-value">{{ stat.value() }}</span>
-          <span class="banner-stat-label">{{ stat.label }}</span>
+          <span class="banner-stat-label">
+            {{ stat.label }}
+            @if (stat.hint) {
+              <app-help-hint class="banner-hint" [label]="stat.label" [text]="stat.hint" />
+            }
+          </span>
         </div>
       }
     </div>
@@ -22,13 +27,16 @@
   <!-- ===== AVISO: meses con cuotas sin generar (solo aparece si falta alguna) ===== -->
   <app-aviso-cuotas-faltantes />
 
-  <!-- ===== KPI CARDS ===== -->
-  <section class="cards">
+  <!-- ===== KPI CARDS (HU-099: cada una es un enlace a la pantalla con su detalle) ===== -->
+  <section class="cards" aria-label="Indicadores principales">
     <!-- animation-delay staggers the entrance of each card -->
     @for (card of cards; track card.label; let i = $index) {
-      <article class="card" [style.animation-delay.ms]="i * 80">
+      <a class="card" [routerLink]="card.route" [attr.aria-label]="cardAriaLabel(card)"
+         [style.animation-delay.ms]="i * 80">
 
         <div class="card-head">
+          <!-- Variación contra el mes anterior; neutral (mismo alto) si no hay con qué comparar -->
+          <span class="card-trend" [ngClass]="'trend-' + card.trend.tone">{{ card.trend.text }}</span>
           @if (card.badge) {
             <span class="card-badge" [ngClass]="'badge-' + card.badgeTone">{{ card.badge }}</span>
           }
@@ -46,34 +54,32 @@
               [style.background]="card.progressColor"
               [style.animation-delay.ms]="240 + i * 80"></div>
         </div>
-      </article>
+      </a>
     }
   </section>
 
   <!-- ===== BOTTOM ROW ===== -->
   <section class="bottom-row">
 
-    <!-- Monthly revenue chart, built with plain CSS bars -->
+    <!-- Monthly revenue chart (HU-099: Chart.js con ejes y escala desde $0) -->
     <article class="panel panel-chart">
       <header class="panel-head">
         <h2 class="panel-title">Recaudación mensual</h2>
-        <span class="panel-subtitle">Ingresos por cuotas — temporada 2026</span>
+        <span class="panel-subtitle">Lo cobrado en los últimos meses con cobros, por mes de la cuota</span>
       </header>
 
-      <div class="chart">
-        @for (bar of monthlyRevenue; track bar.month; let i = $index) {
-          <div class="chart-column">
-            <span class="chart-amount">{{ bar.amount }}</span>
-            <div class="chart-track">
-              <div class="chart-bar"
-                  [class.current]="bar.current"
-                  [style.height.%]="bar.height"
-                  [style.animation-delay.ms]="320 + i * 60"></div>
-            </div>
-            <span class="chart-month" [class.current]="bar.current">{{ bar.month }}</span>
-          </div>
-        }
-      </div>
+      @if (revenueTitles.length > 0) {
+        <div class="chart-canvas">
+          <canvas baseChart
+                  type="bar"
+                  role="img"
+                  [attr.aria-label]="'Gráfico de barras de la recaudación mensual: ' + revenueSummary"
+                  [data]="revenueData"
+                  [options]="revenueOptions"></canvas>
+        </div>
+      } @else if (!cargando) {
+        <p class="chart-empty">Todavía no hay cobros registrados.</p>
+      }
     </article>
 
     <!-- Squad eligibility breakdown -->

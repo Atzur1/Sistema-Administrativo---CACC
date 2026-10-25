@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, DestroyRef, NgZone, OnInit, WritableSignal, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { EstadisticasService } from '../../services/estadisticas';
@@ -7,7 +8,10 @@ import { AuthService } from '../../services/auth';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { animateCountUp } from '../../shared/count-up';
 import { AvisoCuotasFaltantes } from './aviso-cuotas-faltantes/aviso-cuotas-faltantes';
-import { GeneralSummaryModel, MonthlyCollectionPointModel, MonthlyCoveragePointModel } from '../../models/GeneralSummaryModel';
+import { HelpHint } from '../../shared/help-hint/help-hint';
+import {
+  GeneralSummaryModel, KpiTrendModel, MonthlyCollectionPointModel, MonthlyCoveragePointModel,
+} from '../../models/GeneralSummaryModel';
 
 Chart.register(...registerables);
 
@@ -18,9 +22,18 @@ Chart.register(...registerables);
 interface BannerStat {
   value: WritableSignal<string>;
   label: string;
+  // Texto del "?" que explica cómo se calcula (HU-099: "Cuotas al día")
+  hint?: string;
 }
 
-// One metric card in the KPI row
+// HU-099: variación de la tarjeta contra el mes anterior, lista para mostrar
+export interface CardTrend {
+  text: string;          // "↑ 12 %" o "Sin variación mensual"
+  tone: 'up' | 'down' | 'flat' | 'neutral';
+  spoken: string;        // lo mismo, dicho para el lector de pantalla
+}
+
+// One metric card in the KPI row. HU-099: cada tarjeta es un enlace a la pantalla con su detalle.
 interface SummaryCard {
   value: WritableSignal<string>;
   label: string;
@@ -29,14 +42,10 @@ interface SummaryCard {
   badgeTone: 'positive' | 'negative' | 'neutral';
   progress: number;
   progressColor: string;
-}
-
-// One bar in the monthly revenue chart
-interface MonthlyBar {
-  month: string;
-  amount: string;
-  height: number;
-  current: boolean;
+  route: string;
+  destination: string;   // nombre de la pantalla a la que lleva, para el nombre accesible
+  finalValue: string;    // el valor ya formateado (el animado arranca en 0 y no sirve para el aria-label)
+  trend: CardTrend;
 }
 
 // One row in the eligibility panel
@@ -60,10 +69,37 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 0,
 });
 
+// HU-099: lo que muestra el "?" de "Cuotas al día"
+export const CUOTAS_AL_DIA_HINT =
+  'Porcentaje de jugadores activos que no tienen ninguna cuota vencida impaga. Una cuota vence el día 10 del mes ' +
+  'siguiente al que cubre; la inscripción no cuenta, y una cuota que una beca o descuento deja en $0 tampoco.';
+
+// HU-099: texto de la variación mensual de una tarjeta. Sin base de comparación queda neutral, con el mismo alto.
+export function describeTrend(trend: KpiTrendModel | null | undefined, neutralText = 'Sin datos del mes anterior'): CardTrend {
+  if (!trend || trend.direction === 'none' || trend.changePercentage == null) {
+    return { text: neutralText, tone: 'neutral', spoken: neutralText };
+  }
+  const value = Math.abs(trend.changePercentage);
+  switch (trend.direction) {
+    case 'up':
+      return { text: `↑ ${value} %`, tone: 'up', spoken: `subió ${value} % respecto del mes anterior` };
+    case 'down':
+      return { text: `↓ ${value} %`, tone: 'down', spoken: `bajó ${value} % respecto del mes anterior` };
+    default:
+      return { text: '= 0 %', tone: 'flat', spoken: 'igual que el mes anterior' };
+  }
+}
+
+const PANTALLAS = {
+  cuotas: { route: '/admin/portal/cuotas-pagos', name: 'Cuotas y Pagos' },
+  deudas: { route: '/admin/portal/deudas-morosidad', name: 'Deudas y Morosidad' },
+  recaudacion: { route: '/admin/portal/recaudacion-mensual', name: 'Recaudación Mensual' },
+};
+
 @Component({
   selector: 'app-resumen-general',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective, AvisoCuotasFaltantes],
+  imports: [CommonModule, RouterLink, BaseChartDirective, AvisoCuotasFaltantes, HelpHint],
   templateUrl: './resumen-general.html',
   styleUrl: './resumen-general.css',
 })
@@ -79,7 +115,50 @@ export class ResumenGeneral implements OnInit {
 
   bannerStats: BannerStat[] = [];
   cards: SummaryCard[] = [];
-  monthlyRevenue: MonthlyBar[] = [];
+
+  // HU-099: recaudación mensual como gráfico de barras con ejes. La escala arranca en $0 y cada barra con cobros
+  // tiene un alto mínimo visible, así un mes chico al lado de uno grande no desaparece.
+  revenueData: ChartConfiguration<'bar'>['data'] = { labels: [], datasets: [{ data: [] }] };
+  revenueTitles: string[] = [];
+  revenueOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 600, easing: 'easeOutQuart' },
+    layout: { padding: { top: 4, right: 4 } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#000000',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderWidth: 0,
+        displayColors: false,
+        callbacks: {
+          title: (items) => this.revenueTitles[items[0]?.dataIndex ?? 0] ?? '',
+          label: (context) => CURRENCY_FULL.format(Number(context.parsed.y)),
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        border: { color: '#cfd8d2' },
+        ticks: { color: '#4b5563', font: { size: 11, weight: 600 } },
+      },
+      y: {
+        beginAtZero: true,
+        grace: '8%',
+        grid: { color: '#eef2ef' },
+        border: { display: false },
+        ticks: {
+          color: '#4b5563',
+          font: { size: 11 },
+          maxTicksLimit: 6,
+          callback: (value) => formatCompactCurrency(Number(value)),
+        },
+      },
+    },
+  };
   eligibility: EligibilityItem[] = [];
   suspendedPlayers: DebtorPlayer[] = [];
 
@@ -168,10 +247,6 @@ export class ResumenGeneral implements OnInit {
   private aplicarResumen(r: GeneralSummaryModel) {
     const jugadoresConRestricciones = r.jugadoresConUnaImpaga + r.jugadoresConDosOMasImpagas;
     const porcentajeHabilitados = r.totalJugadores > 0 ? Math.round((r.jugadoresSinDeuda / r.totalJugadores) * 100) : 0;
-    const cambioMensual =
-      r.ingresadoMesAnterior > 0
-        ? Math.round(((r.ingresadoEsteMes - r.ingresadoMesAnterior) / r.ingresadoMesAnterior) * 100)
-        : null;
 
     const pagosDelMesDisplay = signal('0');
     const recaudadoDisplay = signal(formatCompactCurrency(0));
@@ -184,9 +259,12 @@ export class ResumenGeneral implements OnInit {
     this.bannerStats = [
       { value: pagosDelMesDisplay, label: 'Pagos del mes' },
       { value: recaudadoDisplay, label: `Recaudado ${new Date().getFullYear()}` },
-      { value: cuotasAlDiaDisplay, label: 'Cuotas al día' },
+      { value: cuotasAlDiaDisplay, label: 'Cuotas al día', hint: CUOTAS_AL_DIA_HINT },
     ];
 
+    const sinVariacion = 'Sin variación mensual';
+    const trends = r.trends;
+    // HU-099: en el orden de la historia, cada una enlazada a la pantalla con su detalle.
     this.cards = [
       {
         value: jugadoresActivosDisplay,
@@ -196,24 +274,10 @@ export class ResumenGeneral implements OnInit {
         badgeTone: 'neutral',
         progress: 100,
         progressColor: '#00a651',
-      },
-      {
-        value: jugadoresHabilitadosDisplay,
-        label: 'Jugadores habilitados',
-        detail: `${jugadoresConRestricciones} con restricciones`,
-        badge: `${porcentajeHabilitados}%`,
-        badgeTone: porcentajeHabilitados >= 80 ? 'positive' : porcentajeHabilitados >= 50 ? 'neutral' : 'negative',
-        progress: porcentajeHabilitados,
-        progressColor: '#4cb863',
-      },
-      {
-        value: ingresadoEsteMesDisplay,
-        label: 'Ingresado este mes',
-        detail: `${r.pagosDelMes} pagos registrados`,
-        badge: cambioMensual === null ? '' : `${cambioMensual >= 0 ? '+' : ''}${cambioMensual}%`,
-        badgeTone: cambioMensual === null ? 'neutral' : cambioMensual >= 0 ? 'positive' : 'negative',
-        progress: r.ingresadoMesAnterior > 0 ? Math.min(100, Math.round((r.ingresadoEsteMes / r.ingresadoMesAnterior) * 100)) : 0,
-        progressColor: '#8dd49d',
+        route: PANTALLAS.cuotas.route,
+        destination: PANTALLAS.cuotas.name,
+        finalValue: String(r.totalJugadores),
+        trend: describeTrend(trends?.activePlayers),
       },
       {
         value: deudaAcumuladaDisplay,
@@ -223,6 +287,36 @@ export class ResumenGeneral implements OnInit {
         badgeTone: 'neutral',
         progress: r.totalJugadores > 0 ? Math.round((jugadoresConRestricciones / r.totalJugadores) * 100) : 0,
         progressColor: '#c0392b',
+        route: PANTALLAS.deudas.route,
+        destination: PANTALLAS.deudas.name,
+        finalValue: CURRENCY_FULL.format(r.deudaAcumulada),
+        trend: describeTrend(trends?.accumulatedDebt, sinVariacion),
+      },
+      {
+        value: ingresadoEsteMesDisplay,
+        label: 'Ingresado este mes',
+        detail: `${r.pagosDelMes} pagos registrados`,
+        badge: '',
+        badgeTone: 'neutral',
+        progress: r.ingresadoMesAnterior > 0 ? Math.min(100, Math.round((r.ingresadoEsteMes / r.ingresadoMesAnterior) * 100)) : 0,
+        progressColor: '#8dd49d',
+        route: PANTALLAS.recaudacion.route,
+        destination: PANTALLAS.recaudacion.name,
+        finalValue: CURRENCY_FULL.format(r.ingresadoEsteMes),
+        trend: describeTrend(trends?.monthRevenue),
+      },
+      {
+        value: jugadoresHabilitadosDisplay,
+        label: 'Jugadores habilitados',
+        detail: `${jugadoresConRestricciones} con restricciones`,
+        badge: `${porcentajeHabilitados}%`,
+        badgeTone: porcentajeHabilitados >= 80 ? 'positive' : porcentajeHabilitados >= 50 ? 'neutral' : 'negative',
+        progress: porcentajeHabilitados,
+        progressColor: '#4cb863',
+        route: PANTALLAS.deudas.route,
+        destination: PANTALLAS.deudas.name,
+        finalValue: String(r.jugadoresSinDeuda),
+        trend: describeTrend(trends?.enabledPlayers, sinVariacion),
       },
     ];
 
@@ -239,7 +333,7 @@ export class ResumenGeneral implements OnInit {
       { target: r.deudaAcumulada, display: deudaAcumuladaDisplay, format: (v) => CURRENCY_FULL.format(v) },
     ]);
 
-    this.monthlyRevenue = this.mapMonthlyRevenue(r.recaudacionMensual);
+    this.revenueData = this.mapMonthlyRevenue(r.recaudacionMensual);
 
     this.eligibility = [
       { tone: 'success', title: `${r.jugadoresSinDeuda} habilitados`, description: 'Sin cuotas vencidas' },
@@ -257,14 +351,35 @@ export class ResumenGeneral implements OnInit {
     }));
   }
 
-  private mapMonthlyRevenue(puntos: MonthlyCollectionPointModel[]): MonthlyBar[] {
-    const max = Math.max(1, ...puntos.map((p) => p.monto));
-    return puntos.map((p, i) => ({
-      month: p.mes,
-      amount: formatCompactCurrency(p.monto),
-      height: Math.round((p.monto / max) * 100),
-      current: i === puntos.length - 1,
-    }));
+  // El gráfico dicho en texto para el lector de pantalla: "Sep 2026 $1,2 M, Oct 2026 $85 k".
+  get revenueSummary(): string {
+    const montos = (this.revenueData.datasets[0]?.data ?? []) as number[];
+    return this.revenueTitles.map((titulo, i) => `${titulo} ${formatCompactCurrency(montos[i] ?? 0)}`).join(', ');
+  }
+
+  // Nombre accesible de una tarjeta: qué es, cuánto vale, cómo varió y adónde lleva.
+  cardAriaLabel(card: SummaryCard): string {
+    return `${card.label}: ${card.finalValue}. ${card.trend.spoken}. Ver ${card.destination}`;
+  }
+
+  // El último mes (el más reciente) va resaltado. minBarLength: un mes con cobros nunca queda en 0 px aunque al
+  // lado haya uno mucho mayor; el valor real se lee en el eje y en el tooltip.
+  mapMonthlyRevenue(puntos: MonthlyCollectionPointModel[]): ChartConfiguration<'bar'>['data'] {
+    const ultimo = puntos.length - 1;
+    this.revenueTitles = puntos.map((p) => `${p.mes} ${p.anio}`);
+    return {
+      labels: puntos.map((p) => p.mes),
+      datasets: [
+        {
+          data: puntos.map((p) => p.monto),
+          backgroundColor: puntos.map((_, i) => (i === ultimo ? '#00a651' : '#8dd49d')),
+          hoverBackgroundColor: puntos.map((_, i) => (i === ultimo ? '#008f45' : '#5fc17f')),
+          borderRadius: 6,
+          maxBarThickness: 42,
+          minBarLength: 6,
+        },
+      ],
+    };
   }
 
   private mapTrend(puntos: MonthlyCoveragePointModel[]): ChartConfiguration<'line'>['data'] {

@@ -12,6 +12,21 @@ export interface MonthlyCoveragePointModel {
   porcentaje: number;
 }
 
+// HU-099: variación de una tarjeta contra el mes anterior. changePercentage es entero; null sin base para comparar.
+export type TrendDirection = 'up' | 'down' | 'flat' | 'none';
+
+export interface KpiTrendModel {
+  changePercentage: number | null;
+  direction: TrendDirection;
+}
+
+export interface SummaryTrendsModel {
+  activePlayers: KpiTrendModel;
+  accumulatedDebt: KpiTrendModel;
+  monthRevenue: KpiTrendModel;
+  enabledPlayers: KpiTrendModel;
+}
+
 export interface GeneralSummaryModel {
   totalJugadores: number;
   cantidadCategorias: number;
@@ -26,4 +41,5 @@ export interface GeneralSummaryModel {
   recaudacionMensual: MonthlyCollectionPointModel[];
   coberturaPagoMensual: MonthlyCoveragePointModel[];
   mayorDeudaPendiente: PendingDebtorModel[];
+  trends: SummaryTrendsModel;
 }

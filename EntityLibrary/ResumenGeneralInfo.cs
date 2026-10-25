@@ -18,6 +18,8 @@ namespace EntityLibrary
     public class ResumenGeneralInfo
     {
         public int TotalJugadores { get; set; }
+        // Jugadores activos al cierre del mes anterior (HU-099: variación de "Jugadores activos").
+        public int JugadoresActivosMesAnterior { get; set; }
         public int CantidadCategorias { get; set; }
 
         public int PagosDelMes { get; set; }
