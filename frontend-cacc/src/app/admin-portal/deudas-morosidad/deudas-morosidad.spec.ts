@@ -40,6 +40,8 @@ function debtor(
     amountOwed: amount,
     pendingInstallments: installments,
     overdueInstallments: overdue,
+    // Como lo informa el backend (la misma regla que la API de integración).
+    sportStatus: overdue >= 2 ? 'inhabilitado' : overdue === 1 ? 'solo_entrenamientos' : 'habilitado',
   };
 }
 
@@ -153,6 +155,7 @@ describe('DeudasMorosidad - jugadores dados de baja (HU-081)', () => {
   const baja = (id: number, nombre: string, cuotas: number, monto: number): PlayerAccountModel => ({
     ...debtor(id, nombre, cuotas, monto),
     leaveDate: '2026-09-15',
+    sportStatus: 'baja', // el backend informa baja aunque el jugador deba cuotas vencidas
   });
 
   it('muestra al dado de baja con su fecha en lugar del estado deportivo', async () => {

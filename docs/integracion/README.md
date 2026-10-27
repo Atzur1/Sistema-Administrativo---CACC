@@ -97,6 +97,10 @@ cuotas (al iniciar la API y cada 6 horas), sin que el Deportivo haga nada.
 - **Quién la recibe:** quien entró desde el día en que se cargó ese arancel hasta el día en que rige, y todavía no tiene ninguna inscripción (pendiente, pagada ni anulada).
   Quien ya estaba antes de que se cargara no recibe ningún cobro (por ejemplo, las jugadoras que ya estaban cuando la inscripción femenina pasó de $0 a un monto).
 - **Quién no:** los jugadores dados de baja y las inscripciones de $0.
+- **Si la API estuvo caída:** también se miran las inscripciones anteriores que empezaron a regir en los últimos 31 días. Quien entró mientras una estaba
+  programada la paga (con su monto y el vencimiento de su primer día) aunque otra más nueva ya rija hoy.
+- **Importante:** el momento en que se cargó cada inscripción sale de la **auditoría**. Una inscripción cargada fuera de la pantalla de Actualización de
+  aranceles (por ejemplo, un `INSERT` directo sin identificar al usuario) no deja ese registro y no genera nada con esta regla.
 - Es idempotente: repetir el proceso no duplica nada. Para el Deportivo no cambia el contrato: `cargos-alta` sigue respondiendo lo mismo.
 
 ## Campos

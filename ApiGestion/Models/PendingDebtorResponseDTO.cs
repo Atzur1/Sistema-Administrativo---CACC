@@ -17,6 +17,10 @@ public class PendingDebtorResponseDTO
     // null while the player is active
     public DateTime? FechaBaja { get; set; }
 
+    // El estado deportivo que calcula el backend (habilitado, solo_entrenamientos, inhabilitado o baja): la misma regla y los
+    // mismos textos que la API de integración con el Portal Deportivo. La pantalla lo muestra, no lo recalcula.
+    public string EstadoDeportivo { get; set; } = EstadoDeportivoTexto.Habilitado;
+
     public static PendingDebtorResponseDTO FromEntity(PendienteJugador debtor)
     {
         return new PendingDebtorResponseDTO
@@ -29,7 +33,9 @@ public class PendingDebtorResponseDTO
             MontoTotal = debtor.MontoTotal,
             CantidadCuotas = debtor.CantidadCuotas,
             CantidadVencidas = debtor.CantidadVencidas,
-            FechaBaja = debtor.FechaBaja
+            FechaBaja = debtor.FechaBaja,
+            EstadoDeportivo = EstadoDeportivoTexto.De(
+                new EstadoDeudaJugador(debtor.IdJugador, debtor.Dni, debtor.CantidadVencidas, debtor.MontoTotal, debtor.FechaBaja).Estado)
         };
     }
 }

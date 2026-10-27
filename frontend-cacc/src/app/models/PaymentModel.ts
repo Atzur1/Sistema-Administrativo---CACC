@@ -1,3 +1,6 @@
+// El estado deportivo lo calcula el backend (la misma regla que la API de integración con el Portal Deportivo).
+export type EstadoDeportivo = 'habilitado' | 'solo_entrenamientos' | 'inhabilitado' | 'baja';
+
 export interface PendingDebtorModel {
   idJugador: number;
   nombreCompleto: string;
@@ -10,6 +13,8 @@ export interface PendingDebtorModel {
   cantidadVencidas: number;
   // "yyyy-MM-dd" si el jugador está dado de baja (puede seguir debiendo), null si está activo.
   fechaBaja?: string | null;
+  // Calculado por el backend: la pantalla lo muestra, no lo recalcula.
+  estadoDeportivo: EstadoDeportivo;
 }
 
 export interface CategoryDebtModel {

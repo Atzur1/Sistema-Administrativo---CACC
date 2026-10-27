@@ -334,7 +334,9 @@ namespace ApiGestion.Controllers
                 AmountOwed = account.AmountOwed,
                 PendingInstallments = account.PendingInstallments,
                 OverdueInstallments = account.OverdueInstallments,
-                LeaveDate = account.LeaveDate?.ToString("yyyy-MM-dd")
+                LeaveDate = account.LeaveDate?.ToString("yyyy-MM-dd"),
+                SportStatus = EstadoDeportivoTexto.De(new EstadoDeudaJugador(
+                    account.PlayerId, account.Dni, account.OverdueInstallments, account.AmountOwed, account.LeaveDate).Estado)
             };
         }
     }

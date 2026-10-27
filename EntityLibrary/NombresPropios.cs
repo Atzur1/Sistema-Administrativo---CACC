@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace EntityLibrary
 {
@@ -11,6 +12,8 @@ namespace EntityLibrary
         {
             "de", "del", "la", "las", "los", "y", "e"
         };
+
+        private static readonly Regex TramoMc = new(@"(^|[-'’])Mc(\p{L})", RegexOptions.Compiled);
 
         public static string Normalizar(string? texto)
         {
@@ -25,7 +28,7 @@ namespace EntityLibrary
             return string.Join(' ', palabras);
         }
 
-        // Mayúscula al inicio y después de guion o apóstrofo ("Pérez-Gómez", "D'Angelo"); "Mc" lleva mayúscula también en la siguiente ("McDonald").
+        // Mayúscula al inicio y después de guion o apóstrofo ("Pérez-Gómez", "D'Angelo"); "Mc" lleva mayúscula también en la siguiente ("McDonald", "Pérez-McDonald").
         private static string CapitalizarPalabra(string minuscula)
         {
             var resultado = new StringBuilder(minuscula.Length);
@@ -37,11 +40,8 @@ namespace EntityLibrary
                 mayuscula = c is '-' or '\'' or '’';
             }
 
-            if (resultado.Length > 2 && resultado[0] == 'M' && resultado[1] == 'c' && char.IsLetter(resultado[2]))
-            {
-                resultado[2] = char.ToUpperInvariant(resultado[2]);
-            }
-            return resultado.ToString();
+            // "Mc" al inicio de la palabra o de cada tramo ("McDonald", "Pérez-McDonald")
+            return TramoMc.Replace(resultado.ToString(), m => m.Groups[1].Value + "Mc" + m.Groups[2].Value.ToUpperInvariant());
         }
     }
 }
