@@ -133,11 +133,13 @@ namespace ServiceLibrary
                 montoInscripcion = inscripcion.Amount;
             }
 
-            // La cuota del mes solo desde el día 10 (antes la recibe con el resto en la generación mensual), con el arancel de
-            // su categoría si tiene uno o, si no, el de su género; sin arancel vigente no se cobra.
-            DateTime primerDiaDelMes = CalendarioCuotas.PrimerDiaDelMes(hoy);
+            // La cuota del mes DEL ALTA (no el de esta llamada: si la API estuvo caída, la llamada puede llegar ya en otro mes), solo si
+            // el alta fue desde el día 10 (antes la recibe con el resto en la generación mensual), con el arancel de su categoría si
+            // tiene uno o, si no, el de su género; sin arancel vigente no se cobra.
+            DateTime fechaDeAlta = jugador.FechaAlta.Date;
+            DateTime primerDiaDelMes = CalendarioCuotas.PrimerDiaDelMes(fechaDeAlta);
             decimal? montoCuota = null;
-            if (CalendarioCuotas.YaSeGeneraElMesEnCurso(hoy))
+            if (CalendarioCuotas.YaSeGeneraElMesEnCurso(fechaDeAlta))
             {
                 DateTime ultimoDiaDelMes = primerDiaDelMes.AddMonths(1).AddDays(-1);
                 montoCuota = _arancelesDao.ObtenerMontoVigente(jugador.Genero, jugador.IdCategoria, ultimoDiaDelMes);

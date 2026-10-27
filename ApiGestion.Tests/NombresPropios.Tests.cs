@@ -30,6 +30,10 @@ public class NombresPropiosTests
     [InlineData("PÉREZ-GÓMEZ", "Pérez-Gómez")]
     [InlineData("d'angelo", "D'Angelo")]
     [InlineData("MCDONALD", "McDonald")]
+    [InlineData("PÉREZ-MCDONALD", "Pérez-McDonald")]
+    [InlineData("mcdonald-mcgregor", "McDonald-McGregor")]
+    [InlineData("o'mcgrath", "O'McGrath")]
+    [InlineData("MCA", "McA")]
     [InlineData("ñandú NÚÑEZ", "Ñandú Núñez")]
     public void Respeta_guiones_apostrofos_acentos_y_la_enie(string escrito, string esperado)
         => Assert.Equal(esperado, NombresPropios.Normalizar(escrito));

@@ -283,21 +283,24 @@ public class PlayerDAO
 
     internal static int GenerarInscripcionesProgramadas(SqlConnection connection, SqlTransaction transaction)
     {
-        // La inscripción vigente de cada género, con el momento en que se cargó (auditoría). Sin ese dato no se sabe
-        // quién entró después de la carga, así que no se genera nada.
+        // Las inscripciones de cada género que ya empezaron a regir (la vigente y las anteriores), con el momento en que se
+        // cargaron (auditoría). Sin ese dato no se sabe quién entró después de la carga, así que no se genera nada. Se miran
+        // también las anteriores que empezaron a regir hace poco (un año viejo no se cobra ahora): si la API estuvo caída el día que regía una y al día siguiente ya regía otra, quien entró
+        // mientras la primera estaba programada igual la paga (con el monto de esa y el vencimiento de su primer día).
         string query = $@"
             SELECT j.PK_id_jugador, f.monto, f.vigente_desde, f.registrado_utc, j.fecha_alta
             FROM ({EnrollmentFeeDAO.SelectWithStatus}) f
             JOIN PERSONAS p ON p.genero = f.genero
             JOIN JUGADORES j ON j.FK_id_persona = p.PK_id_persona
-            WHERE f.estado = 1
+            WHERE (f.estado = 1 OR (f.estado = 2 AND f.vigente_desde >= DATEADD(DAY, -{InscripcionAnual.DiasParaEmitir}, {SqlReloj.Hoy})))
               AND f.monto > 0
               AND f.registrado_utc IS NOT NULL
               AND j.fecha_baja IS NULL
               AND j.fecha_alta < f.vigente_desde
               AND NOT EXISTS (SELECT 1 FROM PAGOS pg WHERE pg.FK_id_jugador = j.PK_id_jugador AND pg.concepto = @concepto);";
 
-        List<(int IdJugador, decimal Monto, DateTime VigenteDesde)> pendientes = new();
+        // Un jugador puede caer en la ventana de más de una inscripción: se toma la que rigió primero.
+        Dictionary<int, (decimal Monto, DateTime VigenteDesde)> pendientes = new();
         using (SqlCommand command = new SqlCommand(query, connection, transaction))
         {
             command.Parameters.AddWithValue("@concepto", EnrollmentFeeConcept);
@@ -305,16 +308,20 @@ public class PlayerDAO
             while (reader.Read())
             {
                 DateTime cargada = RelojNegocio.FechaDelClub(reader.GetDateTime(3));
-                if (reader.GetDateTime(4).Date >= cargada)
+                if (reader.GetDateTime(4).Date < cargada) continue;
+
+                int idJugador = reader.GetInt32(0);
+                DateTime vigenteDesde = reader.GetDateTime(2).Date;
+                if (!pendientes.TryGetValue(idJugador, out var actual) || vigenteDesde < actual.VigenteDesde)
                 {
-                    pendientes.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.GetDateTime(2)));
+                    pendientes[idJugador] = (reader.GetDecimal(1), vigenteDesde);
                 }
             }
         }
 
-        foreach (var (idJugador, monto, vigenteDesde) in pendientes)
+        foreach (var (idJugador, (monto, vigenteDesde)) in pendientes)
         {
-            InsertPendingCharge(connection, transaction, idJugador, monto, vigenteDesde.Date, EnrollmentFeeConcept);
+            InsertPendingCharge(connection, transaction, idJugador, monto, vigenteDesde, EnrollmentFeeConcept);
         }
         return pendientes.Count;
     }

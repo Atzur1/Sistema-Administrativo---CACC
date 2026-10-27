@@ -69,6 +69,34 @@ public class CargosDeAltaTests
         Assert.Equal(70_000m, dao.MontoInscripcion);
     }
 
+    // Alta el 28/11 y llamada el 2/12 (la API estuvo caída): la cuota que corresponde es la de noviembre, el mes del alta.
+    [Fact]
+    public void UnaLlamadaTardiaEnElMesSiguiente_GeneraLaCuotaDelMesDelAlta()
+    {
+        var alta = new DateTime(2026, 11, 28);
+        var (servicio, dao) = Crear(Jugador(alta: alta), hoy: new DateTime(2026, 12, 2));
+
+        var resultado = servicio.GenerarCargosDeAlta(7);
+
+        Assert.True(resultado.Exito);
+        Assert.Equal(85_000m, dao.MontoCuota);
+        Assert.Equal(new DateTime(2026, 11, 1), dao.PrimerDiaDelMes);
+        Assert.Equal(alta, dao.FechaInscripcion);
+        Assert.Equal(70_000m, dao.MontoInscripcion);
+    }
+
+    // Un alta antes del 10 no recibe la cuota por esta vía aunque la llamada llegue después del 10: la genera la generación mensual.
+    [Fact]
+    public void UnAltaAntesDelDia10_NoRecibeLaCuotaAunqueLaLlamadaLlegueDespuesDelDia10()
+    {
+        var (servicio, dao) = Crear(Jugador(alta: new DateTime(2026, 10, 8)), hoy: new DateTime(2026, 10, 12));
+
+        servicio.GenerarCargosDeAlta(7);
+
+        Assert.Null(dao.MontoCuota);
+        Assert.Equal(70_000m, dao.MontoInscripcion);
+    }
+
     [Fact]
     public void SinArancelDeCuotaVigente_NoSeGeneraLaCuota()
     {

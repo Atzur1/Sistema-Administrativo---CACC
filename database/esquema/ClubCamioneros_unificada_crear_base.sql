@@ -13,8 +13,12 @@
         Portal Administrativo) ni la configuracion de cobranza.
      4. Registra en dbo.__CaccMigraciones las 20 migraciones que ya existen en el repositorio del Portal
         Administrativo (mismo nombre y mismo hash que calcula la API), para que al iniciar no vuelva a aplicarlas.
-        Las migraciones posteriores (V20261018_01__inscripcion_por_genero y V20261018_02__genero_y_categoria_obligatorios)
-        las aplica la API al iniciar; sobre esta estructura no cambian nada porque ya nace en su forma final.
+        Las migraciones posteriores las aplica la API al iniciar. V20261018_01__inscripcion_por_genero y
+        V20261018_02__genero_y_categoria_obligatorios no cambian nada sobre esta estructura (ya nace en su forma final).
+        V20261021_01__inscripcion_anual SI la cambia: reemplaza el indice unico de inscripciones pendientes por jugador
+        (UX_PAGOS_InscripcionPendiente_Jugador) por uno por jugador y anio (UX_PAGOS_InscripcionPendiente_Periodo).
+        Una base recien creada con este script tiene el indice viejo hasta que se levanta la API una vez en Development
+        (o se corre esa migracion a mano): las pruebas de integracion de la inscripcion anual lo necesitan.
    COMO USARLO: sqlcmd -S <servidor> -E -C -b -i este_archivo.sql   (o F5 en SSMS). Es seguro repetirlo:
    si la base ya tiene tablas, no hace nada.
 

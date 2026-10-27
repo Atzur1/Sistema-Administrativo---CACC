@@ -15,5 +15,17 @@ automáticamente al iniciar en `Development`, registrándolas en `dbo.__CaccMigr
 | `esquema/ClubCamioneros_crear_base.sql` | **Obsoleto** (base anterior, con `PERSONA`/`USUARIO`/`TIPO_DESCUENTO`): el código de esta rama ya no funciona con ella. | No |
 | `upgrades/` | Diagnóstico y actualización puntual de `ClubCamionerosPRUEBA` del 23/09/2026. | No |
 
+## Base para las pruebas de integración
+
+Las pruebas marcadas como de integración (`CACC_TEST_DB`) corren contra una base real y necesitan **todas las migraciones
+aplicadas**. Una base nueva creada con `esquema/ClubCamioneros_unificada_crear_base.sql` solo trae las anteriores a
+`V20261018_02`: levantá la API una vez en `Development` apuntando a esa base (las aplica sola) o corré las pendientes a mano:
+
+```
+sqlcmd -S localhost -E -C -I -b -d <base> -i database\migrations\V20261021_01__inscripcion_anual.sql
+```
+
+Si falta `V20261021_01`, fallan las pruebas de `InscripcionAnual` con `Cannot insert duplicate key row ... UX_PAGOS_InscripcionPendiente_Jugador`.
+
 No agregar scripts nuevos en la raíz ni copiar los históricos a `migrations/`: usan `GO` y
 `USE`, que el ejecutor rechaza. El código del ejecutor está en `ApiGestion/Database/`.

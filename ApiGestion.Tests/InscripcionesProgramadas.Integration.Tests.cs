@@ -128,6 +128,30 @@ public class InscripcionesProgramadasIntegrationTests
         finally { t.Rollback(); }
     }
 
+    // SCRUM-565: la API no corrió el día en que regía la primera inscripción y al día siguiente ya regía otra.
+    [IntegracionFact]
+    public void SiLaApiEstuvoCaida_ElJugadorPagaLaInscripcionEnLaQueEntro_NoLaSiguiente()
+    {
+        using var c = Abrir();
+        using var t = c.BeginTransaction();
+        try
+        {
+            // $80.000 rige desde ayer (cargada hace 7 días) y $90.000 rige desde hoy (cargada ayer): la vigente hoy es la segunda.
+            Ejecutar(c, t, "DELETE FROM ARANCELES_INSCRIPCION WHERE genero = 'Femenino'");
+            Ejecutar(c, t, "INSERT INTO ARANCELES_INSCRIPCION (genero, monto, vigente_desde) VALUES ('Femenino', 80000, @d)", ("@d", Hoy.AddDays(-1)));
+            Ejecutar(c, t, "INSERT INTO ARANCELES_INSCRIPCION (genero, monto, vigente_desde) VALUES ('Femenino', 90000, @d)", ("@d", Hoy));
+            Ejecutar(c, t, @"UPDATE ac SET fecha_utc = DATEADD(DAY, -7, fecha_utc) FROM AUDITORIA_CAMBIOS ac
+                             WHERE ac.entidad = N'ARANCELES_INSCRIPCION' AND ac.accion = 'INSERT'
+                               AND ac.id_entidad = CONVERT(NVARCHAR(128), (SELECT PK_id_arancel_inscripcion FROM ARANCELES_INSCRIPCION WHERE genero = 'Femenino' AND monto = 80000))");
+            int entroEnLaPrimera = CrearJugadora(c, t, "99999975", Hoy.AddDays(-4));
+
+            PlayerDAO.GenerarInscripcionesProgramadas(c, t);
+
+            Assert.Equal([(80_000m, Hoy.AddDays(-1), 0)], Inscripciones(c, t, entroEnLaPrimera));
+        }
+        finally { t.Rollback(); }
+    }
+
     [IntegracionFact]
     public void ConLaInscripcionEnCero_NoSeCobraNada()
     {
