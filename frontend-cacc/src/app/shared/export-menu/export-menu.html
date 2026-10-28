@@ -1,0 +1,30 @@
+<div class="export-menu-wrap">
+  <button type="button" class="boton boton-principal export-menu-trigger" [class.compacto]="compacto"
+          [class.en-curso]="enCurso" [disabled]="enCurso || deshabilitado" [attr.aria-busy]="enCurso"
+          aria-haspopup="menu" [attr.aria-expanded]="abierto()" (click)="alternar()">
+    <svg class="export-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="7 10 12 15 17 10"></polyline>
+      <line x1="12" y1="15" x2="12" y2="3"></line>
+    </svg>
+    {{ enCurso ? 'Generando…' : texto }}
+    <svg class="export-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  </button>
+
+  @if (abierto()) {
+    <ul class="export-menu-list" role="menu" [attr.aria-label]="texto">
+      @for (opcion of opciones; track opcion.formato) {
+        <li role="none">
+          <button type="button" role="menuitem" class="export-menu-option" (click)="elegir(opcion.formato)">
+            <span class="export-menu-label">{{ opcion.texto }}</span>
+            <span class="export-menu-hint">{{ opcion.detalle }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>

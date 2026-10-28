@@ -34,8 +34,10 @@
   <div class="header-divider"></div>
 
   <!-- ===== BARRA DE FILTROS ===== -->
-  <!-- Una sola fila: mes, año y categoría filtran al elegirlos (HU-070). -->
+  <!-- Barra de filtros compartida (HU-097): mes, año y categoría filtran al elegirlos (HU-070). -->
   <article class="panel panel-filtros">
+    <app-filter-bar etiqueta="Filtros de recaudación" [filtrosActivos]="filtrosActivos"
+                    (quitarFiltro)="quitarFiltro($event)" (limpiar)="limpiarFiltros()">
 
     <div class="field field-mes">
       <span class="field-label">Mes</span>
@@ -61,16 +63,7 @@
       </div>
     </div>
 
-    @if (hayFiltros) {
-      <button type="button" class="boton boton-fantasma" (click)="limpiarFiltros()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-        Quitar categoría
-      </button>
-    }
+    </app-filter-bar>
   </article>
 
   <!-- ===== PAGOS + DESGLOSE ===== -->
@@ -91,42 +84,9 @@
           <span class="panel-subtitle">Jugadores y el medio con el que pagaron</span>
         </div>
 
-        <!-- Mismo botón que Deudas y Morosidad: el archivo lo genera el servidor
+        <!-- Menú de exportación compartido (HU-097): el archivo lo genera el servidor
              con el período y la categoría que se están viendo. -->
-        <div class="export-wrap">
-          <button type="button" class="boton boton-principal" (click)="toggleExportMenu()"
-                  [disabled]="exportando" [class.en-curso]="exportando" [attr.aria-busy]="exportando"
-                  [attr.aria-expanded]="exportMenuOpen">
-            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            {{ exportando ? 'Generando…' : 'Exportar Reporte' }}
-            <svg class="export-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-
-          @if (exportMenuOpen) {
-            <ul class="export-menu">
-              <li>
-                <button type="button" (click)="exportarRecaudacion('pdf')">
-                  <span class="export-menu-label">PDF</span>
-                  <span class="export-menu-hint">Planilla imprimible</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" (click)="exportarRecaudacion('csv')">
-                  <span class="export-menu-label">CSV</span>
-                  <span class="export-menu-hint">Se abre en Excel</span>
-                </button>
-              </li>
-            </ul>
-          }
-        </div>
+        <app-export-menu [enCurso]="exportando" (exportar)="exportarRecaudacion($event)" />
       </header>
 
       <span class="tabla-conteo">

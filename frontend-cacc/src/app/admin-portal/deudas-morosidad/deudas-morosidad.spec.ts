@@ -1,6 +1,7 @@
+import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { from } from 'rxjs';
+import { NEVER, from } from 'rxjs';
 
 import { DeudasMorosidad } from './deudas-morosidad';
 import { PagosService } from '../../services/pagos';
@@ -274,5 +275,68 @@ describe('DeudasMorosidad - filtro por categoría (HU-020)', () => {
     const banner = component.bannerMetrics;
     expect(banner.find((m) => m.label === 'Deuda total')?.value).toBe('$92 k');
     expect(banner.find((m) => m.label === 'Deudores')?.value).toBe('1');
+  });
+});
+
+// HU-097: barra de filtros y menú de exportación compartidos.
+describe('DeudasMorosidad - filtros y exportación compartidos (HU-097)', () => {
+  const refrescar = (fixture: ComponentFixture<DeudasMorosidad>) => {
+    fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+  };
+
+  it('shows each active filter as a chip, and its × removes only that one', async () => {
+    const fixture = await create([debtor(1, 'SANTIAGO', 1, 92000), debtor(2, 'NICOLAS', 2, 184000, 'Pt preAFA 2015')]);
+    const component = fixture.componentInstance;
+    const el = fixture.nativeElement as HTMLElement;
+
+    component.selectedCategoria = 'AFA 20067';
+    component.selectedEstado = 'Solo entrenamientos';
+    component.onFiltrosChange();
+    refrescar(fixture);
+
+    const chips = () => Array.from(el.querySelectorAll('.filter-bar-chip')).map((c) => c.textContent!.replace('×', '').trim());
+    expect(chips()).toEqual(['Categoría: AFA 20067', 'Estado: Solo entrenamientos']);
+
+    el.querySelectorAll<HTMLButtonElement>('.filter-bar-chip button')[1].click();
+    refrescar(fixture);
+
+    expect(component.selectedEstado).toBeNull();
+    expect(component.selectedCategoria).toBe('AFA 20067');
+    expect(chips()).toEqual(['Categoría: AFA 20067']);
+  });
+
+  it('the search waits 300 ms before filtering the list', async () => {
+    const fixture = await create([debtor(1, 'SANTIAGO', 1, 92000), debtor(2, 'NICOLAS', 2, 184000)]);
+    const el = fixture.nativeElement as HTMLElement;
+    vi.useFakeTimers();
+    try {
+      const input = el.querySelector<HTMLInputElement>('app-filter-bar input[type="search"]')!;
+      input.value = 'nico';
+      input.dispatchEvent(new Event('input'));
+      vi.advanceTimersByTime(250);
+      refrescar(fixture);
+      expect(tablePlayers(fixture)).toHaveLength(2);
+
+      vi.advanceTimersByTime(60);
+      refrescar(fixture);
+      expect(tablePlayers(fixture)).toEqual(['PRUEBA, NICOLAS']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('uses the shared "Exportar Reporte" menu and exports with the active category', async () => {
+    const fixture = await create([debtor(1, 'SANTIAGO', 1, 92000)], [{ idCategoria: 5, nombre: 'AFA 20067' }]);
+    const component = fixture.componentInstance;
+    const el = fixture.nativeElement as HTMLElement;
+    const exportarDeudoresCsv = vi.fn(() => NEVER);
+    (TestBed.inject(ReportesService) as unknown as Record<string, unknown>)['exportarDeudoresCsv'] = exportarDeudoresCsv;
+
+    expect(el.querySelector('app-export-menu .export-menu-trigger')!.textContent!.trim()).toBe('Exportar Reporte');
+    component.selectedCategoria = 'AFA 20067';
+    component.exportarDeudores('csv');
+
+    expect(exportarDeudoresCsv).toHaveBeenCalledWith(5);
   });
 });

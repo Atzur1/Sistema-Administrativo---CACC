@@ -119,106 +119,7 @@
     color: var(--color-text-muted);
 }
 
-/* ---- Botón "Exportar" con menú PDF/CSV (mismo patrón que Deudas y Morosidad) ---- */
-.export-wrap {
-    position: relative;
-    flex-shrink: 0;
-}
-
-.export-csv-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    height: 34px;
-    padding: 0 var(--space-3);
-    background: #ffffff;
-    border: 1px solid var(--color-brand);
-    border-radius: var(--radius-md);
-    color: var(--color-brand-deep);
-    font-family: inherit;
-    font-size: var(--font-base);
-    font-weight: 700;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
-}
-
-.export-csv-btn:hover:not(:disabled) {
-    background: var(--color-brand);
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-raised);
-}
-
-.export-csv-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.excel-icon {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-    color: #1e7d3c;
-}
-
-.export-chevron {
-    width: 11px;
-    height: 11px;
-    flex-shrink: 0;
-    margin-left: -1px;
-}
-
-.export-csv-btn:hover:not(:disabled) .excel-icon {
-    color: #ffffff;
-}
-
-.export-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    z-index: 30;
-    margin: 0;
-    padding: var(--space-2);
-    width: 190px;
-    list-style: none;
-    background: #ffffff;
-    border: 1px solid #f1f5f9;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-floating);
-    animation: fadeIn 0.12s ease both;
-}
-
-.export-menu button {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-1);
-    width: 100%;
-    padding: var(--space-2) var(--space-3);
-    background: transparent;
-    border: none;
-    border-radius: var(--radius-md);
-    font-family: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.export-menu button:hover {
-    background: var(--color-brand-tint);
-}
-
-.export-menu-label {
-    font-size: var(--font-md);
-    font-weight: 700;
-    color: var(--color-text);
-}
-
-.export-menu-hint {
-    font-size: var(--font-sm);
-    color: var(--color-text-muted);
-}
+/* El menú Exportar es el compartido (app-export-menu, HU-097). */
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
@@ -236,8 +137,7 @@
         flex-wrap: wrap;
     }
 
-    .export-csv-btn {
+    app-export-menu {
         width: 100%;
-        justify-content: center;
     }
 }

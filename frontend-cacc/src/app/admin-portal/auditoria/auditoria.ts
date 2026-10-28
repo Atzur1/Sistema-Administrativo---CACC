@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { ChangeDetectorRef, Component, NgZone, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, NgZone, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { API_BASE_URL } from '../../services/api-url';
 import { AuthService } from '../../services/auth';
@@ -9,6 +9,8 @@ import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepick
 import { Cargando } from '../../shared/cargando/cargando';
 import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { Ventana } from '../../shared/ventana/ventana';
+import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
+import { LatestRequest } from '../../shared/latest-request';
 
 interface AuditEvent {
   id: number;
@@ -153,7 +155,7 @@ type Datos = Record<string, unknown>;
 @Component({
   selector: 'app-auditoria',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect, CustomDatepicker, Ventana, Cargando, EstadoVacio],
+  imports: [CommonModule, FormsModule, CustomSelect, CustomDatepicker, Ventana, Cargando, EstadoVacio, FilterBar],
   templateUrl: './auditoria.html',
   styleUrl: './auditoria.css',
 })
@@ -162,6 +164,9 @@ export class Auditoria {
   private readonly auth = inject(AuthService);
   private readonly ngZone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  // HU-097: solo vale la respuesta de la última búsqueda; una nueva cancela la anterior.
+  private readonly consulta = new LatestRequest();
 
   readonly pageSize = 50;
   // Sin la entrada "Todas las acciones": el placeholder de app-custom-select
@@ -212,8 +217,6 @@ export class Auditoria {
   detalleActual: DetalleEvento | null = null;
   mostrarIguales = false;
 
-  private temporizadorBusqueda: ReturnType<typeof setTimeout> | undefined;
-
   get pages(): number {
     return Math.max(1, Math.ceil(this.total / this.pageSize));
   }
@@ -227,6 +230,7 @@ export class Auditoria {
   }
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.consulta.cancel());
     this.search(1);
   }
 
@@ -245,15 +249,14 @@ export class Auditoria {
   }
 
   // Los filtros se aplican solos: no hay que apretar "Aplicar". Los de elegir (fechas, sección, tipo) buscan al
-  // instante; el de texto espera un instante a que termine de escribir.
+  // instante; el de texto espera a que se termine de escribir (la espera la hace la barra de filtros, HU-097).
   buscarAhora(): void {
-    clearTimeout(this.temporizadorBusqueda);
     this.search(1);
   }
 
-  buscarAlEscribir(): void {
-    clearTimeout(this.temporizadorBusqueda);
-    this.temporizadorBusqueda = setTimeout(() => this.search(1), 400);
+  buscarPersona(texto: string): void {
+    this.email = texto;
+    this.search(1);
   }
 
   // "Hoy", "Últimos 7 días", etc. Elegir el que ya está puesto lo quita.
@@ -283,13 +286,20 @@ export class Auditoria {
     return lista;
   }
 
+  // Los mismos filtros, en el formato de la barra compartida (HU-097).
+  private readonly filtrosBarraCache = new ActiveFiltersCache();
+  get filtrosBarra(): ActiveFilter[] {
+    return this.filtrosBarraCache.get(this.filtrosActivos.map((f) => ({ key: f.clave, label: f.etiqueta })));
+  }
+
   // Cuántos de los filtros de "Más filtros" están puestos (para el número del botón).
   get cantidadMasFiltros(): number {
     return [this.from, this.to, this.entity, this.action].filter(Boolean).length;
   }
 
-  quitarFiltro(clave: FiltroActivo['clave']): void {
-    this[clave] = '';
+  quitarFiltro(clave: string): void {
+    if (!['email', 'from', 'to', 'entity', 'action'].includes(clave)) return;
+    this[clave as FiltroActivo['clave']] = '';
     this.buscarAhora();
   }
 
@@ -313,12 +323,12 @@ export class Auditoria {
     if (this.entity.trim()) params = params.set('entidad', this.entity.trim());
     if (this.action) params = params.set('accion', this.action);
 
-    this.http
-      .get<AuditResponse>(`${API_BASE_URL}/auditoria/cambios`, {
+    this.consulta.run(
+      this.http.get<AuditResponse>(`${API_BASE_URL}/auditoria/cambios`, {
         params,
         headers: { Authorization: `Bearer ${this.auth.getToken() ?? ''}` },
-      })
-      .subscribe({
+      }),
+      {
         // ngZone.run() + cdr.detectChanges(): la respuesta de HttpClient no dispara
         // detección de cambios sola en este proyecto (mismo problema documentado en
         // login.ts) — sin esto, loading/items quedan actualizados por dentro pero la
