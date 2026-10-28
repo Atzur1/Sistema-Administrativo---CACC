@@ -88,3 +88,121 @@ describe('BecadosDescuentos - formulario por cuota', () => {
     expect(component.dateRangeErrorMessage).toBe('');
   });
 });
+
+// HU-101: la tabla se separa en Vigentes (activas y programadas) e Historial (finalizadas, canceladas y anuladas).
+function beneficio(id: number, status: DiscountModel['status'], playerName: string, type = 'Becado'): DiscountModel {
+  return {
+    id,
+    playerId: id,
+    playerName,
+    category: 'AFA 2010',
+    type,
+    valueType: '%',
+    percentage: 50,
+    fixedAmount: null,
+    startDate: '2026-01-01',
+    endDate: '2026-12-31',
+    status,
+    isActive: status === 'Active',
+  };
+}
+
+const BENEFICIOS: DiscountModel[] = [
+  beneficio(1, 'Active', 'GOMEZ, ANA'),
+  beneficio(2, 'Scheduled', 'PEREZ, LUIS', 'Descuento'),
+  beneficio(3, 'Expired', 'GOMEZ, JUAN'),
+  beneficio(4, 'Cancelled', 'DIAZ, SOL', 'Descuento'),
+  beneficio(5, 'Voided', 'RUIZ, MARTA'),
+];
+
+async function crearConTabla(rows: DiscountModel[] = BENEFICIOS) {
+  await TestBed.configureTestingModule({
+    imports: [BecadosDescuentos],
+    providers: [
+      {
+        provide: DiscountService,
+        useValue: {
+          getDiscountMap: () => of(new Map<number, DiscountModel>()),
+          getAllDiscounts: () => of(rows),
+          getDiscountTypes: () => of(['Becado', 'Descuento']),
+        },
+      },
+      { provide: PagosService, useValue: { getJugadores: () => of([]) } },
+      { provide: AuthService, useValue: { isSuperAdmin: () => true } },
+    ],
+  }).compileComponents();
+
+  const fixture = TestBed.createComponent(BecadosDescuentos);
+  fixture.detectChanges();
+  return { fixture, component: fixture.componentInstance };
+}
+
+const ids = (rows: DiscountModel[]) => rows.map((row) => row.id);
+
+describe('BecadosDescuentos - pestañas Vigentes / Historial', () => {
+  it('arranca en Vigentes y muestra solo las activas y programadas', async () => {
+    const { component } = await crearConTabla();
+
+    expect(component.pestana()).toBe('vigentes');
+    expect(ids(component.filteredRows)).toEqual([1, 2]);
+  });
+
+  it('Historial muestra las finalizadas, canceladas y anuladas', async () => {
+    const { component } = await crearConTabla();
+
+    component.cambiarPestana('historial');
+
+    expect(ids(component.filteredRows)).toEqual([3, 4, 5]);
+  });
+
+  it('cada pestaña muestra cuántos beneficios tiene', async () => {
+    const { fixture } = await crearConTabla();
+
+    const textos = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]') as NodeListOf<HTMLElement>).map((tab) =>
+      tab.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+    expect(textos).toEqual(['Vigentes 2', 'Historial 3']);
+  });
+
+  it('la búsqueda y el motivo se mantienen al cambiar de pestaña', async () => {
+    const { component } = await crearConTabla();
+
+    component.filterForm.patchValue({ busqueda: 'gomez', motivo: 'Becado' });
+    expect(ids(component.filteredRows)).toEqual([1]);
+
+    component.cambiarPestana('historial');
+    expect(component.filterForm.value.busqueda).toBe('gomez');
+    expect(ids(component.filteredRows)).toEqual([3]);
+  });
+
+  it('el filtro de estado ofrece solo los estados de la pestaña y se limpia si no existe en la nueva', async () => {
+    const { component } = await crearConTabla();
+
+    expect(component.estadoOptionsDePestana.map((o) => o.value)).toEqual(['Active', 'Scheduled']);
+    component.filterForm.patchValue({ estado: 'Active' });
+
+    component.cambiarPestana('historial');
+
+    expect(component.estadoOptionsDePestana.map((o) => o.value)).toEqual(['Expired', 'Cancelled', 'Voided']);
+    expect(component.filterForm.value.estado).toBeNull();
+  });
+
+  it('al cambiar de pestaña vuelve a la página 1', async () => {
+    const muchos = Array.from({ length: 25 }, (_, i) => beneficio(i + 1, 'Active', `JUGADOR, ${i + 1}`));
+    const { component } = await crearConTabla(muchos);
+    component.irAPagina(3);
+
+    component.cambiarPestana('historial');
+    component.cambiarPestana('vigentes');
+
+    expect(component.page).toBe(1);
+  });
+
+  it('los cinco estados se muestran con la etiqueta compartida, cada uno con su propio tono', async () => {
+    const { component } = await crearConTabla();
+
+    const tonos = BENEFICIOS.map((row) => component.statusClassOf(row));
+    expect(new Set(tonos).size).toBe(5);
+    expect(BENEFICIOS.map((row) => component.statusOf(row))).toEqual(['Activa', 'Programada', 'Finalizada', 'Cancelada', 'Anulada']);
+  });
+});

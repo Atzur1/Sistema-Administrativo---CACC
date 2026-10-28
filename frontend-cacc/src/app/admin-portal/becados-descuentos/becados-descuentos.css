@@ -1,5 +1,14 @@
-﻿/* Color de la sección en el encabezado compartido (ver styles.css): violeta, beneficios (las acciones de esta pantalla ya son violetas). */
+﻿/* ===== IDENTIDAD DE LA SECCIÓN (HU-101) =====
+   El violeta es el color propio de Becados y Descuentos (beneficios): el ícono del encabezado, el avatar y el motivo
+   de cada fila, las pestañas y la ventana de bonificación. No se mezcla con el azul (--color-info), que es el de los
+   avisos y el de las secciones de control; el único azul que aparece acá es la etiqueta compartida de estado
+   "Programada" (HU-093), que significa lo mismo en todo el portal.
+   Los textos en violeta usan el tono oscuro: el claro no llega a 4.5:1 sobre blanco. */
 :host {
+  --becados-violeta: #7c3aed;
+  --becados-violeta-hover: #6d28d9;
+  --becados-violeta-oscuro: #5b21b6;
+  --becados-violeta-suave: #ede9fe;
   --section-accent: var(--color-accent);
   --section-accent-bg: var(--color-accent-bg);
 }
@@ -286,6 +295,64 @@
 /* Con ~700 jugadores en el club esta tabla no se puede recorrer a ojo — buscar por
    nombre y filtrar por estado/motivo es lo que la hace usable. Mismo patrón visual que
    ya usa Deudas y Morosidad para sus propios filtros. */
+/* ===== PESTAÑAS VIGENTES / HISTORIAL (HU-101) =====
+   Mismo dibujo que las pestañas de Usuarios y Permisos, con la pestaña elegida en el violeta de la sección. */
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-page);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: calc(var(--space-6) + var(--space-2));
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tab:hover:not(.tab-active) {
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--color-text);
+}
+
+.tab-active {
+  background: var(--color-bg-card);
+  color: var(--becados-violeta-oscuro);
+  box-shadow: var(--shadow-raised);
+}
+
+.tab-count {
+  min-width: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-card);
+  font-size: var(--font-base);
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.tab-active .tab-count {
+  background: var(--becados-violeta-suave);
+  color: var(--becados-violeta-oscuro);
+}
+
 .filter-row {
   display: flex;
   align-items: center;
@@ -448,15 +515,6 @@
   flex-shrink: 0;
 }
 
-/* Avatar background per benefit type */
-.avatar-scholarship {
-  background: var(--color-accent);
-}
-
-.avatar-discount {
-  background: var(--color-info);
-}
-
 .player-identity {
   display: flex;
   flex-direction: column;
@@ -497,16 +555,6 @@
   font-size: var(--font-sm);
   font-weight: 600;
   white-space: nowrap;
-}
-
-.type-scholarship {
-  background: var(--color-accent-bg);
-  color: var(--color-accent);
-}
-
-.type-discount {
-  background: var(--color-info-bg);
-  color: var(--color-info);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -595,11 +643,11 @@ app-ventana {
   --action-field-bg: #f5f3ff;
   --action-border: #ddd6fe;
   --action-border-strong: #c4b5fd;
-  --action-accent: #7c3aed;
-  --action-accent-hover: #6d28d9;
+  --action-accent: var(--becados-violeta);
+  --action-accent-hover: var(--becados-violeta-hover);
   --action-focus-ring: 0 0 0 3px rgba(124, 58, 237, 0.16);
-  --color-brand-tint: #ede9fe;
-  --color-brand-deep: #5b21b6;
+  --color-brand-tint: var(--becados-violeta-suave);
+  --color-brand-deep: var(--becados-violeta-oscuro);
 }
 
 /* Botones propios de la bonificación activa: se acomodan en el pie de la ventana como si fueran suyos. */

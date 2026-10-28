@@ -50,7 +50,8 @@ export type DiscountStatus = 'Scheduled' | 'Active' | 'Expired' | 'Cancelled' | 
 const STATUS_LABELS: Record<DiscountStatus, string> = {
     Scheduled: 'Programada',
     Active: 'Activa',
-    Expired: 'Expirada',
+    // Corrió su curso completo. Mismo nombre que el filtro de estado de Becados y Descuentos.
+    Expired: 'Finalizada',
     Cancelled: 'Cancelada',
     // Asignado por error: a diferencia de Cancelada, no cuenta ni para los meses que ya
     // pasaron — el backend lo excluye por completo del cálculo de deuda.
@@ -61,19 +62,27 @@ export function statusLabel(status: DiscountStatus): string {
     return STATUS_LABELS[status] ?? status;
 }
 
-// Tone of the shared status tag (.etiqueta-estado in styles.css, HU-093). Keeps the colours this
-// screen already used on purpose: cancelled (taken down by an admin) in red, voided ("should not
-// have happened", already resolved) and expired in neutral grey, scheduled as a future fact.
+// Tone of the shared status tag (.etiqueta-estado in styles.css, HU-093). Cada estado tiene el suyo
+// (HU-101): activa en verde, programada como un hecho futuro, finalizada en gris (terminó sola),
+// cancelada en rojo (la cortó un administrador) y anulada en ámbar (nunca debió otorgarse).
 const STATUS_TONES: Record<DiscountStatus, string> = {
     Active: 'tono-exito',
     Scheduled: 'tono-info',
     Expired: 'tono-neutro',
     Cancelled: 'tono-peligro',
-    Voided: 'tono-neutro',
+    Voided: 'tono-aviso',
 };
 
 export function statusToneClass(status: DiscountStatus): string {
     return STATUS_TONES[status] ?? 'tono-neutro';
+}
+
+// Pestaña de Becados y Descuentos donde aparece cada estado (HU-101): Vigentes, lo que rige hoy o
+// va a regir; Historial, lo que ya terminó.
+export type PestanaBeneficios = 'vigentes' | 'historial';
+
+export function pestanaDe(status: DiscountStatus): PestanaBeneficios {
+    return status === 'Active' || status === 'Scheduled' ? 'vigentes' : 'historial';
 }
 
 // Body sent to assign or edit a benefit. The player travels in the URL, so it is
