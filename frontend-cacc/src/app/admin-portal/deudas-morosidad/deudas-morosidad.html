@@ -102,7 +102,7 @@
             </thead>
             <tbody>
               @for (debtor of debtors; track debtor.rank) {
-                <tr class="row-clickable" (click)="irADeuda(debtor.idJugador)">
+                <tr class="row-clickable" tabindex="0" (click)="irADeuda(debtor.idJugador)" (keydown.enter)="irADeuda(debtor.idJugador)">
                   <td class="col-rank">
                     <span class="rank-badge" [class.rank-top]="isTopRank(debtor.rank)">
                       {{ debtor.rank }}

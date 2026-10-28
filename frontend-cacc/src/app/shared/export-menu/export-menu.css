@@ -60,7 +60,6 @@
 .export-menu-option:hover,
 .export-menu-option:focus-visible {
   background: var(--color-brand-tint);
-  outline: none;
 }
 
 .export-menu-label {
@@ -70,6 +69,6 @@
 }
 
 .export-menu-hint {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }

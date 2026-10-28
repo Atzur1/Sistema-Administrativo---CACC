@@ -87,7 +87,7 @@
 }
 
 .form-subtitle {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -144,7 +144,6 @@
   font-family: inherit;
   font-size: var(--font-base);
   color: var(--color-text);
-  outline: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -201,7 +200,6 @@
 .suggestion:hover,
 .suggestion:focus-visible {
   background: var(--color-brand-tint);
-  outline: none;
 }
 
 .suggestion-name {
@@ -210,7 +208,7 @@
 }
 
 .suggestion-meta {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -280,7 +278,7 @@
 }
 
 .panel-subtitle {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -324,7 +322,6 @@
   font-family: inherit;
   font-size: var(--font-md);
   color: var(--color-text);
-  outline: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -353,7 +350,7 @@
 
 .filter-count {
   margin: 10px 2px 0;
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -476,7 +473,7 @@
 }
 
 .player-category {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
   white-space: nowrap;
 }
@@ -705,7 +702,7 @@ app-ventana {
 }
 
 .field-hint {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -837,7 +834,7 @@ app-ventana {
 }
 
 .benefit-history-meta {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }

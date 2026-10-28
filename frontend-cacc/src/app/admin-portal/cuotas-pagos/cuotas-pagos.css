@@ -144,7 +144,7 @@
     border-radius: var(--radius-sm);
     background: var(--color-bg-card);
     font-family: inherit;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     font-weight: 700;
     color: var(--color-text-muted);
 }
@@ -207,7 +207,7 @@
 }
 
 .mostrador-jugador-meta {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -231,7 +231,7 @@
 .mostrador-aviso,
 .mostrador-ayuda {
     margin: 0;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -267,7 +267,6 @@
 .cuota-item:hover,
 .cuota-item:focus-visible {
     border-color: var(--action-accent);
-    outline: none;
 }
 
 .cuota-elegida {
@@ -342,7 +341,6 @@
 
 .concepto-opcion:focus-visible {
     box-shadow: var(--shadow-focus);
-    outline: none;
 }
 
 .concepto-activo {
@@ -389,7 +387,6 @@
     font-family: inherit;
     font-size: var(--font-md);
     color: var(--color-text);
-    outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -465,7 +462,6 @@
 .suggestion:hover,
 .suggestion-activa {
     background: var(--color-brand-tint);
-    outline: none;
 }
 
 .suggestion-name {
@@ -474,7 +470,7 @@
 }
 
 .suggestion-meta {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -530,7 +526,7 @@
 }
 
 .insc-monto-sub {
-    font-size: var(--font-xs);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -645,7 +641,6 @@
     font-family: inherit;
     font-size: var(--font-base);
     color: var(--color-text);
-    outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -666,7 +661,7 @@
 
 .filter-count {
     margin: 0 2px 10px;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 

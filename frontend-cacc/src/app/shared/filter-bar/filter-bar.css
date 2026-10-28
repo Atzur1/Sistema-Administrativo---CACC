@@ -51,7 +51,6 @@
   font-family: inherit;
   font-size: var(--font-md);
   color: var(--color-text);
-  outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -113,7 +112,6 @@
 .filter-bar-chip button:hover,
 .filter-bar-chip button:focus-visible {
   background: rgba(0, 0, 0, 0.08);
-  outline: none;
 }
 
 /* Pantallas angostas: todo en columna, a lo ancho */

@@ -228,7 +228,7 @@ app-export-menu {
 
 /* Cantidad de pagos y porcentaje debajo del monto (HU-070), en el color de su medio de pago */
 .card-detail {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     font-weight: 600;
     line-height: 1.3;
     color: var(--color-text-muted);
@@ -255,7 +255,7 @@ app-export-menu {
 /* ===== TABLA DE PAGOS ===== */
 .tabla-conteo {
     margin-bottom: 10px;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-subtle);
 }
 
@@ -461,7 +461,7 @@ app-export-menu {
 }
 
 .legend-meta {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-subtle);
 }
 
@@ -481,7 +481,7 @@ app-export-menu {
 }
 
 .legend-amount {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-subtle);
 }
 

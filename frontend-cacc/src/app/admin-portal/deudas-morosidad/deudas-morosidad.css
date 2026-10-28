@@ -107,7 +107,7 @@
 
 .filter-count {
     margin: 10px 2px 0;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -118,7 +118,7 @@
 }
 
 .panel-subtitle {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -127,9 +127,9 @@
 /* Explica qué significa cada estado de la columna "Estado" */
 .table-legend {
     margin: 10px 2px 0;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     line-height: 1.5;
-    color: #8a8f8a;
+    color: var(--color-text-muted);
 }
 
 /* ===== DEBTORS TABLE ===== */
@@ -280,7 +280,7 @@
 }
 
 .suspended-detail {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
     white-space: nowrap;
 }
@@ -397,7 +397,7 @@
 }
 
 .categoria-count {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
