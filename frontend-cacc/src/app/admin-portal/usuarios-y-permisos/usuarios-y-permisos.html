@@ -467,6 +467,7 @@
     textoConfirmar="Deshabilitar"
     textoEnCurso="Deshabilitando…"
     [enCurso]="bajaSubmitting()"
+    [focoAlCerrar]="botonMenu"
     (confirmar)="confirmarBajaAccion()"
     (cerrar)="cancelarBaja()"
   >
@@ -487,6 +488,7 @@
     textoConfirmar="Enviar correo"
     textoEnCurso="Enviando…"
     [enCurso]="enlaceSubmitting()"
+    [focoAlCerrar]="botonMenu"
     (confirmar)="confirmarEnlaceAccion()"
     (cerrar)="cancelarEnlace()"
   >

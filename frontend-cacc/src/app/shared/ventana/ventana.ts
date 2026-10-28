@@ -1,5 +1,5 @@
 import { A11yModule } from '@angular/cdk/a11y';
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
 
 let siguienteId = 0;
 
@@ -28,7 +28,7 @@ const MENUS_FLOTANTES = '.cs-menu, .dp-panel, .help-tooltip';
   templateUrl: './ventana.html',
   styleUrl: './ventana.css',
 })
-export class Ventana {
+export class Ventana implements OnInit, OnDestroy {
   @Input({ required: true }) titulo = '';
   @Input() subtitulo: string | null | undefined = '';
   @Input() error: string | null | undefined = null;
@@ -52,6 +52,10 @@ export class Ventana {
 
   @Input() forma: 'centrada' | 'angosta' | 'ancha' | 'lateral' = 'centrada';
 
+  // Adónde vuelve el foco al cerrar si el botón que abrió la ventana ya no existe. Pasa con las opciones de
+  // un menú ("⋯"): el menú se cierra al elegir y la opción desaparece, así que se indica el botón del menú.
+  @Input() focoAlCerrar: HTMLElement | null = null;
+
   @Output() readonly confirmar = new EventEmitter<void>();
   // Si nadie escucha "volver", el botón Volver cierra la ventana.
   @Output() readonly volver = new EventEmitter<void>();
@@ -59,6 +63,29 @@ export class Ventana {
 
   readonly tituloId = `ventana-titulo-${++siguienteId}`;
   readonly subtituloId = `ventana-subtitulo-${siguienteId}`;
+
+  // Lo que tenía el foco al abrirse. cdkTrapFocus le devuelve el foco solo; esto es para saber si ya no existe.
+  private abridor: Element | null = null;
+
+  ngOnInit(): void {
+    this.abridor = document.activeElement;
+  }
+
+  ngOnDestroy(): void {
+    const abridor = this.abridor;
+    const respaldo = this.focoAlCerrar;
+    if (!respaldo) {
+      return;
+    }
+    // Después de que cdkTrapFocus intentó devolver el foco y de que la pantalla se redibujó.
+    setTimeout(() => {
+      const abridorPerdido = !abridor || abridor === document.body || !abridor.isConnected;
+      const focoSuelto = !document.activeElement || document.activeElement === document.body;
+      if (abridorPerdido && focoSuelto && respaldo.isConnected) {
+        respaldo.focus();
+      }
+    });
+  }
 
   intentarCerrar(): void {
     if (!this.enCurso) {
