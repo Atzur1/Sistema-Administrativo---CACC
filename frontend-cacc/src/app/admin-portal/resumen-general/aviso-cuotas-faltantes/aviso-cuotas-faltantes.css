@@ -230,7 +230,7 @@
 
 .detalle-meta {
   grid-column: 1;
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 

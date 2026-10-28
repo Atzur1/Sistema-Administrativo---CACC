@@ -123,6 +123,7 @@
 }
 
 .copilot-close {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -326,7 +327,7 @@
    le reste espacio a los mensajes todo el tiempo. */
 .copilot-clear-hint {
     padding: var(--space-2) var(--space-3) 0;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-subtle);
     animation: clearHintIn 0.15s ease both;
 }
@@ -337,7 +338,7 @@
     background: var(--color-brand-tint);
     color: var(--color-brand-deep);
     font-family: 'SFMono-Regular', Consolas, monospace;
-    font-size: var(--font-xs);
+    font-size: var(--font-base);
 }
 
 @keyframes clearHintIn {
@@ -371,7 +372,6 @@
 }
 
 .copilot-input:focus {
-    outline: none;
     border-color: var(--color-brand);
     box-shadow: var(--shadow-focus);
 }
@@ -380,8 +380,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
     border-radius: var(--radius-pill);
     border: none;

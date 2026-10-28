@@ -360,8 +360,8 @@
 }
 
 .abono-meta {
-  font-size: var(--font-sm);
-  color: #6b7280;
+  font-size: var(--font-base);
+  color: var(--color-text-subtle);
 }
 
 .abono-monto {
@@ -579,7 +579,6 @@
   font-family: inherit;
   font-size: var(--font-base);
   color: var(--color-text);
-  outline: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -606,7 +605,7 @@
 }
 
 .field-hint {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 

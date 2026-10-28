@@ -19,7 +19,7 @@
       @if (loading()) {
         <span class="search-spinner" aria-hidden="true"></span>
       } @else if (term()) {
-        <button type="button" class="search-clear" (click)="clear()" aria-label="Limpiar búsqueda">×</button>
+        <button type="button" class="search-clear area-tactil" (click)="clear()" aria-label="Limpiar búsqueda">×</button>
       }
     </div>
     <button type="submit" class="boton boton-principal search-submit" [disabled]="loading()"

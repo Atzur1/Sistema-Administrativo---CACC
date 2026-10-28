@@ -316,7 +316,7 @@
             </thead>
             <tbody>
               @for (row of filteredPendingRows; track row.id; let i = $index) {
-                <tr class="row-clickable" (click)="cobrarDesdePendientes(row.id)" title="Cobrarle en el mostrador">
+                <tr class="row-clickable" tabindex="0" (click)="cobrarDesdePendientes(row.id)" (keydown.enter)="cobrarDesdePendientes(row.id)" title="Cobrarle en el mostrador">
                   <td class="col-rank">
                     <span class="rank-badge">{{ i + 1 }}</span>
                   </td>
