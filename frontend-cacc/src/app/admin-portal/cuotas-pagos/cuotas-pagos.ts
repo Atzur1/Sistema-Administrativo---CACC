@@ -630,7 +630,12 @@ export class CuotasPagos implements OnInit, OnDestroy {
   // mes todavía no se generó) se imputa a este mes, no al anterior. Si paga otro mes, el operador lo cambia.
   selectPlayer(jugador: PlayerSummaryModel) {
     this.selectedPlayer = jugador;
-    this.paymentForm.patchValue({ player: jugador.nombreCompleto });
+    const hoy = new Date();
+    this.paymentForm.patchValue({
+      player: jugador.nombreCompleto,
+      period: this.periods[hoy.getMonth()],
+      year: hoy.getFullYear(),
+    });
     this.matchingPlayers = [];
     this.showSuggestions = false;
   }
@@ -693,11 +698,11 @@ function normalizeTexto(texto: string): string {
   return texto.normalize('NFD').replace(DIACRITICS_REGEX, '');
 }
 
-// Año actual y los 2 anteriores, más nuevo primero. Calculado en el momento (no hardcodeado)
-// para que la ventana se corra sola cada 1° de enero sin que haga falta tocar código.
-function buildYearOptions(): number[] {
+// Año siguiente (para pagar por adelantado), el actual y los 2 anteriores, más nuevo primero. Calculado en el
+// momento (no hardcodeado) para que la ventana se corra sola cada 1° de enero sin que haga falta tocar código.
+export function buildYearOptions(): number[] {
   const actual = new Date().getFullYear();
-  return [actual, actual - 1, actual - 2];
+  return [actual + 1, actual, actual - 1, actual - 2];
 }
 
 function initialsOf(nombreCompleto: string): string {

@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NEVER, Observable, from, throwError } from 'rxjs';
 
-import { CuotasPagos, mensajeSinInscripcion } from './cuotas-pagos';
+import { CuotasPagos, buildYearOptions, mensajeSinInscripcion } from './cuotas-pagos';
 import { PagosService } from '../../services/pagos';
 import { ArancelesService } from '../../services/aranceles';
 import { NotificationService } from '../../shared/notifications/notification.service';
@@ -178,5 +178,77 @@ describe('mensajeSinInscripcion', () => {
     expect(mensajeSinInscripcion('Varón, Prueba', 'Masculino', undefined)).toBe(
       'Varón, Prueba no paga inscripción: no hay un arancel de inscripción vigente para su género.',
     );
+  });
+});
+
+// HU-084: pago por adelantado imputado al mes en curso.
+describe('CuotasPagos - periodo propuesto y aviso de adelanto (HU-084)', () => {
+  const RESUMEN: PaymentSummaryModel = {
+    recaudadoAnioActual: 0,
+    pagosDelMes: 0,
+    cantidadPendientes: 0,
+    deudaGlobalTotal: 0,
+    jugadoresMorosos: 0,
+  };
+  const JUGADOR = { idJugador: 7, nombreCompleto: 'Pérez, Juan', dni: '41000001' } as never;
+
+  afterEach(() => vi.useRealTimers());
+
+  async function crearEn(fecha: string) {
+    const fixture = await create(RESUMEN);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(fecha));
+    return fixture.componentInstance;
+  }
+
+  it('al elegir un jugador propone el mes y el año en curso', async () => {
+    const c = await crearEn('2026-10-05T12:00:00');
+    c.selectPlayer(JUGADOR);
+
+    expect(c.paymentForm.value.period).toBe('Octubre');
+    expect(c.paymentForm.value.year).toBe(2026);
+  });
+
+  it('el operador puede cambiar el período propuesto', async () => {
+    const c = await crearEn('2026-10-05T12:00:00');
+    c.selectPlayer(JUGADOR);
+    c.paymentForm.patchValue({ period: 'Septiembre' });
+
+    expect(c.paymentForm.value.period).toBe('Septiembre');
+  });
+
+  it('antes del día 10, pagar el mes en curso se avisa como adelanto', async () => {
+    const c = await crearEn('2026-10-05T12:00:00');
+    c.selectPlayer(JUGADOR);
+
+    expect(c.avisoAdelanto).toContain('adelanto de octubre');
+  });
+
+  it('con otro mes elegido no hay aviso de adelanto', async () => {
+    const c = await crearEn('2026-10-05T12:00:00');
+    c.selectPlayer(JUGADOR);
+    c.paymentForm.patchValue({ period: 'Septiembre' });
+
+    expect(c.avisoAdelanto).toBeNull();
+  });
+
+  it('desde el día 10 no hay aviso de adelanto', async () => {
+    const c = await crearEn('2026-10-10T12:00:00');
+    c.selectPlayer(JUGADOR);
+
+    expect(c.avisoAdelanto).toBeNull();
+  });
+
+  it('sin jugador elegido no hay aviso', async () => {
+    const c = await crearEn('2026-10-05T12:00:00');
+
+    expect(c.avisoAdelanto).toBeNull();
+  });
+
+  it('el combo de año ofrece el año siguiente para pagar por adelantado', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-05T12:00:00'));
+
+    expect(buildYearOptions()).toEqual([2027, 2026, 2025, 2024]);
   });
 });

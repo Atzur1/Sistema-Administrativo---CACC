@@ -231,6 +231,8 @@ export class AccountAccess implements OnInit, OnDestroy {
           } else if (error.status === 400) {
             // El token no sirve (vencido, ya usado o inexistente): no tiene sentido seguir escribiendo.
             this.estado = 'enlaceInvalido';
+          } else if (error.status === 429) {
+            this.mensajeError = 'Hiciste demasiados intentos seguidos. Esperá unos minutos y volvé a probar.';
           } else {
             this.mensajeError = 'No se pudo completar la operación. Intentá nuevamente.';
           }
