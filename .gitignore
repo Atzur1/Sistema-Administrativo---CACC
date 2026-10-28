@@ -35,3 +35,8 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Docker deployment secrets (only the example is versioned)
+.env.docker
+.env.docker.*
+!.env.docker.example

@@ -1,0 +1,44 @@
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-cacc-backend:local}
+    build:
+      context: .
+      dockerfile: ApiGestion/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__ConexionSQL: ${SQL_CONNECTION_STRING:?Configure SQL_CONNECTION_STRING in .env.docker}
+      Jwt__Key: ${JWT_KEY:?Configure JWT_KEY with at least 32 bytes}
+      Jwt__Issuer: ${JWT_ISSUER:-CACC}
+      Jwt__Audience: ${JWT_AUDIENCE:-CACC-Portales}
+      DatabaseMigrations__Enabled: "false"
+      ForwardedHeaders__Enabled: "true"
+      Email__PublicBaseUrl: ${PUBLIC_URL:?Configure the public frontend URL}
+      Email__SmtpHost: ${SMTP_HOST:-}
+      Email__SmtpPort: ${SMTP_PORT:-587}
+      Email__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+      Email__From: ${SMTP_FROM:-}
+      Email__Username: ${SMTP_USERNAME:-}
+      Email__Password: ${SMTP_PASSWORD:-}
+    networks:
+      - app
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-cacc-frontend:local}
+    build:
+      context: ./frontend-cacc
+      args:
+        DEPORTIVO_URL: ${DEPORTIVO_URL:?Configure the public Deportivo portal URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_BIND:-127.0.0.1}:${FRONTEND_PORT:-8080}:80"
+    environment:
+      PUBLIC_SCHEME: ${PUBLIC_SCHEME:-http}
+    networks:
+      - app
+
+networks:
+  app:
