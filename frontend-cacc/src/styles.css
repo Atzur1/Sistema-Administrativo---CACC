@@ -411,10 +411,11 @@ html, body {
    Foco visible: todo lo que se puede usar con el teclado (botones, enlaces, campos, selectores y lo que
    tenga tabindex) muestra un anillo verde al recibir el foco con Tab. Las pantallas no lo ocultan con
    "outline: none"; si quieren un indicador extra (un sombreado), lo suman a este, no lo reemplazan.
-   Vale dentro del Portal Administrativo y en sus menús y calendarios, que se dibujan sobre <body>; el
-   login y la elección de portales no se tocan.
+   Vale dentro del Portal Administrativo y en sus menús y calendarios, que se dibujan sobre <body>, y desde la
+   HU-109 también en las pantallas de acceso: login, elección de portales y crear / reestablecer contraseña.
    ===================================================================== */
 app-admin-portal :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+:is(app-login, app-portales, app-account-access) :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
 .cs-menu :focus-visible,
 .dp-panel :focus-visible {
   outline: 2px solid var(--action-accent);

@@ -8,17 +8,17 @@
   --primary-light: var(--color-brand-light);
   --text-dark: var(--color-text-dark);
   --text-muted: var(--color-text-subtle);
-  --border-light: #dcdfe4;
+  --border-light: var(--color-border);
 
   /* Acento por defecto (primer ingreso) */
   --accent: var(--color-brand-deep);
   --accent-light: var(--color-brand-light);
-  --accent-soft: #e4f4ea;
-  --accent-text: #005f2e;
+  --accent-soft: var(--color-brand-tint);
+  --accent-text: var(--color-brand-darkest);
   --accent-shadow: rgba(0, 127, 62, 0.35);
 
   background: var(--gradient-institutional);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-variant-numeric: tabular-nums;
   position: relative;
   min-height: 100vh;
@@ -30,6 +30,8 @@
   overflow: hidden;
 }
 
+/* Decisión de diseño (HU-109): el dorado de recuperación no es un color del portal y se mantiene a propósito.
+   Es el mismo de los correos de recuperación, y sirve para que nadie confunda "crear" con "reestablecer". */
 .main[data-modo='restablecer'] {
   --accent: #a87921;
   --accent-light: #d6a84f;
@@ -116,7 +118,7 @@
 
 .access-header h1,
 .state-panel h1 {
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: inherit;
   color: var(--text-dark);
   font-size: 25px;
   font-weight: 800;
@@ -172,12 +174,11 @@
   padding: 0 46px 0 44px;
   border: 1.5px solid var(--border-light);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--color-bg-card);
   color: var(--text-dark);
   font-family: inherit;
   font-size: 14px;
   box-sizing: border-box;
-  outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -214,13 +215,13 @@
   border: 0;
   border-radius: 9px;
   background: transparent;
-  color: #6b7280;
+  color: var(--color-text-subtle);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .eye-icon:hover {
-  background: #f1f3f5;
+  background: var(--color-bg-page);
   color: var(--primary-green);
 }
 
@@ -248,8 +249,9 @@
   color: var(--primary-green);
 }
 
+/* Ámbar oscuro: el claro no llegaba a 4.5:1 sobre blanco (HU-109) */
 .caps-warning {
-  color: #a87921;
+  color: #7a5513;
 }
 
 .caps-warning svg {
@@ -275,7 +277,7 @@
 .strength-bars span {
   height: 5px;
   border-radius: 999px;
-  background: #e5e7eb;
+  background: var(--color-border);
   transition: background 0.25s ease;
 }
 
@@ -287,13 +289,13 @@
   color: var(--text-muted);
 }
 
-.strength[data-nivel='1'] .strength-bars span:nth-child(-n + 1) { background: #dc2626; }
-.strength[data-nivel='2'] .strength-bars span:nth-child(-n + 2) { background: #3b82f6; }
+.strength[data-nivel='1'] .strength-bars span:nth-child(-n + 1) { background: var(--color-danger-strong); }
+.strength[data-nivel='2'] .strength-bars span:nth-child(-n + 2) { background: var(--color-info); }
 .strength[data-nivel='3'] .strength-bars span:nth-child(-n + 3) { background: #84cc16; }
-.strength[data-nivel='4'] .strength-bars span:nth-child(-n + 4) { background: #00a651; }
+.strength[data-nivel='4'] .strength-bars span:nth-child(-n + 4) { background: var(--color-brand); }
 
-.strength[data-nivel='1'] .strength-label { color: #dc2626; }
-.strength[data-nivel='2'] .strength-label { color: #2c5fa8; }
+.strength[data-nivel='1'] .strength-label { color: var(--color-danger-strong); }
+.strength[data-nivel='2'] .strength-label { color: var(--aviso-acento); }
 .strength[data-nivel='3'] .strength-label { color: #4d7c0f; }
 .strength[data-nivel='4'] .strength-label { color: var(--primary-green); }
 
@@ -304,7 +306,7 @@
   display: grid;
   gap: 7px;
   border-radius: 12px;
-  background: #f6f8f7;
+  background: var(--color-bg-page-alt);
 }
 
 .requirements li {
@@ -341,7 +343,7 @@
 .requirements li.is-met .requirement-check {
   background: var(--primary-green);
   border-color: var(--primary-green);
-  color: #ffffff;
+  color: var(--color-bg-card);
 }
 
 .requirement-tag {
@@ -357,7 +359,7 @@
   margin: 8px 2px 0;
   font-size: 11.5px;
   line-height: 1.45;
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 /* ===== ALERTAS ===== */
@@ -380,7 +382,7 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  color: #ffffff;
+  color: var(--color-bg-card);
 }
 
 .alert-icon svg {
@@ -410,7 +412,7 @@
   border: 0;
   border-radius: 12px;
   background: linear-gradient(110deg, var(--color-brand-light), var(--primary-green));
-  color: #ffffff;
+  color: var(--color-bg-card);
   font-family: inherit;
   font-size: 15px;
   font-weight: 700;
@@ -502,7 +504,7 @@
 }
 
 .state-icon-success {
-  background: #e4f4ea;
+  background: var(--color-brand-tint);
   color: var(--primary-green);
   box-shadow: 0 0 0 10px rgba(0, 166, 81, 0.08);
 }
@@ -517,7 +519,7 @@
   margin-top: 12px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: #f6f8f7;
+  background: var(--color-bg-page-alt);
   color: var(--text-dark);
   font-weight: 600;
 }
