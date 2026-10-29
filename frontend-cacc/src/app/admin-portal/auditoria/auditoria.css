@@ -406,6 +406,16 @@ tbody tr:hover {
   overflow-wrap: anywhere;
 }
 
+/* HU-055: lo que llegó desde otro sistema (la integración con el Portal Deportivo) se distingue de lo hecho acá. */
+.person-info .origin-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  font-weight: 600;
+}
+
 /* La etiqueta del tipo de cambio va arriba y la frase de lo que pasó debajo. */
 .what-cell .action-chip {
   margin-bottom: 6px;

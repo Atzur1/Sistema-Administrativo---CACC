@@ -151,6 +151,16 @@ public static class IntegrationErrors
             errorCode, status, DateTimeOffset.UtcNow, EndpointOf(context), LogSanitizer.Sanitize(reason));
     }
 
+    // HU-055: con el id de correlación del pedido. Lo genera el servidor (TraceIdentifier) y no trae datos del cliente, así
+    // que no pasa por LogSanitizer: su sufijo de 8 dígitos ("0HN...:00000001") se confundía con un DNI y quedaba oculto.
+    public static void Log(ILogger logger, HttpContext context, int status, string errorCode, string reason, string correlationId)
+    {
+        var level = status >= StatusCodes.Status500InternalServerError ? LogLevel.Error : LogLevel.Warning;
+        logger.Log(level,
+            "Error de integración {ErrorCode} ({Status}). Timestamp: {Timestamp:o}. Endpoint: {Endpoint}. Motivo: {Reason} Correlación: {CorrelationId}",
+            errorCode, status, DateTimeOffset.UtcNow, EndpointOf(context), LogSanitizer.Sanitize(reason), correlationId);
+    }
+
     // La excepción no se pasa al logger tal cual (su mensaje podría traer datos): va su tipo, su mensaje y la pila, sanitizados.
     public static void LogException(ILogger logger, HttpContext? context, int status, string errorCode, Exception exception)
     {

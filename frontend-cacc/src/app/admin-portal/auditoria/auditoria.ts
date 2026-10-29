@@ -26,6 +26,9 @@ interface AuditEvent {
   // Los nombres de lo que el evento menciona solo por número, como "tipo:número" -> texto (por ejemplo
   // "jugador:3" -> "PRUEBA, NICOLAS (DNI 99000001)"). Lo que ya no existe en la base no figura.
   references?: Record<string, string>;
+  // HU-055: el sistema que hizo el pedido ("PortalDeportivo" por la API de integración, "PortalAdministrativo" por este
+  // portal). NULL: no pasó por la API del Portal Administrativo o es un evento anterior a HU-055.
+  sourceSystem?: string | null;
 }
 
 interface AuditResponse {
@@ -536,6 +539,21 @@ export class Auditoria {
     return [event.userEmail || 'Usuario no identificado', event.userDni ? `DNI ${event.userDni}` : '']
       .filter(Boolean)
       .join(' · ');
+  }
+
+  // Desde qué sistema se hizo. Sin origen registrado no se inventa uno.
+  private static readonly ORIGENES: Record<string, string> = {
+    PortalDeportivo: 'Portal Deportivo (integración)',
+    PortalAdministrativo: 'Portal Administrativo',
+  };
+
+  origen(event: AuditEvent): string | null {
+    return event.sourceSystem ? (Auditoria.ORIGENES[event.sourceSystem] ?? event.sourceSystem) : null;
+  }
+
+  // En la lista solo se marca lo que llegó de otro sistema: lo hecho desde este portal es lo habitual.
+  vinoDeOtroSistema(event: AuditEvent): boolean {
+    return !!event.sourceSystem && event.sourceSystem !== 'PortalAdministrativo';
   }
 
   iniciales(event: AuditEvent): string {
