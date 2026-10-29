@@ -13,4 +13,8 @@ export interface LoginResponseModel {
     dni?: string;
     role: number;
     token: string;
+    // HU-007: portales a los que puede entrar, según el backend (PortalesDeLaCuenta). Decide a dónde va al iniciar sesión.
+    portales: Portal[];
 }
+
+export type Portal = 'administrativo' | 'deportivo' | 'personas';

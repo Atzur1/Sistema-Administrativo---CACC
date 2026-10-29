@@ -15,7 +15,7 @@ describe('authInterceptor', () => {
     sessionStorage.clear();
     sessionStorage.setItem(
       'cacc-session',
-      JSON.stringify({ email: 'admin@cacc.com', role: 1, token }),
+      JSON.stringify({ email: 'admin@cacc.com', role: 1, token, portales: ['administrativo', 'deportivo', 'personas'] }),
     );
 
     TestBed.configureTestingModule({

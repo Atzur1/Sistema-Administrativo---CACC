@@ -113,6 +113,11 @@ namespace ApiGestion.Controllers
                 {
                     if (clave is not null) _loginThrottle.Limpiar(clave);
 
+                    // HU-007: sin ningún portal no se emite token; así ningún frontend tiene que adivinar a dónde mandarla.
+                    var portales = PortalesDeLaCuenta.De(usuarioEncontrado);
+                    if (portales.Count == 0)
+                        return StatusCode(StatusCodes.Status403Forbidden, new { mensaje = "Tu cuenta no tiene accesos habilitados." });
+
                     // Generamos el token JWT con el rol adentro
                     string token = GenerarToken(usuarioEncontrado);
 
@@ -124,7 +129,8 @@ namespace ApiGestion.Controllers
                         LastName = usuarioEncontrado.Apellido,
                         Dni = usuarioEncontrado.Dni,
                         Role = usuarioEncontrado.IdRol,
-                        Token = token
+                        Token = token,
+                        Portales = portales
                     });
                 }
 
