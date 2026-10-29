@@ -160,4 +160,44 @@ public class UsuariosPortalDaoIntegrationTests
         }
         finally { transaction.Rollback(); connection.Dispose(); }
     }
+
+    private static int InsertarSuperAdmin(SqlConnection connection, SqlTransaction transaction, string dni, string email, bool activacionPendiente)
+    {
+        int id = InsertarUsuario(connection, transaction, dni, email, conAcceso: true);
+        using var command = new SqlCommand(
+            "UPDATE dbo.USUARIOS SET rol_portal = 1, activacion_pendiente = @pendiente WHERE PK_id_usuario = @id", connection, transaction);
+        command.Parameters.AddWithValue("@pendiente", activacionPendiente);
+        command.Parameters.AddWithValue("@id", id);
+        command.ExecuteNonQuery();
+        return id;
+    }
+
+    // HU-061 (LAST-05): un SuperAdmin que todavía no activó su cuenta no puede iniciar sesión ni recuperar la contraseña,
+    // así que no cuenta como "el otro SuperAdmin que queda". Sin esto, el único SuperAdmin operativo podía bajarse el
+    // rol o ser deshabilitado y el club se quedaba sin nadie que administre los accesos.
+    [IntegracionFact]
+    public void UltimoSuperAdmin_UnSuperAdminConActivacionPendienteNoCuentaComoElQueQueda()
+    {
+        var (connection, transaction) = Abrir();
+        try
+        {
+            using (var apartarLosDemas = new SqlCommand(
+                "UPDATE dbo.USUARIOS SET acceso_portal = 0 WHERE rol_portal = 1 AND acceso_portal = 1", connection, transaction))
+                apartarLosDemas.ExecuteNonQuery();
+            int operativo = InsertarSuperAdmin(connection, transaction, "90616101", "sa-operativo@cacc.test", activacionPendiente: false);
+            int pendiente = InsertarSuperAdmin(connection, transaction, "90616102", "sa-pendiente@cacc.test", activacionPendiente: true);
+
+            Assert.False(UsuariosPortalDao.CambiarRolCore(connection, transaction, operativo, 2));
+            Assert.False(UsuariosPortalDao.DeshabilitarCore(connection, transaction, operativo));
+
+            using (var activar = new SqlCommand("UPDATE dbo.USUARIOS SET activacion_pendiente = 0 WHERE PK_id_usuario = @id", connection, transaction))
+            {
+                activar.Parameters.AddWithValue("@id", pendiente);
+                activar.ExecuteNonQuery();
+            }
+
+            Assert.True(UsuariosPortalDao.CambiarRolCore(connection, transaction, operativo, 2));
+        }
+        finally { transaction.Rollback(); connection.Dispose(); }
+    }
 }

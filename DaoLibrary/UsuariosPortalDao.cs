@@ -228,93 +228,74 @@ namespace DaoLibrary
 
             using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
+            var resultado = CambiarRolCore(conexion, transaccion, idUsuario, nuevoRolPortal);
+            if (resultado) transaccion.Commit(); else transaccion.Rollback();
+            return resultado;
+        }
 
+        internal static bool CambiarRolCore(SqlConnection conexion, SqlTransaction transaccion, int idUsuario, int nuevoRolPortal)
+        {
             using (var bloquear = new SqlCommand(
                 "SELECT rol_portal FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
                 conexion, transaccion))
             {
                 bloquear.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
                 var actual = bloquear.ExecuteScalar();
-                if (actual is null)
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
+                if (actual is null) return false;
 
                 var rolActual = Convert.ToInt32(actual);
                 if (rolActual == 1 && nuevoRolPortal != 1 && !QuedaOtroSuperAdminHabilitado(conexion, transaccion, idUsuario))
-                {
-                    transaccion.Rollback();
                     return false;
-                }
             }
 
-            using (var actualizar = new SqlCommand(
+            using var actualizar = new SqlCommand(
                 "UPDATE dbo.USUARIOS SET rol_portal = @rol, token_version = token_version + 1 WHERE PK_id_usuario = @id AND acceso_portal = 1",
-                conexion, transaccion))
-            {
-                actualizar.Parameters.Add("@rol", SqlDbType.Int).Value = nuevoRolPortal;
-                actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-                if (actualizar.ExecuteNonQuery() != 1)
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
-            }
-
-            transaccion.Commit();
-            return true;
+                conexion, transaccion);
+            actualizar.Parameters.Add("@rol", SqlDbType.Int).Value = nuevoRolPortal;
+            actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
+            return actualizar.ExecuteNonQuery() == 1;
         }
 
         public bool Deshabilitar(int idUsuario)
         {
             using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
+            var resultado = DeshabilitarCore(conexion, transaccion, idUsuario);
+            if (resultado) transaccion.Commit(); else transaccion.Rollback();
+            return resultado;
+        }
 
+        internal static bool DeshabilitarCore(SqlConnection conexion, SqlTransaction transaccion, int idUsuario)
+        {
             using (var bloquear = new SqlCommand(
                 "SELECT rol_portal FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
                 conexion, transaccion))
             {
                 bloquear.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
                 var actual = bloquear.ExecuteScalar();
-                if (actual is null)
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
+                if (actual is null) return false;
 
                 var rolActual = Convert.ToInt32(actual);
                 if (rolActual == 1 && !QuedaOtroSuperAdminHabilitado(conexion, transaccion, idUsuario))
-                {
-                    transaccion.Rollback();
                     return false;
-                }
             }
 
-            using (var actualizar = new SqlCommand(
+            using var actualizar = new SqlCommand(
                 "UPDATE dbo.USUARIOS SET acceso_portal = 0, token_version = token_version + 1 WHERE PK_id_usuario = @id AND acceso_portal = 1",
-                conexion, transaccion))
-            {
-                actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-                if (actualizar.ExecuteNonQuery() != 1)
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
-            }
-
-            transaccion.Commit();
-            return true;
+                conexion, transaccion);
+            actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
+            return actualizar.ExecuteNonQuery() == 1;
         }
 
         // Nunca deja que la última operación sobre un SuperAdmin (bajarle el rol o
         // deshabilitarlo) apague el acceso de todo el club: siempre tiene que
-        // quedar, como mínimo, otro SuperAdmin habilitado.
+        // quedar, como mínimo, otro SuperAdmin habilitado. Uno con la activación pendiente no cuenta: no puede iniciar
+        // sesión ni pedir "¿Olvidaste tu contraseña?", y si su enlace vence el club se queda sin SuperAdmin (HU-061).
         private static bool QuedaOtroSuperAdminHabilitado(SqlConnection conexion, SqlTransaction transaccion, int idUsuarioExcluido)
         {
             using var contar = new SqlCommand(
                 @"SELECT COUNT(*) FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK)
-                  WHERE rol_portal = 1 AND acceso_portal = 1 AND activo = 1 AND PK_id_usuario <> @id",
+                  WHERE rol_portal = 1 AND acceso_portal = 1 AND activo = 1 AND activacion_pendiente = 0 AND PK_id_usuario <> @id",
                 conexion, transaccion);
             contar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuarioExcluido;
             return Convert.ToInt32(contar.ExecuteScalar()) > 0;
