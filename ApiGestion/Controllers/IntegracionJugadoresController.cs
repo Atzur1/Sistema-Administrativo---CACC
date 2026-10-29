@@ -105,6 +105,84 @@ namespace ApiGestion.Controllers
             });
         }
 
+        // HU-057. POST api/integracion/v1/jugadores/{idJugador}/baja  Body: { "fechaBaja": "2026-10-15" }
+        // -> 200 (también si repite una baja ya registrada con la misma fecha) | 400 id o fecha inválidos, o fecha futura | 404 no
+        // existe | 409 ya dado de baja con otra fecha | 422 fecha anterior a su ingreso al club | 401 / 403 sin credencial, sin
+        // sesión o sin permiso. Baja lógica: no se borra nada; deja de recibir cuotas desde el mes siguiente.
+        [HttpPost("{idJugador:int}/baja")]
+        [ProducesResponseType(typeof(BajaIntegracionResponseDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status503ServiceUnavailable)]
+        public IActionResult DarDeBaja(int idJugador, [FromBody] BajaIntegracionRequestDTO? request, [FromServices] IJugadoresBajaService bajaService)
+        {
+            ResultadoOperacion<BajaIntegracionRegistrada> resultado;
+            try
+            {
+                resultado = bajaService.DarDeBaja(idJugador, request?.FechaBaja);
+            }
+            catch (Exception ex)
+            {
+                return IntegrationErrors.FromException(this, _logger, ex);
+            }
+            return IntegrationErrors.FromResult(this, _logger, resultado, baja =>
+            {
+                _logger.LogInformation("Baja del jugador {IdJugador} informada por el Deportivo: {FechaBaja:yyyy-MM-dd} (reintento: {Reintento})",
+                    idJugador, baja.FechaBaja, baja.YaEstabaDadoDeBaja);
+                return Ok(new BajaIntegracionResponseDTO
+                {
+                    IdJugador = idJugador,
+                    FechaBaja = baja.FechaBaja.ToString("yyyy-MM-dd"),
+                    YaEstabaDadoDeBaja = baja.YaEstabaDadoDeBaja
+                });
+            });
+        }
+
+        // HU-057. POST api/integracion/v1/jugadores/{idJugador}/reincorporacion  Body (opcional): { "idCategoria": 4 }
+        // -> 200 | 400 id o categoría inválidos | 404 no existe | 409 ya está activo | 422 la categoría no existe | 401 / 403.
+        // Mismo jugador y misma persona; su fecha de alta pasa a ser hoy y la cuota del mes sigue el calendario (día 10).
+        [HttpPost("{idJugador:int}/reincorporacion")]
+        [ProducesResponseType(typeof(ReincorporacionIntegracionResponseDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status503ServiceUnavailable)]
+        public IActionResult Reincorporar(int idJugador, [FromBody] ReincorporacionIntegracionRequestDTO? request,
+            [FromServices] IJugadoresBajaService bajaService)
+        {
+            ResultadoOperacion<ReincorporacionRegistrada> resultado;
+            try
+            {
+                resultado = bajaService.Reincorporar(idJugador, request?.IdCategoria);
+            }
+            catch (Exception ex)
+            {
+                return IntegrationErrors.FromException(this, _logger, ex);
+            }
+            return IntegrationErrors.FromResult(this, _logger, resultado, reingreso =>
+            {
+                _logger.LogInformation("Reincorporación del jugador {IdJugador} informada por el Deportivo (categoría cambiada: {Cambio})",
+                    idJugador, reingreso.CategoriaCambiada);
+                return Ok(new ReincorporacionIntegracionResponseDTO
+                {
+                    IdJugador = idJugador,
+                    FechaAlta = reingreso.FechaAlta.ToString("yyyy-MM-dd"),
+                    CategoriaCambiada = reingreso.CategoriaCambiada
+                });
+            });
+        }
+
         // POST api/integracion/v1/jugadores/{idJugador}/cargos-alta -> 200 con lo que se generó | 400 id inválido | 404 no existe
         // | 422 dado de baja o alta que no es reciente | 401 / 403 sin sesión o sin permiso. Se puede repetir sin duplicar nada.
         [HttpPost("{idJugador:int}/cargos-alta")]

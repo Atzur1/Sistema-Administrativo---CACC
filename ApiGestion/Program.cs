@@ -215,6 +215,11 @@ builder.Services.AddScoped<ServiceLibrary.IJugadoresAltaService>(provider => new
     provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
     provider.GetRequiredService<DaoLibrary.IArancelesDao>(),
     rechazos: provider.GetRequiredService<ServiceLibrary.IRegistroRechazos>()));
+// Baja y reincorporación informadas por el Portal Deportivo (HU-057): las mismas reglas que la baja y la reactivación del portal.
+builder.Services.AddScoped<ServiceLibrary.IJugadoresBajaService>(provider => new ServiceLibrary.JugadoresBajaService(
+    new DaoLibrary.JugadoresDao(conexionSql),
+    provider.GetRequiredService<DaoLibrary.ICategoriasDao>()));
+
 // Becados y descuentos
 builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
     new DaoLibrary.DiscountDao(conexionSql));
