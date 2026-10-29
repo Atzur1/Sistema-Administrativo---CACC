@@ -209,11 +209,24 @@ builder.Services.AddScoped<ServiceLibrary.IInscripcionesService>(provider => new
     provider.GetRequiredService<DaoLibrary.EnrollmentDAO>(),
     provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
     provider.GetRequiredService<DaoLibrary.IJugadoresDao>()));
+// Fecha de negocio fija SOLO para pruebas de punta a punta (HU-060): permite probar las dos ramas del calendario de cuotas
+// (día 10) sin tocar la hora de la máquina. Afecta únicamente al alta de jugadores; fuera de Development y Testing la API no
+// arranca si está configurada, así que nunca llega a Producción.
+Func<DateTime>? relojAltas = null;
+string? fechaNegocioPruebas = builder.Configuration["Pruebas:FechaNegocio"];
+if (!string.IsNullOrWhiteSpace(fechaNegocioPruebas))
+{
+    if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
+        throw new InvalidOperationException("Pruebas:FechaNegocio solo se admite en los entornos Development y Testing.");
+    DateTime fechaFija = DateTime.ParseExact(fechaNegocioPruebas.Trim(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    relojAltas = () => fechaFija;
+}
 builder.Services.AddScoped<ServiceLibrary.IJugadoresAltaService>(provider => new ServiceLibrary.JugadoresAltaService(
     provider.GetRequiredService<DaoLibrary.PlayerDAO>(),
     provider.GetRequiredService<DaoLibrary.ICategoriasDao>(),
     provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
     provider.GetRequiredService<DaoLibrary.IArancelesDao>(),
+    relojAltas,
     rechazos: provider.GetRequiredService<ServiceLibrary.IRegistroRechazos>()));
 // Baja y reincorporación informadas por el Portal Deportivo (HU-057): las mismas reglas que la baja y la reactivación del portal.
 builder.Services.AddScoped<ServiceLibrary.IJugadoresBajaService>(provider => new ServiceLibrary.JugadoresBajaService(
