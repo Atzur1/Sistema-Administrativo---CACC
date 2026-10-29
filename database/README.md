@@ -14,6 +14,7 @@ automáticamente al iniciar en `Development`, registrándolas en `dbo.__CaccMigr
 | `esquema/ClubCamioneros_unificada_crear_base.sql` | **Base única** (Portal Administrativo + Portal Deportivo): estructura + catálogos, sin datos de personas. Es la base que usa el código de esta rama; su contrato (nombres de tablas, ids por secuencia, bajas, auditoría) está en el encabezado del script. | No |
 | `esquema/ClubCamioneros_crear_base.sql` | **Obsoleto** (base anterior, con `PERSONA`/`USUARIO`/`TIPO_DESCUENTO`): el código de esta rama ya no funciona con ella. | No |
 | `upgrades/` | Diagnóstico y actualización puntual de `ClubCamionerosPRUEBA` del 23/09/2026. | No |
+| `unificacion/` | Importación de A (Administrativo) y B (Deportivo) a la base única, con remapeo por DNI y validación (HU-053). Ver su [README](unificacion/README.md). | No |
 
 No agregar scripts nuevos en la raíz ni copiar los históricos a `migrations/`: usan `GO` y
 `USE`, que el ejecutor rechaza. El código del ejecutor está en `ApiGestion/Database/`.
