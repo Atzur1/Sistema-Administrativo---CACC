@@ -1,0 +1,38 @@
+PASS  A1     Se rechaza: la base A de origen (termina en PRUEBA)  [La base 'ClubCamionerosPRUEBA' no es un nombre de prueba v lido: solo letras, d¡]
+PASS  A2     Se rechaza: inyecci¢n: cierra el corchete y agrega un DROP  [La base 'x]; DROP DATABASE [ClubCamionerosPRUEBA]; --_Prueba' no es un nombre de]
+PASS  A3     Se rechaza: inyecci¢n con comilla  [La base 'ClubCamionerosPRUEBA'; DROP DATABASE CACC_B_Origen; --_E2E' no es un no]
+PASS  A4     Se rechaza: base B de origen  [La base 'CACC_B_Origen' no es un nombre de prueba v lido: solo letras, d¡gitos y]
+PASS  A5     Se rechaza: base de trabajo  [La base 'CCACUnificada' no es un nombre de prueba v lido: solo letras, d¡gitos y]
+PASS  A6     Se rechaza: base del sistema  [La base 'master' no es un nombre de prueba v lido: solo letras, d¡gitos y '_', y]
+PASS  A7     Se rechaza: sufijo en min£sculas  [La base 'algo_prueba' no es un nombre de prueba v lido: solo letras, d¡gitos y ']
+PASS  A8     Se rechaza: con espacio  [La base 'Mi Base_Prueba' no es un nombre de prueba v lido: solo letras, d¡gitos ]
+PASS  A9     Se rechaza: empieza con d¡gito  [La base '1Base_Prueba' no es un nombre de prueba v lido: solo letras, d¡gitos y ]
+PASS  A10    Se rechaza: con guion  [La base 'Base-HU_Prueba' no es un nombre de prueba v lido: solo letras, d¡gitos ]
+PASS  A11    Se rechaza: sin '_' antes del sufijo  [La base 'BasePrueba' no es un nombre de prueba v lido: solo letras, d¡gitos y '_]
+PASS  A12    Se rechaza: servidor remoto  [El servidor 'sql.club.com.ar' no es local ni est  en CACC_E2E_SERVIDORES_PERMITI]
+PASS  A13    Se rechaza: servidor por IP de red  [El servidor '10.0.0.5\SQLEXPRESS' no es local ni est  en CACC_E2E_SERVIDORES_PER]
+PASS  A14    Se rechaza: servidor con texto de cadena de conexi¢n  [El servidor '(localdb)\MSSQLLocalDB;Database=ClubCamionerosPRUEBA' no es local n]
+PASS  A15    Se rechaza con ASPNETCORE_ENVIRONMENT=Production  [rechazado]
+PASS  A16    Se rechaza con ASPNETCORE_ENVIRONMENT=Staging  [rechazado]
+PASS  A17    Se acepta: ClubCamionerosUnificadaV2_HU059_Prueba en (localdb)\MSSQLLocalDB  [aceptado]
+PASS  A18    Se acepta: CACC_HU056_E2E en localhost  [aceptado]
+PASS  A19    Se acepta: Otra_Base_Prueba en .\SQLEXPRESS,1433  [aceptado]
+PASS  A20    Un servidor compartido solo con coincidencia exacta en CACC_E2E_SERVIDORES_PERMITIDOS  [exacto: True; parecido rechazado: True]
+PASS  A21    Marca: existente sin marca se rechaza; con marca se acepta; inexistente es nueva  [sin marca: True; marcada; nueva]
+PASS  B1     reset_base.ps1 -Base 'ClubCamionerosPRUEBA': falla antes de cualquier SQL  [rechazado: True; sin log: True]
+PASS  B2     reset_base.ps1 -Base 'x]; DROP DATABASE [ClubCamionerosPRUEBA]; --_Prueba': falla antes de cualquier SQL  [rechazado: True; sin log: True]
+PASS  B3     reset_base.ps1 -Base 'CACC_B_Origen': falla antes de cualquier SQL  [rechazado: True; sin log: True]
+PASS  B4     Las bases reales siguen intactas (misma fecha de creaci¢n)  [CACC_B_Origen@2026-10-05T20:21:22.627,CCACUnificada@2026-10-05T18:42:42.653,ClubCamionerosPRUEBA@2026-08-22T15:34:04.933]
+PASS  C1     Una base con nombre de prueba que NO cre¢ reset_base.ps1 no se borra  [rechazado: True; 2026-10-29T16:21:05.617|42]
+  Esquema unificado creado en CACC_ResetSeguridad_Prueba.
+  Migraciones al d¡a (25 de database/migrations aplicadas).
+  Cuentas ficticias y fixtures: personas=5 jugadores=4 cuotas=5
+  Estado inicial verificado (5|4|5|0|1|1) en 2 s.
+PASS  C2     Con -AdoptarBaseSinMarca se recrea y queda marcada  [marca: reset_base]
+  Esquema unificado creado en CACC_ResetSeguridad_Prueba.
+  Migraciones al d¡a (25 de database/migrations aplicadas).
+  Cuentas ficticias y fixtures: personas=5 jugadores=4 cuotas=5
+  Estado inicial verificado (5|4|5|0|1|1) en 1 s.
+PASS  C3     La corrida siguiente recrea la base marcada sin el switch  [ok]
+
+Total: 28 PASS | 0 FAIL
