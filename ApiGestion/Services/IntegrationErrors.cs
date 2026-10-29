@@ -75,7 +75,9 @@ public static class IntegrationErrors
             TipoResultado.NoProcesable => (StatusCodes.Status422UnprocessableEntity, IntegrationErrorCodes.Unprocessable),
             _ => (StatusCodes.Status400BadRequest, IntegrationErrorCodes.InvalidInput)
         };
-        return Respond(controller, logger, status, errorCode, result.Mensaje ?? "No se pudo procesar el pedido.");
+        // El contrato lleva "field" solo en los 400: el dato que el Deportivo tiene que corregir.
+        return Respond(controller, logger, status, errorCode, result.Mensaje ?? "No se pudo procesar el pedido.",
+            status == StatusCodes.Status400BadRequest ? result.Campo : null);
     }
 
     // Respuesta a un cuerpo que no se puede leer (JSON mal formado, tipo equivocado). El detalle de System.Text.Json
@@ -91,6 +93,18 @@ public static class IntegrationErrors
             : $"El dato \"{field}\" no tiene un formato válido.";
         Log(logger, context.HttpContext, StatusCodes.Status400BadRequest, IntegrationErrorCodes.InvalidInput,
             field is null ? "Cuerpo del pedido ausente o ilegible." : $"Dato de entrada con formato inválido (campo: {field}).");
+        string? operacion = RegistroRechazosIntegracion.OperacionDe(context.HttpContext);
+        if (operacion is not null)
+        {
+            int? idJugador = int.TryParse(context.HttpContext.Request.RouteValues["idJugador"]?.ToString(), out int parsedId)
+                ? parsedId
+                : null;
+            context.HttpContext.RequestServices.GetService<IRegistroRechazos>()?.RegistrarModeloInvalido(
+                operacion,
+                field is null ? "El cuerpo del pedido falta o no es un JSON válido." : $"Dato de entrada inválido (campo: {field}).",
+                context.HttpContext.TraceIdentifier,
+                idJugador);
+        }
         return new BadRequestObjectResult(Body(IntegrationErrorCodes.InvalidInput, message, field));
     }
 

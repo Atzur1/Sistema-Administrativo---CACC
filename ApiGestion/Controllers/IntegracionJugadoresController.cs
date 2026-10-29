@@ -28,6 +28,83 @@ namespace ApiGestion.Controllers
             _logger = logger;
         }
 
+        [HttpPost]
+        [ProducesResponseType(typeof(AltaIntegracionResponseDTO), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(AltaIntegracionResponseDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status503ServiceUnavailable)]
+        public IActionResult AltaDesdeIntegracion([FromBody] AltaIntegracionRequestDTO? request)
+        {
+            ResultadoOperacion<AltaIntegracionRegistrada> resultado;
+            try
+            {
+                resultado = _altaService.AltaDesdeIntegracion(
+                    new SolicitudAltaIntegracion(request?.Dni, request?.Nombre, request?.Apellido,
+                        request?.Genero, request?.FechaNacimiento, request?.IdCategoria),
+                    HttpContext.TraceIdentifier);
+            }
+            catch (Exception ex)
+            {
+                return IntegrationErrors.FromException(this, _logger, ex);
+            }
+
+            return IntegrationErrors.FromResult(this, _logger, resultado, alta =>
+            {
+                _logger.LogInformation("Alta integrada del jugador {IdJugador} (creado: {Creado}, persona existente: {PersonaExistente})",
+                    alta.IdJugador, alta.Creado, alta.PersonaExistente);
+                var response = new AltaIntegracionResponseDTO
+                {
+                    IdJugador = alta.IdJugador,
+                    Creado = alta.Creado,
+                    PersonaExistente = alta.PersonaExistente,
+                    InscripcionGenerada = alta.InscripcionGenerada,
+                    CuotaGenerada = alta.CuotaGenerada
+                };
+                return alta.Creado ? StatusCode(StatusCodes.Status201Created, response) : Ok(response);
+            });
+        }
+
+        [HttpPut("{idJugador:int}/categoria")]
+        [ProducesResponseType(typeof(CambioCategoriaIntegracionResponseDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(IntegrationErrorResponseDTO), StatusCodes.Status503ServiceUnavailable)]
+        public IActionResult CambiarCategoria(int idJugador, [FromBody] CambioCategoriaIntegracionRequestDTO? request)
+        {
+            ResultadoOperacion<CambioCategoriaRealizado> resultado;
+            try
+            {
+                resultado = _altaService.CambiarCategoria(idJugador, request?.IdCategoria, HttpContext.TraceIdentifier);
+            }
+            catch (Exception ex)
+            {
+                return IntegrationErrors.FromException(this, _logger, ex);
+            }
+
+            return IntegrationErrors.FromResult(this, _logger, resultado, cambio =>
+            {
+                _logger.LogInformation("Cambio de categoría del jugador {IdJugador} (categoría: {IdCategoria}, cambiado: {Cambiado})",
+                    cambio.IdJugador, cambio.IdCategoria, cambio.Cambiado);
+                return Ok(new CambioCategoriaIntegracionResponseDTO
+                {
+                    IdJugador = cambio.IdJugador,
+                    IdCategoria = cambio.IdCategoria,
+                    Cambiado = cambio.Cambiado
+                });
+            });
+        }
+
         // POST api/integracion/v1/jugadores/{idJugador}/cargos-alta -> 200 con lo que se generó | 400 id inválido | 404 no existe
         // | 422 dado de baja o alta que no es reciente | 401 / 403 sin sesión o sin permiso. Se puede repetir sin duplicar nada.
         [HttpPost("{idJugador:int}/cargos-alta")]

@@ -1,4 +1,4 @@
-﻿namespace DaoLibrary;
+namespace DaoLibrary;
 
 using System.Data;
 using System.Text;
@@ -210,6 +210,235 @@ public class PlayerDAO
             transaction.Rollback();
             throw;
         }
+    }
+
+    // HU-056: el alta que pide el Portal Deportivo, toda en UNA transacción cuyo primer paso es el bloqueo de escritura de
+    // cobros (así dos pedidos del mismo DNI nunca corren a la vez). Busca la persona por su DNI exacto y su jugador, y hace lo
+    // que falte: persona nueva, jugador nuevo con su categoría y los cargos de alta. Si ya está todo, es idempotente: solo
+    // completa los cargos que le falten. No pisa los datos de una persona que ya existe (solo completa su género si no lo tenía).
+    //
+    // planificarCargos lo llama DENTRO de la transacción, ya sabiendo si el jugador es nuevo, y devuelve los montos a cobrar (las
+    // reglas de cobro viven en JugadoresAltaService, no acá). Si trae un rechazo se revierte todo.
+    //
+    // Red de seguridad: si aun así la base frena un duplicado (índice único de DNI o de jugador por persona, que también protegen
+    // de quien escribe directo en la base), se revierte y se repite UNA vez: ahora la fila que ganó está a la vista y el resultado
+    // es el idempotente. Nunca sale como error 500 por una carrera.
+    public virtual ResultadoAltaIntegracion AltaDesdeIntegracion(DatosAltaIntegracion datos, Func<ContextoCargosAlta, PlanCargosAlta> planificarCargos)
+    {
+        try
+        {
+            return AltaDesdeIntegracionUnaVez(datos, planificarCargos);
+        }
+        catch (SqlException ex) when (EsViolacionDeUnicidad(ex))
+        {
+            return AltaDesdeIntegracionUnaVez(datos, planificarCargos);
+        }
+    }
+
+    // 2601 = índice único; 2627 = restricción UNIQUE / PRIMARY KEY.
+    internal static bool EsViolacionDeUnicidad(SqlException ex) => ex.Number is 2601 or 2627;
+
+    private ResultadoAltaIntegracion AltaDesdeIntegracionUnaVez(DatosAltaIntegracion datos, Func<ContextoCargosAlta, PlanCargosAlta> planificarCargos)
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        using SqlTransaction transaction = connection.BeginTransaction();
+        BloqueoEscrituraPagos.Tomar(connection, transaction);
+
+        try
+        {
+            ResultadoAltaIntegracion Revertir(EstadoAltaIntegracion estado, int idPersona, int idJugador, bool personaExistente, string? campo = null, string? mensaje = null)
+            {
+                transaction.Rollback();
+                return new ResultadoAltaIntegracion(estado, idPersona, idJugador, personaExistente, new CargosGenerados(false, false), campo, mensaje);
+            }
+
+            // La persona, por su DNI canónico: la misma comparación que ExistsPersonByDni y el alta del portal (LTRIM/RTRIM),
+            // así un DNI histórico guardado con espacios (bases sin CK_PERSONAS_dni_digitos) es la misma persona y no se
+            // duplica. El dato guardado no se toca. Si dos personas comparten el DNI canónico no se elige ni se fusiona:
+            // queda para revisión manual. UPDLOCK + HOLDLOCK: nadie más la crea ni la cambia hasta el fin de la transacción.
+            int? idPersona = null;
+            string? generoActual = null;
+            bool variasPersonas = false;
+            using (SqlCommand buscar = new SqlCommand(
+                "SELECT PK_id_persona, genero FROM PERSONAS WITH (UPDLOCK, HOLDLOCK) WHERE LTRIM(RTRIM(Dni)) = @dni;", connection, transaction))
+            {
+                buscar.Parameters.Add("@dni", SqlDbType.VarChar, 20).Value = datos.Dni;
+                using SqlDataReader reader = buscar.ExecuteReader();
+                if (reader.Read())
+                {
+                    idPersona = reader.GetInt32(0);
+                    generoActual = reader.IsDBNull(1) ? null : reader.GetString(1).Trim();
+                    variasPersonas = reader.Read();
+                }
+            }
+            if (variasPersonas)
+            {
+                return Revertir(EstadoAltaIntegracion.VariasPersonas, 0, 0, true);
+            }
+
+            bool personaExistente = idPersona != null;
+            if (idPersona != null)
+            {
+                if (!string.IsNullOrEmpty(generoActual) && generoActual != datos.Genero)
+                {
+                    return Revertir(EstadoAltaIntegracion.GeneroNoCoincide, idPersona.Value, 0, true);
+                }
+                if (string.IsNullOrEmpty(generoActual))
+                {
+                    using SqlCommand completar = new SqlCommand("UPDATE PERSONAS SET genero = @genero WHERE PK_id_persona = @id;", connection, transaction);
+                    completar.Parameters.AddWithValue("@genero", datos.Genero);
+                    completar.Parameters.AddWithValue("@id", idPersona.Value);
+                    completar.ExecuteNonQuery();
+                }
+            }
+            else
+            {
+                string? faltante = datos.Nombre == null ? "nombre" : datos.Apellido == null ? "apellido" : datos.FechaNacimiento == null ? "fechaNacimiento" : null;
+                if (faltante != null)
+                {
+                    return Revertir(EstadoAltaIntegracion.FaltanDatosDePersona, 0, 0, false, faltante);
+                }
+                idPersona = InsertPerson(connection, transaction, new Player
+                {
+                    FirstName = datos.Nombre!,
+                    LastName = datos.Apellido!,
+                    Dni = datos.Dni,
+                    BirthDate = datos.FechaNacimiento!.Value.Date,
+                    Gender = datos.Genero
+                });
+            }
+
+            // Los jugadores de esa persona. La base ya impide más de uno (UX_JUGADORES_persona); si igual aparecen, no se elige.
+            var jugadores = new List<(int Id, int Categoria, DateTime? Alta, DateTime? Baja)>();
+            using (SqlCommand buscar = new SqlCommand(
+                "SELECT PK_id_jugador, FK_id_categoria, fecha_alta, fecha_baja FROM JUGADORES WITH (UPDLOCK, HOLDLOCK) WHERE FK_id_persona = @persona;",
+                connection, transaction))
+            {
+                buscar.Parameters.AddWithValue("@persona", idPersona.Value);
+                using SqlDataReader reader = buscar.ExecuteReader();
+                while (reader.Read())
+                {
+                    jugadores.Add((reader.GetInt32(0), reader.GetInt32(1),
+                        reader.IsDBNull(2) ? null : reader.GetDateTime(2), reader.IsDBNull(3) ? null : reader.GetDateTime(3)));
+                }
+            }
+
+            if (jugadores.Count > 1)
+            {
+                return Revertir(EstadoAltaIntegracion.VariosJugadores, idPersona.Value, 0, personaExistente);
+            }
+
+            if (jugadores.Count == 1)
+            {
+                var existente = jugadores[0];
+                if (existente.Baja != null)
+                {
+                    return Revertir(EstadoAltaIntegracion.JugadorDeBaja, idPersona.Value, existente.Id, personaExistente);
+                }
+
+                // Sin fecha de alta (dato viejo) se trata como un alta antigua: el servicio no le genera cargos.
+                DateTime fechaAltaExistente = existente.Alta ?? DateTime.MinValue;
+                PlanCargosAlta planExistente = planificarCargos(new ContextoCargosAlta(false, datos.Genero, existente.Categoria, fechaAltaExistente));
+                if (planExistente.Rechazo != null)
+                {
+                    return Revertir(EstadoAltaIntegracion.CargosRechazados, idPersona.Value, existente.Id, personaExistente, null, planExistente.Rechazo);
+                }
+
+                CargosGenerados completados = GenerarCargos(connection, transaction, existente.Id, planExistente.MontoCuota,
+                    planExistente.PrimerDiaDelMes, planExistente.MontoInscripcion, fechaAltaExistente);
+                transaction.Commit();
+                return new ResultadoAltaIntegracion(EstadoAltaIntegracion.YaExistia, idPersona.Value, existente.Id, personaExistente, completados);
+            }
+
+            PlanCargosAlta plan = planificarCargos(new ContextoCargosAlta(true, datos.Genero, datos.IdCategoria, datos.FechaAlta));
+            if (plan.Rechazo != null)
+            {
+                return Revertir(EstadoAltaIntegracion.CargosRechazados, idPersona.Value, 0, personaExistente, null, plan.Rechazo);
+            }
+
+            int idJugador = InsertPlayer(connection, transaction, idPersona.Value, new Player { CategoryId = datos.IdCategoria, JoinDate = datos.FechaAlta });
+            AsegurarCategoriaDelJugador(connection, transaction, idJugador, datos.IdCategoria);
+            CargosGenerados cargos = GenerarCargos(connection, transaction, idJugador, plan.MontoCuota, plan.PrimerDiaDelMes,
+                plan.MontoInscripcion, datos.FechaAlta);
+
+            transaction.Commit();
+            return new ResultadoAltaIntegracion(EstadoAltaIntegracion.Creado, idPersona.Value, idJugador, personaExistente, cargos);
+        }
+        catch
+        {
+            // Si la transacción ya se cerró (revertida a propósito o por la base), el rollback del catch no aplica.
+            if (transaction.Connection != null) transaction.Rollback();
+            throw;
+        }
+    }
+
+    // HU-056: cambia la categoría de COBRO del jugador (JUGADORES.FK_id_categoria). No toca PAGOS: lo ya emitido conserva su
+    // monto y solo las próximas emisiones usan el arancel de la categoría nueva. Las filas de JUGADORES_CATEGORIAS (la
+    // pertenencia del Deportivo, que es suya) se dejan como están: solo se asegura que exista la de la categoría nueva.
+    public virtual ResultadoCambioCategoria CambiarCategoria(int idJugador, int idCategoria)
+    {
+        using SqlConnection connection = SqlConnectionFactory.Open(_connectionString);
+        using SqlTransaction transaction = connection.BeginTransaction();
+        BloqueoEscrituraPagos.Tomar(connection, transaction);
+
+        try
+        {
+            int actual;
+            DateTime? baja;
+            using (SqlCommand buscar = new SqlCommand(
+                "SELECT FK_id_categoria, fecha_baja FROM JUGADORES WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_jugador = @id;", connection, transaction))
+            {
+                buscar.Parameters.AddWithValue("@id", idJugador);
+                using SqlDataReader reader = buscar.ExecuteReader();
+                if (!reader.Read())
+                {
+                    reader.Close();
+                    transaction.Rollback();
+                    return new ResultadoCambioCategoria(EstadoCambioCategoria.NoEncontrado, 0);
+                }
+                actual = reader.GetInt32(0);
+                baja = reader.IsDBNull(1) ? null : reader.GetDateTime(1);
+            }
+
+            if (baja != null)
+            {
+                transaction.Rollback();
+                return new ResultadoCambioCategoria(EstadoCambioCategoria.DeBaja, actual);
+            }
+            if (actual == idCategoria)
+            {
+                transaction.Rollback();
+                return new ResultadoCambioCategoria(EstadoCambioCategoria.SinCambio, actual);
+            }
+
+            using (SqlCommand cambiar = new SqlCommand(
+                "UPDATE JUGADORES SET FK_id_categoria = @categoria WHERE PK_id_jugador = @id;", connection, transaction))
+            {
+                cambiar.Parameters.AddWithValue("@categoria", idCategoria);
+                cambiar.Parameters.AddWithValue("@id", idJugador);
+                cambiar.ExecuteNonQuery();
+            }
+            AsegurarCategoriaDelJugador(connection, transaction, idJugador, idCategoria);
+
+            transaction.Commit();
+            return new ResultadoCambioCategoria(EstadoCambioCategoria.Cambiado, idCategoria);
+        }
+        catch
+        {
+            if (transaction.Connection != null) transaction.Rollback();
+            throw;
+        }
+    }
+
+    // La pertenencia del jugador a esa categoría (tabla N:M que usa el Portal Deportivo). Idempotente.
+    internal static void AsegurarCategoriaDelJugador(SqlConnection connection, SqlTransaction transaction, int idJugador, int idCategoria)
+    {
+        using SqlCommand command = new SqlCommand(@"
+            IF NOT EXISTS (SELECT 1 FROM JUGADORES_CATEGORIAS WITH (UPDLOCK, HOLDLOCK) WHERE FK_id_jugador = @jugador AND FK_id_categoria = @categoria)
+                INSERT INTO JUGADORES_CATEGORIAS (FK_id_jugador, FK_id_categoria) VALUES (@jugador, @categoria);", connection, transaction);
+        command.Parameters.AddWithValue("@jugador", idJugador);
+        command.Parameters.AddWithValue("@categoria", idCategoria);
+        command.ExecuteNonQuery();
     }
 
     // Datos de un jugador que ya existe (por ejemplo, dado de alta desde el Portal Deportivo) para decidir sus cargos.

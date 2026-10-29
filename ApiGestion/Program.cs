@@ -200,6 +200,9 @@ builder.Services.AddScoped<DaoLibrary.EnrollmentFeeDAO>(provider =>
     new DaoLibrary.EnrollmentFeeDAO(conexionSql));
 builder.Services.AddScoped<DaoLibrary.PlayerDAO>(provider =>
     new DaoLibrary.PlayerDAO(conexionSql));
+builder.Services.AddScoped<DaoLibrary.IIntegracionRechazosDao>(provider =>
+    new DaoLibrary.IntegracionRechazosDao(conexionSql));
+builder.Services.AddScoped<ServiceLibrary.IRegistroRechazos, ApiGestion.Services.RegistroRechazosIntegracion>();
 builder.Services.AddScoped<DaoLibrary.EnrollmentDAO>(provider =>
     new DaoLibrary.EnrollmentDAO(conexionSql));
 builder.Services.AddScoped<ServiceLibrary.IInscripcionesService>(provider => new ServiceLibrary.InscripcionesService(
@@ -210,7 +213,8 @@ builder.Services.AddScoped<ServiceLibrary.IJugadoresAltaService>(provider => new
     provider.GetRequiredService<DaoLibrary.PlayerDAO>(),
     provider.GetRequiredService<DaoLibrary.ICategoriasDao>(),
     provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
-    provider.GetRequiredService<DaoLibrary.IArancelesDao>()));
+    provider.GetRequiredService<DaoLibrary.IArancelesDao>(),
+    rechazos: provider.GetRequiredService<ServiceLibrary.IRegistroRechazos>()));
 // Becados y descuentos
 builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
     new DaoLibrary.DiscountDao(conexionSql));

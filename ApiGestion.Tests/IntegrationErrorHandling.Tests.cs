@@ -248,6 +248,8 @@ public class IntegrationControllersErrorContractTests
     {
         public ResultadoOperacion<CargosGenerados> GenerarCargosDeAlta(int idJugador) => result();
         public ResultadoOperacion<AltaJugadorRegistrada> Registrar(SolicitudAltaJugador solicitud) => throw new NotSupportedException();
+        public ResultadoOperacion<AltaIntegracionRegistrada> AltaDesdeIntegracion(SolicitudAltaIntegracion solicitud, string? correlacion = null) => throw new NotSupportedException();
+        public ResultadoOperacion<CambioCategoriaRealizado> CambiarCategoria(int idJugador, int? idCategoria, string? correlacion = null) => throw new NotSupportedException();
     }
 
     private static T WithUser<T>(T controller) where T : ControllerBase
