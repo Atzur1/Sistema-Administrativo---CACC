@@ -10,8 +10,10 @@ namespace DaoLibrary
         // Arancel del jugador `j` (con su PERSONAS `p`) para el mes que empieza en `primerDiaMes`. Un arancel
         // cargado el 5 de enero cubre igual TODO enero: por eso se compara contra el último día del mes. Primero
         // el arancel de la categoría del jugador; si no tiene, el de su género. Devuelve la columna `monto`.
-        public static string ArancelDelJugador(string primerDiaMes) => $@"
-            SELECT TOP (1) a.monto FROM ARANCELES a
+        // HU-106: `aranceles` permite evaluar la misma jerarquía sobre ARANCELES más un arancel todavía no grabado
+        // (la simulación de impacto), y `columnas` traer algo más que el monto. Por defecto es la regla de siempre.
+        public static string ArancelDelJugador(string primerDiaMes, string aranceles = "ARANCELES", string columnas = "a.monto") => $@"
+            SELECT TOP (1) {columnas} FROM {aranceles} a
             WHERE a.vigente_desde <= EOMONTH({primerDiaMes})
               AND (a.FK_id_categoria = j.FK_id_categoria
                    OR (a.FK_id_categoria IS NULL AND a.genero = LTRIM(RTRIM(p.genero))))

@@ -148,7 +148,7 @@ namespace DaoLibrary
             comando.Parameters["@montoBase"].Scale = 2;
         }
 
-        public int ContarCuotasConPagos(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+        public int ContarCuotasConPagos(SqlConnection conexion, SqlTransaction? transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
         {
             string query = $@"
                 SELECT COUNT(*) FROM (
@@ -163,6 +163,24 @@ namespace DaoLibrary
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
             CargarParametrosCuotas(comando, genero, idCategoria, desde, hasta, montoBase);
+            return Convert.ToInt32(comando.ExecuteScalar());
+        }
+
+        // HU-106: cuántas cuotas quitaría EliminarCuotasPendientesSinPagos (sin filtro de monto), para informarlo en la
+        // simulación antes de confirmar. Mismo filtro y misma condición que el borrado; solo cuenta.
+        public int ContarCuotasPendientesSinPagos(SqlConnection conexion, SqlTransaction? transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta)
+        {
+            string query = $@"
+                SELECT COUNT(*)
+                FROM PAGOS p
+                JOIN JUGADORES j ON j.PK_id_jugador = p.FK_id_jugador
+                JOIN PERSONAS pe ON pe.PK_id_persona = j.FK_id_persona
+                WHERE {FiltroCuotasDelArancel}
+                  AND p.estado = 0
+                  AND NOT {CuotaTienePagos};";
+
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            CargarParametrosCuotas(comando, genero, idCategoria, desde, hasta, null);
             return Convert.ToInt32(comando.ExecuteScalar());
         }
 
