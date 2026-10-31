@@ -704,6 +704,23 @@ BEGIN
 END;
 GO
 
+-- El genero se guarda siempre como "Masculino" o "Femenino": 'masculino ' llega como 'Masculino' (HU-112).
+CREATE TRIGGER dbo.TR_PERSONAS_GENERO_NORMALIZADO ON dbo.PERSONAS AFTER INSERT, UPDATE AS
+BEGIN
+    SET NOCOUNT ON;
+    IF EXISTS (
+        SELECT 1 FROM inserted
+        WHERE LTRIM(RTRIM(genero)) IN (N'Masculino', N'Femenino')
+          AND genero COLLATE Latin1_General_100_BIN2 NOT IN (N'Masculino', N'Femenino'))
+        UPDATE p
+        SET genero = CASE WHEN LTRIM(RTRIM(i.genero)) = N'Masculino' THEN N'Masculino' ELSE N'Femenino' END
+        FROM dbo.PERSONAS p
+        JOIN inserted i ON i.PK_id_persona = p.PK_id_persona
+        WHERE LTRIM(RTRIM(i.genero)) IN (N'Masculino', N'Femenino')
+          AND i.genero COLLATE Latin1_General_100_BIN2 NOT IN (N'Masculino', N'Femenino');
+END;
+GO
+
 CREATE TRIGGER dbo.TR_AUDIT_JUGADORES_DESCUENTOS ON dbo.JUGADORES_DESCUENTOS AFTER INSERT, UPDATE, DELETE AS
 BEGIN
     SET NOCOUNT ON;
