@@ -201,6 +201,20 @@ describe('AccountAccess - enlace inválido', () => {
     expect(texto(element)).toContain('No se pudo completar la operación. Intentá nuevamente.');
     expect(element.querySelector('form')).not.toBeNull();
   });
+
+  it('con demasiados intentos (429) avisa que hay que esperar, en lugar del mensaje genérico', async () => {
+    const complete = vi.fn(() => throwError(() => ({ status: 429 })));
+    const { fixture, element, component } = await create('crear', { complete });
+
+    llenar(component, 'Abcdef1!xy', 'Abcdef1!xy');
+    component.submit();
+    fixture.detectChanges();
+
+    expect(texto(element)).toContain('demasiados intentos');
+    expect(texto(element)).toContain('Esperá unos minutos');
+    expect(texto(element)).not.toContain('No se pudo completar la operación');
+    expect(element.querySelector('form')).not.toBeNull();
+  });
 });
 
 describe('Fortaleza y requisitos de la contraseña', () => {

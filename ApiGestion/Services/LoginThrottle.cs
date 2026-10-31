@@ -19,6 +19,8 @@ public sealed class LoginThrottle(TimeProvider clock, IIntentosLoginStore store)
     public const int MaximoFallos = 10;
     public static readonly TimeSpan Ventana = TimeSpan.FromMinutes(15);
 
+    // La ventana se cuenta desde el ÚLTIMO fallo: con 9 fallos repartidos en 14 minutos, el décimo bloquea la
+    // cuenta los 15 minutos completos, no el minuto que le quedaba al primero.
     public bool Bloqueado(string identificador)
     {
         var estado = store.Obtener(Clave(identificador));

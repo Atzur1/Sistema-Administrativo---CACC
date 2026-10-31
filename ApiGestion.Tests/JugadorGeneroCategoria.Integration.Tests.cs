@@ -58,6 +58,55 @@ public class JugadorGeneroCategoriaIntegrationTests
         EnTransaccion((c, t) => Jugador(c, t, Persona(c, t, genero), Categoria(c, t)));
     }
 
+    private static string? GeneroGuardado(SqlConnection c, SqlTransaction t, int persona)
+    {
+        using var cmd = new SqlCommand("SELECT genero FROM PERSONAS WHERE PK_id_persona = @id", c, t);
+        cmd.Parameters.AddWithValue("@id", persona);
+        return cmd.ExecuteScalar() as string;
+    }
+
+    // HU-112: el genero se guarda siempre como "Masculino" o "Femenino", llegue como llegue.
+    [IntegracionTheory]
+    [InlineData("masculino ", "Masculino")]
+    [InlineData(" MASCULINO", "Masculino")]
+    [InlineData("femenino", "Femenino")]
+    [InlineData("  Femenino  ", "Femenino")]
+    [InlineData("Masculino", "Masculino")]
+    public void ElGeneroSeGuardaNormalizado(string recibido, string esperado)
+    {
+        EnTransaccion((c, t) =>
+        {
+            int persona = Persona(c, t, recibido);
+            Assert.Equal(esperado, GeneroGuardado(c, t, persona));
+        });
+    }
+
+    [IntegracionFact]
+    public void ElCambioDeGeneroTambienSeNormaliza()
+    {
+        EnTransaccion((c, t) =>
+        {
+            int persona = Persona(c, t, "Masculino");
+            using (var cmd = new SqlCommand("UPDATE PERSONAS SET genero = N'femenino ' WHERE PK_id_persona = @id", c, t))
+            {
+                cmd.Parameters.AddWithValue("@id", persona);
+                cmd.ExecuteNonQuery();
+            }
+
+            Assert.Equal("Femenino", GeneroGuardado(c, t, persona));
+        });
+    }
+
+    [IntegracionFact]
+    public void UnGeneroQueNoEsNingunoDeLosDos_NoSeToca()
+    {
+        EnTransaccion((c, t) =>
+        {
+            int persona = Persona(c, t, "No especificado");
+            Assert.Equal("No especificado", GeneroGuardado(c, t, persona));
+        });
+    }
+
     [IntegracionFact]
     public void SinCategoria_LaBaseRechazaElJugador()
     {

@@ -809,11 +809,11 @@ function normalizeTexto(texto: string): string {
   return texto.normalize('NFD').replace(DIACRITICS_REGEX, '');
 }
 
-// Año actual y los 2 anteriores, más nuevo primero. Calculado en el momento (no hardcodeado)
-// para que la ventana se corra sola cada 1° de enero sin que haga falta tocar código.
-function buildYearOptions(): number[] {
+// Año siguiente (para pagar por adelantado), el actual y los 2 anteriores, más nuevo primero. Calculado en el
+// momento (no hardcodeado) para que la ventana se corra sola cada 1° de enero sin que haga falta tocar código.
+export function buildYearOptions(): number[] {
   const actual = new Date().getFullYear();
-  return [actual, actual - 1, actual - 2];
+  return [actual + 1, actual, actual - 1, actual - 2];
 }
 
 function initialsOf(nombreCompleto: string): string {

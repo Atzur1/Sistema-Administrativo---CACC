@@ -66,6 +66,12 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("account-email", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 4, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 }));
+    // Completar la activación o la recuperación: quien elige una contraseña puede equivocarse varias veces contra
+    // la política (que rechaza muchas), así que no comparte el cupo de 4 de los envíos de correo. El token ya es
+    // de un solo uso y de 256 bits; el límite solo frena a quien prueba enlaces al azar.
+    options.AddPolicy("account-complete", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 }));
 });
 
 // 1. AGREGA ESTA POLÍTICA DE CORS (Permite conexiones desde Angular)

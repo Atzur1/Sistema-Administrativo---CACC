@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NEVER, Observable, from, throwError } from 'rxjs';
 
-import { CuotasPagos, buscarJugadores, mensajeSinInscripcion, parsePeriodo } from './cuotas-pagos';
+import { CuotasPagos, buildYearOptions, buscarJugadores, mensajeSinInscripcion, parsePeriodo } from './cuotas-pagos';
 import { PagosService } from '../../services/pagos';
 import { ArancelesService } from '../../services/aranceles';
 import { NotificationService } from '../../shared/notifications/notification.service';
@@ -482,5 +482,67 @@ describe('ultimo-medio-pago (HU-100)', () => {
       getItem.mockRestore();
       setItem.mockRestore();
     }
+  });
+});
+
+// HU-084: pago por adelantado imputado al mes en curso.
+describe('CuotasPagos - periodo propuesto y aviso de adelanto (HU-084)', () => {
+  afterEach(() => vi.useRealTimers());
+
+  // Alumno sin deuda: lo que se propone es el mes en curso (con deuda se propone su cuota más vieja).
+  async function conAlumnoElegido(fecha: string) {
+    const { component } = await crearMostrador([]);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(fecha));
+    component.selectPlayer(JUGADORES[0]);
+    return component;
+  }
+
+  it('al elegir un jugador propone el mes y el año en curso', async () => {
+    const c = await conAlumnoElegido('2026-10-05T12:00:00');
+
+    expect(c.paymentForm.value.period).toBe('Octubre');
+    expect(c.paymentForm.value.year).toBe(2026);
+  });
+
+  it('el operador puede cambiar el período propuesto', async () => {
+    const c = await conAlumnoElegido('2026-10-05T12:00:00');
+    c.paymentForm.patchValue({ period: 'Septiembre' });
+
+    expect(c.paymentForm.value.period).toBe('Septiembre');
+  });
+
+  it('antes del día 10, pagar el mes en curso se avisa como adelanto', async () => {
+    const c = await conAlumnoElegido('2026-10-05T12:00:00');
+
+    expect(c.avisoAdelanto).toContain('adelanto de octubre');
+  });
+
+  it('con otro mes elegido no hay aviso de adelanto', async () => {
+    const c = await conAlumnoElegido('2026-10-05T12:00:00');
+    c.paymentForm.patchValue({ period: 'Septiembre' });
+
+    expect(c.avisoAdelanto).toBeNull();
+  });
+
+  it('desde el día 10 no hay aviso de adelanto', async () => {
+    const c = await conAlumnoElegido('2026-10-10T12:00:00');
+
+    expect(c.avisoAdelanto).toBeNull();
+  });
+
+  it('sin jugador elegido no hay aviso', async () => {
+    const { component } = await crearMostrador([]);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-05T12:00:00'));
+
+    expect(component.avisoAdelanto).toBeNull();
+  });
+
+  it('el combo de año ofrece el año siguiente para pagar por adelantado', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-05T12:00:00'));
+
+    expect(buildYearOptions()).toEqual([2027, 2026, 2025, 2024]);
   });
 });
