@@ -20,6 +20,7 @@ namespace ApiGestion.Controllers
     [Authorize]
     public class ReportesController : ControllerBase
     {
+        private readonly IReportesDao _reportesDao;
         private readonly IPagosService _pagosService;
         private readonly IArancelesService _arancelesService;
         private readonly DiscountDao _discountDao;
@@ -31,8 +32,10 @@ namespace ApiGestion.Controllers
             IArancelesService arancelesService,
             DiscountDao discountDao,
             ICategoriasDao categoriasDao,
-            IRecaudacionDao recaudacionDao)
+            IRecaudacionDao recaudacionDao,
+            IReportesDao reportesDao)
         {
+            _reportesDao = reportesDao;
             _pagosService = pagosService;
             _arancelesService = arancelesService;
             _discountDao = discountDao;
@@ -47,6 +50,7 @@ namespace ApiGestion.Controllers
         {
             var deudores = _pagosService.ObtenerPendientes(idCategoria);
             byte[] pdf = DeudoresReportBuilder.BuildPdf(deudores, CategoriaLabel(idCategoria), PeriodoLabel());
+            Registrar("deudores", "pdf", FiltroCategoria(idCategoria), deudores.Count);
             return File(pdf, "application/pdf", $"reporte-deudores_{Timestamp()}.pdf");
         }
 
@@ -57,6 +61,7 @@ namespace ApiGestion.Controllers
         {
             var deudores = _pagosService.ObtenerPendientes(idCategoria);
             byte[] csv = DeudoresReportBuilder.BuildCsv(deudores, CategoriaLabel(idCategoria), PeriodoLabel());
+            Registrar("deudores", "csv", FiltroCategoria(idCategoria), deudores.Count);
             return File(csv, "text/csv", $"reporte-deudores_{Timestamp()}.csv");
         }
 
@@ -67,6 +72,7 @@ namespace ApiGestion.Controllers
         {
             var pagos = _pagosService.ObtenerUltimosPagos(Math.Clamp(top, 1, 1000));
             byte[] csv = PagosRecientesReportBuilder.BuildCsv(pagos);
+            Registrar("pagos-recientes", "csv", $"Últimos {Math.Clamp(top, 1, 1000)} pagos", pagos.Count);
             return File(csv, "text/csv", $"reporte-pagos_{Timestamp()}.csv");
         }
 
@@ -76,6 +82,7 @@ namespace ApiGestion.Controllers
         {
             var pagos = _pagosService.ObtenerUltimosPagos(Math.Clamp(top, 1, 1000));
             byte[] pdf = PagosRecientesReportBuilder.BuildPdf(pagos);
+            Registrar("pagos-recientes", "pdf", $"Últimos {Math.Clamp(top, 1, 1000)} pagos", pagos.Count);
             return File(pdf, "application/pdf", $"reporte-pagos_{Timestamp()}.pdf");
         }
 
@@ -86,6 +93,7 @@ namespace ApiGestion.Controllers
         {
             List<Discount> beneficios = _discountDao.GetAllDiscounts();
             byte[] csv = BecadosReportBuilder.BuildCsv(beneficios);
+            Registrar("becados", "csv", "Sin filtros adicionales", beneficios.Count);
             return File(csv, "text/csv", $"reporte-becados_{Timestamp()}.csv");
         }
 
@@ -95,6 +103,7 @@ namespace ApiGestion.Controllers
         {
             List<Discount> beneficios = _discountDao.GetAllDiscounts();
             byte[] pdf = BecadosReportBuilder.BuildPdf(beneficios);
+            Registrar("becados", "pdf", "Sin filtros adicionales", beneficios.Count);
             return File(pdf, "application/pdf", $"reporte-becados_{Timestamp()}.pdf");
         }
 
@@ -105,6 +114,7 @@ namespace ApiGestion.Controllers
         {
             var historial = _arancelesService.ObtenerHistorial();
             byte[] csv = ArancelesReportBuilder.BuildCsv(historial);
+            Registrar("aranceles", "csv", "Sin filtros adicionales", historial.Count);
             return File(csv, "text/csv", $"reporte-aranceles_{Timestamp()}.csv");
         }
 
@@ -114,6 +124,7 @@ namespace ApiGestion.Controllers
         {
             var historial = _arancelesService.ObtenerHistorial();
             byte[] pdf = ArancelesReportBuilder.BuildPdf(historial);
+            Registrar("aranceles", "pdf", "Sin filtros adicionales", historial.Count);
             return File(pdf, "application/pdf", $"reporte-aranceles_{Timestamp()}.pdf");
         }
 
@@ -132,6 +143,7 @@ namespace ApiGestion.Controllers
             var datos = _recaudacionDao.ObtenerDelPeriodo(anio, mes, idCategoria);
             byte[] pdf = RecaudacionReportBuilder.BuildPdf(
                 datos, PeriodoMesLabel(anio, mes), CategoriaLabel(idCategoria));
+            Registrar("recaudacion", "pdf", $"Período: {PeriodoMesLabel(anio, mes)}; {FiltroCategoria(idCategoria)}", datos.Detalle.Count);
             return File(pdf, "application/pdf", $"reporte-recaudacion_{Timestamp()}.pdf");
         }
 
@@ -149,7 +161,42 @@ namespace ApiGestion.Controllers
             var datos = _recaudacionDao.ObtenerDelPeriodo(anio, mes, idCategoria);
             byte[] csv = RecaudacionReportBuilder.BuildCsv(
                 datos, PeriodoMesLabel(anio, mes), CategoriaLabel(idCategoria));
+            Registrar("recaudacion", "csv", $"Período: {PeriodoMesLabel(anio, mes)}; {FiltroCategoria(idCategoria)}", datos.Detalle.Count);
             return File(csv, "text/csv", $"reporte-recaudacion_{Timestamp()}.csv");
+        }
+
+        [Authorize(Roles = "1,2")]
+        [HttpGet("{tipo}/conteo")]
+        public IActionResult Conteo(string tipo, [FromQuery] int? idCategoria = null,
+            [FromQuery] int top = 500, [FromQuery] int anio = 0, [FromQuery] int mes = 0)
+        {
+            if (tipo is not ("deudores" or "pagos-recientes" or "becados" or "aranceles" or "recaudacion"))
+                return NotFound();
+            if (tipo is "aranceles" or "recaudacion" && !User.IsInRole("1")) return Forbid();
+            if (tipo == "recaudacion" && !PeriodoValido(anio, mes, out var error))
+                return BadRequest(new { exito = false, mensaje = error });
+            return Ok(new { tipo, cantidadFilas = _reportesDao.Contar(tipo, idCategoria, Math.Clamp(top, 1, 1000), anio, mes) });
+        }
+
+        [Authorize(Roles = "1")]
+        [HttpGet("historial")]
+        public IActionResult Historial([FromQuery] int pagina = 1, [FromQuery] int tamanioPagina = 20)
+        {
+            if (pagina < 1 || pagina > 1000000 || tamanioPagina < 1 || tamanioPagina > 100)
+                return BadRequest(new { exito = false, mensaje = "La página o el tamaño de página no es válido." });
+            return Ok(_reportesDao.Historial(pagina, tamanioPagina));
+        }
+
+        private string FiltroCategoria(int? categoria) => $"Categoría: {CategoriaLabel(categoria)}";
+
+        private void Registrar(string tipo, string formato, string filtros, int filas)
+        {
+            if (!int.TryParse(User.FindFirst("idUsuario")?.Value, out var usuarioId) || usuarioId <= 0)
+                throw new UnauthorizedAccessException("Falta la identidad autenticada de quien exporta.");
+            _reportesDao.Registrar(new ExportacionReporte {
+                UsuarioId = usuarioId, FechaHora = RelojNegocio.Ahora, Tipo = tipo,
+                Formato = formato, Filtros = filtros, CantidadFilas = filas
+            });
         }
 
         private static bool PeriodoValido(int anio, int mes, out string? error)

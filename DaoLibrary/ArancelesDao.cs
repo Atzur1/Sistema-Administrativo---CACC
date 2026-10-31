@@ -211,12 +211,7 @@ namespace DaoLibrary
             comando.Parameters.AddWithValue("@vigenteDesde", vigenteDesde.Date);
         }
 
-        private List<Arancel> ObtenerTodos()
-        {
-            var resultado = new List<Arancel>();
-            string query = @"
-                SELECT a.PK_id_arancel, a.genero, a.FK_id_categoria, c.nombre_categoria, a.monto, a.vigente_desde,
-                       actor.nombre_usuario AS responsable_nombre, actor.apellido_usuario AS responsable_apellido
+        internal const string ArancelesSeleccion = @"
                 FROM dbo.ARANCELES a
                 LEFT JOIN dbo.CATEGORIAS c ON c.PK_id_categoria = a.FK_id_categoria
                 OUTER APPLY (
@@ -226,6 +221,14 @@ namespace DaoLibrary
                       AND ac.accion = 'INSERT'
                     ORDER BY ac.fecha_utc, ac.PK_id_evento
                 ) actor";
+
+        private List<Arancel> ObtenerTodos()
+        {
+            var resultado = new List<Arancel>();
+            string query = @"
+                SELECT a.PK_id_arancel, a.genero, a.FK_id_categoria, c.nombre_categoria, a.monto, a.vigente_desde,
+                       actor.nombre_usuario AS responsable_nombre, actor.apellido_usuario AS responsable_apellido
+                " + ArancelesSeleccion;
 
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 

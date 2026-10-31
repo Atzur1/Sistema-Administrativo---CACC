@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="93a6b79e-6868-4b9c-9e4d-253a87795e0d" name="FramD@GABINETE1 2026-10-31 19:08:18" runUser="GABINETE1\CodexSandboxOffline" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-31T19:08:18.7458073-03:00" queuing="2026-10-31T19:08:18.7458076-03:00" start="2026-10-31T19:08:17.7353312-03:00" finish="2026-10-31T19:08:18.7546231-03:00" />
+  <TestSettings name="default" id="a2e3b8db-1885-4b8f-9a53-b943f4a0610a">
+    <Deployment runDeploymentRoot="FramD_GABINETE1_2026-10-31_19_08_18" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="f82fcc2d-7757-499d-b4d7-25cfc8c98d04" testId="910d48c4-c4c3-837d-310a-45bb61b76828" testName="ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 7749000)" computerName="GABINETE1" duration="00:00:00.2185393" startTime="2026-10-31T19:08:18.6342665-03:00" endTime="2026-10-31T19:08:18.6342806-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f82fcc2d-7757-499d-b4d7-25cfc8c98d04">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Contains() Failure: Filter not matched in collection&#xD;
+Collection: [&lt;text fill="#0D4223" transform="translate(94 36.6)" font-size="15" font-weight="600" font-family="Lato" x="0, 9.9224091, 13.649872, 22.109802, 30.622223, 33.764694, 43.717102, 49.297058, 53.024521, 60.959457, 66.539413, 70.34938, 77.444321, 86.061737, 89.706711, 99.62912, 107.24155, 119.80394, 123.61391, 132.23132, 140.69125, 148.70119, 154.07864, 162.69606, 169.2885, 172.93347, 181.44589, 189.45583, 193.1008, 202.86571, 211.48312, 216.87558, 225.388, 234.00542, 242.51784, " y="14.805, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			Club Atlético Camioneros de Córdoba&#xD;
+	&lt;/text&gt;, &lt;text fill="#007F3E" transform="translate(94 55.6)" font-size="11.5" font-weight="500" font-family="Lato, Lato SemiBold" x="0, 6.9229279, 13.029358, 19.521042, 26.087479, 30.330933, 34.493881, 40.600311, 43.463776, 49.949707, 56.056137, 58.919601, 65.842529, 71.948959, 77.468903, 83.247589, 89.69902, 96.184952, 101.96364, 107.48358, 110.3298, 116.89624, 123.34767, 126.21114, 136.80827, 142.9147, 149.36613, 154.38583, 160.83727, 166.61595, " y="11.3505, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			Reporte de Recaudación Mensual&#xD;
+	&lt;/text&gt;, &lt;text fill="#5F6B64" transform="translate(525.327 43.1)" font-size="7" font-weight="500" font-family="Lato, Lato SemiBold" x="0.28, 4.8719826, 11.990957, 14.570443, 19.298931, 21.878416, 27.761889, " y="6.9089999, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			EMITIDO&#xD;
+	&lt;/text&gt;, &lt;text fill="#1A1A1A" transform="translate(479.371 51.5)" font-size="9.5" font-weight="500" font-family="Lato, Lato SemiBold" x="0, 5.5100098, 11.02002, 15.385284, 20.895294, 26.405304, 30.770569, 36.280579, 41.790588, 47.300598, 52.810608, 55.176117, 60.686127, 66.196136, 68.609146, 74.119156, " y="9.3765001, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			31/10/2026 19:08&#xD;
+	&lt;/text&gt;, &lt;text fill="#5F6B64" transform="translate(48 118)" font-size="7" font-weight="500" font-family="Lato, Lato SemiBold" x="0.28, 5.1134834, 9.7054653, 14.710443, 17.289928, 23.481398, 29.36487, " y="6.9089999, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			PERÍODO&#xD;
+	&lt;/text&gt;, ···]</Message>
+          <StackTrace>   at ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(Decimal total) in C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionReportBuilder.Tests.cs:line 40&#xD;
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="b828d074-f8db-4e96-8362-cb2d21f85367" testId="9af97364-75de-2f73-b794-d29d459b5bd9" testName="ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 999999999)" computerName="GABINETE1" duration="00:00:00.0154324" startTime="2026-10-31T19:08:18.6467722-03:00" endTime="2026-10-31T19:08:18.6467725-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b828d074-f8db-4e96-8362-cb2d21f85367">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Contains() Failure: Filter not matched in collection&#xD;
+Collection: [&lt;text fill="#0D4223" transform="translate(94 36.6)" font-size="15" font-weight="600" font-family="Lato" x="0, 9.9224091, 13.649872, 22.109802, 30.622223, 33.764694, 43.717102, 49.297058, 53.024521, 60.959457, 66.539413, 70.34938, 77.444321, 86.061737, 89.706711, 99.62912, 107.24155, 119.80394, 123.61391, 132.23132, 140.69125, 148.70119, 154.07864, 162.69606, 169.2885, 172.93347, 181.44589, 189.45583, 193.1008, 202.86571, 211.48312, 216.87558, 225.388, 234.00542, 242.51784, " y="14.805, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			Club Atlético Camioneros de Córdoba&#xD;
+	&lt;/text&gt;, &lt;text fill="#007F3E" transform="translate(94 55.6)" font-size="11.5" font-weight="500" font-family="Lato, Lato SemiBold" x="0, 6.9229279, 13.029358, 19.521042, 26.087479, 30.330933, 34.493881, 40.600311, 43.463776, 49.949707, 56.056137, 58.919601, 65.842529, 71.948959, 77.468903, 83.247589, 89.69902, 96.184952, 101.96364, 107.48358, 110.3298, 116.89624, 123.34767, 126.21114, 136.80827, 142.9147, 149.36613, 154.38583, 160.83727, 166.61595, " y="11.3505, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			Reporte de Recaudación Mensual&#xD;
+	&lt;/text&gt;, &lt;text fill="#5F6B64" transform="translate(525.327 43.1)" font-size="7" font-weight="500" font-family="Lato, Lato SemiBold" x="0.28, 4.8719826, 11.990957, 14.570443, 19.298931, 21.878416, 27.761889, " y="6.9089999, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			EMITIDO&#xD;
+	&lt;/text&gt;, &lt;text fill="#1A1A1A" transform="translate(479.371 51.5)" font-size="9.5" font-weight="500" font-family="Lato, Lato SemiBold" x="0, 5.5100098, 11.02002, 15.385284, 20.895294, 26.405304, 30.770569, 36.280579, 41.790588, 47.300598, 52.810608, 55.176117, 60.686127, 66.196136, 68.609146, 74.119156, " y="9.3765001, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			31/10/2026 19:08&#xD;
+	&lt;/text&gt;, &lt;text fill="#5F6B64" transform="translate(48 118)" font-size="7" font-weight="500" font-family="Lato, Lato SemiBold" x="0.28, 5.1134834, 9.7054653, 14.710443, 17.289928, 23.481398, 29.36487, " y="6.9089999, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+			PERÍODO&#xD;
+	&lt;/text&gt;, ···]</Message>
+          <StackTrace>   at ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(Decimal total) in C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionReportBuilder.Tests.cs:line 40&#xD;
+   at InvokeStub_RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 999999999)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="9af97364-75de-2f73-b794-d29d459b5bd9">
+      <Execution id="b828d074-f8db-4e96-8362-cb2d21f85367" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionReportBuilderTests" name="Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 7749000)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="910d48c4-c4c3-837d-310a-45bb61b76828">
+      <Execution id="f82fcc2d-7757-499d-b4d7-25cfc8c98d04" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionReportBuilderTests" name="Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="910d48c4-c4c3-837d-310a-45bb61b76828" executionId="f82fcc2d-7757-499d-b4d7-25cfc8c98d04" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9af97364-75de-2f73-b794-d29d459b5bd9" executionId="b828d074-f8db-4e96-8362-cb2d21f85367" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="2" executed="2" passed="0" failed="2" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.19)&#xD;
+[xUnit.net 00:00:00.09]   Discovering: ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.22]   Discovered:  ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.22]   Starting:    ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.48]       Assert.Contains() Failure: Filter not matched in collection&#xD;
+[xUnit.net 00:00:00.48]       Collection: [&lt;text fill="#0D4223" transform="translate(94 36.6)" font-size="15" font-weight="600" font-family="Lato" x="0, 9.9224091, 13.649872, 22.109802, 30.622223, 33.764694, 43.717102, 49.297058, 53.024521, 60.959457, 66.539413, 70.34938, 77.444321, 86.061737, 89.706711, 99.62912, 107.24155, 119.80394, 123.61391, 132.23132, 140.69125, 148.70119, 154.07864, 162.69606, 169.2885, 172.93347, 181.44589, 189.45583, 193.1008, 202.86571, 211.48312, 216.87558, 225.388, 234.00542, 242.51784, " y="14.805, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.48]       			Club Atlético Camioneros de Córdoba&#xD;
+[xUnit.net 00:00:00.48]       	&lt;/text&gt;, &lt;text fill="#007F3E" transform="translate(94 55.6)" font-size="11.5" font-weight="500" font-family="Lato, Lato SemiBold" x="0, 6.9229279, 13.029358, 19.521042, 26.087479, 30.330933, 34.493881, 40.600311, 43.463776, 49.949707, 56.056137, 58.919601, 65.842529, 71.948959, 77.468903, 83.247589, 89.69902, 96.184952, 101.96364, 107.48358, 110.3298, 116.89624, 123.34767, 126.21114, 136.80827, 142.9147, 149.36613, 154.38583, 160.83727, 166.61595, " y="11.3505, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.48]       			Reporte de Recaudación Mensual&#xD;
+[xUnit.net 00:00:00.48]       	&lt;/text&gt;, &lt;text fill="#5F6B64" transform="translate(525.327 43.1)" font-size="7" font-weight="500" font-family="Lato, Lato SemiBold" x="0.28, 4.8719826, 11.990957, 14.570443, 19.298931, 21.878416, 27.761889, " y="6.9089999, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.48]       			EMITIDO&#xD;
+[xUnit.net 00:00:00.48]       	&lt;/text&gt;, &lt;text fill="#1A1A1A" transform="translate(479.371 51.5)" font-size="9.5" font-weight="500" font-family="Lato, Lato SemiBold" x="0, 5.5100098, 11.02002, 15.385284, 20.895294, 26.405304, 30.770569, 36.280579, 41.790588, 47.300598, 52.810608, 55.176117, 60.686127, 66.196136, 68.609146, 74.119156, " y="9.3765001, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.48]       			31/10/2026 19:08&#xD;
+[xUnit.net 00:00:00.48]       	&lt;/text&gt;, &lt;text fill="#5F6B64" transform="translate(48 118)" font-size="7" font-weight="500" font-family="Lato, Lato SemiBold" x="0.28, 5.1134834, 9.7054653, 14.710443, 17.289928, 23.481398, 29.36487, " y="6.9089999, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.48]       			PERÍODO&#xD;
+[xUnit.net 00:00:00.48]       	&lt;/text&gt;, ···]&#xD;
+[xUnit.net 00:00:00.48]       Stack Trace:&#xD;
+[xUnit.net 00:00:00.48]         C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionReportBuilder.Tests.cs(40,0): at ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(Decimal total)&#xD;
+[xUnit.net 00:00:00.48]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+[xUnit.net 00:00:00.48]            at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)&#xD;
+[xUnit.net 00:00:00.50]       Assert.Contains() Failure: Filter not matched in collection&#xD;
+[xUnit.net 00:00:00.50]       Collection: [&lt;text fill="#0D4223" transform="translate(94 36.6)" font-size="15" font-weight="600" font-family="Lato" x="0, 9.9224091, 13.649872, 22.109802, 30.622223, 33.764694, 43.717102, 49.297058, 53.024521, 60.959457, 66.539413, 70.34938, 77.444321, 86.061737, 89.706711, 99.62912, 107.24155, 119.80394, 123.61391, 132.23132, 140.69125, 148.70119, 154.07864, 162.69606, 169.2885, 172.93347, 181.44589, 189.45583, 193.1008, 202.86571, 211.48312, 216.87558, 225.388, 234.00542, 242.51784, " y="14.805, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.50]       			Club Atlético Camioneros de Córdoba&#xD;
+[xUnit.net 00:00:00.50]       	&lt;/text&gt;, &lt;text fill="#007F3E" transform="translate(94 55.6)" font-size="11.5" font-weight="500" font-family="Lato, Lato SemiBold" x="0, 6.9229279, 13.029358, 19.521042, 26.087479, 30.330933, 34.493881, 40.600311, 43.463776, 49.949707, 56.056137, 58.919601, 65.842529, 71.948959, 77.468903, 83.247589, 89.69902, 96.184952, 101.96364, 107.48358, 110.3298, 116.89624, 123.34767, 126.21114, 136.80827, 142.9147, 149.36613, 154.38583, 160.83727, 166.61595, " y="11.3505, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.50]       			Reporte de Recaudación Mensual&#xD;
+[xUnit.net 00:00:00.50]       	&lt;/text&gt;, &lt;text fill="#5F6B64" transform="translate(525.327 43.1)" font-size="7" font-weight="500" font-family="Lato, Lato SemiBold" x="0.28, 4.8719826, 11.990957, 14.570443, 19.298931, 21.878416, 27.761889, " y="6.9089999, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.50]       			EMITIDO&#xD;
+[xUnit.net 00:00:00.50]       	&lt;/text&gt;, &lt;text fill="#1A1A1A" transform="translate(479.371 51.5)" font-size="9.5" font-weight="500" font-family="Lato, Lato SemiBold" x="0, 5.5100098, 11.02002, 15.385284, 20.895294, 26.405304, 30.770569, 36.280579, 41.790588, 47.300598, 52.810608, 55.176117, 60.686127, 66.196136, 68.609146, 74.119156, " y="9.3765001, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.50]       			31/10/2026 19:08&#xD;
+[xUnit.net 00:00:00.50]       	&lt;/text&gt;, &lt;text fill="#5F6B64" transform="translate(48 118)" font-size="7" font-weight="500" font-family="Lato, Lato SemiBold" x="0.28, 5.1134834, 9.7054653, 14.710443, 17.289928, 23.481398, 29.36487, " y="6.9089999, " xmlns="http://www.w3.org/2000/svg"&gt;&#xD;
+[xUnit.net 00:00:00.50]       			PERÍODO&#xD;
+[xUnit.net 00:00:00.50]       	&lt;/text&gt;, ···]&#xD;
+[xUnit.net 00:00:00.50]       Stack Trace:&#xD;
+[xUnit.net 00:00:00.50]         C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionReportBuilder.Tests.cs(40,0): at ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(Decimal total)&#xD;
+[xUnit.net 00:00:00.50]            at InvokeStub_RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(Object, Span`1)&#xD;
+[xUnit.net 00:00:00.50]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:00.50]   Finished:    ApiGestion.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="GABINETE1" outcome="Error" timestamp="2026-10-31T19:08:18.6320888-03:00">
+        <Text>[xUnit.net 00:00:00.48]     ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 7749000) [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="GABINETE1" outcome="Error" timestamp="2026-10-31T19:08:18.6463870-03:00">
+        <Text>[xUnit.net 00:00:00.50]     ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 999999999) [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

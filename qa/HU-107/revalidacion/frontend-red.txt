@@ -1,0 +1,155 @@
+> Building...
+√ Building...
+Application bundle generation complete. [4.580 seconds] - 2026-10-31T22:06:52.304Z
+
+
+ RUN  v4.1.11 C:/Users/FramD/Documents/Tesis/Sisterrma CACC/Sistema-Administrativo---CACC/frontend-cacc
+
+ ❯ |frontend-cacc| src/app/admin-portal/recaudacion-mensual/recaudacion-mensual.spec.ts (36 tests | 2 failed) 2658ms
+     × no presenta filas y conteo del filtro anterior mientras carga otro 245ms
+     × un error no anuncia cero pagos y permite reintentar solo la tabla 113ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |frontend-cacc| src/app/admin-portal/recaudacion-mensual/recaudacion-mensual.spec.ts > RecaudacionMensual - estados HU-107 > no presenta filas y conteo del filtro anterior mientras carga otro
+AssertionError: expected [ { idPago: 27, …(7) }, …(9) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000026",
++     "fechaHoraRegistro": "2026-10-28T10:00:00-03:00",
++     "fechaPago": "2026-10-28",
++     "idPago": 27,
++     "jugador": "JUGADOR 27",
++     "medioPago": "Efectivo",
++     "monto": 9000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000025",
++     "fechaHoraRegistro": "2026-10-27T10:00:00-03:00",
++     "fechaPago": "2026-10-27",
++     "idPago": 26,
++     "jugador": "JUGADOR 26",
++     "medioPago": "Efectivo",
++     "monto": 8000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000024",
++     "fechaHoraRegistro": "2026-10-26T10:00:00-03:00",
++     "fechaPago": "2026-10-26",
++     "idPago": 25,
++     "jugador": "JUGADOR 25",
++     "medioPago": "Transferencia",
++     "monto": 7000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000023",
++     "fechaHoraRegistro": "2026-10-25T10:00:00-03:00",
++     "fechaPago": "2026-10-25",
++     "idPago": 24,
++     "jugador": "JUGADOR 24",
++     "medioPago": "Efectivo",
++     "monto": 6000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000022",
++     "fechaHoraRegistro": "2026-10-24T10:00:00-03:00",
++     "fechaPago": "2026-10-24",
++     "idPago": 23,
++     "jugador": "JUGADOR 23",
++     "medioPago": "Efectivo",
++     "monto": 5000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000021",
++     "fechaHoraRegistro": "2026-10-23T10:00:00-03:00",
++     "fechaPago": "2026-10-23",
++     "idPago": 22,
++     "jugador": "JUGADOR 22",
++     "medioPago": "Transferencia",
++     "monto": 4000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000020",
++     "fechaHoraRegistro": "2026-10-22T10:00:00-03:00",
++     "fechaPago": "2026-10-22",
++     "idPago": 21,
++     "jugador": "JUGADOR 21",
++     "medioPago": "Efectivo",
++     "monto": 3000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000019",
++     "fechaHoraRegistro": "2026-10-21T10:00:00-03:00",
++     "fechaPago": "2026-10-21",
++     "idPago": 20,
++     "jugador": "JUGADOR 20",
++     "medioPago": "Efectivo",
++     "monto": 2000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000018",
++     "fechaHoraRegistro": "2026-10-20T10:00:00-03:00",
++     "fechaPago": "2026-10-20",
++     "idPago": 19,
++     "jugador": "JUGADOR 19",
++     "medioPago": "Transferencia",
++     "monto": 1000,
++   },
++   {
++     "categoria": "AFA 20067",
++     "dni": "90000017",
++     "fechaHoraRegistro": "2026-10-19T10:00:00-03:00",
++     "fechaPago": "2026-10-19",
++     "idPago": 18,
++     "jugador": "JUGADOR 18",
++     "medioPago": "Efectivo",
++     "monto": 9000,
++   },
++ ]
+
+ ❯ src/app/admin-portal/recaudacion-mensual/recaudacion-mensual.spec.ts:114:29
+    112|     fixture.changeDetectorRef.markForCheck();
+    113|     fixture.detectChanges();
+    114|     expect(component.filas).toEqual([]);
+       |                             ^
+    115|     expect(el.querySelector('.tabla')).toBeNull();
+    116|     expect(el.querySelector('.tabla-conteo')!.textContent).toContain('…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |frontend-cacc| src/app/admin-portal/recaudacion-mensual/recaudacion-mensual.spec.ts > RecaudacionMensual - estados HU-107 > un error no anuncia cero pagos y permite reintentar solo la tabla
+AssertionError: expected ' 0 pagos en Octubre 2026' not to contain '0 pagos'
+
+Expected: "0 pagos"
+Received: " 0 pagos en Octubre 2026"
+
+ ❯ src/app/admin-portal/recaudacion-mensual/recaudacion-mensual.spec.ts:131:64
+    129|     pendiente.error(new Error('Sin conexión'));
+    130|     await redibujar(fixture);
+    131|     expect(el.querySelector('.tabla-conteo')!.textContent).not.toConta…
+       |                                                                ^
+    132|     expect(el.querySelector('.tabla-conteo')!.textContent).toContain('…
+    133|     const reintentar = Array.from(el.querySelectorAll<HTMLButtonElemen…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 34 passed (36)
+   Start at  19:06:52
+   Duration  4.09s (transform 154ms, setup 323ms, import 221ms, tests 2.66s, environment 702ms)
+
