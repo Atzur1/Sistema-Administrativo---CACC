@@ -100,7 +100,7 @@ Estado inicial verificado: `5|4|5|0|1|1`, más 20 personas sin jugador.
 - **Base:** `is_read_committed_snapshot_on = 0`, `snapshot_isolation_state = OFF` → **READ COMMITTED con bloqueos**.
 - **Sesiones:** el monitor leyó `transaction_isolation_level = 2` (READ COMMITTED) en todas las sesiones: Administrativo, generadores, Deportivo y la suite.
 - Las transacciones que lo necesitan escalan de forma **local**:
-  - `UPDLOCK, HOLDLOCK` en `PlayerDAO`, `EnrollmentDao` y `ArancelesDao`;
+  - `UPDLOCK, HOLDLOCK` en `PlayerDao`, `EnrollmentDao` y `ArancelesDao`;
   - `Serializable` en `AccountAccessDao` y `DiscountDao`;
   - el applock `CACC_ESCRITURA_PAGOS`.
 - **No se cambió ningún nivel de aislamiento.**
@@ -114,7 +114,7 @@ Estado inicial verificado: `5|4|5|0|1|1`, más 20 personas sin jugador.
 | Riesgo | Mecanismo | Dónde |
 |---|---|---|
 | ID repetido | `SEQUENCE NO CACHE` (JUGADORES, PAGOS) + IDENTITY (resto) | V20261011_04/05 |
-| Dos PERSONAS con el mismo DNI | `UX_PERSONAS_dni` (único filtrado) + `UPDLOCK, HOLDLOCK` en la búsqueda del alta | esquema; `PlayerDAO.cs:180`, `:263` |
+| Dos PERSONAS con el mismo DNI | `UX_PERSONAS_dni` (único filtrado) + `UPDLOCK, HOLDLOCK` en la búsqueda del alta | esquema; `PlayerDao.cs:180`, `:263` |
 | Dos JUGADORES por persona | `UX_JUGADORES_persona` | esquema |
 | Cuota pendiente duplicada | `UX_PAGOS_CuotaPendiente_Jugador_Periodo` (jugador, vencimiento, concepto; `estado=0`) | esquema |
 | Inscripción duplicada | `UX_PAGOS_InscripcionPendiente_Periodo` | esquema |
@@ -272,7 +272,7 @@ Las escrituras de los dos sistemas sobre PERSONAS, JUGADORES, PAGOS y USUARIOS l
 
 **Transacciones (granularidad revisada; no se cambió ninguna):**
 
-- **Alta de jugador** (`PlayerDAO`): una transacción con el applock como primer paso, que cubre:
+- **Alta de jugador** (`PlayerDao`): una transacción con el applock como primer paso, que cubre:
   - la búsqueda del DNI con `UPDLOCK, HOLDLOCK`;
   - PERSONAS, JUGADORES, JUGADORES_CATEGORIAS y el período;
   - la inscripción y la cuota del mes.
@@ -344,7 +344,7 @@ Se ejecuta antes y después de cada caso (`$sqlIntegridad` en el runner). Los hu
 | ID | Tipo | Descripción | Vincular a |
 |---|---|---|---|
 | BUG-059-1 (existente) | Bug abierto | El Deportivo escribe directo en la base y no sella `origen`: la baja (`UPDATE JUGADORES SET fecha_baja`) y el alta de staff quedan con origen `NULL`. HU-066 lo confirma bajo concurrencia (AUD-5, BJD-2 de HU-059). No hay contaminación, pero el origen no es positivo. Se resuelve en el código del Deportivo. | **HU-066** (nuevo vínculo), HU-057, HU-040 |
-| OBS-066-1 | Observación (rendimiento, no defecto) | `PlayerDAO.cs:180` y `:263` buscan `WHERE LTRIM(RTRIM(Dni)) = @dni WITH (UPDLOCK, HOLDLOCK)`. La función sobre la columna impide el seek en `UX_PERSONAS_dni`: el range lock cubre el índice entero y serializa todas las altas contra los `INSERT PERSONAS` del Deportivo. Con 50 altas simultáneas hubo 2,3 s de espera (margen de 2,1× sobre el timeout de 5 s del Deportivo). Opción: guardar el DNI ya normalizado y buscar `dni = @dni`, sin función sobre la columna. **No se cambió**: el resultado es correcto y el cambio corresponde a HU-053/HU-056. | HU-066, HU-056 |
+| OBS-066-1 | Observación (rendimiento, no defecto) | `PlayerDao.cs:180` y `:263` buscan `WHERE LTRIM(RTRIM(Dni)) = @dni WITH (UPDLOCK, HOLDLOCK)`. La función sobre la columna impide el seek en `UX_PERSONAS_dni`: el range lock cubre el índice entero y serializa todas las altas contra los `INSERT PERSONAS` del Deportivo. Con 50 altas simultáneas hubo 2,3 s de espera (margen de 2,1× sobre el timeout de 5 s del Deportivo). Opción: guardar el DNI ya normalizado y buscar `dni = @dni`, sin función sobre la columna. **No se cambió**: el resultado es correcto y el cambio corresponde a HU-053/HU-056. | HU-066, HU-056 |
 | OBS-066-2 | Observación (política) | Asimetría con un DNI que ya existe: el portal **rechaza** (400 "Ya hay una persona registrada"), mientras que el Deportivo **reutiliza** la persona (201 o 200 `"creado": false`). Las dos respuestas son controladas y respetan la unicidad. Se documenta para que sea una decisión explícita. | HU-056 |
 
 **Los bugs no se cargaron en Jira desde acá: no hay acceso a Jira en esta sesión.** Pendiente para el equipo:
