@@ -462,11 +462,13 @@
   border-color: var(--color-brand);
 }
 
-.profile-action-danger {
+.profile-action-danger,
+.profile-action-anular {
   color: var(--color-danger);
 }
 
-.profile-action-danger:hover {
+.profile-action-danger:hover,
+.profile-action-anular:hover {
   background: var(--color-danger-bg);
   border-color: rgba(192, 57, 43, 0.45);
 }

@@ -9,6 +9,12 @@ namespace DaoLibrary
     // descuentos vigentes o programados se cancelaron automáticamente.
     public sealed record ResultadoBajaJugador(BajaJugadorResultado Resultado, int CuotasEliminadas = 0, int BeneficiosCancelados = 0);
 
+    public enum AnularAltaResultado { Ok, NoEncontrado, TieneMovimientos }
+
+    // Que se borro al anular un alta por error, o por que no se pudo (Motivos: lo que el jugador ya tiene y lo impide).
+    public sealed record ResultadoAnulacionAlta(
+        AnularAltaResultado Resultado, IReadOnlyList<string>? Motivos = null, int CargosEliminados = 0, bool PersonaEliminada = false);
+
     public class JugadoresDao : IJugadoresDao
     {
         private readonly string _cadenaConexion;
@@ -196,6 +202,120 @@ namespace DaoLibrary
             // La inscripción es anual: dentro del año de la última no se vuelve a pagar; fuera de él empieza un año nuevo.
             PlayerDAO.GenerarInscripcionAlReingreso(conexion, transaccion, idJugador, hoy, altaAnterior);
             return true;
+        }
+
+        // Anular un alta cargada por error (solo SuperAdmin): el jugador, sus cuotas e inscripcion PENDIENTES y su persona
+        // se borran por completo y el DNI queda libre. Solo se puede si el jugador no tiene ningun movimiento real: ni un
+        // pago cobrado (ni parcial), ni pagos anulados, becas o descuentos, asistencias, partidos, ni datos en la ficha
+        // medica. Si los tiene, no se toca nada y se informa cuales son: ahi corresponde la baja, que conserva todo.
+        // La persona solo se borra si no es tambien tutor, usuario o personal con asistencias.
+        public ResultadoAnulacionAlta AnularAlta(int idJugador)
+        {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            using SqlTransaction transaccion = conexion.BeginTransaction(System.Data.IsolationLevel.Serializable);
+            BloqueoEscrituraPagos.Tomar(conexion, transaccion);
+            try
+            {
+                var resultado = AnularAltaCore(conexion, transaccion, idJugador);
+                if (resultado.Resultado == AnularAltaResultado.Ok) transaccion.Commit(); else transaccion.Rollback();
+                return resultado;
+            }
+            catch
+            {
+                transaccion.Rollback();
+                throw;
+            }
+        }
+
+        // internal (no private) para que la prueba de integracion la corra dentro de una transaccion que revierte.
+        internal static ResultadoAnulacionAlta AnularAltaCore(SqlConnection conexion, SqlTransaction transaccion, int idJugador)
+        {
+            int idPersona;
+            using (var buscar = new SqlCommand(
+                "SELECT FK_id_persona FROM JUGADORES WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_jugador = @id", conexion, transaccion))
+            {
+                buscar.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
+                object? valor = buscar.ExecuteScalar();
+                if (valor == null || valor == DBNull.Value)
+                {
+                    return new ResultadoAnulacionAlta(AnularAltaResultado.NoEncontrado);
+                }
+                idPersona = Convert.ToInt32(valor);
+            }
+
+            var motivos = new List<string>();
+            using (var movimientos = new SqlCommand(@"
+                SELECT
+                    (SELECT COUNT(*) FROM PAGOS WHERE FK_id_jugador = @id AND estado = 1),
+                    (SELECT COUNT(*) FROM PAGOS_ANULADOS WHERE FK_id_jugador = @id),
+                    (SELECT COUNT(*) FROM JUGADORES_DESCUENTOS WHERE FK_id_jugador = @id),
+                    (SELECT COUNT(*) FROM ASISTENCIAS WHERE FK_id_jugador = @id),
+                    (SELECT COUNT(*) FROM JUGADORES_PARTIDOS WHERE FK_id_jugador = @id),
+                    (SELECT COUNT(*) FROM FICHAS_MEDICAS WHERE FK_id_jugador = @id AND (
+                            NULLIF(LTRIM(RTRIM(obra_social)), '') IS NOT NULL
+                         OR numero_afiliado_os IS NOT NULL
+                         OR NULLIF(LTRIM(RTRIM(grupo_sanguineo)), '') IS NOT NULL
+                         OR NULLIF(LTRIM(RTRIM(factor)), '') IS NOT NULL
+                         OR NULLIF(LTRIM(RTRIM(antecedentes_salud)), '') IS NOT NULL
+                         OR NULLIF(LTRIM(RTRIM(medicamentos_cronicos)), '') IS NOT NULL
+                         OR NULLIF(LTRIM(RTRIM(condiciones_cronicas)), '') IS NOT NULL
+                         OR apto_fisico_vencimiento IS NOT NULL
+                         OR NULLIF(LTRIM(RTRIM(observaciones)), '') IS NOT NULL))", conexion, transaccion))
+            {
+                movimientos.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
+                using var reader = movimientos.ExecuteReader();
+                reader.Read();
+                int cobrados = reader.GetInt32(0), anulados = reader.GetInt32(1), descuentos = reader.GetInt32(2),
+                    asistencias = reader.GetInt32(3), partidos = reader.GetInt32(4), fichas = reader.GetInt32(5);
+                if (cobrados > 0) motivos.Add(cobrados == 1 ? "un pago cobrado" : $"{cobrados} pagos cobrados");
+                if (anulados > 0) motivos.Add("pagos anulados");
+                if (descuentos > 0) motivos.Add("becas o descuentos");
+                if (asistencias > 0) motivos.Add("asistencias registradas");
+                if (partidos > 0) motivos.Add("partidos");
+                if (fichas > 0) motivos.Add("datos cargados en la ficha médica");
+            }
+
+            if (motivos.Count > 0)
+            {
+                return new ResultadoAnulacionAlta(AnularAltaResultado.TieneMovimientos, motivos);
+            }
+
+            int cargos;
+            using (var borrarCargos = new SqlCommand("DELETE FROM PAGOS WHERE FK_id_jugador = @id AND estado = 0", conexion, transaccion))
+            {
+                borrarCargos.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
+                cargos = borrarCargos.ExecuteNonQuery();
+            }
+
+            using (var borrarJugador = new SqlCommand(@"
+                DELETE FROM JUGADORES_RESPONSABLES WHERE FK_id_jugador = @id;
+                DELETE FROM JUGADORES_CATEGORIAS WHERE FK_id_jugador = @id;
+                DELETE FROM JUGADORES_PERIODOS WHERE FK_id_jugador = @id;
+                DELETE FROM FICHAS_MEDICAS WHERE FK_id_jugador = @id;
+                DELETE FROM JUGADORES WHERE PK_id_jugador = @id;", conexion, transaccion))
+            {
+                borrarJugador.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
+                borrarJugador.ExecuteNonQuery();
+            }
+
+            bool personaEliminada;
+            using (var borrarPersona = new SqlCommand(@"
+                IF NOT EXISTS (SELECT 1 FROM JUGADORES WHERE FK_id_persona = @idPersona)
+                   AND NOT EXISTS (SELECT 1 FROM RESPONSABLES WHERE FK_id_persona = @idPersona)
+                   AND NOT EXISTS (SELECT 1 FROM USUARIOS WHERE FK_id_persona = @idPersona)
+                   AND NOT EXISTS (SELECT 1 FROM ASISTENCIAS WHERE FK_id_persona = @idPersona)
+                BEGIN
+                    DELETE FROM CREDENCIALES_QR WHERE FK_id_persona = @idPersona;
+                    DELETE FROM PERSONAS WHERE PK_id_persona = @idPersona;
+                    SELECT 1;
+                END
+                ELSE SELECT 0;", conexion, transaccion))
+            {
+                borrarPersona.Parameters.Add("@idPersona", System.Data.SqlDbType.Int).Value = idPersona;
+                personaEliminada = Convert.ToInt32(borrarPersona.ExecuteScalar()) == 1;
+            }
+
+            return new ResultadoAnulacionAlta(AnularAltaResultado.Ok, null, cargos, personaEliminada);
         }
 
         private static JugadorResumen LeerJugador(SqlDataReader reader) => new()

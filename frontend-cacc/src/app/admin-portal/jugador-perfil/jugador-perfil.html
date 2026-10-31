@@ -38,9 +38,17 @@
               Dar de baja
             </button>
           }
+          <button
+            type="button"
+            class="profile-action profile-action-anular"
+            title="Solo si se cargó por error y todavía no tiene pagos cobrados"
+            (click)="abrirAnularAlta()"
+          >
+            Anular alta por error
+          </button>
           <app-help-hint
             label="Baja del jugador"
-            text="Dar de baja deja de generarle cuotas a partir del mes siguiente a la baja. Las cuotas sin pagos de meses posteriores se quitan; la deuda anterior se mantiene. Reactivar vuelve a generarle cuotas desde el mes en curso."
+            text="Dar de baja deja de generarle cuotas a partir del mes siguiente a la baja. Las cuotas sin pagos de meses posteriores se quitan; la deuda anterior se mantiene. Reactivar vuelve a generarle cuotas desde el mes en curso. Anular alta por error borra al jugador y sus cargos pendientes (solo si no tiene pagos cobrados, becas ni asistencias)."
           />
         </div>
       </div>
@@ -202,6 +210,19 @@
         ¿Confirmás que querés reactivar a <strong>{{ jugador?.nombreCompleto }}</strong>? Se toma como un
         reingreso: su fecha de alta pasa a ser hoy y vuelve a generar su cuota desde el mes en curso (si ya pasó el
         día 10, la de este mes se genera en el momento). Los meses en que estuvo dado de baja no se cobran.
+      </p>
+    }
+
+    <!-- ----- ANULAR ALTA POR ERROR ----- -->
+    @if (dialogo === 'anular-alta') {
+      <p class="dialog-confirm">
+        ¿Confirmás que <strong>{{ jugador?.nombreCompleto }}</strong> se dio de alta por error? Se elimina por completo:
+        sus cuotas e inscripción pendientes se borran y su DNI queda libre para volver a darlo de alta.
+        <strong>No se puede deshacer.</strong>
+      </p>
+      <p class="dialog-confirm dialog-confirm-warning">
+        Solo se puede si todavía no tiene pagos cobrados, becas o descuentos, asistencias ni ficha médica cargada. Si
+        dejó el club, usá «Dar de baja»: así se conserva todo su historial.
       </p>
     }
 

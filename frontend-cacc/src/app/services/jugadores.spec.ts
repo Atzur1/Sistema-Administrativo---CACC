@@ -64,10 +64,19 @@ describe('JugadoresService', () => {
 
   // El historial sigue sin operaciones que editen importes ni fechas. Las únicas escrituras son la baja y
   // reactivación del jugador y la anulación auditada de un pago cargado por error (con motivo, solo SuperAdmin).
-  it('solo expone como escrituras la baja/reactivación y la anulación auditada de pagos', () => {
+  it('solo expone como escrituras la baja/reactivación, anular un alta por error y la anulación auditada de pagos', () => {
     const metodos = Object.getOwnPropertyNames(JugadoresService.prototype).filter((nombre) => nombre !== 'constructor');
 
-    expect(metodos.sort()).toEqual(['anularPago', 'darDeBaja', 'getHistorialPagos', 'getJugador', 'reactivar']);
+    expect(metodos.sort()).toEqual(['anularAlta', 'anularPago', 'darDeBaja', 'getHistorialPagos', 'getJugador', 'reactivar']);
+  });
+
+  it('anula un alta por error contra el endpoint del jugador, sin cuerpo', () => {
+    servicio.anularAlta(7).subscribe();
+
+    const req = http.expectOne('/api/jugadores/7/anular-alta');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush({ mensaje: 'ok', cargosEliminados: 2 });
   });
 
   it('anula un pago por su id y con el motivo, contra el endpoint de pagos', () => {

@@ -189,6 +189,7 @@ public class JugadoresControllerTests
     {
         public ResultadoBajaJugador DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
         public bool Reactivar(int idJugador) => throw new NotSupportedException();
+        public ResultadoAnulacionAlta AnularAlta(int idJugador) => throw new NotSupportedException();
         public JugadorResumen? Player { get; init; }
         public Exception? LookupError { get; init; }
 

@@ -34,6 +34,18 @@
             </span>
           }
         </div>
+        @if (esSuperAdmin) {
+          <div class="profile-actions">
+            <button
+              type="button"
+              class="boton boton-secundario boton-anular-alta"
+              title="Solo si se cargó por error y todavía no tiene pagos cobrados, becas ni asistencias"
+              (click)="irAAnularAlta()"
+            >
+              Anular alta por error
+            </button>
+          </div>
+        }
       </div>
 
       <!-- HU-024/026: total a abonar del estado de cuenta (solo cuotas mensuales). Con datos
@@ -279,8 +291,8 @@
                   <span class="saldo-monto">{{ formatMonto(cuota.saldoPendiente) }}</span>
                 </div>
 
-                @if (esInscripcion(cuota)) {
-                  <span class="cuota-original">Se cobra desde Cuotas y Pagos, en la solapa Inscripción</span>
+                @if (!puedePagarSaldo(cuota)) {
+                  <span class="cuota-original">Se cobra después de la inscripción anterior</span>
                 } @else if (pagandoId !== cuota.idPago) {
                   <button type="button" class="boton boton-secundario pagar-button" (click)="abrirPago(cuota)">
                     <svg

@@ -15,7 +15,7 @@ import { Ventana } from '../../shared/ventana/ventana';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 import { PaymentHistoryItemModel, PaymentHistoryModel, PaymentHistoryPartialPaymentModel } from '../../models/PaymentHistoryModel';
 
-type DialogoPerfil = 'baja' | 'reactivar' | 'anular';
+type DialogoPerfil = 'baja' | 'reactivar' | 'anular' | 'anular-alta';
 
 const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -58,7 +58,8 @@ export class JugadorPerfil implements OnInit {
       return;
     }
 
-    this.cargarJugador();
+    // Desde la pantalla de deuda se llega con el cartel de "Anular alta por error" ya abierto.
+    this.cargarJugador(this.route.snapshot.queryParamMap?.get('accion') === 'anular-alta');
     this.cargarHistorial();
   }
 
@@ -76,11 +77,14 @@ export class JugadorPerfil implements OnInit {
     return `${this.jugador.apellido[0] ?? ''}${this.jugador.nombre[0] ?? ''}`.toUpperCase();
   }
 
-  private cargarJugador() {
+  private cargarJugador(abrirAnularAlta = false) {
     this.jugadoresService.getJugador(this.idJugador).subscribe({
       next: (jugador) => {
         this.jugador = jugador;
         this.cargandoJugador = false;
+        if (abrirAnularAlta) {
+          this.abrirAnularAlta();
+        }
         this.cdr.detectChanges();
       },
       error: () => {
@@ -163,6 +167,10 @@ export class JugadorPerfil implements OnInit {
     this.abrir('reactivar');
   }
 
+  abrirAnularAlta() {
+    this.abrir('anular-alta');
+  }
+
   abrirAnulacion(abono: PaymentHistoryPartialPaymentModel, item: PaymentHistoryItemModel) {
     this.abonoAnular = { abono, item };
     this.motivoAnulacion = '';
@@ -186,6 +194,8 @@ export class JugadorPerfil implements OnInit {
         return 'Dar de baja';
       case 'reactivar':
         return 'Reactivar jugador';
+      case 'anular-alta':
+        return 'Anular alta por error';
       default:
         return 'Anular pago';
     }
@@ -197,6 +207,8 @@ export class JugadorPerfil implements OnInit {
         return 'Sí, dar de baja';
       case 'reactivar':
         return 'Sí, reactivar';
+      case 'anular-alta':
+        return 'Sí, anular el alta';
       default:
         return 'Sí, anular pago';
     }
@@ -208,6 +220,8 @@ export class JugadorPerfil implements OnInit {
         return 'Dando de baja…';
       case 'reactivar':
         return 'Reactivando…';
+      case 'anular-alta':
+        return 'Anulando el alta…';
       default:
         return 'Anulando…';
     }
@@ -235,7 +249,34 @@ export class JugadorPerfil implements OnInit {
       case 'anular':
         this.confirmarAnulacion();
         break;
+      case 'anular-alta':
+        this.confirmarAnularAlta();
+        break;
     }
+  }
+
+  // El jugador deja de existir: no se recarga su perfil, se vuelve a la lista. Si ya tiene pagos cobrados, becas,
+  // asistencias o ficha médica la API responde 409 con el motivo y el cartel lo muestra.
+  confirmarAnularAlta() {
+    if (this.procesando) {
+      return;
+    }
+    this.procesando = true;
+    this.errorDialogo = '';
+    this.jugadoresService.anularAlta(this.idJugador).subscribe({
+      next: (respuesta) => {
+        this.procesando = false;
+        this.cerrarDialogo();
+        this.notifications.notify(respuesta.mensaje, 'success');
+        this.volver();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.procesando = false;
+        this.errorDialogo = err.error?.mensaje ?? 'No se pudo anular el alta del jugador.';
+        this.notifications.notify(this.errorDialogo, 'error');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   confirmarBaja() {

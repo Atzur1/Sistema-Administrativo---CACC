@@ -749,3 +749,20 @@
   margin-top: 10px;
   margin-left: 6px;
 }
+
+/* "Anular alta por error": solo SuperAdmin, a la derecha del encabezado del jugador. Discreto y en tono de peligro. */
+.profile-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.boton-anular-alta {
+  color: var(--color-danger);
+}
+
+.boton-anular-alta:hover {
+  background: var(--color-danger-bg);
+  border-color: rgba(192, 57, 43, 0.45);
+}
+

@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
+import { AuthService } from '../../services/auth';
+import { EnrollmentService } from '../../services/enrollment';
 import { JugadoresService } from '../../services/jugadores';
 import { PagosService, feeToCuotaJugador } from '../../services/pagos';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
@@ -102,6 +104,8 @@ export class DeudaJugador implements OnInit, OnDestroy {
     private router: Router,
     private jugadoresService: JugadoresService,
     private pagosService: PagosService,
+    private enrollmentService: EnrollmentService,
+    private auth: AuthService,
     private notifications: NotificationService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -415,6 +419,16 @@ export class DeudaJugador implements OnInit, OnDestroy {
     this.router.navigate(['/admin/portal/cuotas-pagos']);
   }
 
+  // Solo SuperAdmin (igual que dar de baja o reactivar, que viven en el perfil del jugador).
+  get esSuperAdmin(): boolean {
+    return this.auth.isSuperAdmin();
+  }
+
+  // El alta por error se anula desde el perfil del jugador: se llega con el cartel de confirmación ya abierto.
+  irAAnularAlta() {
+    this.router.navigate(['/admin/portal/jugadores', this.idJugador], { queryParams: { accion: 'anular-alta' } });
+  }
+
   ngOnDestroy() {
     clearTimeout(this.mensajeExitoTimer);
   }
@@ -474,8 +488,13 @@ export class DeudaJugador implements OnInit, OnDestroy {
     this.enviandoPago = true;
     this.errorPago = '';
 
-    this.pagosService
-      .registrarPago(this.idJugador, nombreMes, anio, monto, this.metodoPago)
+    // La inscripcion tiene su propio cobro (el mismo de Cuotas y Pagos > Inscripcion): registrarla como pago de cuota
+    // descontaria plata de la cuota de ese mes.
+    const operacion: Observable<unknown> = this.esInscripcion(cuota)
+      ? this.enrollmentService.registerEnrollmentPayment(this.idJugador, { amount: monto, paymentMethod: this.metodoPago })
+      : this.pagosService.registrarPago(this.idJugador, nombreMes, anio, monto, this.metodoPago);
+
+    operacion
       .subscribe({
         next: () => {
           this.enviandoPago = false;
@@ -488,7 +507,8 @@ export class DeudaJugador implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.enviandoPago = false;
-          this.errorPago = err.error?.mensaje ?? 'No se pudo registrar el pago. Intentá de nuevo.';
+          this.errorPago =
+            (typeof err.error === 'string' ? err.error : null) ?? err.error?.mensaje ?? 'No se pudo registrar el pago. Intentá de nuevo.';
           this.cdr.detectChanges();
         },
       });
@@ -515,9 +535,17 @@ export class DeudaJugador implements OnInit, OnDestroy {
     return CURRENCY_FULL.format(valor);
   }
 
-  // La inscripcion es anual y se cobra aparte (Cuotas y Pagos > Inscripcion): aca solo se muestra, no se paga como una cuota.
   esInscripcion(cuota: PendingFeeDetailModel): boolean {
     return cuota.concepto === 'Inscripcion';
+  }
+
+  // La inscripcion es anual y se cobra por su propio cobro, que siempre salda la mas vieja con saldo: si hay mas de una
+  // pendiente, "Pagar saldo" solo se ofrece en la primera, para no cobrar una distinta de la que se ve.
+  puedePagarSaldo(cuota: PendingFeeDetailModel): boolean {
+    if (!this.esInscripcion(cuota)) {
+      return true;
+    }
+    return this.cuotas.find((c) => this.esInscripcion(c) && c.saldoPendiente > 0)?.idPago === cuota.idPago;
   }
 
   // La cuota no trae una fecha de vencimiento propia, solo "Agosto 2026": vence el 10 del mes

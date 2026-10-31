@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { from } from 'rxjs';
+import { from, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { JugadorPerfil } from './jugador-perfil';
 import { JugadoresService } from '../../services/jugadores';
@@ -67,6 +68,8 @@ const DIEZ_PERIODOS = MESES.map((mes) => periodo(`${mes} 2026`, 85000));
 
 interface Opciones {
   id?: string | null;
+  // ?accion= de la dirección: la deuda manda al perfil con el cartel de "Anular alta por error" ya pedido.
+  accion?: string;
   jugador?: PlayerSummaryModel | 'error';
   historialPorPagina?: (page: number) => PaymentHistoryModel | 'error';
 }
@@ -82,6 +85,7 @@ async function crear(opciones: Opciones = {}) {
     anularPago: vi.fn((_idPago: number, _motivo: string) => respuesta({ mensaje: 'Pago anulado.', saldoReabierto: 85000 })),
     darDeBaja: vi.fn((_id: number, _fecha?: string) => respuesta({ mensaje: 'Jugador dado de baja.' })),
     reactivar: vi.fn((_id: number) => respuesta({ mensaje: 'Jugador reactivado.' })),
+    anularAlta: vi.fn((_id: number) => respuesta({ mensaje: 'Alta anulada. Se eliminó al jugador.', cargosEliminados: 2 })),
     getHistorialPagos: vi.fn((_id: number, page: number) =>
       respuesta((opciones.historialPorPagina ?? (() => historial([])))(page)),
     ),
@@ -97,6 +101,7 @@ async function crear(opciones: Opciones = {}) {
         useValue: {
           snapshot: {
             paramMap: convertToParamMap(opciones.id === null ? {} : { id: opciones.id ?? '3' }),
+            queryParamMap: convertToParamMap(opciones.accion ? { accion: opciones.accion } : {}),
           },
         },
       },
@@ -612,3 +617,90 @@ describe('JugadorPerfil - historial de pagos', () => {
     });
   });
 });
+
+// Anular un alta cargada por error (solo SuperAdmin): borra al jugador y sus cargos pendientes.
+describe('JugadorPerfil - anular alta por error', () => {
+  const botonAnularAlta = (el: HTMLElement) => el.querySelector<HTMLButtonElement>('.profile-action-anular');
+
+  async function abrir(opciones: Opciones = {}) {
+    const ctx = await crear({ historialPorPagina: () => historial([]), ...opciones });
+    botonAnularAlta(ctx.el)!.click();
+    ctx.fixture.detectChanges();
+    return ctx;
+  }
+
+  it('el botón está en el perfil de un jugador activo', async () => {
+    expect(botonAnularAlta((await crear()).el)).not.toBeNull();
+  });
+
+  it('y también si el jugador ya está dado de baja (el caso de un alta por error que se dio de baja)', async () => {
+    const { el } = await crear({ jugador: { ...JUGADOR, fechaBaja: '2026-09-30T00:00:00' } });
+
+    expect(botonAnularAlta(el)).not.toBeNull();
+  });
+
+  it('abre el cartel con tono de peligro, avisa que no se puede deshacer y no llama a la API', async () => {
+    const { el, servicio } = await abrir();
+
+    expect(texto(el.querySelector('.ventana-titulo'))).toBe('Anular alta por error');
+    expect(el.querySelector('[role="dialog"]')!.classList).toContain('ventana-peligro');
+    expect(texto(el.querySelector('[role="dialog"]'))).toContain('No se puede deshacer');
+    expect(texto(el.querySelector('.ventana-confirmar'))).toBe('Sí, anular el alta');
+    expect(servicio.anularAlta).not.toHaveBeenCalled();
+  });
+
+  it('al confirmar anula el alta del jugador, avisa y vuelve a la lista sin recargar al jugador', async () => {
+    const { el, fixture, servicio, navigate } = await abrir();
+    const cargasDelJugador = servicio.getJugador.mock.calls.length;
+
+    (el.querySelector('.ventana-confirmar') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(servicio.anularAlta).toHaveBeenCalledWith(3);
+    expect(navigate).toHaveBeenCalledWith(['/admin/portal/actividad-movimientos']);
+    expect(servicio.getJugador.mock.calls.length).toBe(cargasDelJugador);
+  });
+
+  it('si el jugador ya tiene pagos cobrados, la API lo rechaza y el cartel muestra el motivo y sigue abierto', async () => {
+    const { el, fixture, servicio, navigate } = await abrir();
+    servicio.anularAlta.mockReturnValueOnce(
+      throwError(() => new HttpErrorResponse({
+        status: 409,
+        error: { mensaje: 'No se puede anular el alta: el jugador ya tiene un pago cobrado. Si dejó el club, dalo de baja: así se conserva todo su historial.' },
+      })) as never,
+    );
+
+    (el.querySelector('.ventana-confirmar') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(el.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(texto(el.querySelector('[role="dialog"]'))).toContain('ya tiene un pago cobrado');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('Volver cierra el cartel sin anular nada', async () => {
+    const { el, fixture, servicio } = await abrir();
+
+    (el.querySelector('.ventana-volver') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
+    expect(servicio.anularAlta).not.toHaveBeenCalled();
+  });
+
+  it('si se llega desde la deuda con ?accion=anular-alta, el cartel ya está abierto (sin tocar nada)', async () => {
+    const { el, servicio } = await crear({ accion: 'anular-alta', historialPorPagina: () => historial([]) });
+
+    expect(texto(el.querySelector('.ventana-titulo'))).toBe('Anular alta por error');
+    expect(servicio.anularAlta).not.toHaveBeenCalled();
+  });
+
+  it('sin ese parámetro el cartel no se abre solo', async () => {
+    const { el } = await crear({ historialPorPagina: () => historial([]) });
+
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
+  });
+});
+
