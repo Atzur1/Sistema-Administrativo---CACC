@@ -1,0 +1,587 @@
+> Building...
+√ Building...
+Application bundle generation complete. [4.249 seconds] - 2026-10-31T22:07:13.398Z
+
+
+ RUN  v4.1.11 C:/Users/FramD/Documents/Tesis/Sisterrma CACC/Sistema-Administrativo---CACC/frontend-cacc
+
+ ❯ |frontend-cacc| src/app/admin-portal/recaudacion-mensual/recaudacion-mensual.spec.ts (36 tests | 1 failed) 2582ms
+     × no presenta filas y conteo del filtro anterior mientras carga otro 222ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |frontend-cacc| src/app/admin-portal/recaudacion-mensual/recaudacion-mensual.spec.ts > RecaudacionMensual - estados HU-107 > no presenta filas y conteo del filtro anterior mientras carga otro
+AssertionError: expected <table …(2)>…(3)</table> to be null
+
+- Expected:
+null
+
++ Received:
+<table
+  _ngcontent-a-c1847482081=""
+  class="tabla"
+>
+  <caption
+    _ngcontent-a-c1847482081=""
+    class="sr-only"
+  >
+    Pagos de Octubre 2026, página 1 de 4
+  </caption>
+  <thead
+    _ngcontent-a-c1847482081=""
+  >
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <th
+        _ngcontent-a-c1847482081=""
+        aria-sort="descending"
+        scope="col"
+      >
+        <button
+          _ngcontent-a-c1847482081=""
+          aria-label="Ordenado por fecha, más reciente primero. Cambiar el orden"
+          class="orden-boton"
+          type="button"
+        >
+           Fecha 
+          <span
+            _ngcontent-a-c1847482081=""
+            aria-hidden="true"
+            class="orden-indicador"
+          >
+            ↓
+          </span>
+        </button>
+      </th>
+      <th
+        _ngcontent-a-c1847482081=""
+        scope="col"
+      >
+        Jugador
+      </th>
+      <th
+        _ngcontent-a-c1847482081=""
+        scope="col"
+      >
+        DNI
+      </th>
+      <th
+        _ngcontent-a-c1847482081=""
+        scope="col"
+      >
+        Categoría
+      </th>
+      <th
+        _ngcontent-a-c1847482081=""
+        scope="col"
+      >
+        Tipo de pago
+      </th>
+      <th
+        _ngcontent-a-c1847482081=""
+        aria-sort="none"
+        class="col-monto"
+        scope="col"
+      >
+        <button
+          _ngcontent-a-c1847482081=""
+          aria-label="Ordenar por monto"
+          class="orden-boton"
+          type="button"
+        >
+           Monto 
+          <span
+            _ngcontent-a-c1847482081=""
+            aria-hidden="true"
+            class="orden-indicador"
+          >
+            ↕
+          </span>
+        </button>
+      </th>
+    </tr>
+  </thead>
+  <tbody
+    _ngcontent-a-c1847482081=""
+  >
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        28/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 27
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000026
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-efectivo"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-efectivo"
+          />
+           Efectivo 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 9.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        27/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 26
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000025
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-efectivo"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-efectivo"
+          />
+           Efectivo 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 8.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        26/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 25
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000024
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-transferencia"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-transferencia"
+          />
+           Transferencia 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 7.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        25/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 24
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000023
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-efectivo"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-efectivo"
+          />
+           Efectivo 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 6.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        24/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 23
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000022
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-efectivo"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-efectivo"
+          />
+           Efectivo 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 5.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        23/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 22
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000021
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-transferencia"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-transferencia"
+          />
+           Transferencia 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 4.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        22/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 21
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000020
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-efectivo"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-efectivo"
+          />
+           Efectivo 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 3.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        21/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 20
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000019
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-efectivo"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-efectivo"
+          />
+           Efectivo 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 2.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        20/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 19
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000018
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-transferencia"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-transferencia"
+          />
+           Transferencia 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 1.000
+      </td>
+    </tr>
+    <tr
+      _ngcontent-a-c1847482081=""
+    >
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-fecha"
+      >
+        19/10/2026 10:00
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-jugador"
+      >
+        JUGADOR 18
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        90000017
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        AFA 20067
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+      >
+        <span
+          _ngcontent-a-c1847482081=""
+          class="chip-medio chip-efectivo"
+        >
+          <span
+            _ngcontent-a-c1847482081=""
+            class="legend-dot dot-efectivo"
+          />
+           Efectivo 
+        </span>
+      </td>
+      <td
+        _ngcontent-a-c1847482081=""
+        class="celda-monto col-monto"
+      >
+        $ 9.000
+      </td>
+    </tr>
+    <!--container-->
+  </tbody>
+</table>
+
+ ❯ src/app/admin-portal/recaudacion-mensual/recaudacion-mensual.spec.ts:115:40
+    113|     fixture.detectChanges();
+    114|     expect(component.filas).toEqual([]);
+    115|     expect(el.querySelector('.tabla')).toBeNull();
+       |                                        ^
+    116|     expect(el.querySelector('.tabla-conteo')!.textContent).toContain('…
+    117|     expect(el.querySelector('.tabla-conteo')!.textContent).not.toConta…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 35 passed (36)
+   Start at  19:07:13
+   Duration  3.95s (transform 127ms, setup 299ms, import 189ms, tests 2.58s, environment 695ms)
+

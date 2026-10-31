@@ -40,6 +40,7 @@ namespace ApiGestion.Reports
         // Fila de total al final de la tabla: el texto va a la izquierda y el valor en la última columna.
         public string? TotalLabel { get; init; }
         public string? TotalValue { get; init; }
+        public uint TotalValueColumnSpan { get; init; } = 1;
     }
 
     // Plantilla común para todos los reportes PDF del club. Todos los reportes de "Reportes", HU-021 y Recaudación
@@ -329,9 +330,10 @@ namespace ApiGestion.Reports
                 }
                 else if (!string.IsNullOrWhiteSpace(extras.TotalLabel) && columns.Length > 1)
                 {
-                    table.Cell().ColumnSpan((uint)(columns.Length - 1)).Element(TotalCell)
+                    uint valueSpan = Math.Clamp(extras.TotalValueColumnSpan, 1u, (uint)columns.Length - 1);
+                    table.Cell().ColumnSpan((uint)columns.Length - valueSpan).Element(TotalCell)
                         .Text(extras.TotalLabel).FontSize(10.5f).Bold().FontColor(BrandDark);
-                    table.Cell().Element(TotalCell).AlignRight()
+                    table.Cell().ColumnSpan(valueSpan).Element(TotalCell).AlignRight()
                         .Text(extras.TotalValue ?? "").FontSize(11.5f).Bold().FontColor(BrandGreen);
                 }
             });

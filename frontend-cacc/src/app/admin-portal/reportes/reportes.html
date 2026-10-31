@@ -56,7 +56,7 @@
           </span>
 
           <!-- Menú de exportación compartido (HU-097); mientras una caja exporta, las demás esperan -->
-          <app-export-menu [compacto]="true" [enCurso]="exportandoId() === card.id"
+          <app-report-export-menu [tipo]="tipoReporte(card.id)" [compacto]="true" [enCurso]="exportandoId() === card.id"
                            [deshabilitado]="exportandoId() !== null && exportandoId() !== card.id"
                            (exportar)="exportar(card, $event)" />
         </header>
@@ -82,4 +82,28 @@
       </article>
     }
   </section>
+  @if (esSuperAdmin) {
+    <section class="historial-reportes" aria-labelledby="historial-titulo">
+      <h2 id="historial-titulo">Historial de exportaciones</h2>
+      <button type="button" (click)="cargarHistorial(paginaHistorial)" [disabled]="cargandoHistorial()">Actualizar</button>
+      @if (cargandoHistorial()) { <p role="status">Cargando historial…</p> }
+      @else if (errorHistorial()) { <p role="alert">No se pudo cargar el historial. Intentá de nuevo.</p> }
+      @else if (historial(); as registro) {
+        @if (registro.items.length === 0) { <p>Todavía no hay exportaciones registradas.</p> }
+        @else {
+          <div class="historial-scroll"><table>
+            <thead><tr><th>Fecha y hora del club</th><th>Persona</th><th>Reporte</th><th>Formato</th><th>Filtros</th><th>Filas</th></tr></thead>
+            <tbody>@for (item of registro.items; track item.id) {
+              <tr><td>{{ fechaHistorial(item.fechaHora) }}</td><td>{{ item.persona }} ({{ item.usuarioId }})</td><td>{{ nombreReporte(item.tipo) }}</td><td>{{ item.formato | uppercase }}</td><td>{{ item.filtros }}</td><td>{{ item.cantidadFilas }}</td></tr>
+            }</tbody>
+          </table></div>
+          <nav aria-label="Páginas del historial">
+            <button type="button" [disabled]="paginaHistorial <= 1" (click)="cargarHistorial(paginaHistorial - 1)">Anterior</button>
+            <span>Página {{ paginaHistorial }} · {{ registro.total }} exportaciones</span>
+            <button type="button" [disabled]="paginaHistorial * tamanioHistorial >= registro.total" (click)="cargarHistorial(paginaHistorial + 1)">Siguiente</button>
+          </nav>
+        }
+      }
+    </section>
+  }
 </div>

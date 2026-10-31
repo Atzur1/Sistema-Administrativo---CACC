@@ -28,7 +28,7 @@ public class DiscountDao
             responsable.nombre_usuario AS responsable_nombre,
             responsable.apellido_usuario AS responsable_apellido";
 
-    private const string FromJoins = @"
+    internal const string FromJoins = @"
         FROM JUGADORES_DESCUENTOS jd
             INNER JOIN JUGADORES j ON j.PK_id_jugador = jd.FK_id_jugador
             INNER JOIN PERSONAS p ON p.PK_id_persona = j.FK_id_persona

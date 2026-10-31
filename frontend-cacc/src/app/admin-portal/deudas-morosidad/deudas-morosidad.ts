@@ -16,7 +16,8 @@ import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { ReportesService } from '../../services/reportes';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { triggerBlobDownload } from '../../shared/download-file';
-import { ExportFormat, ExportMenu } from '../../shared/export-menu/export-menu';
+import { ExportFormat } from '../../shared/export-menu/export-menu';
+import { ReportExportMenu as ExportMenu } from '../../shared/export-menu/report-export-menu';
 import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
 import { CategoryDebtModel, EstadoDeportivo, PaymentSummaryModel, PendingDebtorModel } from '../../models/PaymentModel';
 
@@ -380,7 +381,7 @@ export class DeudasMorosidad implements OnInit {
   // no contra allPendientes: antes, filtrar/exportar una categoría sin
   // deudores hoy no encontraba ningún id (porque esa categoría no tenía
   // ninguna fila en allPendientes) y el filtro quedaba roto.
-  private get idCategoriaActivo(): number | null {
+  get idCategoriaActivo(): number | null {
     const categoria = this.categoriaActiva;
     if (!categoria) return null;
     return this.categoriasMap.get(categoria) ?? null;

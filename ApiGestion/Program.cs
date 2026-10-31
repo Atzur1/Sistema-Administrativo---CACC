@@ -176,6 +176,8 @@ builder.Services.AddScoped<DaoLibrary.IEstadoDeudaDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
     new DaoLibrary.CategoriasDao(conexionSql));
 
+builder.Services.AddScoped<DaoLibrary.IReportesDao>(_ => new DaoLibrary.ReportesDao(conexionSql));
+
 // Recaudación mensual por medio de pago (HU-018)
 builder.Services.AddScoped<DaoLibrary.IRecaudacionDao>(provider =>
     new DaoLibrary.RecaudacionDao(conexionSql));

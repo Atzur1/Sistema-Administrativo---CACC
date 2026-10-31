@@ -1,0 +1,33 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos están actualizados para la restauración.
+  EntityLibrary -> C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\EntityLibrary\bin\Debug\net9.0\EntityLibrary.dll
+  DaoLibrary -> C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\DaoLibrary\bin\Debug\net9.0\DaoLibrary.dll
+  ServiceLibrary -> C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ServiceLibrary\bin\Debug\net9.0\ServiceLibrary.dll
+  ApiGestion -> C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion\bin\Debug\net9.0\ApiGestion.dll
+  ApiGestion.Tests -> C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll
+Serie de pruebas para C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll (.NETCoreApp,Version=v9.0)
+1 archivos de prueba en total coincidieron con el patrón especificado.
+[xUnit.net 00:00:04.72]     ApiGestion.Tests.BajaConDeudaEnPantallasIntegrationTests.UnJugadorDadoDeBajaConDeuda_SigueEnDeudasYMorosidadYElDeportivoLoVeDeBaja [SKIP]
+  Omitidas ApiGestion.Tests.BajaConDeudaEnPantallasIntegrationTests.UnJugadorDadoDeBajaConDeuda_SigueEnDeudasYMorosidadYElDeportivoLoVeDeBaja [1 ms]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.LecturaDelDeportivo_VeElEstadoNuevoDespuesDeCadaPago [SKIP]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.VariasCuotas_TodasQuedanAbonadasEnLaMismaOperacion [SKIP]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.ConBeneficio_SeCobraElMontoAjustadoYLosDosSistemasVenElMismoSaldo [SKIP]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.Auditoria_ElRegistroDejaElAltaDelAbonoYElCierreDeLaCuotaConSuUsuario [SKIP]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.VariasCuotas_SiLaOperacionFallaNoQuedaNingunaAMedias [SKIP]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.Historial_ElPagoApareceEnElHistorialDelJugadorYEnActividad [SKIP]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.PagoCompleto_ElRegistroPorElTotalDejaElAbonoYCierraLaCuota [SKIP]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.VariasCuotas_SiUnaYaFueCobradaPorOtroSeRechazaTodoElLote [SKIP]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.PagoCompleto_ElCobroDejaLaCuotaAbonadaConMetodoFechaYUsuario [SKIP]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.LecturaDelDeportivo_VeElEstadoNuevoDespuesDeCadaPago [1 ms]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.VariasCuotas_TodasQuedanAbonadasEnLaMismaOperacion [1 ms]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.ConBeneficio_SeCobraElMontoAjustadoYLosDosSistemasVenElMismoSaldo [1 ms]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.Auditoria_ElRegistroDejaElAltaDelAbonoYElCierreDeLaCuotaConSuUsuario [1 ms]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.VariasCuotas_SiLaOperacionFallaNoQuedaNingunaAMedias [1 ms]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.Historial_ElPagoApareceEnElHistorialDelJugadorYEnActividad [1 ms]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.PagoCompleto_ElRegistroPorElTotalDejaElAbonoYCierraLaCuota [1 ms]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.VariasCuotas_SiUnaYaFueCobradaPorOtroSeRechazaTodoElLote [1 ms]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.PagoCompleto_ElCobroDejaLaCuotaAbonadaConMetodoFechaYUsuario [1 ms]
+[xUnit.net 00:00:05.87]     ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.Auditoria_ElCobroQuedaRegistradoConSuUsuario [SKIP]
+  Omitidas ApiGestion.Tests.PagosBaseCompartidaIntegrationTests.Auditoria_ElCobroQuedaRegistradoConSuUsuario [1 ms]
+
+Correctas! - Con error:     0, Superado:   682, Omitido:    11, Total:   693, Duración: 7 s - ApiGestion.Tests.dll (net9.0)

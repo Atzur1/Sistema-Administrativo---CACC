@@ -66,6 +66,8 @@ public class PagoDelPeriodo
     private string categoria = "";
     private decimal monto = 0;
     private string medioPago = "";
+    private DateTime fechaPago;
+    private DateTime? fechaHoraRegistro;
 
     public long IdPago
     {
@@ -103,4 +105,52 @@ public class PagoDelPeriodo
         get { return medioPago; }
         set { medioPago = value; }
     }
+
+    // HU-107: día del cobro (PAGOS.fecha_pago, el mismo que define a qué mes pertenece).
+    public DateTime FechaPago
+    {
+        get { return fechaPago; }
+        set { fechaPago = value; }
+    }
+
+    // HU-107: momento real en que se registró el cobro (PAGOS.fecha_hora_registro), ya en hora del
+    // club: la base lo graba con SqlReloj.Ahora. Null en los pagos anteriores a esa columna.
+    public DateTime? FechaHoraRegistro
+    {
+        get { return fechaHoraRegistro; }
+        set { fechaHoraRegistro = value; }
+    }
+}
+
+// HU-107: por qué se puede ordenar la tabla "Pagos del período". Un enum y no el texto que llega
+// por la URL: el ORDER BY sale de una lista cerrada y nunca del nombre que manda el cliente.
+public enum OrdenPagosDelPeriodo
+{
+    Fecha,
+    Monto
+}
+
+// HU-107: una página de "Pagos del período", filtrada, ordenada y paginada en la base.
+public class FiltroPagosDelPeriodo
+{
+    public int Anio { get; set; }
+    public int Mes { get; set; }
+    public int? IdCategoria { get; set; }
+    public int Pagina { get; set; } = 1;
+    public int TamanioPagina { get; set; } = 10;
+    public OrdenPagosDelPeriodo OrdenarPor { get; set; } = OrdenPagosDelPeriodo.Fecha;
+    public bool Descendente { get; set; } = true;
+}
+
+public class PagosDelPeriodoPagina
+{
+    public List<PagoDelPeriodo> Items { get; set; } = new();
+
+    // Cobros de TODO el período (con el filtro de categoría), no los de la página.
+    public int Total { get; set; }
+    public int Pagina { get; set; }
+    public int TamanioPagina { get; set; }
+
+    // Un período sin cobros sigue teniendo una página (vacía), igual que el paginador de HU-088.
+    public int TotalPaginas => Math.Max(1, (int)Math.Ceiling(Total / (double)TamanioPagina));
 }

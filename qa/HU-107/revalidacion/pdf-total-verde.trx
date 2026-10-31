@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="97892bb7-bcaf-4243-b2b4-0ae31fa875a0" name="FramD@GABINETE1 2026-10-31 19:08:29" runUser="GABINETE1\CodexSandboxOffline" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-31T19:08:29.6382551-03:00" queuing="2026-10-31T19:08:29.6382557-03:00" start="2026-10-31T19:08:28.7047910-03:00" finish="2026-10-31T19:08:29.6433504-03:00" />
+  <TestSettings name="default" id="fae019d5-d118-4d83-926c-1411b037be02">
+    <Deployment runDeploymentRoot="FramD_GABINETE1_2026-10-31_19_08_29" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="36887b09-c78e-4697-a125-10bfe621359a" testId="9af97364-75de-2f73-b794-d29d459b5bd9" testName="ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 999999999)" computerName="GABINETE1" duration="00:00:00.0149300" startTime="2026-10-31T19:08:29.5396991-03:00" endTime="2026-10-31T19:08:29.5396998-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="36887b09-c78e-4697-a125-10bfe621359a" />
+    <UnitTestResult executionId="d87ff0bf-dc8e-4a3d-b5cd-10d1becfe55d" testId="910d48c4-c4c3-837d-310a-45bb61b76828" testName="ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 7749000)" computerName="GABINETE1" duration="00:00:00.2121747" startTime="2026-10-31T19:08:29.5251628-03:00" endTime="2026-10-31T19:08:29.5251761-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d87ff0bf-dc8e-4a3d-b5cd-10d1becfe55d" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 999999999)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="9af97364-75de-2f73-b794-d29d459b5bd9">
+      <Execution id="36887b09-c78e-4697-a125-10bfe621359a" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionReportBuilderTests" name="Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionReportBuilderTests.Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto(total: 7749000)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="910d48c4-c4c3-837d-310a-45bb61b76828">
+      <Execution id="d87ff0bf-dc8e-4a3d-b5cd-10d1becfe55d" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionReportBuilderTests" name="Pdf_total_millonario_se_renderiza_completo_en_un_solo_texto" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="9af97364-75de-2f73-b794-d29d459b5bd9" executionId="36887b09-c78e-4697-a125-10bfe621359a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="910d48c4-c4c3-837d-310a-45bb61b76828" executionId="d87ff0bf-dc8e-4a3d-b5cd-10d1becfe55d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="2" executed="2" passed="2" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.19)&#xD;
+[xUnit.net 00:00:00.08]   Discovering: ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.18]   Discovered:  ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.18]   Starting:    ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.45]   Finished:    ApiGestion.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

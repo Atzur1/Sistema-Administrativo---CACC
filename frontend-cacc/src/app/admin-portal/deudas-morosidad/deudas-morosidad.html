@@ -41,7 +41,7 @@
           </div>
 
           <!-- HU-021: exporta la lista respetando el filtro de categoría activo (menú compartido, HU-097) -->
-          <app-export-menu [enCurso]="exportando" (exportar)="exportarDeudores($event)" />
+          <app-report-export-menu tipo="deudores" [idCategoria]="idCategoriaActivo" [enCurso]="exportando" (exportar)="exportarDeudores($event)" />
         </div>
 
         <!-- Barra de filtros compartida (HU-097): la búsqueda espera 300 ms; los desplegables filtran al instante -->

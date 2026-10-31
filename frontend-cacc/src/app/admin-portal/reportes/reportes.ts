@@ -1,7 +1,9 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpResponse } from '@angular/common/http';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
+import { AuthService } from '../../services/auth';
+import { ExportHistory } from '../../services/reportes';
 import { ReportesService } from '../../services/reportes';
 import { PagosService } from '../../services/pagos';
 import { DiscountService } from '../../services/discounts';
@@ -9,7 +11,8 @@ import { ArancelesService } from '../../services/aranceles';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { triggerBlobDownload } from '../../shared/download-file';
 import { formatCompactCurrency } from '../../shared/format-currency';
-import { ExportFormat, ExportMenu } from '../../shared/export-menu/export-menu';
+import { ExportFormat } from '../../shared/export-menu/export-menu';
+import { ReportExportMenu as ExportMenu } from '../../shared/export-menu/report-export-menu';
 
 type ReportCardId = 'deudas' | 'cuotas' | 'becados' | 'aranceles';
 
@@ -74,11 +77,43 @@ export class Reportes implements OnInit {
         },
     ]);
 
+    tipoReporte(id: ReportCardId): 'deudores' | 'pagos-recientes' | 'becados' | 'aranceles' {
+        return id === 'deudas' ? 'deudores' : id === 'cuotas' ? 'pagos-recientes' : id;
+    }
+
     // Solo puede haber una exportación en curso a la vez: alcanza con saber
     // CUÁL caja la está generando. Cada caja tiene su menú compartido (HU-097).
     exportandoId = signal<ReportCardId | null>(null);
 
+    historial = signal<ExportHistory | null>(null);
+    cargandoHistorial = signal(false);
+    errorHistorial = signal(false);
+    paginaHistorial = 1;
+    readonly tamanioHistorial = 20;
+    get esSuperAdmin(): boolean { return this.auth.isSuperAdmin(); }
+    nombreReporte(tipo: string): string {
+        const nombres: Record<string, string> = {
+            deudores: 'Deudas y morosidad', 'pagos-recientes': 'Cuotas y pagos',
+            becados: 'Becados y descuentos', aranceles: 'Actualización de aranceles', recaudacion: 'Recaudación mensual',
+        };
+        return nombres[tipo] ?? tipo;
+    }
+    fechaHistorial(fecha: string): string {
+        const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/.exec(fecha);
+        return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}:${m[6] ?? '00'}` : '—';
+    }
+    cargarHistorial(pagina = 1): void {
+        if (!this.esSuperAdmin || this.cargandoHistorial()) return;
+        this.cargandoHistorial.set(true);
+        this.errorHistorial.set(false);
+        this.reportesService.historial(pagina, this.tamanioHistorial).subscribe({
+            next: result => { this.historial.set(result); this.paginaHistorial = result.pagina; this.cargandoHistorial.set(false); },
+            error: () => { this.errorHistorial.set(true); this.cargandoHistorial.set(false); },
+        });
+    }
+
     constructor(
+        private auth: AuthService,
         private reportesService: ReportesService,
         private pagosService: PagosService,
         private discountService: DiscountService,
@@ -87,10 +122,12 @@ export class Reportes implements OnInit {
     ) {}
 
     ngOnInit(): void {
+        this.cargarHistorial();
+        if (!this.esSuperAdmin) this.cards.update(cards => cards.filter(card => card.id !== 'aranceles'));
         forkJoin({
             resumenPagos: this.pagosService.getResumen(),
             beneficios: this.discountService.getAllDiscounts(),
-            resumenAranceles: this.arancelesService.getResumen(),
+            resumenAranceles: this.esSuperAdmin ? this.arancelesService.getResumen() : of(null),
         }).subscribe({
             next: ({ resumenPagos, beneficios, resumenAranceles }) => {
                 const vigentes = beneficios.filter((b) => b.isActive).length;
@@ -107,7 +144,7 @@ export class Reportes implements OnInit {
                     { value: String(vigentes), label: 'Vigentes' },
                     { value: String(beneficios.length - vigentes), label: 'No vigentes' },
                 ]);
-                this.setStats('aranceles', [
+                if (resumenAranceles) this.setStats('aranceles', [
                     { value: resumenAranceles.arancelMasculinoVigente != null ? formatCompactCurrency(resumenAranceles.arancelMasculinoVigente) : '—', label: 'Arancel masc.' },
                     { value: resumenAranceles.arancelFemeninoVigente != null ? formatCompactCurrency(resumenAranceles.arancelFemeninoVigente) : '—', label: 'Arancel fem.' },
                 ]);
@@ -128,6 +165,7 @@ export class Reportes implements OnInit {
         this.requestFor(card.id, formato).subscribe({
             next: (response) => {
                 this.exportandoId.set(null);
+                this.cargarHistorial();
                 triggerBlobDownload(response, `reporte-${card.id}.${formato}`);
                 this.notifications.notify(`Reporte de ${card.title} exportado correctamente.`, 'success');
             },

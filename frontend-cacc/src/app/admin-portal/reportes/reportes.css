@@ -141,3 +141,9 @@
         width: 100%;
     }
 }
+
+.historial-reportes { margin-top: 2rem; padding: 1.5rem; background: var(--color-superficie, #fff); border-radius: 16px; }
+.historial-scroll { overflow-x: auto; margin: 1rem 0; }
+.historial-reportes table { width: 100%; border-collapse: collapse; text-align: left; }
+.historial-reportes th, .historial-reportes td { padding: .75rem; border-bottom: 1px solid #ddd; }
+.historial-reportes nav { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }

@@ -1,0 +1,341 @@
+{
+  "fecha": "2026-10-31 18:12:25",
+  "base": "ClubCamionerosUnificadaV2_HU107_Prueba",
+  "septiembre": {
+    "pagos": 126,
+    "total": 7749000.00,
+    "efectivo": 5460000.00,
+    "transferencia": 2289000.00
+  },
+  "octubre": {
+    "pagos": 7,
+    "total": 525000.00
+  },
+  "julio": {
+    "pagos": 5001
+  },
+  "tiempos": {
+    "pagos sep p1": {
+      "Mediana": 4.0,
+      "Max": 4.7
+    },
+    "pagos jul p1 fecha": {
+      "Mediana": 13.7,
+      "Max": 18.5
+    },
+    "pagos jul p250 monto": {
+      "Mediana": 29.0,
+      "Max": 39.8
+    },
+    "totales jul": {
+      "Mediana": 19.4,
+      "Max": 26.0
+    },
+    "csv jul": {
+      "Mediana": 81.6,
+      "Max": 89.8
+    }
+  },
+  "resultados": [
+    {
+      "Id": "PAG-1",
+      "Caso": "Primera página: 10 filas, total = cobros del período (SQL), 13 páginas",
+      "Estado": "PASS",
+      "Obtenido": "items=10 total=126 paginas=13 (SQL 126)"
+    },
+    {
+      "Id": "PAG-2",
+      "Caso": "Página intermedia (7): 10 filas, mismo total",
+      "Estado": "PASS",
+      "Obtenido": "items=10 total=126"
+    },
+    {
+      "Id": "PAG-3",
+      "Caso": "Última página: el resto exacto",
+      "Estado": "PASS",
+      "Obtenido": "página 13: 6 filas"
+    },
+    {
+      "Id": "PAG-4",
+      "Caso": "Después de la última: sin filas, el total sigue siendo el del período",
+      "Estado": "PASS",
+      "Obtenido": "items=0 total=126"
+    },
+    {
+      "Id": "PAG-5",
+      "Caso": "Recorrer todas las páginas (fecha desc): 126 filas, sin repetidas ni perdidas (= ids de SQL)",
+      "Estado": "PASS",
+      "Obtenido": "filas=126 únicas=126 igualSQL=True"
+    },
+    {
+      "Id": "ORD-fecha-desc",
+      "Caso": "Orden fecha desc sobre TODO el período (cruza páginas), desempate por id",
+      "Estado": "PASS",
+      "Obtenido": "primeras: 131@2026-09-30T23:59:30-03:00, 129@2026-09-30T20:30:30-03:00, 130@2026-09-30T16:00:00-03:00, 128@2026-09-30T11:00:00-03:00"
+    },
+    {
+      "Id": "PAG-5",
+      "Caso": "Recorrer todas las páginas (fecha asc): 126 filas, sin repetidas ni perdidas (= ids de SQL)",
+      "Estado": "PASS",
+      "Obtenido": "filas=126 únicas=126 igualSQL=True"
+    },
+    {
+      "Id": "ORD-fecha-asc",
+      "Caso": "Orden fecha asc sobre TODO el período (cruza páginas), desempate por id",
+      "Estado": "PASS",
+      "Obtenido": "primeras: 9@2026-09-01T08:37:07-03:00, 6@2026-09-01T09:07:00-03:00, 8@2026-09-01T09:07:00-03:00, 10@2026-09-01T12:07:37-03:00"
+    },
+    {
+      "Id": "PAG-5",
+      "Caso": "Recorrer todas las páginas (monto desc): 126 filas, sin repetidas ni perdidas (= ids de SQL)",
+      "Estado": "PASS",
+      "Obtenido": "filas=126 únicas=126 igualSQL=True"
+    },
+    {
+      "Id": "ORD-monto-desc",
+      "Caso": "Orden monto desc sobre TODO el período (cruza páginas), desempate por id",
+      "Estado": "PASS",
+      "Obtenido": "primeras: 119=100000, 118=100000, 117=100000, 116=100000"
+    },
+    {
+      "Id": "PAG-5",
+      "Caso": "Recorrer todas las páginas (monto asc): 126 filas, sin repetidas ni perdidas (= ids de SQL)",
+      "Estado": "PASS",
+      "Obtenido": "filas=126 únicas=126 igualSQL=True"
+    },
+    {
+      "Id": "ORD-monto-asc",
+      "Caso": "Orden monto asc sobre TODO el período (cruza páginas), desempate por id",
+      "Estado": "PASS",
+      "Obtenido": "primeras: 31=9000, 32=9000, 33=9000, 34=9000"
+    },
+    {
+      "Id": "ORD-NUM",
+      "Caso": "Monto ordena como número (9000 < 20000 < 60000 < 85000 < 95000 < 100000), no como texto",
+      "Estado": "PASS",
+      "Obtenido": "9000,20000,60000,85000,95000,100000"
+    },
+    {
+      "Id": "ORD-DIA",
+      "Caso": "Mismo día (01/09): ordena por la hora real; misma hora exacta -> por id",
+      "Estado": "PASS",
+      "Obtenido": "horas=08:37:07, 09:07:00, 09:07:00, 12:07:37, 13:37:07 mismaHora=6,8"
+    },
+    {
+      "Id": "FEC-1",
+      "Caso": "Cada fila trae fechaPago y fechaHoraRegistro = PAGOS.fecha_hora_registro, con corrimiento -03:00 de la zona",
+      "Estado": "PASS",
+      "Obtenido": "API 2026-09-30 2026-09-30T23:59:30-03:00 | base 2026-09-30|2026-09-30T23:59:30"
+    },
+    {
+      "Id": "FEC-2",
+      "Caso": "Pagos sin hora de registro: fechaHoraRegistro null, solo el día",
+      "Estado": "PASS",
+      "Obtenido": "API 6 / base 6"
+    },
+    {
+      "Id": "FEC-3",
+      "Caso": "El 30/09 23:59:30 está en septiembre y es el primero por fecha desc",
+      "Estado": "PASS",
+      "Obtenido": "131 2026-09-30T23:59:30-03:00"
+    },
+    {
+      "Id": "TOT-1",
+      "Caso": "Tarjetas = SQL del período completo (total, efectivo, transferencia, cantidades)",
+      "Estado": "PASS",
+      "Obtenido": "API {\"total\":7749000.00,\"efectivo\":5460000.00,\"transferencia\":2289000.00,\"pagos\":126,\"pagosEfectivo\":84,\"pagosTransferencia\":42} | SQL 126/7749000.00/5460000.00/2289000.00"
+    },
+    {
+      "Id": "TOT-2",
+      "Caso": "Pedir otras páginas u otro orden no cambia los totales (respuesta idéntica)",
+      "Estado": "PASS",
+      "Obtenido": "iguales=True"
+    },
+    {
+      "Id": "TOT-3",
+      "Caso": "Los totales ya no traen el detalle de filas",
+      "Estado": "PASS",
+      "Obtenido": "124 bytes"
+    },
+    {
+      "Id": "TOT-4",
+      "Caso": "Suma de todas las páginas = total de la tarjeta; la página sola no lo es",
+      "Estado": "PASS",
+      "Obtenido": "todas=7749000 página1=536000 tarjeta=7749000"
+    },
+    {
+      "Id": "CAT-1",
+      "Caso": "Con categoría: total de la tabla = tarjetas = SQL, y todas las filas son de esa categoría",
+      "Estado": "PASS",
+      "Obtenido": "tabla=63 tarjetas=63 SQL=63"
+    },
+    {
+      "Id": "CHI-1",
+      "Caso": "Mes con pocos pagos (octubre): una página, total correcto, tarjetas = SQL",
+      "Estado": "PASS",
+      "Obtenido": "total=7 páginas=1 filas=7 SQL=7/525000.00"
+    },
+    {
+      "Id": "CHI-2",
+      "Caso": "01/10 00:01 queda en octubre (último por fecha desc)",
+      "Estado": "PASS",
+      "Obtenido": "2026-10-01T00:01:00-03:00"
+    },
+    {
+      "Id": "VAC-1",
+      "Caso": "Mes vacío (agosto): 0 pagos, 1 página, sin filas, tarjetas en 0 (el 31/07 23:59 queda en julio)",
+      "Estado": "PASS",
+      "Obtenido": "total=0 páginas=1 tarjetas=0/0"
+    },
+    {
+      "Id": "VAL-1",
+      "Caso": "Página, tamaño, orden, dirección y período inválidos -> 400 (sin SQL inyectado; PAGOS intacta)",
+      "Estado": "PASS",
+      "Obtenido": "page=0->400 page=-3->400 pageSize=0->400 pageSize=101->400 sortBy=PK_id_pago->400 sortBy=fecha_pago%3B%20DROP%20TABLE%20PAGOS--->400 sortDirection=arriba->400 sortDirection=desc%2C%20PK_id_pago->400 mes=13->400 anio=1999->400"
+    },
+    {
+      "Id": "VAL-3",
+      "Caso": "sortBy y sortDirection vacíos = no enviados: 200 con el orden por defecto (fecha desc)",
+      "Estado": "PASS",
+      "Obtenido": "200, mismas filas que fecha desc"
+    },
+    {
+      "Id": "VAL-2",
+      "Caso": "sortBy/sortDirection sin distinguir mayúsculas",
+      "Estado": "PASS",
+      "Obtenido": "200 primero=9000"
+    },
+    {
+      "Id": "AUT-1",
+      "Caso": "Administrador: 403 en tabla, tarjetas y exportación; sin sesión 401",
+      "Estado": "PASS",
+      "Obtenido": "403/403/403/401"
+    },
+    {
+      "Id": "CSV-1",
+      "Caso": "CSV: BOM UTF-8, separador ';', columna Fecha primera, zona en el encabezado",
+      "Estado": "PASS",
+      "Obtenido": "Fecha;Jugador;DNI;Categoría;Medio de pago;Monto ($) | Fechas;Hora del club (America/Argentina/Buenos_Aires)"
+    },
+    {
+      "Id": "CSV-2",
+      "Caso": "CSV: TODO el período (126 filas, no 10), fechas ISO, montos numéricos que suman el total",
+      "Estado": "PASS",
+      "Obtenido": "filas=126 ISO=True suma=7749000 | TOTAL RECAUDADO;126;7749000 | ej. 2026-09-30 23:59;HU107 30, Cobro;96000030;Pt  AFA 2008;Transferencia;9000"
+    },
+    {
+      "Id": "CSV-3",
+      "Caso": "CSV en el mismo orden que la tabla por defecto (fecha desc) y con la misma fecha",
+      "Estado": "PASS",
+      "Obtenido": "igual=True"
+    },
+    {
+      "Id": "PDF-1",
+      "Caso": "PDF: columna Fecha, una fila por cobro del período (126, no 10), en dd/MM/yyyy",
+      "Estado": "PASS",
+      "Obtenido": "filas con fecha=126, 136763 bytes"
+    },
+    {
+      "Id": "PDF-2",
+      "Caso": "PDF: aclara la zona horaria y el total del período",
+      "Estado": "PASS",
+      "Obtenido": "Hora del club (America/ | Total recaudado (126 cobros)"
+    },
+    {
+      "Id": "VOL-1",
+      "Caso": "Julio (5001 cobros): total y páginas correctos, última página con el resto",
+      "Estado": "PASS",
+      "Obtenido": "total=5001 páginas=501 última=1"
+    },
+    {
+      "Id": "PERF-1",
+      "Caso": "Página de la tabla < 1 s aun con 5.000 cobros (10 pedidos por caso)",
+      "Estado": "PASS",
+      "Obtenido": "pagos sep p1: mediana 4 ms, máx 4.7 ms; pagos jul p1 fecha: mediana 13.7 ms, máx 18.5 ms; pagos jul p250 monto: mediana 29 ms, máx 39.8 ms; totales jul: mediana 19.4 ms, máx 26 ms; csv jul: mediana 81.6 ms, máx 89.8 ms"
+    },
+    {
+      "Id": "PERF-2",
+      "Caso": "La página viaja con 10 filas, no con el mes entero",
+      "Estado": "PASS",
+      "Obtenido": "2077 bytes por página (julio)"
+    },
+    {
+      "Id": "NAV-1",
+      "Caso": "Septiembre: 10 filas, columna Fecha primera en dd/MM/yyyy HH:mm, \"126 pagos\" y \"Página 1 de 13\"",
+      "Estado": "PASS",
+      "Obtenido": "{\"conteo\":\"126 pagos en Septiembre 2026 · Página 1 de 13\",\"paginas\":\"Página 1 de 13\",\"encabezados\":[\"Fecha\",\"Jugador\",\"DNI\",\"Categoría\",\"Tipo de pago\",\"Monto\"],\"primera\":[\"30/09/2026 23:59\",\"HU107 30, Cobro\",\"96000030\",\"Pt AFA 2008\",\"Transferencia\",\"$ 9.000\"]}"
+    },
+    {
+      "Id": "NAV-1b",
+      "Caso": "El donut muestra los pagos de TODO el período (126), igual que el encabezado",
+      "Estado": "PASS",
+      "Obtenido": "{\"centro\":\"126\",\"header\":\"126\"}"
+    },
+    {
+      "Id": "NAV-2",
+      "Caso": "Siguiente: página 2, otras filas; tarjetas, encabezado y donut idénticos; solo se pidió /pagos",
+      "Estado": "PASS",
+      "Obtenido": "{\"paginas\":\"Página 2 de 13\",\"pedidas\":[\"http://localhost:4200/api/recaudacion/pagos?anio=2026&mes=9&page=2&pageSize=10&sortBy=fecha&sortDirection=desc\"],\"donut\":\"111.96636217394023 339.29200658769764\",\"tarjetasIguales\":true}"
+    },
+    {
+      "Id": "NAV-3",
+      "Caso": "Recorrer las 13 páginas con \"Siguiente\": 126 filas, 126 distintas; en la última \"Siguiente\" se deshabilita",
+      "Estado": "PASS",
+      "Obtenido": "{\"filasVistas\":126,\"distintas\":126,\"ultima\":6}"
+    },
+    {
+      "Id": "NAV-4",
+      "Caso": "Clic en Fecha: ascendente, página 1, empieza el 01/09",
+      "Estado": "PASS",
+      "Obtenido": "{\"ariaSort\":\"ascending\",\"paginas\":\"Página 1 de 13\",\"primeras\":[\"01/09/2026 08:37\",\"01/09/2026 09:07\",\"01/09/2026 09:07\",\"01/09/2026 12:07\"]}"
+    },
+    {
+      "Id": "NAV-5",
+      "Caso": "Clic en Monto: $100.000 primero; otro clic: $9.000 primero (orden numérico, no de texto)",
+      "Estado": "PASS",
+      "Obtenido": "{\"desc\":[100000,100000,100000],\"asc\":[9000,9000,9000],\"ariaSort\":[\"none\",null,null,null,null,\"ascending\"]}"
+    },
+    {
+      "Id": "NAV-6",
+      "Caso": "Teclado: Enter sobre el encabezado Fecha ordena (desc) y el foco sigue en el botón",
+      "Estado": "PASS",
+      "Obtenido": "{\"ariaSort\":\"descending\",\"foco\":\"Fecha ↓\"}"
+    },
+    {
+      "Id": "NAV-7",
+      "Caso": "Navegador en Asia/Tokyo (+12 h), pantalla recargada: fechas y horas idénticas a las del club (30/09/2026 23:59 sigue en 30/09)",
+      "Estado": "PASS",
+      "Obtenido": "{\"zona\":\"Asia/Tokyo\",\"primera\":\"30/09/2026 23:59\",\"iguales\":true}"
+    },
+    {
+      "Id": "NAV-8",
+      "Caso": "Exportar CSV y PDF desde la página 3: piden mes y año, sin page/pageSize",
+      "Estado": "PASS",
+      "Obtenido": "[\"http://localhost:4200/api/reportes/recaudacion/csv?anio=2026&mes=9\",\"http://localhost:4200/api/reportes/recaudacion/pdf?anio=2026&mes=9\"]"
+    },
+    {
+      "Id": "NAV-9",
+      "Caso": "Octubre (pocos pagos): página 1, \"7 pagos\", sin paginador, tarjetas del mes nuevo",
+      "Estado": "PASS",
+      "Obtenido": "{\"conteo\":\"7 pagos en Octubre 2026\",\"filas\":7,\"header\":\"$ 525.000Total del período7Pagos procesados\"}"
+    },
+    {
+      "Id": "NAV-10",
+      "Caso": "Agosto (vacío): \"0 pagos\", estado vacío, sin tabla ni paginador, tarjetas en $0",
+      "Estado": "PASS",
+      "Obtenido": "{\"conteo\":\"0 pagos en Agosto 2026\",\"vacio\":\"No hay cobros en Agosto 2026\",\"header\":\"$ 0Total del período0Pagos procesados\"}"
+    },
+    {
+      "Id": "NAV-11",
+      "Caso": "tablet (820px): sin scroll horizontal de página; paginador entero en pantalla; fechas legibles",
+      "Estado": "PASS",
+      "Obtenido": "{\"scrollWidth\":820,\"innerWidth\":820,\"paginador\":{\"izq\":113,\"der\":779},\"fecha\":\"30/09/2026 23:59\"}"
+    },
+    {
+      "Id": "NAV-12",
+      "Caso": "celular (390px): sin scroll horizontal de página; paginador entero en pantalla; fechas legibles",
+      "Estado": "PASS",
+      "Obtenido": "{\"scrollWidth\":390,\"innerWidth\":390,\"paginador\":{\"izq\":41,\"der\":349},\"fecha\":\"30/09/2026 23:59\"}"
+    }
+  ]
+}
