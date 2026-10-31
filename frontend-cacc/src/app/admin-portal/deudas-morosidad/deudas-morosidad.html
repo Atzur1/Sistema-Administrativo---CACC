@@ -40,54 +40,15 @@
             <span class="panel-subtitle">Buscá y filtrá entre todos los jugadores con cuotas impagas</span>
           </div>
 
-          <!-- HU-021: exporta la lista respetando el filtro de categoría activo -->
-          <div class="export-wrap">
-            <button type="button" class="boton boton-principal" (click)="toggleExportMenu()" [disabled]="exportando"
-                    [class.en-curso]="exportando" [attr.aria-busy]="exportando"
-                    [attr.aria-expanded]="exportMenuOpen">
-              <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              {{ exportando ? 'Generando…' : 'Exportar Reporte' }}
-              <svg class="export-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </button>
-
-            @if (exportMenuOpen) {
-              <ul class="export-menu">
-                <li>
-                  <button type="button" (click)="exportarDeudores('pdf')">
-                    <span class="export-menu-label">PDF</span>
-                    <span class="export-menu-hint">Planilla imprimible</span>
-                  </button>
-                </li>
-                <li>
-                  <button type="button" (click)="exportarDeudores('csv')">
-                    <span class="export-menu-label">CSV</span>
-                    <span class="export-menu-hint">Se abre en Excel</span>
-                  </button>
-                </li>
-              </ul>
-            }
-          </div>
+          <!-- HU-021: exporta la lista respetando el filtro de categoría activo (menú compartido, HU-097) -->
+          <app-export-menu [enCurso]="exportando" (exportar)="exportarDeudores($event)" />
         </div>
 
-        <div class="filter-row">
-          <div class="search-control">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" placeholder="Buscar por nombre o DNI…"
-                   [(ngModel)]="busqueda" (ngModelChange)="onFiltrosChange()" />
-          </div>
-
+        <!-- Barra de filtros compartida (HU-097): la búsqueda espera 300 ms; los desplegables filtran al instante -->
+        <app-filter-bar class="filter-row" etiqueta="Filtros de deudores" textoBusqueda="Buscar por nombre o DNI…"
+                        [busqueda]="busqueda" (busquedaChange)="onBusquedaChange($event)"
+                        [filtrosActivos]="filtrosActivos" (quitarFiltro)="quitarFiltro($event)"
+                        (limpiar)="limpiarFiltros()">
           <div class="filter-control">
             <app-custom-select [options]="categoriaOptions" placeholder="Todas las categorías"
                                 [(ngModel)]="selectedCategoria"
@@ -105,11 +66,7 @@
                                 [(ngModel)]="selectedSituacion"
                                 (ngModelChange)="onFiltrosChange()"></app-custom-select>
           </div>
-
-          @if (hayFiltrosActivos) {
-            <button type="button" class="boton boton-fantasma clear-filter-btn" (click)="limpiarFiltros()">Limpiar filtros</button>
-          }
-        </div>
+        </app-filter-bar>
 
         @if (!cargando) {
           <p class="filter-count">Mostrando {{ debtors.length }} de {{ totalJugadores }} jugadores</p>
@@ -145,7 +102,7 @@
             </thead>
             <tbody>
               @for (debtor of debtors; track debtor.rank) {
-                <tr class="row-clickable" (click)="irADeuda(debtor.idJugador)">
+                <tr class="row-clickable" tabindex="0" (click)="irADeuda(debtor.idJugador)" (keydown.enter)="irADeuda(debtor.idJugador)">
                   <td class="col-rank">
                     <span class="rank-badge" [class.rank-top]="isTopRank(debtor.rank)">
                       {{ debtor.rank }}

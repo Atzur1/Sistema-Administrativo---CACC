@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, NgZone, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpResponse } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
@@ -9,9 +9,9 @@ import { ArancelesService } from '../../services/aranceles';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { triggerBlobDownload } from '../../shared/download-file';
 import { formatCompactCurrency } from '../../shared/format-currency';
+import { ExportFormat, ExportMenu } from '../../shared/export-menu/export-menu';
 
 type ReportCardId = 'deudas' | 'cuotas' | 'becados' | 'aranceles';
-type ExportFormat = 'pdf' | 'csv';
 
 interface CardStat {
     value: string;
@@ -34,7 +34,7 @@ interface ReportCard {
 @Component({
     selector: 'app-reportes',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, ExportMenu],
     templateUrl: './reportes.html',
     styleUrl: './reportes.css',
 })
@@ -75,9 +75,8 @@ export class Reportes implements OnInit {
     ]);
 
     // Solo puede haber una exportación en curso a la vez: alcanza con saber
-    // CUÁL caja la está generando para deshabilitar únicamente su botón.
+    // CUÁL caja la está generando. Cada caja tiene su menú compartido (HU-097).
     exportandoId = signal<ReportCardId | null>(null);
-    exportMenuOpenId = signal<ReportCardId | null>(null);
 
     constructor(
         private reportesService: ReportesService,
@@ -85,8 +84,6 @@ export class Reportes implements OnInit {
         private discountService: DiscountService,
         private arancelesService: ArancelesService,
         private notifications: NotificationService,
-        private elementRef: ElementRef<HTMLElement>,
-        private ngZone: NgZone,
     ) {}
 
     ngOnInit(): void {
@@ -123,16 +120,9 @@ export class Reportes implements OnInit {
         this.cards.update((cards) => cards.map((card) => (card.id === id ? { ...card, stats } : card)));
     }
 
-    toggleExportMenu(card: ReportCard): void {
-        this.ngZone.run(() => {
-            this.exportMenuOpenId.set(this.exportMenuOpenId() === card.id ? null : card.id);
-        });
-    }
-
     exportar(card: ReportCard, formato: ExportFormat): void {
         if (this.exportandoId() !== null) return;
 
-        this.exportMenuOpenId.set(null);
         this.exportandoId.set(card.id);
 
         this.requestFor(card.id, formato).subscribe({
@@ -146,20 +136,6 @@ export class Reportes implements OnInit {
                 this.notifications.notify(`No se pudo exportar el reporte de ${card.title}. Intentá de nuevo.`, 'error');
             },
         });
-    }
-
-    // Cierra cualquier menú abierto si el click fue afuera de todas las cajas.
-    @HostListener('document:click', ['$event'])
-    onDocumentClick(event: MouseEvent): void {
-        if (this.exportMenuOpenId() === null) return;
-
-        const target = event.target as Node;
-        const insideAnyMenu = Array.from(this.elementRef.nativeElement.querySelectorAll('.export-wrap'))
-            .some((wrap) => wrap.contains(target));
-
-        if (!insideAnyMenu) {
-            this.ngZone.run(() => this.exportMenuOpenId.set(null));
-        }
     }
 
     private requestFor(id: ReportCardId, formato: ExportFormat): Observable<HttpResponse<Blob>> {

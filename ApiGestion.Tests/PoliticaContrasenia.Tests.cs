@@ -49,6 +49,46 @@ public class PoliticaContraseniaTests
         Assert.Contains(PoliticaContrasenia.Validar(contrasenia, Camila), p => p.Contains("común"));
     }
 
+    // HU-087: el nombre del club no puede ir en ninguna parte de la contraseña, con cualquier separador.
+    [Theory]
+    [InlineData("Camioneros-1931")]
+    [InlineData("ClubCamioneros-99")]
+    [InlineData("Camioneros2027")]
+    [InlineData("C.A.C.C.2026")]
+    [InlineData("Mi-cacc-Norte-77")]
+    public void ConElNombreDelClub_SeRechaza(string contrasenia)
+    {
+        Assert.Contains(PoliticaContrasenia.Validar(contrasenia, Camila), p => p.Contains("nombre del club"));
+    }
+
+    // HU-087: apellido compuesto con guion, cada tramo cuenta como dato personal.
+    [Theory]
+    [InlineData("Perez-norte-77")]
+    [InlineData("Gomez-norte-77")]
+    public void ConUnTramoDelApellidoCompuestoConGuion_SeRechaza(string contrasenia)
+    {
+        var titular = new DatosTitular("Camila", "Pérez-Gómez", "30111222", null);
+
+        Assert.Contains(PoliticaContrasenia.Validar(contrasenia, titular), p => p.Contains("DNI"));
+    }
+
+    // HU-087: las palabras más usadas caen aunque cambie el número del final.
+    [Theory]
+    [InlineData("Qwerty12345")]
+    [InlineData("Argentina2027")]
+    [InlineData("Password2027")]
+    [InlineData("Bienvenido99")]
+    public void UnaPalabraComunConOtrosNumerosAlFinal_SeRechaza(string contrasenia)
+    {
+        Assert.Contains(PoliticaContrasenia.Validar(contrasenia, Camila), p => p.Contains("común"));
+    }
+
+    [Fact]
+    public void UnaPalabraComunDentroDeUnaFraseLarga_NoSeRechaza()
+    {
+        Assert.Empty(PoliticaContrasenia.Validar("Argentina-campeon-2022", Camila));
+    }
+
     [Fact]
     public void PartesMuyCortasDelNombreNoSeControlan()
     {

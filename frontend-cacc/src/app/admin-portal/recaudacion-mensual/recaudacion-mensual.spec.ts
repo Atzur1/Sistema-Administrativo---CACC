@@ -1,5 +1,6 @@
+import { ChangeDetectorRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { delay, of } from 'rxjs';
+import { Subject, delay, of } from 'rxjs';
 
 import { RecaudacionMensual } from './recaudacion-mensual';
 import { RecaudacionService } from '../../services/recaudacion';
@@ -215,5 +216,64 @@ describe('RecaudacionMensual - tarjetas por medio de pago', () => {
 
     expect(el.querySelector('.card-detail-efectivo')!.textContent!.trim()).toBe('0 pagos');
     expect(el.querySelector('.card-detail-transferencia')!.textContent!.trim()).toBe('0 pagos');
+  });
+});
+
+// HU-097: barra de filtros y menú de exportación compartidos, y ninguna respuesta vieja pisa a la nueva.
+describe('RecaudacionMensual - filtros y exportación compartidos (HU-097)', () => {
+  it('the category shows as a chip; its × and "Limpiar filtros" remove it', async () => {
+    const { component, el, fixture } = await crear([]);
+    component.onCategoriaChange('5');
+    fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+
+    const chip = el.querySelector('.filter-bar-chip')!;
+    expect(chip.textContent!.replace('×', '').trim()).toBe('Categoría: AFA 20067');
+    expect(el.querySelector<HTMLButtonElement>('.filter-bar-clear')!.disabled).toBe(false);
+
+    chip.querySelector<HTMLButtonElement>('button')!.click();
+    expect(component.categoriaSeleccionada).toBe('');
+    expect(llamadas.at(-1)!.idCategoria).toBeNull();
+    // Se espera la respuesta de la consulta que disparó la ×, como en el resto de las pruebas de filtros.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+
+  it('the period is not a removable filter: without a category "Limpiar filtros" is disabled', async () => {
+    const { el } = await crear([]);
+
+    expect(el.querySelectorAll('.filter-bar-chip')).toHaveLength(0);
+    expect(el.querySelector<HTMLButtonElement>('.filter-bar-clear')!.disabled).toBe(true);
+  });
+
+  it('uses the shared "Exportar Reporte" menu', async () => {
+    const { el } = await crear([]);
+
+    expect(el.querySelector('app-export-menu .export-menu-trigger')!.textContent!.trim()).toBe('Exportar Reporte');
+    expect(el.querySelector('.export-wrap')).toBeNull();
+  });
+
+  it('a slow answer for an old month never replaces the month chosen after it', async () => {
+    const respuestas: Subject<CollectionPeriodModel>[] = [];
+    await TestBed.configureTestingModule({
+      imports: [RecaudacionMensual],
+      providers: [
+        { provide: RecaudacionService, useValue: { getDelPeriodo: () => { const s = new Subject<CollectionPeriodModel>(); respuestas.push(s); return s; } } },
+        { provide: PagosService, useValue: { getCategorias: () => respuesta([]) } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(RecaudacionMensual);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    component.onAnioChange(new Date().getFullYear() - 1);   // pide otro período mientras el primero sigue en camino
+    expect(respuestas).toHaveLength(2);
+    expect(respuestas[0].observed).toBe(false);              // el pedido viejo se canceló
+
+    respuestas[1].next(periodo([pago(1, 'NUEVO', '1', 50000, 'Efectivo')]));
+    respuestas[0].next(periodo([pago(2, 'VIEJO', '2', 99000, 'Transferencia')]));
+
+    expect(component.filas.map((f) => f.jugador)).toEqual(['NUEVO']);
+    expect(component.datos!.total).toBe(50000);
+    await new Promise((resolve) => setTimeout(resolve, 20));
   });
 });

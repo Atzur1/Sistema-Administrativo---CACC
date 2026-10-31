@@ -56,7 +56,7 @@ public class DiscountRequestDTO : IValidatableObject
             if (Percentage == null)
             {
                 yield return new ValidationResult(
-                    "A percentage benefit requires a percentage.",
+                    "Indicá el porcentaje de la bonificación.",
                     new[] { nameof(Percentage) });
             }
             else if (Percentage <= MinPercentage || Percentage > MaxPercentage)
@@ -78,7 +78,7 @@ public class DiscountRequestDTO : IValidatableObject
             if (FixedAmount == null)
             {
                 yield return new ValidationResult(
-                    "A fixed amount benefit requires an amount.",
+                    "Indicá el monto fijo de la bonificación.",
                     new[] { nameof(FixedAmount) });
             }
             else if (FixedAmount <= 0)

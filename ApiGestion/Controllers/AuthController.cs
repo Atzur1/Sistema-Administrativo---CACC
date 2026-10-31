@@ -73,7 +73,7 @@ namespace ApiGestion.Controllers
         // como uno de ACTIVACION (alta hecha desde Usuarios y Permisos): el tipo lo
         // resuelve el propio token, no hace falta que el cliente lo indique.
         [HttpPost("account-access/complete")]
-        [EnableRateLimiting("account-email")]
+        [EnableRateLimiting("account-complete")]
         public IActionResult CompletarAcceso([FromBody] CompleteAccountAccessRequestDTO request)
         {
             var tokenHash = TokenAccesoCuenta.Hash(request.Token);

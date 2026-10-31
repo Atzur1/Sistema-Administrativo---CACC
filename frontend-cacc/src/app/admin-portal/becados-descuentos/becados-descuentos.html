@@ -115,6 +115,23 @@
         </div>
       </header>
 
+      <!-- Pestañas (HU-101): Vigentes, lo que rige hoy o va a regir; Historial, lo finalizado, cancelado o anulado.
+           La búsqueda y los filtros de abajo trabajan sobre la pestaña elegida. -->
+      <div class="tabs" role="tablist" aria-label="Beneficios asignados">
+        <button type="button" role="tab" id="tab-vigentes" class="tab" aria-controls="panel-beneficios"
+                [class.tab-active]="pestana() === 'vigentes'"
+                [attr.aria-selected]="pestana() === 'vigentes'"
+                (click)="cambiarPestana('vigentes')">
+          Vigentes <span class="tab-count">{{ cantidadVigentes }}</span>
+        </button>
+        <button type="button" role="tab" id="tab-historial" class="tab" aria-controls="panel-beneficios"
+                [class.tab-active]="pestana() === 'historial'"
+                [attr.aria-selected]="pestana() === 'historial'"
+                (click)="cambiarPestana('historial')">
+          Historial <span class="tab-count">{{ cantidadHistorial }}</span>
+        </button>
+      </div>
+
       <form class="filter-row" [formGroup]="filterForm">
         <div class="search-control">
           <svg
@@ -134,7 +151,7 @@
 
         <div class="filter-control">
           <app-custom-select
-            [options]="estadoOptions"
+            [options]="estadoOptionsDePestana"
             placeholder="Todos los estados"
             formControlName="estado"
           ></app-custom-select>
@@ -158,13 +175,13 @@
       @if (benefitsLoaded()) {
         <p class="filter-count">
           Mostrando {{ pagedRows.length }} de {{ filteredRows.length }} beneficios
-          @if (filteredRows.length !== benefitRows().length) {
-            ({{ benefitRows().length }} en total)
+          @if (filteredRows.length !== rowsDePestana.length) {
+            ({{ rowsDePestana.length }} en total)
           }
         </p>
       }
 
-      <div class="table-wrapper">
+      <div class="table-wrapper" id="panel-beneficios" role="tabpanel" [attr.aria-labelledby]="'tab-' + pestana()">
         <table class="benefits-table">
           <thead>
             <tr>
@@ -227,8 +244,10 @@
           </tbody>
         </table>
 
-        @if (benefitsLoaded() && benefitRows().length === 0) {
-          <p class="panel-empty">No hay beneficios asignados.</p>
+        @if (benefitsLoaded() && rowsDePestana.length === 0) {
+          <p class="panel-empty">
+            {{ pestana() === 'vigentes' ? 'No hay becas ni descuentos vigentes.' : 'Todavía no hay beneficios finalizados, cancelados ni anulados.' }}
+          </p>
         } @else if (benefitsLoaded() && filteredRows.length === 0) {
           <p class="panel-empty">
             Ningún beneficio coincide con la búsqueda o los filtros aplicados.

@@ -5,7 +5,7 @@
   --primary-dark: var(--color-brand-darkest);
   --text-dark: var(--color-text-dark);
   --text-muted: var(--color-text-subtle);
-  --border-light: #e5e7eb;
+  --border-light: var(--color-border);
 
   /* Degradé diagonal institucional continuo */
   background: var(--gradient-institutional);
@@ -208,6 +208,8 @@
   left: 0;
   width: 100%;
   height: 4px;
+  /* Decisión de diseño (HU-109): el verde brillante #00d666 de esta franja y del resplandor de abajo no es un color
+     del portal. Se mantiene a propósito: es solo un brillo sobre el degradé oscuro, nunca texto ni fondo. */
   background: linear-gradient(90deg, var(--primary-green), #00d666, var(--primary-dark), #00d666, var(--primary-green));
   background-size: 200% 100%;
   opacity: 0.55;
@@ -281,8 +283,8 @@
 }
 
 .tag {
-  background: linear-gradient(180deg, #f9fbf9 0%, #edf4ef 100%);
-  border: 1px solid #dce8df;
+  background: linear-gradient(180deg, var(--color-bg-hover) 0%, var(--color-bg-page) 100%);
+  border: 1px solid var(--color-border);
   border-radius: 9px;
   padding: 11px 13px;
   display: flex;
@@ -290,7 +292,7 @@
   gap: 8px;
   font-size: 12.5px;
   font-weight: 600;
-  color: #2e3832;
+  color: var(--color-text-dark);
   transition: background 0.25s ease, border-color 0.25s ease,
     transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
 }
@@ -328,7 +330,7 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-green) 50%, #005a2b 100%);
+  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-green) 50%, var(--color-brand-darkest) 100%);
   background-size: 200% auto;
   color: var(--color-bg-card);
   border: none;

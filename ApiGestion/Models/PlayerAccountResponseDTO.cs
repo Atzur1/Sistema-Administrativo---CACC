@@ -19,4 +19,8 @@ public class PlayerAccountResponseDTO
 
     // "yyyy-MM-dd", or null while the player is active.
     public string? LeaveDate { get; set; }
+
+    // The sport status computed by the backend (habilitado, solo_entrenamientos, inhabilitado or baja): the same rule and the
+    // same texts as the integration API. The screen shows it; it does not recompute it.
+    public string SportStatus { get; set; } = EntityLibrary.EstadoDeportivoTexto.Habilitado;
 }

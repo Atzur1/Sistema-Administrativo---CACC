@@ -480,14 +480,14 @@ describe('JugadorPerfil - historial de pagos', () => {
     it('abre el popup con el detalle del pago y sin llamar a la API', async () => {
       const { el, servicio } = await abrirAnulacion();
 
-      expect(texto(el.querySelector('.dialog-title'))).toBe('Anular pago');
+      expect(texto(el.querySelector('.ventana-titulo'))).toBe('Anular pago');
       expect(texto(el.querySelector('.anular-detalle'))).toContain('Septiembre 2026');
       expect(servicio.anularPago).not.toHaveBeenCalled();
     });
 
     it('no deja confirmar hasta que el motivo tenga al menos 5 caracteres', async () => {
       const { el, fixture, component } = await abrirAnulacion();
-      const confirmar = () => el.querySelector('.dialog-actions .button-danger') as HTMLButtonElement;
+      const confirmar = () => el.querySelector('.ventana-confirmar') as HTMLButtonElement;
 
       expect(confirmar().disabled).toBe(true);
 
@@ -501,21 +501,21 @@ describe('JugadorPerfil - historial de pagos', () => {
       component.motivoAnulacion = '  Pago duplicado  ';
       fixture.detectChanges();
 
-      (el.querySelector('.dialog-actions .button-danger') as HTMLButtonElement).click();
+      (el.querySelector('.ventana-confirmar') as HTMLButtonElement).click();
       await fixture.whenStable();
       fixture.detectChanges();
 
       expect(servicio.anularPago).toHaveBeenCalledWith(1, 'Pago duplicado');
-      expect(el.querySelector('.dialog')).toBeNull();
+      expect(el.querySelector('[role="dialog"]')).toBeNull();
     });
 
     it('Volver cierra el popup sin anular nada', async () => {
       const { el, fixture, servicio } = await abrirAnulacion();
 
-      (el.querySelector('.dialog-actions .button-ghost') as HTMLButtonElement).click();
+      (el.querySelector('.ventana-volver') as HTMLButtonElement).click();
       fixture.detectChanges();
 
-      expect(el.querySelector('.dialog')).toBeNull();
+      expect(el.querySelector('[role="dialog"]')).toBeNull();
       expect(servicio.anularPago).not.toHaveBeenCalled();
     });
   });
@@ -526,13 +526,89 @@ describe('JugadorPerfil - historial de pagos', () => {
       (el.querySelector('.profile-action-danger') as HTMLButtonElement).click();
       fixture.detectChanges();
 
-      expect(texto(el.querySelector('.dialog-title'))).toBe('Dar de baja');
+      expect(texto(el.querySelector('.ventana-titulo'))).toBe('Dar de baja');
       expect(component.fechaBaja).toBe(component.hoy);
 
-      (el.querySelector('.dialog-actions .button-danger') as HTMLButtonElement).click();
+      (el.querySelector('.ventana-confirmar') as HTMLButtonElement).click();
       await fixture.whenStable();
 
       expect(servicio.darDeBaja).toHaveBeenCalledWith(3, component.hoy);
+    });
+  });
+
+  // HU-094, corrección de QA: las tres confirmaciones de Perfil usan la ventana común.
+  describe('ventana común de confirmación', () => {
+    const ventana = (el: HTMLElement) => el.querySelector<HTMLElement>('[role="dialog"]');
+    const escape = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    it('Dar de baja es un diálogo modal con el título como etiqueta y tono de peligro', async () => {
+      const { el, fixture } = await crear();
+      (el.querySelector('.profile-action-danger') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      const dialogo = ventana(el)!;
+      expect(dialogo.getAttribute('aria-modal')).toBe('true');
+      expect(texto(document.getElementById(dialogo.getAttribute('aria-labelledby')!))).toBe('Dar de baja');
+      expect(dialogo.classList).toContain('ventana-peligro');
+      expect(el.querySelector('.ventana-confirmar')!.classList).toContain('es-peligro');
+      expect(texto(el.querySelector('.ventana-confirmar'))).toBe('Sí, dar de baja');
+    });
+
+    it('Anular pago va con tono de peligro', async () => {
+      const { el, fixture } = await crear({ historialPorPagina: () => historial([periodo('Septiembre 2026', 85000)]) });
+      (el.querySelector('.abono-anular') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(ventana(el)!.classList).toContain('ventana-peligro');
+      expect(el.querySelector('.ventana-confirmar')!.classList).toContain('es-peligro');
+      expect(texto(el.querySelector('.ventana-confirmar'))).toBe('Sí, anular pago');
+    });
+
+    it('Reactivar va con el tono principal, no de peligro', async () => {
+      const { el, fixture } = await crear({
+        jugador: { ...JUGADOR, fechaBaja: '2026-09-30T00:00:00' },
+        historialPorPagina: () => historial([]),
+      });
+      (el.querySelector('.profile-action') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(texto(el.querySelector('.ventana-titulo'))).toBe('Reactivar jugador');
+      expect(ventana(el)!.classList).not.toContain('ventana-peligro');
+      expect(el.querySelector('.ventana-confirmar')!.classList).not.toContain('es-peligro');
+      expect(texto(el.querySelector('.ventana-confirmar'))).toBe('Sí, reactivar');
+    });
+
+    it('se cierra con Esc y con la cruz sin grabar nada', async () => {
+      const { el, fixture, servicio } = await crear();
+
+      (el.querySelector('.profile-action-danger') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      escape();
+      fixture.detectChanges();
+      expect(ventana(el)).toBeNull();
+
+      (el.querySelector('.profile-action-danger') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      (el.querySelector('.ventana-cerrar') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(ventana(el)).toBeNull();
+
+      expect(servicio.darDeBaja).not.toHaveBeenCalled();
+    });
+
+    it('no se cierra mientras la operación está en curso', async () => {
+      const { el, fixture, component } = await crear();
+      (el.querySelector('.profile-action-danger') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      component.procesando = true;
+      fixture.detectChanges();
+
+      escape();
+      (el.querySelector('.ventana-cerrar') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(ventana(el)).not.toBeNull();
+      expect(texto(el.querySelector('.ventana-confirmar'))).toBe('Dando de baja…');
     });
   });
 });

@@ -73,82 +73,14 @@
     color: var(--color-text-subtle);
 }
 
-/* ===== EXPORTAR (mismo patrón que Deudas y Morosidad) ===== */
-.export-wrap {
-    position: relative;
-    flex-shrink: 0;
-    /* Empuja el botón al extremo derecho del encabezado del panel */
+/* ===== EXPORTAR (menú compartido, HU-097) ===== */
+/* Empuja el menú al extremo derecho del encabezado del panel */
+app-export-menu {
     margin-left: auto;
 }
 
-.export-icon {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-}
-
-.export-chevron {
-    width: 12px;
-    height: 12px;
-    flex-shrink: 0;
-    margin-left: -2px;
-}
-
-.export-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    z-index: 30;
-    margin: 0;
-    padding: var(--space-2);
-    width: 200px;
-    list-style: none;
-    background: #ffffff;
-    border: 1px solid #f1f5f9;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-floating);
-    animation: fadeIn 0.12s ease both;
-}
-
-.export-menu button {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-1);
-    width: 100%;
-    padding: var(--space-2) var(--space-3);
-    background: transparent;
-    border: none;
-    border-radius: var(--radius-md);
-    font-family: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.export-menu button:hover {
-    background: var(--color-brand-tint);
-}
-
-.export-menu-label {
-    font-size: var(--font-md);
-    font-weight: 700;
-    color: var(--color-text);
-}
-
-.export-menu-hint {
-    font-size: var(--font-sm);
-    color: var(--color-text-muted);
-}
-
-/* ===== BARRA DE FILTROS ===== */
+/* ===== BARRA DE FILTROS (app-filter-bar, HU-097) ===== */
 .panel-filtros {
-    display: flex;
-    /* .panel es column: acá hay que volver a fila o los filtros se apilan. */
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: var(--space-4) var(--space-5);
     margin-bottom: 16px;
     padding: var(--space-4) var(--space-5);
     /* Hilo verde arriba: marca que este panel es el que controla la pantalla */
@@ -296,7 +228,7 @@
 
 /* Cantidad de pagos y porcentaje debajo del monto (HU-070), en el color de su medio de pago */
 .card-detail {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     font-weight: 600;
     line-height: 1.3;
     color: var(--color-text-muted);
@@ -323,7 +255,7 @@
 /* ===== TABLA DE PAGOS ===== */
 .tabla-conteo {
     margin-bottom: 10px;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-subtle);
 }
 
@@ -529,7 +461,7 @@
 }
 
 .legend-meta {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-subtle);
 }
 
@@ -549,7 +481,7 @@
 }
 
 .legend-amount {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-subtle);
 }
 

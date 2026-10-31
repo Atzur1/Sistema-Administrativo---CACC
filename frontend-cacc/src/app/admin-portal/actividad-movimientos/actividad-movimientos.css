@@ -130,7 +130,6 @@
   font-family: inherit;
   font-size: var(--font-base);
   color: var(--color-text);
-  outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -156,7 +155,7 @@
 
 .filter-count {
   margin: 0 2px 10px;
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--color-text-muted);
 }
 
@@ -333,7 +332,7 @@
 }
 
 .player-category {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -451,7 +450,7 @@
 }
 
 .activity-elapsed {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   color: var(--text-muted);
 }
 

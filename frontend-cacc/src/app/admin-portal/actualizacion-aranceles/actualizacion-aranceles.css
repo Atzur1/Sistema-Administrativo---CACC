@@ -134,7 +134,7 @@
 }
 
 .form-subtitle {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -171,7 +171,6 @@
     font-family: inherit;
     font-size: var(--font-base);
     color: var(--color-text);
-    outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -209,13 +208,13 @@
 }
 
 .field-hint {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
 /* Replaces the hint in place, so showing it never shifts the layout */
 .field-error {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     font-weight: 600;
     color: var(--color-danger);
 }
@@ -347,7 +346,7 @@
 }
 
 .preview-difference {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -466,7 +465,7 @@
 }
 
 .panel-subtitle {
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 

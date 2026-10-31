@@ -58,6 +58,9 @@ export class Usuarios implements OnInit {
 
   // Menú "⋯" de una fila de Habilitadas abierto (id de la cuenta), o null.
   menuAbierto = signal<number | null>(null);
+  // El botón "⋯" que abrió el menú. Las ventanas que se abren desde una opción del menú le devuelven el foco al
+  // cerrarse: la opción en sí desaparece al cerrarse el menú (HU-094, corrección de QA).
+  botonMenu: HTMLElement | null = null;
 
   // "Cambiar rol": un cambio de rol da o quita permisos, así que no se aplica al elegirlo en el desplegable sino
   // después de confirmarlo. `refrescoRoles` vuelve a dibujar los desplegables cuando se cancela, para que
@@ -210,6 +213,7 @@ export class Usuarios implements OnInit {
 
   alternarMenu(idUsuario: number, evento: Event): void {
     evento.stopPropagation();
+    this.botonMenu = evento.currentTarget as HTMLElement | null;
     this.menuAbierto.set(this.menuAbierto() === idUsuario ? null : idUsuario);
   }
 

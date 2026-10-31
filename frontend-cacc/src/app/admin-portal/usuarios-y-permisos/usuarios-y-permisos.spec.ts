@@ -135,6 +135,48 @@ describe('Usuarios - Resetear contraseña', () => {
   });
 });
 
+// HU-094, corrección de QA: las ventanas que se abren desde el menú "⋯" le devuelven el foco a ese botón al
+// cerrarse (la opción del menú ya no existe, porque el menú se cerró al elegirla).
+describe('Usuarios - foco al cerrar una ventana abierta desde el menú', () => {
+  const abrirDesdeMenu = (element: HTMLElement, fixture: { detectChanges(): void }, opcion: string) => {
+    const kebab = element.querySelectorAll<HTMLButtonElement>('.panel-users .kebab')[0];
+    kebab.click();
+    fixture.detectChanges();
+    const item = element.querySelector<HTMLButtonElement>(opcion)!;
+    item.focus();
+    item.click();
+    fixture.detectChanges();
+    return kebab;
+  };
+  const esperarFoco = () => new Promise((resolver) => setTimeout(resolver));
+
+  it('Resetear contraseña: al volver, el foco regresa al botón "⋯" de la fila', async () => {
+    const { fixture, element } = await create();
+    const kebab = abrirDesdeMenu(element, fixture, '.menu-item:not(.menu-item-danger)');
+    expect(element.querySelector('[role="dialog"]')).not.toBeNull();
+
+    element.querySelector<HTMLButtonElement>('.ventana-volver')!.click();
+    fixture.detectChanges();
+    await esperarFoco();
+
+    expect(element.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(kebab);
+  });
+
+  it('Deshabilitar: al cerrar con Esc, el foco regresa al botón "⋯" de la fila', async () => {
+    const { fixture, element } = await create();
+    const kebab = abrirDesdeMenu(element, fixture, '.menu-item-danger');
+    expect(element.querySelector('[role="dialog"]')).not.toBeNull();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    await esperarFoco();
+
+    expect(element.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(kebab);
+  });
+});
+
 // El DNI es el usuario con el que la persona ingresa al portal: se puede corregir antes de habilitarla.
 describe('Usuarios - Corregir el DNI de un candidato', () => {
   it('el formulario trae el DNI cargado y lo muestra para corregirlo', async () => {

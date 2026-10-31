@@ -29,8 +29,10 @@ namespace DaoLibrary
         }
 
         // Una sola sentencia atómica (MERGE con HOLDLOCK): dos fallos simultáneos de la misma cuenta suman dos.
-        // De paso borra las filas que ya salieron de la ventana, para que la tabla no crezca con identificadores
-        // probados al azar.
+        // desde_utc guarda el ÚLTIMO fallo (el nombre quedó de la primera versión): la ventana corre desde ahí, así
+        // el fallo que completa el máximo bloquea la cuenta la ventana entera, aunque los anteriores se hayan
+        // repartido en varios minutos. Un fallo que llega con el anterior ya fuera de la ventana vuelve a contar
+        // desde 1. De paso borra las filas vencidas, para que la tabla no crezca con identificadores probados al azar.
         public void RegistrarFallo(string clave, DateTimeOffset ahora, TimeSpan ventana)
         {
             const string query = @"
@@ -38,7 +40,7 @@ namespace DaoLibrary
                 USING (SELECT @clave AS clave) AS s ON t.clave = s.clave
                 WHEN MATCHED THEN UPDATE SET
                     fallos = CASE WHEN t.desde_utc <= @vencidoAntesDe THEN 1 ELSE t.fallos + 1 END,
-                    desde_utc = CASE WHEN t.desde_utc <= @vencidoAntesDe THEN @ahora ELSE t.desde_utc END
+                    desde_utc = @ahora
                 WHEN NOT MATCHED THEN INSERT (clave, fallos, desde_utc) VALUES (@clave, 1, @ahora);
 
                 DELETE FROM dbo.INTENTOS_LOGIN WHERE desde_utc <= @vencidoAntesDe AND clave <> @clave;";

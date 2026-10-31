@@ -1,15 +1,17 @@
-﻿.main {
+﻿/* Colores y letra del Portal Administrativo (HU-109): los verdes salen de los tokens de styles.css y la letra
+   es la misma del portal, así el sistema se ve igual desde el ingreso. */
+.main {
   --primary-green: var(--color-brand-deep);
   --primary-light: var(--color-brand-light);
   --primary-dark: var(--color-brand-darkest);
   --text-dark: var(--color-text-dark);
   --text-muted: var(--color-text-subtle);
-  --border-light: #dcdfe4;
+  --border-light: var(--color-border);
 
   /* Degradé diagonal institucional continuo */
   background: var(--gradient-institutional);
 
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   /* Números tabulares: en vez del ancho variable por default, cada dígito
      ocupa el mismo espacio — se nota sobre todo en el ojo de la contraseña
      o si en algún momento hay un contador/reloj en esta pantalla. */
@@ -63,7 +65,7 @@
   /* Título con una tipografía distinta a la del resto del formulario —
      geométrica y de mayor peso, para que se lea como un título real y no
      como texto de cuerpo agrandado. */
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: inherit;
   color: var(--text-dark);
   font-size: 25px;
   font-weight: 800;
@@ -108,6 +110,12 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-muted);
   transition: transform 0.2s ease;
   /* Sits above the browser's own inline icons (Chrome's saved-password key,
   Edge's reveal button) so our click always wins over theirs */
@@ -118,6 +126,27 @@
   transform: scale(1.1);
 }
 
+.eye-icon[aria-pressed='true'] {
+  color: var(--color-brand-deep);
+}
+
+/* Aviso de Bloq Mayús (HU-109): ámbar oscuro, el mismo de Crea / Reestablece tu contraseña. */
+.caps-warning {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 0;
+  color: #7a5513;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.caps-warning svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
 .form-control {
   width: 100%;
   /* Right padding reserves room for the custom eye icon so typed text never
@@ -126,8 +155,7 @@
   font-size: 14px;
   border: 1px solid var(--border-light);
   border-radius: 10px;
-  outline: none;
-  background: #fdfdfd;
+  background: var(--color-bg-card);
   box-sizing: border-box;
   transition: all 0.25s ease;
 }
@@ -158,7 +186,7 @@
 }
 
 .form-control::placeholder {
-  color: #adb5bd;
+  color: var(--color-text-subtle);
 }
 
 /* ===== ERROR DE CAMPO (validación) ===== */
@@ -202,7 +230,7 @@
   height: 26px;
   flex-shrink: 0;
   border-radius: 50%;
-  color: #ffffff;
+  color: var(--color-bg-card);
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
@@ -230,7 +258,7 @@
 .alert-banner-success {
   background: linear-gradient(155deg, #ffffff 0%, var(--color-brand-tint) 130%);
   border: 1px solid rgba(0, 166, 81, 0.22);
-  color: #00753a;
+  color: var(--color-brand-deep);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.85),
     0 2px 4px rgba(15, 23, 42, 0.06),
@@ -292,12 +320,12 @@
 /* Botón principal con degradé dinámico y micro-interacción */
 .btn-primary {
   width: 100%;
-  background: linear-gradient(135deg, var(--color-brand-strong) 0%, var(--primary-green) 50%, #005a2b 100%);
+  background: linear-gradient(135deg, var(--color-brand-strong) 0%, var(--primary-green) 50%, var(--color-brand-darkest) 100%);
   background-size: 200% auto;
   color: var(--color-bg-card);
   border: none;
   padding: 14px;
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: inherit;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.2px;
@@ -338,14 +366,14 @@
   position: absolute;
   width: 100%;
   height: 1px;
-  background: linear-gradient(to right, transparent, #e2e5e9, transparent);
+  background: linear-gradient(to right, transparent, var(--color-border), transparent);
   z-index: 1;
 }
 
 .divider span {
   width: 6px;
   height: 6px;
-  border: 1px solid #dcdcdc;
+  border: 1px solid var(--color-border);
   border-radius: 50%;
   background: var(--color-bg-card);
   z-index: 2;
@@ -408,7 +436,7 @@
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: var(--color-brand-deep, #15803d);
+  background: var(--color-brand-deep);
   box-shadow: 0 2px 8px rgba(0, 127, 62, 0.5);
   animation: loadingDotPulse 1.2s ease-in-out infinite;
 }
@@ -536,7 +564,7 @@
 }
 
 .forgot-close:hover {
-  background: var(--color-bg-page-alt, #f4f7f4);
+  background: var(--color-bg-page-alt);
   color: var(--text-dark);
 }
 
@@ -554,7 +582,7 @@
   margin: 0 auto 18px;
   border-radius: 16px;
   background: linear-gradient(135deg, var(--color-brand-light), var(--primary-green));
-  color: #ffffff;
+  color: var(--color-bg-card);
   box-shadow: 0 8px 20px rgba(0, 127, 62, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
@@ -564,7 +592,7 @@
 }
 
 .forgot-card h2 {
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: inherit;
   color: var(--text-dark);
   font-size: 21px;
   font-weight: 800;

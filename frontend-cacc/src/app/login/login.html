@@ -83,17 +83,18 @@
             id="TituloContraseña"
             formControlName="password"
             placeholder="Ingresá tu contraseña"
+            autocomplete="current-password"
+            (keydown)="detectarMayusculas($event)"
+            (keyup)="detectarMayusculas($event)"
           />
 
-          <span
+          <!-- Botón de verdad (HU-109): se alcanza con Tab y se usa con Enter o Espacio sin código extra. -->
+          <button
+            type="button"
             class="eye-icon"
-            role="button"
-            tabindex="0"
-            style="cursor: pointer"
             (click)="togglePasswordVisibility()"
-            (keydown.enter)="togglePasswordVisibility()"
-            (keydown.space)="togglePasswordVisibility(); $event.preventDefault()"
             [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.aria-pressed]="mostrarPassword"
             [title]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           >
             <svg
@@ -103,7 +104,7 @@
               width="20"
               height="20"
               fill="none"
-              stroke="#666"
+              stroke="currentColor"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -119,7 +120,7 @@
               width="20"
               height="20"
               fill="none"
-              stroke="#007F3E"
+              stroke="currentColor"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -129,8 +130,15 @@
               ></path>
               <line x1="1" y1="1" x2="23" y2="23"></line>
             </svg>
-          </span>
+          </button>
         </div>
+        <!-- Aviso de Bloq Mayús, igual que en Crea / Reestablece tu contraseña -->
+        <p *ngIf="capsActivo" class="caps-warning" role="status">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 19V5M5 12l7-7 7 7"></path>
+          </svg>
+          Bloq Mayús está activado
+        </p>
         <small
           *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
           class="field-error"

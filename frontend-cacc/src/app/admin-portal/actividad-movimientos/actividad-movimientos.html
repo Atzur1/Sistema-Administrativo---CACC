@@ -87,7 +87,7 @@
           </thead>
           <tbody>
             @for (payment of pagedPayments; track payment.id) {
-              <tr class="row-clickable" (click)="irAJugador(payment.idJugador)">
+              <tr class="row-clickable" tabindex="0" (click)="irAJugador(payment.idJugador)" (keydown.enter)="irAJugador(payment.idJugador)">
                 <td>
                   <div class="cell-player">
                     <span class="player-name">{{ payment.player }}</span>

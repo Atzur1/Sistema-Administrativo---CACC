@@ -2,7 +2,8 @@
   Normaliza nombre y apellido de PERSONAS: la primera letra de cada palabra en mayuscula, el resto en minuscula
   ("JUAN CARLOS perez" -> "Juan Carlos Perez"). Misma regla que EntityLibrary.NombresPropios (y que aplica el Portal
   Deportivo): de, del, la, las, los, y, e van en minuscula salvo al principio; guiones y apostrofos reinician la mayuscula;
-  "Mc" lleva mayuscula tambien en la letra siguiente.
+  "Mc" lleva mayuscula tambien en la letra siguiente, al inicio de la palabra y despues de un guion o apostrofo
+  ("McDonald", "Perez-McDonald").
 
   Es un script de UNA SOLA VEZ para datos cargados antes de que los portales normalizaran al guardar. No es una migracion:
   no se ejecuta solo.
@@ -10,14 +11,14 @@
   Uso:
     1. Cambiar la base en la linea USE.
     2. Correrlo tal cual: muestra que cambiaria (no modifica nada).
-    3. Si esta bien, poner @aplicar = 1 y correrlo de nuevo.
-  Los cambios quedan en la auditoria a nombre de @idUsuario (poner el id de usuario de quien lo corre).
+    3. Si esta bien, poner @aplicar = 1 y tu id de usuario en @idUsuario, y correrlo de nuevo.
+  Los cambios quedan en la auditoria a nombre de @idUsuario: es obligatorio al aplicar (no tiene valor por defecto).
 */
 USE [ClubCamionerosUnificadaV2];
 GO
 SET NOCOUNT ON;
 DECLARE @aplicar BIT = 0;
-DECLARE @idUsuario INT = 1;
+DECLARE @idUsuario INT = NULL;   -- el id de usuario de quien lo corre; obligatorio al aplicar
 
 IF OBJECT_ID('tempdb..#cambios') IS NOT NULL DROP TABLE #cambios;
 CREATE TABLE #cambios (id INT, campo VARCHAR(10), actual NVARCHAR(200), nuevo NVARCHAR(200));
@@ -48,12 +49,18 @@ BEGIN
             WHILE @i <= LEN(@palabra)
             BEGIN
                 SET @c = SUBSTRING(@palabra, @i, 1);
+                -- "Mc" al inicio de la palabra o de cada tramo: la letra siguiente tambien va en mayuscula
+                IF @mayus = 1 AND SUBSTRING(@palabra, @i, 2) = N'mc'
+                   AND SUBSTRING(@palabra, @i + 2, 1) COLLATE Latin1_General_CI_AI LIKE N'[a-z]'
+                BEGIN
+                    SET @cap = @cap + N'Mc' + UPPER(SUBSTRING(@palabra, @i + 2, 1));
+                    SET @i += 3; SET @mayus = 0;
+                    CONTINUE;
+                END
                 SET @cap = @cap + CASE WHEN @mayus = 1 THEN UPPER(@c) ELSE @c END;
                 SET @mayus = CASE WHEN @c IN (N'-', N'''', NCHAR(8217)) THEN 1 ELSE 0 END;
                 SET @i += 1;
             END
-            IF LEN(@cap) > 2 AND LEFT(@cap, 2) = N'Mc' AND SUBSTRING(@cap, 3, 1) LIKE N'[A-Za-z]'
-                SET @cap = N'Mc' + UPPER(SUBSTRING(@cap, 3, 1)) + SUBSTRING(@cap, 4, 200);
             SET @salida = @salida + CASE WHEN @n > 0 THEN N' ' ELSE N'' END + @cap;
         END
         SET @n += 1;
@@ -68,6 +75,9 @@ CLOSE cur; DEALLOCATE cur;
 SELECT id AS PK_id_persona, campo, actual, nuevo FROM #cambios ORDER BY id, campo;
 DECLARE @cantidad INT = (SELECT COUNT(*) FROM #cambios);
 PRINT CONCAT(N'Valores a cambiar: ', @cantidad);
+
+IF @aplicar = 1 AND @idUsuario IS NULL
+    THROW 50001, N'Indica @idUsuario (el id de usuario de quien corre el script): la auditoria queda a su nombre.', 1;
 
 IF @aplicar = 1
 BEGIN

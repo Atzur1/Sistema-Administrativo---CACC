@@ -1,4 +1,4 @@
-import { Component, NgZone, OnInit, DestroyRef, inject } from '@angular/core';
+import { Component, NgZone, OnInit, DestroyRef, HostListener, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
@@ -104,6 +104,12 @@ toggleSidebar() {
 
 closeSidebar() {
     this.ngZone.run(() => (this.sidebarOpen = false));
+}
+
+// Esc cierra el menú lateral en celulares (HU-098), como cualquier otro menú del portal.
+@HostListener('document:keydown.escape')
+cerrarSidebarConEsc() {
+    if (this.sidebarOpen) this.closeSidebar();
 }
 // Go back to the portals selection screen
 cambiarPortal() {

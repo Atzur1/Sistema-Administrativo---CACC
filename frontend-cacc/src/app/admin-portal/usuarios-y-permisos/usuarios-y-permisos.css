@@ -182,7 +182,6 @@
     color: var(--color-text);
     font: inherit;
     font-size: var(--font-md);
-    outline: 0;
     box-shadow: var(--shadow-rest);
     transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -471,8 +470,8 @@
 
 .kebab {
     display: inline-grid;
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
     place-items: center;
     padding: 0;
     border: 1px solid transparent;
@@ -585,6 +584,7 @@
 
 /* ===== EDITAR CANDIDATO (ícono en la fila) ===== */
 .icon-button {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -666,7 +666,6 @@
     font-family: inherit;
     font-size: var(--font-base);
     color: var(--color-text);
-    outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 

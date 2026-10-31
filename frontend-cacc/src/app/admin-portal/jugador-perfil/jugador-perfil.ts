@@ -11,6 +11,7 @@ import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepick
 import { HelpHint } from '../../shared/help-hint/help-hint';
 import { Cargando } from '../../shared/cargando/cargando';
 import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
+import { Ventana } from '../../shared/ventana/ventana';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 import { PaymentHistoryItemModel, PaymentHistoryModel, PaymentHistoryPartialPaymentModel } from '../../models/PaymentHistoryModel';
 
@@ -25,7 +26,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-jugador-perfil',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomDatepicker, HelpHint, Cargando, EstadoVacio],
+  imports: [CommonModule, FormsModule, CustomDatepicker, HelpHint, Cargando, EstadoVacio, Ventana],
   templateUrl: './jugador-perfil.html',
   styleUrl: './jugador-perfil.css',
 })
@@ -122,8 +123,8 @@ export class JugadorPerfil implements OnInit {
 
   // ===== Baja / reactivación y anulación de pagos (solo SuperAdmin, igual que esta pantalla) =====
 
-  // Mismo popup de confirmación que Becados y Descuentos y Deuda de Jugador: nada se graba hasta
-  // el botón de confirmar, y el error de la API se muestra adentro del popup.
+  // La ventana compartida (app-ventana) que usan Becados y Descuentos y Deuda de Jugador: nada se graba
+  // hasta el botón de confirmar, y el error de la API se muestra adentro.
   dialogo: DialogoPerfil | null = null;
   procesando = false;
   errorDialogo = '';
@@ -175,6 +176,66 @@ export class JugadorPerfil implements OnInit {
     this.dialogo = null;
     this.abonoAnular = null;
     this.errorDialogo = '';
+  }
+
+  // ===== Ventana compartida (app-ventana, HU-094): título y botón Confirmar según la acción =====
+
+  get tituloDialogo(): string {
+    switch (this.dialogo) {
+      case 'baja':
+        return 'Dar de baja';
+      case 'reactivar':
+        return 'Reactivar jugador';
+      default:
+        return 'Anular pago';
+    }
+  }
+
+  get textoConfirmarDialogo(): string {
+    switch (this.dialogo) {
+      case 'baja':
+        return 'Sí, dar de baja';
+      case 'reactivar':
+        return 'Sí, reactivar';
+      default:
+        return 'Sí, anular pago';
+    }
+  }
+
+  get textoEnCursoDialogo(): string {
+    switch (this.dialogo) {
+      case 'baja':
+        return 'Dando de baja…';
+      case 'reactivar':
+        return 'Reactivando…';
+      default:
+        return 'Anulando…';
+    }
+  }
+
+  // Mismas condiciones que tenían los botones de la ventana anterior.
+  get confirmarDialogoDeshabilitado(): boolean {
+    if (this.dialogo === 'baja') {
+      return !this.fechaBaja;
+    }
+    if (this.dialogo === 'anular') {
+      return !this.motivoValido;
+    }
+    return false;
+  }
+
+  confirmarDialogo() {
+    switch (this.dialogo) {
+      case 'baja':
+        this.confirmarBaja();
+        break;
+      case 'reactivar':
+        this.confirmarReactivar();
+        break;
+      case 'anular':
+        this.confirmarAnulacion();
+        break;
+    }
   }
 
   confirmarBaja() {

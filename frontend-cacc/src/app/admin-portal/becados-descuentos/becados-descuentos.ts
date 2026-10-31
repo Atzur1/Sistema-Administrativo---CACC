@@ -29,6 +29,8 @@ import {
   formatValidity,
   lastDayOfMonth,
   periodLabel,
+  PestanaBeneficios,
+  pestanaDe,
   statusLabel,
   statusToneClass,
 } from '../../models/DiscountModel';
@@ -148,15 +150,19 @@ export class BecadosDescuentos implements OnInit {
   estadoOptions: { value: DiscountStatus; label: string }[] = [
     { value: 'Active', label: 'Activa' },
     { value: 'Scheduled', label: 'Programada' },
-    // "Finalizados": llegó a su fecha de cierre sin que nadie la cortara antes. Distinto
+    // "Finalizada": llegó a su fecha de cierre sin que nadie la cortara antes. Distinto
     // de Cancelada (interrumpida antes de tiempo) y de Anulada (nunca debió otorgarse) —
     // ese filtro es el suyo propio, este es solo para las que corrieron su curso completo.
-    { value: 'Expired', label: 'Finalizados' },
+    { value: 'Expired', label: 'Finalizada' },
     { value: 'Cancelled', label: 'Cancelada' },
     { value: 'Voided', label: 'Anulada' },
   ];
 
   motivoOptions = ['Becado', 'Descuento'];
+
+  // Pestañas de la tabla (HU-101): Vigentes es lo que rige hoy o va a regir; Historial, lo que ya terminó
+  // (finalizada, cancelada o anulada). Arranca en Vigentes, que es lo que se busca casi siempre.
+  pestana = signal<PestanaBeneficios>('vigentes');
 
   page = 1;
   readonly pageSize = 10;
@@ -275,11 +281,42 @@ export class BecadosDescuentos implements OnInit {
   // (mismo criterio que el resto del sistema, ej. Deudas y Morosidad), y de acá para
   // abajo es filtrar/paginar en el cliente sobre esa misma lista en memoria.
 
+  // Lo que muestra la pestaña elegida, antes de los filtros
+  get rowsDePestana(): DiscountModel[] {
+    return this.benefitRows().filter((row) => pestanaDe(row.status) === this.pestana());
+  }
+
+  get cantidadVigentes(): number {
+    return this.benefitRows().filter((row) => pestanaDe(row.status) === 'vigentes').length;
+  }
+
+  get cantidadHistorial(): number {
+    return this.benefitRows().filter((row) => pestanaDe(row.status) === 'historial').length;
+  }
+
+  // El filtro de estado ofrece solo los estados que puede haber en la pestaña elegida
+  get estadoOptionsDePestana(): { value: DiscountStatus; label: string }[] {
+    return this.estadoOptions.filter((option) => pestanaDe(option.value) === this.pestana());
+  }
+
+  // La búsqueda y el motivo se mantienen al cambiar de pestaña; el estado solo si existe en la nueva.
+  cambiarPestana(pestana: PestanaBeneficios) {
+    if (pestana === this.pestana()) {
+      return;
+    }
+    this.pestana.set(pestana);
+    const estado = this.filterForm.value.estado as DiscountStatus | null;
+    if (estado && pestanaDe(estado) !== pestana) {
+      this.filterForm.patchValue({ estado: null });
+    }
+    this.page = 1;
+  }
+
   get filteredRows(): DiscountModel[] {
     const { busqueda, estado, motivo } = this.filterForm.value;
     const term = normalizeText((busqueda ?? '').trim().toLowerCase());
 
-    return this.benefitRows().filter((row) => {
+    return this.rowsDePestana.filter((row) => {
       if (estado && row.status !== estado) {
         return false;
       }

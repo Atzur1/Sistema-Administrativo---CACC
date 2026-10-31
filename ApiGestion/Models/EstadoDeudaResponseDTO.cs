@@ -22,13 +22,7 @@ public sealed class EstadoDeudaResponseDTO
     {
         Dni = estado.Dni,
         IdJugador = estado.IdJugador,
-        Estado = estado.Estado switch
-        {
-            EstadoDeportivo.Habilitado => "habilitado",
-            EstadoDeportivo.SoloEntrenamientos => "solo_entrenamientos",
-            EstadoDeportivo.Inhabilitado => "inhabilitado",
-            _ => "baja"
-        },
+        Estado = EstadoDeportivoTexto.De(estado.Estado),
         AccesoPermitido = estado.AccesoPermitido,
         FechaBaja = estado.FechaBaja?.ToString("yyyy-MM-dd")
     };

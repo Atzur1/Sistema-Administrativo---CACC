@@ -8,7 +8,8 @@ namespace ServiceLibrary
     //  - Al menos 10 caracteres (y no más de 128).
     //  - Letras y números.
     //  - No puede contener el DNI, el nombre, el apellido ni el usuario del correo de la persona.
-    //  - No puede ser una de las contraseñas más usadas (ni el nombre del club).
+    //  - No puede contener el nombre del club ("camioneros", "cacc") ni ser una de las contraseñas más usadas
+    //    (con o sin números al final).
     public static class PoliticaContrasenia
     {
         public const int LongitudMinima = 10;
@@ -32,6 +33,21 @@ namespace ServiceLibrary
             "welcome123", "letmein123", "monkey12345", "dragon12345", "sunshine12", "princess12", "master12345",
         };
 
+        // El nombre del club, en cualquier parte de la contraseña y con cualquier separador ("Camioneros-1931",
+        // "C.A.C.C.2026"): se busca ya normalizada, sin símbolos.
+        private static readonly string[] NombresDelClub = { "camioneros", "cacc" };
+
+        // Palabras de las listas de contraseñas más usadas. Se comparan contra la contraseña sin los números del
+        // final, así "Qwerty12345" y "Argentina2027" caen igual que "qwerty1234" o "argentina2026".
+        private static readonly HashSet<string> BasesComunes = new(StringComparer.Ordinal)
+        {
+            "qwerty", "qwertyuiop", "asdfghjkl", "zxcvbnm", "azerty", "password", "passw0rd", "contrasena", "clave",
+            "abcdef", "abcdefg", "iloveyou", "football", "futbol", "argentina", "boca", "bocajuniors", "river",
+            "riverplate", "racing", "independiente", "sanlorenzo", "talleres", "belgrano", "cordoba", "admin",
+            "administrador", "superadmin", "usuario", "bienvenido", "welcome", "letmein", "monkey", "dragon",
+            "sunshine", "princess", "master", "shadow", "baseball", "mustang", "trustno",
+        };
+
         // Lista de lo que no cumple, en el orden en que conviene leerlo; vacía si la contraseña sirve.
         public static IReadOnlyList<string> Validar(string? contrasenia, DatosTitular titular)
         {
@@ -48,7 +64,9 @@ namespace ServiceLibrary
             string normalizada = Normalizar(valor);
             if (titular.DatosPersonales().Select(Normalizar).Any(dato => dato.Length >= LargoMinimoDeDatoPersonal && normalizada.Contains(dato)))
                 problemas.Add("No puede contener tu DNI, tu nombre, tu apellido ni tu correo.");
-            if (Comunes.Contains(normalizada))
+            if (NombresDelClub.Any(normalizada.Contains))
+                problemas.Add("No puede contener el nombre del club.");
+            if (Comunes.Contains(normalizada) || BasesComunes.Contains(normalizada.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')))
                 problemas.Add("Es una contraseña demasiado común. Elegí otra.");
 
             return problemas;
@@ -74,9 +92,14 @@ namespace ServiceLibrary
         {
             if (!string.IsNullOrWhiteSpace(Dni)) yield return Dni;
             if (!string.IsNullOrWhiteSpace(Email)) yield return Email.Split('@')[0];
-            // Cada palabra del nombre y del apellido por separado ("Juan Pablo" -> "juan", "pablo").
+            // Cada palabra del nombre y del apellido por separado ("Juan Pablo" -> "juan", "pablo"), y también cada
+            // tramo de un apellido compuesto con guion ("Pérez-Gómez" -> "perez", "gomez").
             foreach (var parte in $"{Nombre} {Apellido}".Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
                 yield return parte;
+                foreach (var tramo in parte.Split(new[] { '-', '\'', '’' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    yield return tramo;
+            }
         }
     }
 }

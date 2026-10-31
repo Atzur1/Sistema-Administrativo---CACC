@@ -1,0 +1,33 @@
+<div class="filter-bar" role="search" [attr.aria-label]="etiqueta">
+  <div class="filter-bar-row">
+    @if (textoBusqueda) {
+      <label class="filter-bar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m20 20-4-4"></path>
+        </svg>
+        <input type="search" [value]="texto" [placeholder]="textoBusqueda" [attr.aria-label]="textoBusqueda"
+               (input)="alEscribir($any($event.target).value)" (keydown.enter)="buscarAhora($event)" />
+      </label>
+    }
+
+    <ng-content />
+
+    <button type="button" class="boton boton-fantasma filter-bar-clear" [disabled]="filtrosActivos.length === 0"
+            (click)="limpiar.emit()">Limpiar filtros</button>
+  </div>
+
+  <ng-content select="[filterBarMore]" />
+
+  <div class="filter-bar-status" aria-live="polite">
+    @for (filtro of filtrosActivos; track filtro.key) {
+      <span class="filter-bar-chip">
+        {{ filtro.label }}
+        <button type="button" [attr.aria-label]="'Quitar filtro: ' + filtro.label"
+                (click)="quitarFiltro.emit(filtro.key)">×</button>
+      </span>
+    }
+    <ng-content select="[filterBarNote]" />
+  </div>
+</div>

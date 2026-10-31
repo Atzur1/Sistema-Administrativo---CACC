@@ -47,7 +47,6 @@
     padding: 0 var(--space-1) 0 var(--space-3);
     border: 0;
     background: transparent;
-    outline: none;
     font-family: inherit;
     font-size: var(--font-md);
     font-weight: 400;
@@ -129,6 +128,7 @@
 }
 
 .dp-nav {
+    position: relative;
     width: 32px;
     height: 32px;
     flex-shrink: 0;

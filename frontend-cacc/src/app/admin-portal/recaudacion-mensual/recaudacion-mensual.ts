@@ -1,5 +1,5 @@
 import {
-    ChangeDetectorRef, Component, DestroyRef, ElementRef, HostListener, NgZone, inject, signal,
+    ChangeDetectorRef, Component, DestroyRef, NgZone, inject, signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,6 +12,9 @@ import { CollectionPeriodModel, PeriodPaymentModel } from '../../models/Collecti
 import { PagosService } from '../../services/pagos';
 import { triggerBlobDownload } from '../../shared/download-file';
 import { animateCountUp } from '../../shared/count-up';
+import { ExportFormat, ExportMenu } from '../../shared/export-menu/export-menu';
+import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
+import { LatestRequest } from '../../shared/latest-request';
 
 // Mismo formateador que usan Cuotas y pagos y Actualización de aranceles, para que
 // un monto se lea igual en todo el portal ("$5.000.000", sin centavos).
@@ -49,7 +52,7 @@ const DONUT_CIRCUNFERENCIA = 2 * Math.PI * DONUT_RADIO;
 @Component({
     selector: 'app-recaudacion-mensual',
     standalone: true,
-    imports: [CommonModule, FormsModule, CustomSelect, Cargando, EstadoVacio],
+    imports: [CommonModule, FormsModule, CustomSelect, Cargando, EstadoVacio, ExportMenu, FilterBar],
     templateUrl: './recaudacion-mensual.html',
     styleUrl: './recaudacion-mensual.css',
 })
@@ -57,15 +60,16 @@ export class RecaudacionMensual {
 
     private zone = inject(NgZone);
     private destroyRef = inject(DestroyRef);
-    private elementRef = inject(ElementRef);
     private cdr = inject(ChangeDetectorRef);
     private notifications = inject(NotificationService);
     private recaudacionService = inject(RecaudacionService);
     private pagosService = inject(PagosService);
 
-    // Menú "Exportar Reporte": el archivo lo arma el servidor con los mismos
+    // HU-097: solo vale la respuesta del último período pedido; cambiar de mes rápido cancela el pedido anterior.
+    private readonly consultaPeriodo = new LatestRequest();
+
+    // Menú "Exportar Reporte" (compartido): el archivo lo arma el servidor con los mismos
     // datos del período que se están viendo, filtro de categoría incluido.
-    exportMenuOpen = false;
     exportando = false;
 
     // La categoría trae las 13 del club, vengan o no con pagos en el período (HU-020 ya expone el catálogo
@@ -107,7 +111,10 @@ export class RecaudacionMensual {
 
         this.cargarCategorias();
         this.cargarPeriodo();
-        this.destroyRef.onDestroy(() => this.cancelarAnimacion());
+        this.destroyRef.onDestroy(() => {
+            this.cancelarAnimacion();
+            this.consultaPeriodo.cancel();
+        });
     }
 
     // En el año en curso solo se ofrecen los meses que ya empezaron.
@@ -164,6 +171,18 @@ export class RecaudacionMensual {
         return this.categoriaSeleccionada !== '';
     }
 
+    // HU-097: el período (mes y año) siempre está puesto y no es un filtro que se quite; la categoría sí.
+    private readonly filtrosCache = new ActiveFiltersCache();
+    get filtrosActivos(): ActiveFilter[] {
+        if (!this.hayFiltros) return this.filtrosCache.get([]);
+        const categoria = this.categorias.find((c) => String(c.value) === this.categoriaSeleccionada);
+        return this.filtrosCache.get([{ key: 'categoria', label: `Categoría: ${categoria?.label ?? this.categoriaSeleccionada}` }]);
+    }
+
+    quitarFiltro(key: string): void {
+        if (key === 'categoria') this.limpiarFiltros();
+    }
+
     get periodoLabel(): string {
         return `${this.mesSeleccionado} ${this.anioSeleccionado}`;
     }
@@ -178,16 +197,11 @@ export class RecaudacionMensual {
         return CURRENCY_FULL.format(valor);
     }
 
-    toggleExportMenu(): void {
-        this.zone.run(() => (this.exportMenuOpen = !this.exportMenuOpen));
-    }
-
     // Exporta el período que se está viendo, con el mismo filtro de categoría
     // aplicado: lo que se descarga coincide con lo que está en pantalla.
-    exportarRecaudacion(formato: 'pdf' | 'csv'): void {
+    exportarRecaudacion(formato: ExportFormat): void {
         if (this.exportando) return;
 
-        this.exportMenuOpen = false;
         this.exportando = true;
 
         const mes = MESES.indexOf(this.mesSeleccionado) + 1;
@@ -212,19 +226,6 @@ export class RecaudacionMensual {
         });
     }
 
-    // Cierra el menú Exportar si el click fue afuera. Busca ".export-wrap"
-    // puntualmente (no todo el host del componente, que es el dashboard entero)
-    // porque si no, cualquier click en la pantalla quedaría "adentro".
-    @HostListener('document:click', ['$event'])
-    onDocumentClick(event: MouseEvent): void {
-        if (!this.exportMenuOpen) return;
-
-        const wrap = this.elementRef.nativeElement.querySelector('.export-wrap');
-        if (wrap && !wrap.contains(event.target as Node)) {
-            this.zone.run(() => (this.exportMenuOpen = false));
-        }
-    }
-
     private cargarCategorias(): void {
         this.pagosService.getCategorias().subscribe({
             next: (categorias) => {
@@ -245,7 +246,7 @@ export class RecaudacionMensual {
         this.cargando = true;
         this.huboError = false;
 
-        this.recaudacionService.getDelPeriodo(this.anioSeleccionado, mes, idCategoria).subscribe({
+        this.consultaPeriodo.run(this.recaudacionService.getDelPeriodo(this.anioSeleccionado, mes, idCategoria), {
             next: (periodo) => {
                 this.datos = periodo;
                 this.filas = periodo.detalle;
