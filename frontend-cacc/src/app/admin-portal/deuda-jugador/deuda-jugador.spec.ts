@@ -611,7 +611,7 @@ describe('DeudaJugador - estado de cuenta (HU-024)', () => {
   });
 
   it('el total es el del estado de cuenta: una inscripción pendiente no lo suma', async () => {
-    const inscripcion = { ...deudaDe(20, 'Octubre 2026', 50000), concepto: 'Inscripcion' };
+    const inscripcion = { ...deudaDe(20, 'Inscripción 2026', 50000), concepto: 'Inscripcion' as const };
     const { el } = await crear({ cuotas: [[MARZO, ABRIL]], deuda: [[...DEUDA_INICIAL.slice(0, 2), inscripcion]] });
 
     expect(totalAdeudado(el)).toMatch(/\$\s*170\.000/);
@@ -774,3 +774,37 @@ function vencimientoComoLaApi(primerDiaDelMes: string): string {
   const siguiente = new Date(anio, mes, 10);
   return `${siguiente.getFullYear()}-${String(siguiente.getMonth() + 1).padStart(2, '0')}-10`;
 }
+
+// La inscripción (anual) y la cuota del mismo mes se distinguen en la deuda y la inscripción no se cobra como una cuota.
+describe('DeudaJugador - inscripción y cuota en la deuda pendiente', () => {
+  const cuotaDeOctubre = { ...deudaDe(30, 'Octubre 2026', 100000), montoOriginal: 100000, concepto: 'Cuota' as const };
+  const inscripcion = { ...deudaDe(31, 'Inscripción 2026', 70000), montoOriginal: 70000, concepto: 'Inscripcion' as const };
+
+  it('cada fila dice qué es: "Cuota" para la cuota e "Inscripción" para la inscripción', async () => {
+    const ctx = await crear({ deuda: [[cuotaDeOctubre, inscripcion]] });
+    const filas = Array.from(ctx.el.querySelectorAll('.cuota-row')).map((f) => texto(f));
+
+    const deLaCuota = filas.find((f) => f.includes('Octubre 2026'))!;
+    const deLaInscripcion = filas.find((f) => f.includes('Inscripción 2026'))!;
+    expect(deLaCuota).toContain('Cuota: $ 100.000');
+    expect(deLaInscripcion).toContain('Inscripción: $ 70.000');
+    expect(deLaInscripcion).not.toContain('Cuota:');
+  });
+
+  it('la inscripción no tiene "Pagar saldo": se cobra desde Cuotas y Pagos, y la cuota sí lo tiene', async () => {
+    const ctx = await crear({ deuda: [[cuotaDeOctubre, inscripcion]] });
+    const filas = Array.from(ctx.el.querySelectorAll('.cuota-row'));
+
+    const deLaCuota = filas.find((f) => texto(f).includes('Octubre 2026'))!;
+    const deLaInscripcion = filas.find((f) => texto(f).includes('Inscripción 2026'))!;
+    expect(deLaCuota.querySelector('.pagar-button')).not.toBeNull();
+    expect(deLaInscripcion.querySelector('.pagar-button')).toBeNull();
+    expect(texto(deLaInscripcion)).toContain('Cuotas y Pagos');
+  });
+
+  it('una inscripción pendiente no se marca como "Vencida" con la regla del día 10 de las cuotas', async () => {
+    const ctx = await crear({ deuda: [[inscripcion]] });
+
+    expect(texto(ctx.el.querySelector('.cuota-row'))).not.toContain('Vencida');
+  });
+});

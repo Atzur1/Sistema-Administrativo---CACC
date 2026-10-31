@@ -793,9 +793,19 @@ namespace DaoLibrary
 
         // Detalle de deuda de un jugador: cada cuota todavía pendiente (estado = 0), con lo que
         // ya abonó para ese período (estado = 1, mismo mes/año) y cuánto le sigue faltando.
+        // La inscripcion se nombra "Inscripcion 2026" (es anual) y no con el mes de su vencimiento: asi no se confunde con la
+        // cuota de ese mes ni se la cobra como si lo fuera.
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador)
         {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            return ObtenerDeudaDetalleCore(conexion, null, idJugador);
+        }
+
+        internal static IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalleCore(SqlConnection conexion, SqlTransaction? transaccion, int idJugador)
+        {
             var pendientes = new List<CuotaPendienteDetalle>();
+            // Mes de vencimiento de cada cargo, para emparejarle sus abonos aunque el nombre mostrado sea otro.
+            var mesDe = new Dictionary<int, string>();
 
             // El saldo pendiente sale ya con el beneficio de Becados y Descuentos aplicado (si el
             // jugador tiene uno activo cuya vigencia cubre el mes de esta cuota) — no importa que
@@ -810,9 +820,7 @@ namespace DaoLibrary
                 WHERE pg.FK_id_jugador = @idJugador AND pg.estado = 0
                 ORDER BY pg.fecha_vencimiento, pg.concepto";
 
-            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
-
-            using (SqlCommand comando = new SqlCommand(queryPendientes, conexion))
+            using (SqlCommand comando = new SqlCommand(queryPendientes, conexion, transaccion))
             {
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
                 using SqlDataReader reader = comando.ExecuteReader();
@@ -821,12 +829,15 @@ namespace DaoLibrary
                     var periodoBase = Convert.ToDateTime(reader["fecha_vencimiento"]);
                     var tieneBeneficio = reader["motivo"] != DBNull.Value;
                     var saldoAjustado = Convert.ToDecimal(reader["saldo_ajustado"]);
+                    var conceptoPendiente = reader["concepto"].ToString()?.Trim() ?? "";
+                    var idPendiente = Convert.ToInt32(reader["PK_id_pago"]);
+                    mesDe[idPendiente] = CalendarioCuotas.NombreDelPeriodo(periodoBase);
 
                     pendientes.Add(new CuotaPendienteDetalle
                     {
-                        IdPago = Convert.ToInt32(reader["PK_id_pago"]),
-                        Periodo = CalendarioCuotas.NombreDelPeriodo(periodoBase),
-                        Concepto = reader["concepto"].ToString()?.Trim() ?? "",
+                        IdPago = idPendiente,
+                        Periodo = conceptoPendiente == "Inscripcion" ? $"Inscripción {periodoBase.Year}" : mesDe[idPendiente],
+                        Concepto = conceptoPendiente,
                         MontoOriginal = Convert.ToDecimal(reader["monto_base"]),
                         SaldoPendiente = saldoAjustado < 0 ? 0 : saldoAjustado,
                         TieneBeneficio = tieneBeneficio,
@@ -853,7 +864,7 @@ namespace DaoLibrary
                 WHERE FK_id_jugador = @idJugador AND estado = 1 AND fecha_vencimiento IS NOT NULL
                 ORDER BY fecha_pago";
 
-            using (SqlCommand comando = new SqlCommand(queryAbonos, conexion))
+            using (SqlCommand comando = new SqlCommand(queryAbonos, conexion, transaccion))
             {
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
                 using SqlDataReader reader = comando.ExecuteReader();
@@ -863,7 +874,7 @@ namespace DaoLibrary
                     var concepto = reader["concepto"].ToString()?.Trim() ?? "";
                     var cuota = pendientes.FirstOrDefault(c =>
                         c.Concepto == concepto
-                        && c.Periodo == CalendarioCuotas.NombreDelPeriodo(fechaVencimiento));
+                        && mesDe[c.IdPago] == CalendarioCuotas.NombreDelPeriodo(fechaVencimiento));
 
                     cuota?.Abonos.Add(new AbonoDetalle
                     {

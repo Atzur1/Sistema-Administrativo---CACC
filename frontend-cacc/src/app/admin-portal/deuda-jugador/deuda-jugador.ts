@@ -515,6 +515,11 @@ export class DeudaJugador implements OnInit, OnDestroy {
     return CURRENCY_FULL.format(valor);
   }
 
+  // La inscripcion es anual y se cobra aparte (Cuotas y Pagos > Inscripcion): aca solo se muestra, no se paga como una cuota.
+  esInscripcion(cuota: PendingFeeDetailModel): boolean {
+    return cuota.concepto === 'Inscripcion';
+  }
+
   // La cuota no trae una fecha de vencimiento propia, solo "Agosto 2026": vence el 10 del mes
   // siguiente al que nombra (regla del club, la misma que aplica la API).
   private vencimientoDe(periodo: string): Date | null {

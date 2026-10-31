@@ -255,7 +255,7 @@
 
                 <div class="cuota-row-text">
                   <span class="cuota-periodo">{{ cuota.periodo }}</span>
-                  <span class="cuota-original">Cuota: {{ formatMonto(cuota.montoOriginal) }}</span>
+                  <span class="cuota-original">{{ esInscripcion(cuota) ? 'Inscripción' : 'Cuota' }}: {{ formatMonto(cuota.montoOriginal) }}</span>
                 </div>
               </div>
 
@@ -279,7 +279,9 @@
                   <span class="saldo-monto">{{ formatMonto(cuota.saldoPendiente) }}</span>
                 </div>
 
-                @if (pagandoId !== cuota.idPago) {
+                @if (esInscripcion(cuota)) {
+                  <span class="cuota-original">Se cobra desde Cuotas y Pagos, en la solapa Inscripción</span>
+                } @else if (pagandoId !== cuota.idPago) {
                   <button type="button" class="boton boton-secundario pagar-button" (click)="abrirPago(cuota)">
                     <svg
                       viewBox="0 0 24 24"

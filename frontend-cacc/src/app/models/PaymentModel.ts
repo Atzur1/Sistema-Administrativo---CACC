@@ -85,7 +85,9 @@ export interface PartialPaymentDetailModel {
 
 export interface PendingFeeDetailModel {
   idPago: number;
+  // "Octubre 2026" para una cuota; "Inscripción 2026" para la inscripción (es anual).
   periodo: string;
+  concepto?: 'Cuota' | 'Inscripcion';
   montoOriginal: number;
   saldoPendiente: number; // Ya con el beneficio de Becados y Descuentos aplicado, si tiene uno
   tieneBeneficio: boolean;
