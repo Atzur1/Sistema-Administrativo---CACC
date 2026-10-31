@@ -20,6 +20,7 @@ import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepick
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { TariffHistoryItemModel } from '../../models/TariffModel';
 import { IncreaseMode, calculateNewTariff, needsCurrentTariff, sanitizePercentage } from './tariff-increase';
+import { SECCIONES } from '../secciones';
 
 Chart.register(...registerables);
 
@@ -58,6 +59,9 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
     styleUrl: './actualizacion-aranceles.css',
 })
 export class ActualizacionAranceles implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['actualizacion-aranceles'];
+
 
     headerMetrics = [
         { value: '—', label: 'Arancel masculino' },

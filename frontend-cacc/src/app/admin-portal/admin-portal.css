@@ -289,14 +289,28 @@
   padding-left: var(--space-5);
 }
 
-/* Ítem activo: brillo verde esmeralda y borde iluminado — visible siempre
-   igual, colapsado y expandido, ya no hace falta ocultarlo en un estado. */
-.nav-item.active {
-  background: linear-gradient(90deg, rgba(0, 179, 85, 0.35) 0%, rgba(0, 127, 62, 0.08) 100%);
+/* Ítem activo (HU-103): fondo sólido + barra lateral, igual colapsado y
+   expandido. Antes era un degradé verde translúcido que, en la parte alta del
+   sidebar (verde institucional), casi no se distinguía del fondo ni del hover.
+   El verde más oscuro de la marca se separa del degradé en toda su altura y
+   deja el texto blanco en ~10:1; la barra en verde claro tiene ~3,6:1 contra
+   ese fondo. El hover no lo apaga: esta regla va después de .nav-item:hover. */
+.nav-item.active,
+.nav-item.active:hover {
+  background: var(--color-brand-darkest);
   color: #ffffff;
   font-weight: 600;
-  border-left: 3px solid #00d666;
+  border-left-color: var(--color-brand-light);
   box-shadow: var(--shadow-raised);
+}
+
+/* Foco por teclado en el sidebar: el contorno global del portal (styles.css)
+   es el verde institucional, el mismo del fondo, y con outline-offset hacia
+   afuera el overflow del sidebar le cortaba el borde izquierdo. Acá va en
+   blanco y hacia adentro. */
+.sidebar :is(a, button):focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -2px;
 }
 
 .nav-icon {
@@ -573,6 +587,24 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  /* El tramo de la pantalla de detalle no entra en una tablet junto al
+     usuario: queda la sección, y el h1 y el botón "Volver" dicen el resto. */
+  .breadcrumb-separator-sub,
+  .breadcrumb-subpagina {
+    display: none;
+  }
+
+  /* HU-103: en una tablet el nombre y el correo del usuario dejaban sin lugar
+     al contexto (a 600px "Actualización de Aranceles" se cortaba y el nombre
+     del portal partía en dos líneas). Queda el avatar con las iniciales. */
+  .user-info {
+    display: none;
+  }
+
+  .breadcrumb-portal {
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 520px) {
@@ -580,13 +612,14 @@
     padding: 0 var(--space-3);
   }
 
-  .user-info,
-  .breadcrumb-portal,
-  .breadcrumb-separator {
+  /* Sin lugar para el contexto completo: queda el portal y no el nombre de la
+     pantalla, que es justo el h1 que aparece debajo (HU-103: sin duplicado). */
+  .breadcrumb-separator,
+  .breadcrumb-current {
     display: none;
   }
 
-  .breadcrumb-current {
+  .breadcrumb-portal {
     font-size: var(--font-base);
   }
 }

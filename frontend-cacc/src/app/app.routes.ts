@@ -41,10 +41,14 @@ export const routes: Routes = [
       // HU-022: panel financiero. Lo protege adminGuard (rol 1 o 2) del padre; el
       // dato accesoDenegado es el mensaje que ve quien fuerza la URL sin ese rol.
       { path: 'cuotas-pagos', component: CuotasPagos, data: { accesoDenegado: FINANCIAL_ACCESS_DENIED } },
-      { path: 'jugadores/:id', component: JugadorPerfil, canActivate: [superAdminGuard] },
+      // seccion: el ítem del menú que queda activo en las pantallas de detalle (HU-103). Es la misma a la que
+      // vuelve el botón "Volver" de cada una; subpagina es el último tramo de la barra superior.
+      { path: 'jugadores/:id', component: JugadorPerfil, canActivate: [superAdminGuard],
+        data: { seccion: 'actividad-movimientos', subpagina: 'Perfil de Jugador' } },
       // Sin superAdminGuard: es el drill-down al que navega Deudas y Morosidad
       // (rol 1 y 2) al tocar un deudor.
-      { path: 'jugadores/:id/deuda', component: DeudaJugador },
+      { path: 'jugadores/:id/deuda', component: DeudaJugador,
+        data: { seccion: 'cuotas-pagos', subpagina: 'Deuda Pendiente' } },
       { path: 'reportes', component: Reportes, canActivate: [superAdminGuard] },
       { path: 'actualizacion-aranceles', component: ActualizacionAranceles, canActivate: [superAdminGuard] },
       { path: 'becados-descuentos', component: BecadosDescuentos },
