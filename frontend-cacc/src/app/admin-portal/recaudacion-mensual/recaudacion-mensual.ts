@@ -18,6 +18,7 @@ import { ExportFormat } from '../../shared/export-menu/export-menu';
 import { ReportExportMenu as ExportMenu } from '../../shared/export-menu/report-export-menu';
 import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
 import { LatestRequest } from '../../shared/latest-request';
+import { SECCIONES } from '../secciones';
 
 // Mismo formateador que usan Cuotas y pagos y Actualización de aranceles, para que
 // un monto se lea igual en todo el portal ("$5.000.000", sin centavos).
@@ -75,6 +76,9 @@ export function formatFechaPago(fila: Pick<PeriodPaymentModel, 'fechaPago' | 'fe
     styleUrl: './recaudacion-mensual.css',
 })
 export class RecaudacionMensual {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['recaudacion-mensual'];
+
 
     private zone = inject(NgZone);
     private destroyRef = inject(DestroyRef);

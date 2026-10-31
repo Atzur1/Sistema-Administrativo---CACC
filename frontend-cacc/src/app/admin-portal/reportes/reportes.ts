@@ -13,6 +13,7 @@ import { triggerBlobDownload } from '../../shared/download-file';
 import { formatCompactCurrency } from '../../shared/format-currency';
 import { ExportFormat } from '../../shared/export-menu/export-menu';
 import { ReportExportMenu as ExportMenu } from '../../shared/export-menu/report-export-menu';
+import { SECCIONES } from '../secciones';
 
 type ReportCardId = 'deudas' | 'cuotas' | 'becados' | 'aranceles';
 
@@ -42,6 +43,9 @@ interface ReportCard {
     styleUrl: './reportes.css',
 })
 export class Reportes implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['reportes'];
+
     // Signal (no un array plano + ChangeDetectorRef): esta app usa FetchBackend
     // por default y sus respuestas no siempre disparan la detección de cambios
     // basada en zone.js (mismo problema ya resuelto en otras pantallas de acá).

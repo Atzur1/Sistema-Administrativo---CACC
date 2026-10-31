@@ -11,6 +11,7 @@ import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { Ventana } from '../../shared/ventana/ventana';
 import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
 import { LatestRequest } from '../../shared/latest-request';
+import { SECCIONES as SECCIONES_PORTAL } from '../secciones';
 
 interface AuditEvent {
   id: number;
@@ -163,6 +164,9 @@ type Datos = Record<string, unknown>;
   styleUrl: './auditoria.css',
 })
 export class Auditoria {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES_PORTAL['auditoria'];
+
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly ngZone = inject(NgZone);

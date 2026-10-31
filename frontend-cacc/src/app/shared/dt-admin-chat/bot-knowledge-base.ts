@@ -8,6 +8,7 @@
 // accede a Cuotas y Pagos, Deudas y Morosidad y Becados y Descuentos, así que
 // las intenciones marcadas superAdminOnly no se le ofrecen ni se le responden.
 import { normalizeText } from '../normalize-text';
+import { SECCIONES } from '../../admin-portal/secciones';
 
 export interface QuickAction {
     label: string;
@@ -59,12 +60,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Registrar un pago de cuota',
         steps: [
-            'Entrá a "Cuotas y pagos" y dejá la pestaña "Pago de cuota" en el panel "Registrar cobro".',
+            `Entrá a "${SECCIONES['cuotas-pagos']}" y dejá la pestaña "Pago de cuota" en el panel "Registrar cobro".`,
             'Buscá al jugador por nombre o DNI y completá período, año, monto y método.',
             'Confirmá el cobro. También podés tocar un jugador de "Pendientes de cobro" para pagar desde su deuda.',
         ],
         action: {
-            label: 'Ir a Cuotas y pagos',
+            label: `Ir a ${SECCIONES['cuotas-pagos']}`,
             route: '/admin/portal/cuotas-pagos',
             focusSelector: '#player',
         },
@@ -83,12 +84,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Cobrar una inscripción',
         steps: [
-            'Entrá a "Cuotas y pagos" y elegí la pestaña "Inscripción".',
+            `Entrá a "${SECCIONES['cuotas-pagos']}" y elegí la pestaña "Inscripción".`,
             'Buscá al jugador por nombre o DNI: vas a ver lo que ya abonó de la inscripción.',
             'Ingresá el monto a pagar ahora, elegí el método y confirmá.',
         ],
         action: {
-            label: 'Ir a Cuotas y pagos',
+            label: `Ir a ${SECCIONES['cuotas-pagos']}`,
             route: '/admin/portal/cuotas-pagos',
         },
         relatedIds: ['pagos', 'deudores'],
@@ -113,12 +114,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Descargar la lista de deudores',
         steps: [
-            'Entrá a "Deudas y Morosidad" y aplicá los filtros que necesites (categoría, estado o búsqueda).',
+            `Entrá a "${SECCIONES['deudas-morosidad']}" y aplicá los filtros que necesites (categoría, estado o búsqueda).`,
             'Tocá "Exportar" en el panel "Lista de deudores".',
             'Elegí PDF o CSV.',
         ],
         action: {
-            label: 'Ir a Deudas y Morosidad',
+            label: `Ir a ${SECCIONES['deudas-morosidad']}`,
             route: '/admin/portal/deudas-morosidad',
         },
         relatedIds: ['deudores', 'pagos'],
@@ -141,12 +142,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Ver deudores y morosidad',
         steps: [
-            'Entrá a "Deudas y Morosidad": ahí están la lista de deudores, los jugadores inhabilitados y la deuda por categoría.',
+            `Entrá a "${SECCIONES['deudas-morosidad']}": ahí están la lista de deudores, los jugadores inhabilitados y la deuda por categoría.`,
             'Filtrá por nombre o DNI, categoría o estado (también podés tocar una categoría del panel de deuda).',
             'Tocá un jugador para ver su deuda pendiente y registrar el pago de cada cuota.',
         ],
         action: {
-            label: 'Ir a Deudas y Morosidad',
+            label: `Ir a ${SECCIONES['deudas-morosidad']}`,
             route: '/admin/portal/deudas-morosidad',
         },
         relatedIds: ['pagos', 'exportar-deudores', 'becas'],
@@ -165,7 +166,7 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Buscar un jugador o socio',
         steps: [
-            'Entrá a "Cuotas y pagos": ahí está el buscador de jugadores.',
+            `Entrá a "${SECCIONES['cuotas-pagos']}": ahí está el buscador de jugadores.`,
             'Escribí el nombre o el DNI en el campo "Buscar por nombre o DNI".',
             'Elegí al jugador de las sugerencias para cobrarle, o tocá su fila en "Pendientes de cobro" para ver su deuda.',
         ],
@@ -195,12 +196,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Gestionar becas y descuentos',
         steps: [
-            'Entrá a "Becados y descuentos" y, en "Asignar bonificación", buscá al jugador.',
+            `Entrá a "${SECCIONES['becados-descuentos']}" y, en "Asignar bonificación", buscá al jugador.`,
             'Elegí el motivo, el tipo de valor (porcentaje o monto) y la vigencia, y guardá.',
             'En "Beneficios asignados" abrí un jugador para ver su historial, cancelar o anular. Editar es solo de SuperAdmin y solo en bonificaciones en curso (fecha de fin) o programadas.',
         ],
         action: {
-            label: 'Ir a Becados y descuentos',
+            label: `Ir a ${SECCIONES['becados-descuentos']}`,
             route: '/admin/portal/becados-descuentos',
         },
         relatedIds: ['pagos', 'deudores'],
@@ -223,12 +224,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Descargar reportes',
         steps: [
-            'Entrá a "Reportes" desde el menú lateral.',
+            `Entrá a "${SECCIONES['reportes']}" desde el menú lateral.`,
             'Elegí la tarjeta que necesitás: Deudas y Morosidad, Cuotas y Pagos, Becados y Descuentos o Aranceles.',
             'Tocá "Exportar" y elegí PDF o CSV.',
         ],
         action: {
-            label: 'Ir a Reportes',
+            label: `Ir a ${SECCIONES['reportes']}`,
             route: '/admin/portal/reportes',
         },
         relatedIds: ['deudores', 'metricas'],
@@ -249,12 +250,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Programar un nuevo arancel',
         steps: [
-            'Entrá a "Actualización de aranceles" y, en "Programar nuevo arancel", elegí a qué aplica: un género o una categoría (la categoría tiene prioridad sobre el género).',
+            `Entrá a "${SECCIONES['actualizacion-aranceles']}" y, en "Programar nuevo arancel", elegí a qué aplica: un género o una categoría (la categoría tiene prioridad sobre el género).`,
             'Ingresá el nuevo monto y la fecha desde la que entra en vigencia.',
             'Confirmá: queda en "Historial y aranceles programados". Hay un solo arancel por mes para cada género o categoría: para cambiar uno, cancelalo antes con el botón "Cancelar" del historial.',
         ],
         action: {
-            label: 'Ir a Actualización de aranceles',
+            label: `Ir a ${SECCIONES['actualizacion-aranceles']}`,
             route: '/admin/portal/actualizacion-aranceles',
         },
         relatedIds: ['becas', 'reportes'],
@@ -275,12 +276,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Ver métricas y estadísticas',
         steps: [
-            'Entrá a "Resumen General" desde el menú lateral.',
+            `Entrá a "${SECCIONES['resumen-general']}" desde el menú lateral.`,
             'Ahí ves la recaudación mensual, el estado de habilitación y la evolución de cobertura de pagos.',
             'También encontrás los jugadores con mayor deuda pendiente.',
         ],
         action: {
-            label: 'Ir a Resumen General',
+            label: `Ir a ${SECCIONES['resumen-general']}`,
             route: '/admin/portal/resumen-general',
         },
         relatedIds: ['reportes', 'deudores'],
@@ -299,12 +300,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Revisar pagos y actividad reciente',
         steps: [
-            'Entrá a "Actividad y Movimientos" desde el menú lateral.',
+            `Entrá a "${SECCIONES['actividad-movimientos']}" desde el menú lateral.`,
             'En "Pagos registrados" filtrá por jugador o estado.',
             'Mirá "Actividad reciente" para ver los últimos movimientos del club.',
         ],
         action: {
-            label: 'Ir a Actividad y Movimientos',
+            label: `Ir a ${SECCIONES['actividad-movimientos']}`,
             route: '/admin/portal/actividad-movimientos',
         },
         relatedIds: ['auditoria', 'metricas'],
@@ -323,12 +324,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Consultar la auditoría',
         steps: [
-            'Entrá a "Auditoría" desde el menú lateral.',
+            `Entrá a "${SECCIONES['auditoria']}" desde el menú lateral.`,
             'Filtrá por persona, sección, acción o fechas y tocá "Buscar".',
             'Abrí un registro para ver el detalle y comparar el "Antes" y el "Después".',
         ],
         action: {
-            label: 'Ir a Auditoría',
+            label: `Ir a ${SECCIONES['auditoria']}`,
             route: '/admin/portal/auditoria',
         },
         relatedIds: ['movimientos', 'usuarios'],
@@ -353,12 +354,12 @@ export const BOT_KNOWLEDGE_BASE: BotIntent[] = [
         ],
         title: 'Habilitar o quitar accesos al portal',
         steps: [
-            'Entrá a "Usuarios y permisos" desde el menú lateral.',
+            `Entrá a "${SECCIONES['usuarios']}" desde el menú lateral.`,
             'Para dar acceso: en "Candidatos para habilitar" tocá "Habilitar" y elegí el rol (SuperAdmin o Administrador).',
             'Para quitarlo, tocá "Deshabilitar" en "Cuentas habilitadas"; desde "Cuentas deshabilitadas" podés reactivarlo.',
         ],
         action: {
-            label: 'Ir a Usuarios y permisos',
+            label: `Ir a ${SECCIONES['usuarios']}`,
             route: '/admin/portal/usuarios',
         },
         relatedIds: ['auditoria', 'movimientos'],

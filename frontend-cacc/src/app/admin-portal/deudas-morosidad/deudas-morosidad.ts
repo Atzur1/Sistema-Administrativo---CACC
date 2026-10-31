@@ -20,6 +20,7 @@ import { ExportFormat } from '../../shared/export-menu/export-menu';
 import { ReportExportMenu as ExportMenu } from '../../shared/export-menu/report-export-menu';
 import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
 import { CategoryDebtModel, EstadoDeportivo, PaymentSummaryModel, PendingDebtorModel } from '../../models/PaymentModel';
+import { SECCIONES } from '../secciones';
 
 // One row in the debtors ranking table
 interface DebtorRow {
@@ -131,6 +132,9 @@ const SITUACION_BAJA = 'Dados de baja';
   styleUrl: './deudas-morosidad.css',
 })
 export class DeudasMorosidad implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['deudas-morosidad'];
+
   cargando = true;
 
   // Banner: valores globales del club por default; si hay una categoría

@@ -21,25 +21,26 @@
     </div>
 
     <!-- Navigation: agrupada por tipo de tarea, de lo que se usa todos los días a lo ocasional.
-         routerLink maneja la navegación y routerLinkActive resalta la sección actual.
+         routerLink maneja la navegación; esActiva() marca la sección de la ruta actual (también en sus
+         pantallas de detalle, ver data.seccion en app.routes.ts) con .active y aria-current="page".
          title: tooltip nativo cuando el sidebar está colapsado y el texto no se ve.
          El Administrador (rol 2) solo ve "Cobranza"; el resto es exclusivo de SuperAdmin.
-         Los nombres coinciden con el título de cada pantalla y con el de la barra superior. -->
-    <nav class="sidebar-nav">
+         Los nombres salen de secciones.ts, igual que la barra superior y el h1 de cada pantalla (HU-103). -->
+    <nav class="sidebar-nav" aria-label="Secciones del portal">
 
     @if (isSuperAdmin) {
     <!-- Inicio -->
     <div class="nav-group">
         <span class="nav-group-title">Inicio</span>
 
-        <a class="nav-item" routerLink="/admin/portal/resumen-general" routerLinkActive="active" title="Resumen General">
+        <a class="nav-item" routerLink="/admin/portal/resumen-general" [class.active]="esActiva('resumen-general')" [attr.aria-current]="esActiva('resumen-general') ? 'page' : null" [title]="secciones['resumen-general']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"></rect>
             <rect x="14" y="3" width="7" height="7"></rect>
             <rect x="14" y="14" width="7" height="7"></rect>
             <rect x="3" y="14" width="7" height="7"></rect>
         </svg>
-        <span>Resumen General</span>
+        <span>{{ secciones['resumen-general'] }}</span>
         </a>
     </div>
     }
@@ -48,29 +49,29 @@
     <div class="nav-group">
         <span class="nav-group-title">Cobranza</span>
 
-        <a class="nav-item" routerLink="/admin/portal/cuotas-pagos" routerLinkActive="active" title="Cuotas y Pagos">
+        <a class="nav-item" routerLink="/admin/portal/cuotas-pagos" [class.active]="esActiva('cuotas-pagos')" [attr.aria-current]="esActiva('cuotas-pagos') ? 'page' : null" [title]="secciones['cuotas-pagos']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
             <line x1="1" y1="10" x2="23" y2="10"></line>
         </svg>
-        <span>Cuotas y Pagos</span>
+        <span>{{ secciones['cuotas-pagos'] }}</span>
         </a>
 
-        <a class="nav-item" routerLink="/admin/portal/deudas-morosidad" routerLinkActive="active" title="Deudas y Morosidad">
+        <a class="nav-item" routerLink="/admin/portal/deudas-morosidad" [class.active]="esActiva('deudas-morosidad')" [attr.aria-current]="esActiva('deudas-morosidad') ? 'page' : null" [title]="secciones['deudas-morosidad']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
         </svg>
-        <span>Deudas y Morosidad</span>
+        <span>{{ secciones['deudas-morosidad'] }}</span>
         </a>
 
-        <a class="nav-item" routerLink="/admin/portal/becados-descuentos" routerLinkActive="active" title="Becados y Descuentos">
+        <a class="nav-item" routerLink="/admin/portal/becados-descuentos" [class.active]="esActiva('becados-descuentos')" [attr.aria-current]="esActiva('becados-descuentos') ? 'page' : null" [title]="secciones['becados-descuentos']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.59 13.41 12 22l-9-9V4a1 1 0 0 1 1-1h9l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
             <circle cx="7.5" cy="7.5" r="1.5"></circle>
         </svg>
-        <span>Becados y Descuentos</span>
+        <span>{{ secciones['becados-descuentos'] }}</span>
         </a>
     </div>
 
@@ -79,31 +80,31 @@
     <div class="nav-group">
         <span class="nav-group-title">Análisis</span>
 
-        <a class="nav-item" routerLink="/admin/portal/recaudacion-mensual" routerLinkActive="active" title="Recaudación Mensual">
+        <a class="nav-item" routerLink="/admin/portal/recaudacion-mensual" [class.active]="esActiva('recaudacion-mensual')" [attr.aria-current]="esActiva('recaudacion-mensual') ? 'page' : null" [title]="secciones['recaudacion-mensual']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="6" width="20" height="12" rx="2"></rect>
             <circle cx="12" cy="12" r="2.5"></circle>
             <path d="M6 12h.01"></path>
             <path d="M18 12h.01"></path>
         </svg>
-        <span>Recaudación Mensual</span>
+        <span>{{ secciones['recaudacion-mensual'] }}</span>
         </a>
 
-        <a class="nav-item" routerLink="/admin/portal/actividad-movimientos" routerLinkActive="active" title="Actividad y Movimientos">
+        <a class="nav-item" routerLink="/admin/portal/actividad-movimientos" [class.active]="esActiva('actividad-movimientos')" [attr.aria-current]="esActiva('actividad-movimientos') ? 'page' : null" [title]="secciones['actividad-movimientos']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
         </svg>
-        <span>Actividad y Movimientos</span>
+        <span>{{ secciones['actividad-movimientos'] }}</span>
         </a>
 
-        <a class="nav-item" routerLink="/admin/portal/reportes" routerLinkActive="active" title="Reportes">
+        <a class="nav-item" routerLink="/admin/portal/reportes" [class.active]="esActiva('reportes')" [attr.aria-current]="esActiva('reportes') ? 'page' : null" [title]="secciones['reportes']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
             <line x1="16" y1="13" x2="8" y2="13"></line>
             <line x1="16" y1="17" x2="8" y2="17"></line>
         </svg>
-        <span>Reportes</span>
+        <span>{{ secciones['reportes'] }}</span>
         </a>
     </div>
 
@@ -111,7 +112,7 @@
     <div class="nav-group">
         <span class="nav-group-title">Administración</span>
 
-        <a class="nav-item" routerLink="/admin/portal/actualizacion-aranceles" routerLinkActive="active" title="Actualización de Aranceles">
+        <a class="nav-item" routerLink="/admin/portal/actualizacion-aranceles" [class.active]="esActiva('actualizacion-aranceles')" [attr.aria-current]="esActiva('actualizacion-aranceles') ? 'page' : null" [title]="secciones['actualizacion-aranceles']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="21" x2="4" y2="14"></line>
             <line x1="4" y1="10" x2="4" y2="3"></line>
@@ -123,26 +124,26 @@
             <line x1="9" y1="8" x2="15" y2="8"></line>
             <line x1="17" y1="16" x2="23" y2="16"></line>
         </svg>
-        <span>Actualización de Aranceles</span>
+        <span>{{ secciones['actualizacion-aranceles'] }}</span>
         </a>
 
-        <a class="nav-item" routerLink="/admin/portal/usuarios" routerLinkActive="active" title="Usuarios y Permisos">
+        <a class="nav-item" routerLink="/admin/portal/usuarios" [class.active]="esActiva('usuarios')" [attr.aria-current]="esActiva('usuarios') ? 'page' : null" [title]="secciones['usuarios']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
         </svg>
-        <span>Usuarios y Permisos</span>
+        <span>{{ secciones['usuarios'] }}</span>
         </a>
 
-        <a class="nav-item" routerLink="/admin/portal/auditoria" routerLinkActive="active" title="Auditoría">
+        <a class="nav-item" routerLink="/admin/portal/auditoria" [class.active]="esActiva('auditoria')" [attr.aria-current]="esActiva('auditoria') ? 'page' : null" [title]="secciones['auditoria']">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="4" y="3" width="16" height="18" rx="2"></rect>
             <path d="M8 8h2M13 8h3M8 12h2M13 12h3M8 16h2"></path>
             <path d="m13 16 1.5 1.5L18 14"></path>
         </svg>
-        <span>Auditoría</span>
+        <span>{{ secciones['auditoria'] }}</span>
         </a>
     </div>
     }
@@ -194,10 +195,18 @@
     </button>
 
     <!-- "Cambiar portal" vive solo en el pie del menú: tenerlo también acá era un duplicado. -->
+    <!-- Contexto, no título (HU-103): el título de la pantalla es su h1. Por eso la barra siempre muestra el portal
+         y, en celulares chicos, solo el portal (ver el media query de 520px). -->
     <div class="topbar-breadcrumb">
-    <span class="breadcrumb-portal">Portal administrativo</span>
-    <span class="breadcrumb-separator">·</span>
+    <span class="breadcrumb-portal">{{ portal }}</span>
+    @if (currentPageTitle) {
+    <span class="breadcrumb-separator" aria-hidden="true">·</span>
     <span class="breadcrumb-current">{{ currentPageTitle }}</span>
+    }
+    @if (subpagina) {
+    <span class="breadcrumb-separator breadcrumb-separator-sub" aria-hidden="true">·</span>
+    <span class="breadcrumb-subpagina">{{ subpagina }}</span>
+    }
     </div>
     <div class="topbar-user">
     <app-notification-bell></app-notification-bell>
