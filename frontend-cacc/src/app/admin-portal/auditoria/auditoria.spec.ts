@@ -1,3 +1,4 @@
+import { ChangeDetectorRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -20,6 +21,14 @@ async function create(items: unknown[] = []) {
 
   const fixture = TestBed.createComponent(Auditoria);
   const http = TestBed.inject(HttpTestingController);
+  // Las pruebas cambian el estado llamando métodos o campos (no con clics), y la pantalla solo se vuelve a dibujar si
+  // está marcada (los componentes se revisan "OnPush" por defecto): cada detectChanges la marca primero, como un clic.
+  const vista = fixture.componentRef.injector.get(ChangeDetectorRef);
+  const detectar = fixture.detectChanges.bind(fixture);
+  fixture.detectChanges = () => {
+    vista.markForCheck();
+    detectar();
+  };
   // El constructor ya busca la primera página (vista por defecto, sin sección).
   http.expectOne((req) => req.url.endsWith('/auditoria/cambios')).flush({ page: 1, pageSize: 50, total: items.length, items });
   fixture.detectChanges();
@@ -400,23 +409,59 @@ describe('Auditoria - filtros', () => {
     expect(component.filtrosActivos.map((f) => f.clave)).toEqual(['entity']);
   });
 
+  // HU-097: la espera la hace la barra de filtros compartida (300 ms), escribiendo en su buscador.
   it('al escribir espera un momento antes de buscar, y busca una sola vez', async () => {
+    const { component, http, el } = await create();
     vi.useFakeTimers();
     try {
-      const { component, http } = await create();
+      const input = el.querySelector<HTMLInputElement>('app-filter-bar input[type="search"]')!;
+      const escribir = (texto: string) => {
+        input.value = texto;
+        input.dispatchEvent(new Event('input'));
+      };
 
-      component.email = 'a';
-      component.buscarAlEscribir();
-      component.email = 'an';
-      component.buscarAlEscribir();
+      escribir('a');
+      escribir('an');
+      vi.advanceTimersByTime(250);
       http.expectNone((r) => r.url.endsWith('/auditoria/cambios'));
 
-      vi.advanceTimersByTime(450);
+      vi.advanceTimersByTime(100);
       http.expectOne((r) => r.url.endsWith('/auditoria/cambios') && r.params.get('emailUsuario') === 'an')
         .flush({ page: 1, pageSize: 50, total: 0, items: [] });
+      expect(component.email).toBe('an');
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  // HU-097: una respuesta vieja nunca pisa la de la búsqueda más reciente.
+  it('una búsqueda nueva cancela la anterior, y su respuesta no se muestra', async () => {
+    const { component, http } = await create();
+
+    component.buscarPersona('ana');
+    const vieja = http.expectOne((r) => r.params.get('emailUsuario') === 'ana');
+    component.buscarPersona('juan');
+    const nueva = http.expectOne((r) => r.params.get('emailUsuario') === 'juan');
+
+    expect(vieja.cancelled).toBe(true);
+    nueva.flush({ page: 1, pageSize: 50, total: 1, items: [] });
+    expect(component.total).toBe(1);
+  });
+
+  it('las etiquetas y "Limpiar filtros" son las de la barra compartida', async () => {
+    const { component, el, fixture, http } = await create();
+    component.entity = 'PAGOS';
+    fixture.detectChanges();
+
+    const etiquetas = Array.from(el.querySelectorAll('.filter-bar-chip')).map((c) => c.textContent!.replace('×', '').trim());
+    expect(etiquetas).toEqual(['Sección: Pago']);
+    const limpiar = el.querySelector<HTMLButtonElement>('.filter-bar-clear')!;
+    expect(limpiar.textContent!.trim()).toBe('Limpiar filtros');
+
+    limpiar.click();
+    http.expectOne((r) => r.url.endsWith('/auditoria/cambios') && !r.params.has('entidad'))
+      .flush({ page: 1, pageSize: 50, total: 0, items: [] });
+    expect(component.entity).toBe('');
   });
 
   it('avisa que sin elegir una sección se muestran solo pagos y aranceles', async () => {

@@ -1,0 +1,132 @@
+:host {
+  display: block;
+}
+
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Pantallas anchas: una sola fila; "Limpiar filtros" siempre al final */
+.filter-bar-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.filter-bar-clear {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.filter-bar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 240px;
+  max-width: 360px;
+  min-width: 0;
+}
+
+.filter-bar-search svg {
+  position: absolute;
+  left: 12px;
+  width: 15px;
+  height: 15px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.filter-bar-search input {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--space-3) 0 calc(var(--space-6) + var(--space-1));
+  box-sizing: border-box;
+  background: var(--action-field-bg);
+  border: 1px solid var(--action-border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-md);
+  color: var(--color-text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-bar-search input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+.filter-bar-search input:hover {
+  border-color: var(--color-brand);
+}
+
+.filter-bar-search input:focus {
+  border-color: var(--action-accent);
+  box-shadow: var(--shadow-focus);
+}
+
+/* Etiquetas de los filtros puestos */
+.filter-bar-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-bar-status:empty {
+  display: none;
+}
+
+.filter-bar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 4px 2px var(--space-3);
+  background: var(--color-brand-tint);
+  border: 1px solid var(--action-border);
+  border-radius: 999px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-brand-deep);
+}
+
+.filter-bar-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+}
+
+.filter-bar-chip button:hover,
+.filter-bar-chip button:focus-visible {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Pantallas angostas: todo en columna, a lo ancho */
+@media (max-width: 768px) {
+  .filter-bar-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar-search {
+    max-width: none;
+    flex-basis: auto;
+  }
+
+  .filter-bar-clear {
+    margin-left: 0;
+  }
+}

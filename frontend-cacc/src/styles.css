@@ -273,7 +273,6 @@ html, body {
 }
 
 .boton:focus-visible {
-  outline: none;
   box-shadow: var(--shadow-focus);
 }
 
@@ -406,6 +405,42 @@ html, body {
 .tono-peligro { background: var(--color-danger-bg); color: var(--color-danger); }
 .tono-neutro { background: var(--color-bg-page); color: var(--color-text-muted); }
 .tono-info { background: var(--color-info-bg); color: var(--color-info); }
+
+/* =====================================================================
+   ACCESIBILIDAD DEL PORTAL (HU-098)
+   Foco visible: todo lo que se puede usar con el teclado (botones, enlaces, campos, selectores y lo que
+   tenga tabindex) muestra un anillo verde al recibir el foco con Tab. Las pantallas no lo ocultan con
+   "outline: none"; si quieren un indicador extra (un sombreado), lo suman a este, no lo reemplazan.
+   Vale dentro del Portal Administrativo y en sus menús y calendarios, que se dibujan sobre <body>, y desde la
+   HU-109 también en las pantallas de acceso: login, elección de portales y crear / reestablecer contraseña.
+   ===================================================================== */
+app-admin-portal :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+:is(app-login, app-portales, app-account-access) :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+.cs-menu :focus-visible,
+.dp-panel :focus-visible {
+  outline: 2px solid var(--action-accent);
+  outline-offset: 2px;
+}
+
+/* Contraste: el gris de los textos secundarios (#6b7280) no llega a 4.5:1 sobre los fondos claros del
+   portal. Adentro del portal se usa uno apenas más oscuro que sí cumple (5.1:1 en el peor fondo). */
+app-admin-portal,
+.cs-menu,
+.dp-panel {
+  --color-text-subtle: #5f6672;
+}
+
+/* Área táctil mínima de 40px para un botón de ícono chico (el "?" de ayuda, por ejemplo) sin agrandar
+   el dibujo: una zona invisible alrededor que también recibe el toque. El botón necesita position: relative. */
+.area-tactil::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--space-6) + var(--space-2));
+  height: calc(var(--space-6) + var(--space-2));
+  transform: translate(-50%, -50%);
+}
 
 /* =====================================================================
    ANIMACIONES COMPARTIDAS
@@ -592,6 +627,9 @@ app-admin-portal .page-header {
   }
 }
 
+/* Movimiento reducido (HU-098): con la opción activada en el sistema operativo, ninguna animación ni
+   transición se reproduce, en todo el sitio. Es la regla única que cubre todas las animaciones; las
+   pantallas no necesitan repetirla. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

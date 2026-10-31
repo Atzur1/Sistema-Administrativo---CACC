@@ -30,6 +30,8 @@ export class Login implements OnInit {
   mensajeError: string = '';
   mensajeExito: string = '';
   mostrarPassword: boolean = false;
+  // Bloq Mayús activado mientras se escribe la contraseña (HU-109): la causa más común de "no me deja entrar".
+  capsActivo = false;
   // Bloquea el botón/el form durante todo el flujo (llamada + lectura del mensaje +
   // transición). No controla el overlay directamente — ver mostrarOverlay.
   isSubmitting: boolean = false;
@@ -78,6 +80,10 @@ export class Login implements OnInit {
 
   togglePasswordVisibility() {
     this.mostrarPassword = !this.mostrarPassword;
+  }
+
+  detectarMayusculas(event: KeyboardEvent) {
+    this.capsActivo = event.getModifierState?.('CapsLock') ?? false;
   }
 
   onSubmit() {

@@ -67,15 +67,17 @@
 
 /* Separator between metrics */
 
-/* ===== PAYMENT FORM ===== */
-/* Panel de acción "deportivo institucional": blanco limpio, acento verde
-   sólido en el borde superior, sombra suave y difusa. Nada de fondos de
-   color ni brillos — la jerarquía la marca la estructura, no el efecto. */
-.form-panel {
+/* ===== MOSTRADOR (HU-100) =====
+   Buscador arriba; al elegir un alumno, sus cuotas (izquierda) y el cobro (derecha) lado a lado. Pensado para
+   notebooks de 1366 px: las dos columnas entran sin scroll horizontal (min-width: 0 en todo lo que crece). */
+.mostrador {
     position: relative;
     z-index: 2;
-    padding: var(--space-5) var(--space-5) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
     margin-bottom: 14px;
+    padding: var(--space-4) var(--space-5);
     background: var(--action-bg);
     border: 1px solid var(--action-border);
     border-top: 4px solid var(--action-accent);
@@ -85,36 +87,227 @@
     animation-delay: 60ms;
 }
 
-.form-head {
+.mostrador-busqueda {
     display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin-bottom: 18px;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: 640px;
 }
 
-/* Ícono como badge/pill discreto: fondo verde tenue, ícono en verde oscuro */
-.form-icon {
+/* Ancla del desplegable de sugerencias */
+.buscador-wrap {
+    position: relative;
+}
+
+.input-icon-wrap {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
     display: flex;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+.input-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.field-input-icon {
+    padding-left: calc(var(--space-6) + var(--space-1));
+}
+
+.buscador-input {
+    height: 48px;
+    padding-right: 44px;
+    font-size: var(--font-lg);
+}
+
+/* La tecla del atajo, a la derecha del buscador */
+.atajo,
+.mostrador-vacio kbd {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border: 1px solid var(--action-border-strong);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-card);
+    font-family: inherit;
+    font-size: var(--font-base);
+    font-weight: 700;
+    color: var(--color-text-muted);
+}
+
+.atajo {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.mostrador-vacio {
+    margin: 0;
+    font-size: var(--font-base);
+    color: var(--color-text-muted);
+}
+
+/* Las dos columnas: cuotas del alumno | cobro */
+.mostrador-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: var(--space-4);
+    align-items: start;
+    animation: fadeIn 0.2s ease both;
+}
+
+.mostrador-cuotas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-4);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    background: var(--action-badge-bg);
-    color: var(--action-badge-fg);
-    flex-shrink: 0;
 }
 
-.form-icon svg {
-    width: 18px;
-    height: 18px;
+.mostrador-jugador {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
 }
 
-.form-head-text {
+.mostrador-jugador-datos {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
     min-width: 0;
+}
+
+.mostrador-jugador-nombre {
+    margin: 0;
+    font-size: var(--font-lg);
+    font-weight: 700;
+    color: var(--color-text-dark);
+    overflow-wrap: anywhere;
+}
+
+.mostrador-jugador-meta {
+    font-size: var(--font-base);
+    color: var(--color-text-muted);
+}
+
+.mostrador-jugador-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.mostrador-total {
+    margin: 0;
+    font-size: var(--font-base);
+    color: var(--color-text);
+}
+
+.mostrador-total strong {
+    font-size: var(--font-lg);
+    color: var(--color-danger);
+}
+
+.mostrador-aviso,
+.mostrador-ayuda {
+    margin: 0;
+    font-size: var(--font-base);
+    color: var(--color-text-muted);
+}
+
+/* Cuotas pendientes: cada una se toca para cargarla en el cobro */
+.cuotas-lista {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    max-height: 260px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.cuota-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px var(--space-3);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background: var(--action-field-bg);
+    border: 1px solid var(--action-border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    text-align: left;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cuota-item:hover,
+.cuota-item:focus-visible {
+    border-color: var(--action-accent);
+}
+
+.cuota-elegida {
+    background: var(--color-brand-tint);
+    border-color: var(--action-accent);
+}
+
+.cuota-periodo {
+    font-weight: 600;
+}
+
+.cuota-saldo {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.cuota-beneficio {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+/* ===== COBRO (columna derecha) ===== */
+.form-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-4);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.form-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
 }
 
 .form-title {
@@ -124,47 +317,48 @@
     color: var(--color-text-dark);
 }
 
-.form-subtitle {
+/* Concepto: Cuota / Inscripción, a la vista (no solapas que esconden el botón) */
+.concepto {
+    display: inline-flex;
+    gap: 4px;
+    padding: 3px;
+    background: var(--action-field-bg);
+    border: 1px solid var(--action-border);
+    border-radius: var(--radius-md);
+}
+
+.concepto-opcion {
+    padding: 6px 14px;
+    background: transparent;
+    border: none;
+    border-radius: calc(var(--radius-md) - 2px);
+    font-family: inherit;
     font-size: var(--font-sm);
+    font-weight: 600;
     color: var(--color-text-muted);
+    cursor: pointer;
 }
 
-/* Flujo progresivo: cada campo aparece con animación al habilitarse. */
-@keyframes fieldReveal {
-    from {
-        opacity: 0;
-        transform: translateY(14px) scale(0.97);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+.concepto-opcion:focus-visible {
+    box-shadow: var(--shadow-focus);
 }
 
-.field-reveal {
-    animation: fieldReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+.concepto-activo {
+    background: var(--action-accent);
+    color: var(--color-bg-card);
 }
 
-/* Dos filas prolijas: fila 1 = jugador / período / año; fila 2 = monto / método / botón. */
-.form-grid {
+.cobro-form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    padding-top: var(--space-4);
-}
-
-.form-row {
-    display: grid;
     gap: var(--space-3);
 }
 
-.form-row-lookup {
-    grid-template-columns: 1.6fr 1fr 0.7fr;
-}
-
-.form-row-action {
-    grid-template-columns: 1fr 1fr auto;
-    align-items: end;
+/* Dos campos por fila: período | año, monto | medio de pago */
+.cobro-campos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
 }
 
 .field {
@@ -172,11 +366,6 @@
     flex-direction: column;
     gap: var(--space-2);
     min-width: 0;
-}
-
-/* Anchor for the suggestions dropdown */
-.field-player {
-    position: relative;
 }
 
 .field-label {
@@ -198,7 +387,6 @@
     font-family: inherit;
     font-size: var(--font-md);
     color: var(--color-text);
-    outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -237,7 +425,7 @@
     padding-left: var(--space-5);
 }
 
-/* ===== PLAYER SUGGESTIONS ===== */
+/* ===== SUGERENCIAS DEL BUSCADOR ===== */
 .suggestions {
     position: absolute;
     top: 100%;
@@ -247,7 +435,7 @@
     margin: 4px 0 0;
     padding: var(--space-1);
     list-style: none;
-    max-height: 180px;
+    max-height: 260px;
     overflow-y: auto;
     background: var(--action-bg);
     border: 1px solid var(--action-border);
@@ -272,9 +460,8 @@
 }
 
 .suggestion:hover,
-.suggestion:focus-visible {
+.suggestion-activa {
     background: var(--color-brand-tint);
-    outline: none;
 }
 
 .suggestion-name {
@@ -283,149 +470,23 @@
 }
 
 .suggestion-meta {
-    font-size: var(--font-sm);
-    color: var(--color-text-muted);
-}
-
-/* ===== SUBMIT =====
-   Botón compacto y firme, no una barra que ocupa todo el ancho: se ubica
-   solo (columna "auto") a la derecha de la fila 2, a la misma altura que
-   los campos gracias a align-items: end en .form-row-action.
-   El aspecto viene de .boton-principal (styles.css); acá solo la altura de los campos. */
-.submit-button {
-    height: 44px;
-    padding: 0 var(--space-5);
-}
-
-/* Simulated confirmation: fades in, then fades out before being removed */
-.form-feedback {
-    margin: 0;
-    padding: var(--space-2) var(--space-3);
-    background: var(--color-brand-tint);
-    border: 1px solid rgba(0, 166, 81, 0.3);
-    border-radius: var(--radius-md);
     font-size: var(--font-base);
-    font-weight: 600;
-    color: var(--color-brand-deep);
-    animation: fadeIn 0.3s ease both;
-    transition: opacity 0.3s ease;
-}
-
-.form-feedback.is-leaving {
-    opacity: 0;
-}
-
-.form-feedback.is-error {
-    background: var(--color-danger-bg);
-    border-color: rgba(192, 57, 43, 0.3);
-    color: var(--color-danger-strong);
-}
-
-/* ===== PANEL TOGGLE (tabs Pago de cuota / Inscripción) ===== */
-
-.form-icon-inscripcion {
-    background: var(--color-brand-tint);
-    color: var(--color-brand-deep);
-}
-
-.form-badge-inscripcion {
-    background: var(--color-brand-tint);
-    color: var(--color-brand-deep);
-}
-
-.panel-toggle-bar {
-    display: flex;
-    gap: 0;
-    margin: 14px 0 0;
-    border-bottom: 2px solid var(--color-border);
-}
-
-.panel-tab {
-    padding: var(--space-2) var(--space-5);
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: var(--font-md);
-    font-weight: 600;
     color: var(--color-text-muted);
-    font-family: inherit;
-    border-top: 2px solid transparent;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    margin-top: 0;
-    transition: color 0.15s, border-color 0.15s;
-    white-space: nowrap;
 }
 
-.panel-tab:hover:not(.panel-tab-active-cuota):not(.panel-tab-active-inscripcion) {
-    color: var(--color-text);
-}
-
-.panel-tab-active-cuota {
-    color: var(--color-brand-deep);
-    border-bottom-color: var(--color-brand-deep);
-}
-
-.panel-tab-active-inscripcion {
-    color: var(--color-brand-deep);
-    border-bottom-color: var(--color-brand-deep);
-}
-
-/* ===== INSCRIPCIÓN TAB CONTENT ===== */
-.insc-grid {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    padding-top: var(--space-4);
-}
-
-.insc-sin-registro {
-    font-size: var(--font-md);
-    color: #1d4f91;
-    background: #e3edfb;
-    border: 1px solid #c5d9f2;
-    border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-4);
-}
-
-/* Fila 1: jugador | monto | método */
-.form-row-insc-top {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
-    align-items: end;
-    position: relative;
-    z-index: 2;
-}
-
-/* Fila 2: abonado + saldo pendiente + botón en una sola tira unificada */
-.insc-info-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    border: 1px solid var(--color-border, #e5e7eb);
-    border-radius: var(--radius-md);
-    padding: var(--space-4) var(--space-4);
-    box-sizing: border-box;
+/* ===== REGISTRAR COBRO =====
+   Siempre a la vista, a todo el ancho de la columna del cobro. El aspecto viene de .boton-principal (styles.css). */
+.submit-button {
     width: 100%;
-    min-width: 0;
+    height: 48px;
+    font-size: var(--font-md);
 }
 
-.insc-info-row .insc-monto-box {
-    flex: 1;
-    min-width: 0;
-}
-
-.insc-info-row .submit-button {
-    flex-shrink: 0;
-    white-space: nowrap;
-}
-
-@media (max-width: 640px) {
-    .insc-info-row {
-        flex-wrap: wrap;
-    }
-    .insc-info-row .submit-button {
-        width: 100%;
-    }
+/* ===== INSCRIPCIÓN ===== */
+.insc-info-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
 }
 
 .insc-monto-box {
@@ -465,12 +526,8 @@
 }
 
 .insc-monto-sub {
-    font-size: var(--font-xs);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
-}
-
-.insc-monto-sub.insc-monto-sub-warn {
-    color: inherit;
 }
 
 /* ===== MAIN GRID ===== */
@@ -584,7 +641,6 @@
     font-family: inherit;
     font-size: var(--font-base);
     color: var(--color-text);
-    outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -605,7 +661,7 @@
 
 .filter-count {
     margin: 0 2px 10px;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     color: var(--color-text-muted);
 }
 
@@ -752,8 +808,8 @@
 
 /* ===== RESPONSIVE ===== */
 
-/* Laptop chico / tablet grande: los dos paneles se apilan, el header manda
-   aranceles y métricas a un segundo renglón y cada fila del formulario baja a dos columnas. */
+/* Laptop chico / tablet grande: el header manda aranceles y métricas a un segundo renglón y el mostrador apila
+   sus dos columnas. */
 @media (max-width: 1100px) {
     .page-header {
         flex-wrap: wrap;
@@ -772,28 +828,9 @@
         grid-template-columns: 1fr;
     }
 
-    .form-row-lookup,
-    .form-row-action {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .submit-button {
-        grid-column: span 2;
-        width: 100%;
-    }
-
-    /* Inscripción: fila superior pasa a 2 columnas (jugador + monto), método abajo */
-    .form-row-insc-top {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-
-    /* Info row: apilar boxes y botón */
-    .insc-info-row {
-        flex-wrap: wrap;
-    }
-
-    .insc-info-row .submit-button {
-        width: 100%;
+    /* Mostrador (HU-100): las cuotas arriba y el cobro abajo. Con 1366 px siguen lado a lado. */
+    .mostrador-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -827,15 +864,13 @@
         padding: var(--space-4);
     }
 
-    .form-row-lookup,
-    .form-row-action,
-    .form-row-insc-top {
-        grid-template-columns: 1fr;
+    .mostrador {
+        padding: var(--space-4);
     }
 
-    .submit-button {
-        grid-column: 1;
-        width: 100%;
+    .cobro-campos,
+    .insc-info-row {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .row {

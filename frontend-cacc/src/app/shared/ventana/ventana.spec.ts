@@ -181,3 +181,51 @@ describe('Ventana', () => {
     expect(document.activeElement).toBe(abridor);
   });
 });
+
+// Pantalla de prueba con un menú "⋯": la opción que abre la ventana desaparece al cerrarse el menú,
+// como en Usuarios y Permisos. La ventana recibe el botón del menú como lugar de vuelta del foco.
+@Component({
+  standalone: true,
+  imports: [Ventana],
+  template: `
+    <button #botonMenu type="button" class="menu" (click)="menuAbierto.set(true)">⋯</button>
+    @if (menuAbierto()) {
+      <button type="button" class="opcion" (click)="menuAbierto.set(false); abierta.set(true)">Deshabilitar</button>
+    }
+    @if (abierta()) {
+      <app-ventana titulo="Deshabilitar acceso" [focoAlCerrar]="botonMenu" (cerrar)="abierta.set(false)">
+        <p>Corta el acceso de esta persona.</p>
+      </app-ventana>
+    }
+  `,
+})
+class PantallaConMenu {
+  readonly menuAbierto = signal(false);
+  readonly abierta = signal(false);
+}
+
+describe('Ventana abierta desde un menú', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('al cerrarse devuelve el foco al botón del menú, porque la opción ya no existe', async () => {
+    await TestBed.configureTestingModule({ imports: [PantallaConMenu] }).compileComponents();
+    const fixture = TestBed.createComponent(PantallaConMenu);
+    fixture.autoDetectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    el.querySelector<HTMLButtonElement>('.menu')!.click();
+    fixture.detectChanges();
+    const opcion = el.querySelector<HTMLButtonElement>('.opcion')!;
+    opcion.focus();
+    opcion.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(el.querySelector('.opcion')).toBeNull();
+
+    el.querySelector<HTMLButtonElement>('.ventana-cerrar')!.click();
+    fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver));
+
+    expect(document.activeElement).toBe(el.querySelector('.menu'));
+  });
+});

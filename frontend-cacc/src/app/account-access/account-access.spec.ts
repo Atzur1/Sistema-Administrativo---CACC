@@ -267,3 +267,51 @@ describe('Fortaleza y requisitos de la contraseña', () => {
     expect(element.querySelector('form')).not.toBeNull();
   });
 });
+
+// HU-109: los dos campos se pueden mostrar, Bloq Mayús se sigue avisando y las reglas se tildan al escribir.
+describe('AccountAccess - campos de contraseña más claros', () => {
+  it('cada campo tiene su botón para mostrar u ocultar lo escrito', async () => {
+    const { fixture, element } = await create('crear');
+    const campos = () => Array.from(element.querySelectorAll<HTMLInputElement>('input[autocomplete="new-password"]'));
+    const ojos = Array.from(element.querySelectorAll<HTMLButtonElement>('button[aria-pressed]'));
+
+    expect(campos().map((c) => c.type)).toEqual(['password', 'password']);
+    expect(ojos.length).toBe(2);
+
+    ojos.forEach((ojo) => ojo.click());
+    fixture.detectChanges();
+    expect(campos().map((c) => c.type)).toEqual(['text', 'text']);
+  });
+
+  it('el aviso de Bloq Mayús se mantiene', async () => {
+    const { fixture, element } = await create('restablecer');
+    const evento = new KeyboardEvent('keydown', { key: 'A' });
+    Object.defineProperty(evento, 'getModifierState', { value: () => true });
+
+    element.querySelector('input[autocomplete="new-password"]')!.dispatchEvent(evento);
+    fixture.detectChanges();
+
+    expect(texto(element)).toContain('Bloq Mayús está activado');
+  });
+
+  it('las reglas de la política se ven y se van tildando a medida que se cumplen', async () => {
+    const { fixture, element } = await create('crear');
+    const tildadas = () => element.querySelectorAll('.requirements li.is-met').length;
+    const escribir = (valor: string) => {
+      const input = element.querySelector<HTMLInputElement>('#password')!;
+      input.value = valor;
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    };
+
+    expect(texto(element)).toContain('Al menos 10 caracteres');
+    expect(texto(element)).toContain('Letras y números');
+    expect(tildadas()).toBe(0);
+
+    escribir('clubcamion');
+    expect(tildadas()).toBe(1);
+
+    escribir('clubcamion7');
+    expect(tildadas()).toBe(2);
+  });
+});
