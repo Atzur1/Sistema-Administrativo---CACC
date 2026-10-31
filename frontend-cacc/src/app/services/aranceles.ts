@@ -2,7 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from './api-url';
-import { ScheduleTariffResponseModel, TariffHistoryItemModel, TariffSummaryModel } from '../models/TariffModel';
+import {
+  ScheduleTariffResponseModel,
+  TariffChangeRequest,
+  TariffHistoryItemModel,
+  TariffImpactModel,
+  TariffSummaryModel,
+} from '../models/TariffModel';
 
 @Injectable({ providedIn: 'root' })
 export class ArancelesService {
@@ -25,16 +31,19 @@ export class ArancelesService {
     return this.http.delete<void>(`${this.API_URL}/${idArancel}`);
   }
 
-  // destino: un género ('Masculino' | 'Femenino') o una categoría ({ idCategoria }), uno solo.
-  programar(
-    destino: { genero: string } | { idCategoria: number },
-    monto: number,
-    vigenteDesde: string,
-  ): Observable<ScheduleTariffResponseModel> {
+  // HU-106: cuántos jugadores y cuánto dinero alcanza el cambio, calculado por el backend sin grabar nada.
+  simular(cambio: TariffChangeRequest): Observable<TariffImpactModel> {
+    return this.http.post<TariffImpactModel>(`${this.API_URL}/simular`, cambio);
+  }
+
+  // Confirma el cambio simulado. huella: la del resumen que se revisó; jugadoresConfirmados: la cantidad que se
+  // escribió para confirmar (si el cambio alcanza más de una categoría). Si el impacto ya no es el revisado, el
+  // backend no graba y responde 409 con el impacto actual en error.impacto.
+  programar(cambio: TariffChangeRequest, huella: string, jugadoresConfirmados: number | null): Observable<ScheduleTariffResponseModel> {
     return this.http.post<ScheduleTariffResponseModel>(`${this.API_URL}/programar`, {
-      ...destino,
-      monto,
-      vigenteDesde,
+      ...cambio,
+      huella,
+      jugadoresConfirmados,
     });
   }
 }

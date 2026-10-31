@@ -161,6 +161,7 @@ public AnularPagoResultado AnularPago(AnularPagoRequest request) => throw new No
     {
         public IReadOnlyList<ArancelHistorialItem> ObtenerHistorial() => new List<ArancelHistorialItem>();
         public ArancelResumen ObtenerResumen() => throw new NotSupportedException();
+        public ImpactoArancel SimularArancel(CambioArancel cambio) => throw new NotSupportedException();
         public ProgramarArancelResultado ProgramarArancel(ProgramarArancelRequest request) => throw new NotSupportedException();
         public CancelarArancelResultado CancelarArancel(int idArancel) => throw new NotSupportedException();
     }

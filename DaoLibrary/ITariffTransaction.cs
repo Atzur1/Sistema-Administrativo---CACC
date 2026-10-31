@@ -10,27 +10,21 @@ using EntityLibrary;
 // desde / hasta narrow the periods by fecha_vencimiento (hasta is exclusive; null = no limit).
 // montoBase, when given, keeps only the fees issued for that amount, so the fees of one tariff are told
 // apart from those of another tariff for the same destination.
-public interface ITariffTransaction
+//
+// The reads (ILecturaImpactoArancel) are the same ones the HU-106 simulation runs outside a transaction, so the
+// impact approved by the user is recalculated here, with the write lock held, right before saving.
+public interface ITariffTransaction : ILecturaImpactoArancel
 {
-    // A tariff is per gender OR per category: exactly one of the two is given.
-    void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde);
+    // A tariff is per gender OR per category: exactly one of the two is given. impacto (HU-106): what the user
+    // approved; it is stored with the tariff so the audit event records it. Null when there is nothing to record.
+    void ProgramarArancel(string? genero, int? idCategoria, decimal monto, DateTime vigenteDesde, ImpactoArancel? impacto = null);
 
     Arancel? ObtenerPorId(int idArancel);
-
-    // vigente_desde of the tariff the same destination already has in that month, or null.
-    // Only one tariff per month and destination is allowed.
-    DateTime? ObtenerVigenteDesdeEnMes(string? genero, int? idCategoria, int anio, int mes);
-
-    // vigente_desde of the first tariff of the same destination after "desde", or null.
-    DateTime? ObtenerSiguienteVigenteDesde(string? genero, int? idCategoria, DateTime desde);
 
     void EliminarArancel(int idArancel);
 
     // Issues the month's fee for whoever does not have it yet (see IPagosDao). Never overwrites existing ones.
     void GenerarCuotasPendientesDelMes(string? genero, int? idCategoria, int mes, int anio);
-
-    // How many fees (player + period) already have a payment (a row with estado = 1).
-    int ContarCuotasConPagos(string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase);
 
     // Deletes the pending fees that have no payment at all and returns how many were deleted.
     int EliminarCuotasPendientesSinPagos(string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase);

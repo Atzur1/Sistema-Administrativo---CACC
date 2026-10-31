@@ -18,8 +18,9 @@ import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/cus
 import { HelpHint } from '../../shared/help-hint/help-hint';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { NotificationService } from '../../shared/notifications/notification.service';
-import { TariffHistoryItemModel } from '../../models/TariffModel';
-import { IncreaseMode, calculateNewTariff, needsCurrentTariff, sanitizePercentage } from './tariff-increase';
+import { TariffChangeRequest, TariffChangeType, TariffHistoryItemModel, TariffImpactModel } from '../../models/TariffModel';
+import { Ventana } from '../../shared/ventana/ventana';
+import { IncreaseMode, needsCurrentTariff, sanitizePercentage } from './tariff-increase';
 
 Chart.register(...registerables);
 
@@ -50,10 +51,25 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
     maximumFractionDigits: 0,
 });
 
+// HU-106: los montos del resumen de impacto se muestran tal como los calculó el backend (con centavos si los hay).
+const CURRENCY_IMPACTO = new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+});
+
+// Modo del formulario (HU-069) -> tipo de cambio que entiende el backend.
+const TIPO_DE_CAMBIO: Record<IncreaseMode, TariffChangeType> = {
+    absolute: 'absoluto',
+    percentage: 'porcentaje',
+    fixed: 'montoFijo',
+};
+
 @Component({
     selector: 'app-actualizacion-aranceles',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect, CustomDatepicker, HelpHint],
+    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect, CustomDatepicker, HelpHint, Ventana],
     templateUrl: './actualizacion-aranceles.html',
     styleUrl: './actualizacion-aranceles.css',
 })
@@ -190,6 +206,14 @@ export class ActualizacionAranceles implements OnInit {
         });
         // El mínimo del monto depende del destino (la inscripción admite $0): se revalida al cambiarlo.
         this.feeForm.get('target')?.valueChanges.subscribe(() => this.feeForm.get('amount')?.updateValueAndValidity());
+        // HU-106: un resumen de impacto vale solo para lo que se simuló. Si cambia cualquier dato del cambio, se descarta
+        // y hay que volver a revisar el impacto.
+        this.feeForm.valueChanges.subscribe(() => {
+            if (this.impacto && !this.confirmandoImpacto) {
+                this.descartarImpacto();
+                this.cdr.detectChanges();
+            }
+        });
     }
 
     // Regla del club: no se programan aranceles (mensuales ni de inscripción) con fecha pasada. El servidor
@@ -235,27 +259,173 @@ export class ActualizacionAranceles implements OnInit {
         return target ? this.arancelVigente(target) : null;
     }
 
-    // El monto absoluto que se programa: lo que se manda a la API, sea cual sea el modo.
-    get resultingAmount(): number | null {
-        const amount = this.feeForm.get('amount')?.value;
-        return calculateNewTariff(this.increaseMode, amount === '' || amount == null ? null : Number(amount), this.currentTariff);
-    }
+    // ===== HU-106: resumen de impacto antes de confirmar =====
+    // El monto nuevo, los jugadores y la diferencia los calcula el backend (POST /aranceles/simular), con la misma
+    // lógica que después graba: el portal no hace cuentas de dinero, solo muestra el resumen y pide la confirmación.
 
-    // Vista previa "Arancel vigente ➔ Nuevo arancel a aplicar". Solo cuando ya hay un destino y un resultado válido.
-    get tariffPreview(): { current: string; next: string; difference: string | null } | null {
-        const resultado = this.resultingAmount;
-        if (this.vista !== 'cuota' || !this.feeForm.get('target')?.value || resultado == null || resultado <= 0) {
+    // Resumen abierto y el cambio exacto que se simuló (lo que se confirma es esto, no lo que diga el form después).
+    impacto: TariffImpactModel | null = null;
+    private cambioSimulado: TariffChangeRequest | null = null;
+    simulandoImpacto = false;
+    confirmandoImpacto = false;
+    // Lo que se escribe para confirmar un cambio que alcanza a más de una categoría.
+    confirmacionEscrita = '';
+    errorImpacto: string | null = null;
+    // Aviso cuando el backend rechazó la confirmación porque el impacto cambió (409) y se muestra el nuevo.
+    avisoImpactoActualizado: string | null = null;
+
+    // El cambio que arma el form: destino, tipo y valor tal como se escribieron (sin calcular nada acá).
+    private cambioDelFormulario(): TariffChangeRequest | null {
+        const { target, amount, validFrom } = this.feeForm.value;
+        if (typeof target !== 'string' || amount === '' || amount == null || !validFrom) {
             return null;
         }
-        const vigente = this.currentTariff;
-        const diferencia = vigente == null ? null : resultado - vigente;
-        return {
-            current: vigente == null ? 'Sin definir' : this.formatAmount(vigente),
-            next: this.formatAmount(resultado),
-            difference: diferencia == null || diferencia === 0
-                ? null
-                : `${diferencia > 0 ? '+' : '−'}${this.formatAmount(Math.abs(diferencia))}`,
-        };
+        const destino = target.startsWith('categoria:')
+            ? { idCategoria: Number(target.slice('categoria:'.length)) }
+            : { genero: target.slice('genero:'.length) };
+        return { ...destino, tipo: TIPO_DE_CAMBIO[this.increaseMode], valor: Number(amount), vigenteDesde: validFrom };
+    }
+
+    // Confirmar se habilita con el número exacto de jugadores (sin espacios ni otro texto) cuando el cambio alcanza a
+    // más de una categoría; con una sola alcanza con el botón.
+    get confirmacionValida(): boolean {
+        const impacto = this.impacto;
+        if (!impacto || this.confirmandoImpacto) {
+            return false;
+        }
+        return !impacto.requiereConfirmacionReforzada || this.confirmacionEscrita === String(impacto.jugadores);
+    }
+
+    // "noviembre de 2026": el mes cuya cuota se usa para el impacto mensual.
+    mesTexto(isoDate: string): string {
+        const [year, month] = isoDate.slice(0, 10).split('-').map(Number);
+        return new Date(year, month - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+    }
+
+    // "Nuevo arancel del género Masculino" / "Nuevo arancel de la categoría Sub 15".
+    destinoImpacto(impacto: TariffImpactModel): string {
+        return impacto.genero ? `género ${impacto.genero}` : `categoría ${impacto.nombreCategoria ?? impacto.idCategoria}`;
+    }
+
+    // Qué escribió el SuperAdmin, dicho en palabras: el tipo no depende de un color ni de un ícono.
+    cambioImpactoTexto(impacto: TariffImpactModel): string {
+        switch (impacto.tipo) {
+            case 'porcentaje': return `Aumento del ${impacto.valor.toLocaleString('es-AR')} % sobre el arancel vigente`;
+            case 'montoFijo': return `Suma de ${this.moneda(impacto.valor)} al arancel vigente`;
+            default: return `Monto fijo de ${this.moneda(impacto.valor)}`;
+        }
+    }
+
+    moneda(valor: number | null): string {
+        return valor == null ? 'Sin arancel' : CURRENCY_IMPACTO.format(valor);
+    }
+
+    // Diferencia con signo y en palabras ("+$8.500 (aumento)", "−$2.000 (baja)"): no se indica solo con color.
+    diferenciaTexto(valor: number): string {
+        if (valor === 0) {
+            return 'Sin cambio';
+        }
+        return `${valor > 0 ? '+' : '−'}${CURRENCY_IMPACTO.format(Math.abs(valor))} (${valor > 0 ? 'aumento' : 'baja'})`;
+    }
+
+    diferenciaClase(valor: number): string {
+        return valor > 0 ? 'impacto-sube' : valor < 0 ? 'impacto-baja' : '';
+    }
+
+    get categoriasImpactoTexto(): string {
+        const nombres = [...new Set((this.impacto?.lineas ?? []).map(l => l.nombreCategoria ?? 'Sin categoría'))];
+        return nombres.join(', ');
+    }
+
+    private simularImpacto(cambio: TariffChangeRequest) {
+        this.simulandoImpacto = true;
+        this.arancelesService.simular(cambio).subscribe({
+            next: (impacto) => {
+                this.simulandoImpacto = false;
+                this.cambioSimulado = cambio;
+                this.mostrarImpacto(impacto);
+                this.cdr.detectChanges();
+            },
+            error: (err: HttpErrorResponse) => {
+                this.simulandoImpacto = false;
+                this.notifications.notify(err.error?.mensaje ?? 'No se pudo calcular el impacto del cambio. Intentá de nuevo.', 'error');
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
+    private mostrarImpacto(impacto: TariffImpactModel) {
+        this.impacto = impacto;
+        this.confirmacionEscrita = '';
+        this.errorImpacto = null;
+    }
+
+    // Como el resto de los handlers de esta pantalla, repinta a mano: el gráfico de Chart.js deja eventos fuera de la
+    // zona de Angular y, sin esto, "Confirmar actualización" seguía deshabilitado con la cantidad ya bien escrita.
+    onConfirmacionEscrita(target: HTMLInputElement) {
+        this.confirmacionEscrita = target.value;
+        this.cdr.detectChanges();
+    }
+
+    // Volver / Esc / ×: no se graba nada y el resumen deja de valer.
+    cerrarImpacto() {
+        if (!this.confirmandoImpacto) {
+            this.descartarImpacto();
+            this.cdr.detectChanges();
+        }
+    }
+
+    private descartarImpacto() {
+        this.impacto = null;
+        this.cambioSimulado = null;
+        this.confirmacionEscrita = '';
+        this.errorImpacto = null;
+        this.avisoImpactoActualizado = null;
+    }
+
+    confirmarImpacto() {
+        const impacto = this.impacto;
+        const cambio = this.cambioSimulado;
+        if (!impacto || !cambio || !this.confirmacionValida) {
+            return;
+        }
+        this.confirmandoImpacto = true;
+        this.errorImpacto = null;
+        const jugadores = impacto.requiereConfirmacionReforzada ? Number(this.confirmacionEscrita) : null;
+        this.arancelesService.programar(cambio, impacto.huella, jugadores).subscribe({
+            next: (respuesta) => {
+                // Recién acá, con la respuesta del backend: el cambio ya está grabado.
+                this.confirmandoImpacto = false;
+                const grabado = respuesta.impacto ?? impacto;
+                this.descartarImpacto();
+                this.feeForm.reset({ target: '', amount: '', validFrom: '' });
+                this.montoDisplay = '';
+                this.notifications.notify(this.mensajeResultado(grabado, respuesta.mensaje), 'success');
+                this.cargarDatos();
+                this.cdr.detectChanges();
+            },
+            error: (err: HttpErrorResponse) => {
+                this.confirmandoImpacto = false;
+                if (err.status === 409 && err.error?.impacto) {
+                    // Cambiaron los datos desde la simulación: no se grabó nada. Se muestra el impacto nuevo para revisarlo.
+                    this.mostrarImpacto(err.error.impacto as TariffImpactModel);
+                    this.avisoImpactoActualizado = err.error.mensaje ?? 'El impacto cambió desde que lo revisaste: revisá los nuevos números.';
+                } else {
+                    // No se grabó nada: el resumen sigue abierto para reintentar.
+                    this.errorImpacto = err.error?.mensaje ?? 'No se pudo programar el arancel. No se guardó ningún cambio: intentá de nuevo.';
+                }
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
+    private mensajeResultado(impacto: TariffImpactModel, mensajeBackend: string | undefined): string {
+        const jugadores = impacto.jugadores === 1 ? '1 jugador' : `${impacto.jugadores} jugadores`;
+        const resumen = `Aranceles actualizados correctamente: ${this.destinoImpacto(impacto)} pasa a ${this.moneda(impacto.montoNuevo)} ` +
+            `desde el ${this.formatDate(impacto.vigenteDesde)} (${jugadores}, ${this.diferenciaTexto(impacto.diferenciaMensual).toLowerCase()} por mes).`;
+        // El backend agrega qué pasa con las cuotas del mes ("Las cuotas con este monto se generan el...").
+        const detalle = (mensajeBackend ?? '').replace(/^Arancel programado correctamente\.\s*/, '');
+        return detalle ? `${resumen} ${detalle}` : resumen;
     }
 
     get amountLabel(): string {
@@ -633,69 +803,44 @@ export class ActualizacionAranceles implements OnInit {
             return;
         }
 
-        const { target, validFrom } = this.feeForm.value;
-        const targetLabel = this.targets.find(t => t.value === target)?.label ?? '';
-        // HU-069: la API recibe siempre el monto absoluto final; el porcentaje o el monto a sumar se resuelven acá.
-        const amount = this.resultingAmount;
-        if (amount == null) {
-            this.feeForm.markAllAsTouched();
+        const { target, validFrom, amount } = this.feeForm.value;
+
+        // HU-106: la cuota mensual no se graba de un saque. Primero el backend calcula el impacto (sin grabar nada) y se
+        // muestra el resumen; recién al confirmarlo se programa (confirmarImpacto).
+        if (!(typeof target === 'string' && target.startsWith('inscripcion:'))) {
+            const cambio = this.cambioDelFormulario();
+            if (cambio == null) {
+                this.feeForm.markAllAsTouched();
+                return;
+            }
+            this.simularImpacto(cambio);
             return;
         }
 
+        // Inscripción: monto absoluto, sin modos de HU-069 ni resumen de impacto.
         this.enviando = true;
-
-        if (typeof target === 'string' && target.startsWith('inscripcion:')) {
-            const gender = target.slice('inscripcion:'.length) as EnrollmentFeeGender;
-            this.enrollmentFeeService.createEnrollmentFee({ gender, amount: Number(amount), startDate: validFrom }).subscribe({
-                next: () => {
-                    this.enviando = false;
-                    this.feeForm.reset({ target: '', amount: '', validFrom: '' });
-                    this.montoDisplay = '';
-                    this.notifications.notify(
-                        Number(amount) === 0
-                            ? `Desde esa fecha no se cobra la ${enrollmentFeeLabel(gender).toLowerCase()}.`
-                            : `Nuevo valor de la ${enrollmentFeeLabel(gender).toLowerCase()} programado correctamente.`,
-                        'success',
-                    );
-                    this.cargarDatos();
-                    this.cdr.detectChanges();
-                },
-                error: (err: HttpErrorResponse) => {
-                    this.enviando = false;
-                    const mensaje = err.error?.mensaje ?? 'No se pudo programar el valor de inscripción. Intentá de nuevo.';
-                    this.notifications.notify(mensaje, 'error');
-                    this.cdr.detectChanges();
-                },
-            });
-        } else {
-            const destino = typeof target === 'string' && target.startsWith('categoria:')
-                ? { idCategoria: Number(target.slice('categoria:'.length)) }
-                : { genero: String(target).slice('genero:'.length) };
-
-            this.arancelesService.programar(destino, Number(amount), validFrom).subscribe({
-                next: (respuesta) => {
-                    this.enviando = false;
-                    this.feeForm.reset({ target: '', amount: '', validFrom: '' });
-                    this.montoDisplay = '';
-                    // El backend informa qué pasó con las cuotas del mes (se volvieron a emitir, o se
-                    // conservaron las que ya tenían pagos).
-                    this.notifications.notify(
-                        respuesta.mensaje
-                            ? `Nuevo arancel ${targetLabel}. ${respuesta.mensaje}`
-                            : `Nuevo arancel ${targetLabel} programado correctamente.`,
-                        'success',
-                    );
-                    this.cargarDatos();
-                    this.cdr.detectChanges();
-                },
-                error: (err: HttpErrorResponse) => {
-                    this.enviando = false;
-                    const mensaje = err.error?.mensaje ?? 'No se pudo programar el arancel. Intentá de nuevo.';
-                    this.notifications.notify(mensaje, 'error');
-                    this.cdr.detectChanges();
-                },
-            });
-        }
+        const gender = target.slice('inscripcion:'.length) as EnrollmentFeeGender;
+        this.enrollmentFeeService.createEnrollmentFee({ gender, amount: Number(amount), startDate: validFrom }).subscribe({
+            next: () => {
+                this.enviando = false;
+                this.feeForm.reset({ target: '', amount: '', validFrom: '' });
+                this.montoDisplay = '';
+                this.notifications.notify(
+                    Number(amount) === 0
+                        ? `Desde esa fecha no se cobra la ${enrollmentFeeLabel(gender).toLowerCase()}.`
+                        : `Nuevo valor de la ${enrollmentFeeLabel(gender).toLowerCase()} programado correctamente.`,
+                    'success',
+                );
+                this.cargarDatos();
+                this.cdr.detectChanges();
+            },
+            error: (err: HttpErrorResponse) => {
+                this.enviando = false;
+                const mensaje = err.error?.mensaje ?? 'No se pudo programar el valor de inscripción. Intentá de nuevo.';
+                this.notifications.notify(mensaje, 'error');
+                this.cdr.detectChanges();
+            },
+        });
     }
 }
 
