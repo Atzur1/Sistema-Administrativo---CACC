@@ -315,3 +315,39 @@ describe('AccountAccess - campos de contraseña más claros', () => {
     expect(tildadas()).toBe(2);
   });
 });
+
+// HU-109 (corrección de QA del 30/10): los dos ojos se distinguen para un lector de pantalla, y los textos grises de
+// los campos llegan a 4.5:1.
+describe('AccountAccess - correcciones de QA', () => {
+  it('cada ojo dice a qué campo corresponde, al mostrar y al ocultar', async () => {
+    const { fixture, element } = await create('crear');
+    const ojos = () => Array.from(element.querySelectorAll<HTMLButtonElement>('button[aria-pressed]'));
+
+    expect(ojos().map((o) => o.getAttribute('aria-label'))).toEqual(['Mostrar contraseña', 'Mostrar confirmación de contraseña']);
+
+    ojos().forEach((ojo) => ojo.click());
+    fixture.detectChanges();
+    expect(ojos().map((o) => o.getAttribute('aria-label'))).toEqual(['Ocultar contraseña', 'Ocultar confirmación de contraseña']);
+  });
+
+  it('el placeholder y la etiqueta "recomendado" usan el gris del sistema, que llega a 4.5:1 sobre blanco', async () => {
+    const modulo = 'node:fs';
+    const fs = await import(/* @vite-ignore */ modulo);
+    const sinComentarios = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const css = sinComentarios(fs.readFileSync('src/app/account-access/account-access.css', 'utf8') as string);
+    const global = sinComentarios(fs.readFileSync('src/styles.css', 'utf8') as string);
+
+    expect(css).toMatch(/\.form-control::placeholder\s*\{\s*color:\s*var\(--text-muted\);/);
+    expect(css).toMatch(/\.requirement-tag\s*\{[^}]*color:\s*var\(--text-muted\);/);
+    expect(css).toMatch(/--text-muted:\s*var\(--color-text-subtle\);/);
+
+    const gris = global.match(/--color-text-subtle:\s*(#[0-9a-fA-F]{6});/)![1];
+    const luminancia = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) =>
+        c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4),
+      );
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    expect(1.05 / (luminancia(gris) + 0.05)).toBeGreaterThanOrEqual(4.5);
+  });
+});

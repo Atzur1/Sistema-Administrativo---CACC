@@ -182,8 +182,9 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Gris del sistema (4.8:1 sobre blanco): el anterior (#a9b0b8) no llegaba a 4.5:1 (QA, HU-109). */
 .form-control::placeholder {
-  color: #a9b0b8;
+  color: var(--text-muted);
 }
 
 .form-control:focus {
@@ -351,7 +352,8 @@
   font-style: normal;
   font-size: 10.5px;
   font-weight: 600;
-  color: #9aa1a9;
+  /* Mismo gris que las reglas: el anterior (#9aa1a9) no llegaba a 4.5:1 (QA, HU-109). */
+  color: var(--text-muted);
 }
 
 /* Lo que controla el servidor (no se conocen acá los datos de la cuenta): se avisa antes de enviar. */
