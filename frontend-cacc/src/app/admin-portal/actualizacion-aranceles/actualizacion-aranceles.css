@@ -554,90 +554,15 @@
     background: var(--color-danger-bg);
 }
 
-.confirm-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 900;
-    display: grid;
-    place-items: center;
-    padding: var(--space-4);
-    background: rgba(15, 23, 42, 0.45);
-    animation: fadeIn 0.15s ease both;
-}
-
-.confirm-dialog {
-    width: min(440px, 100%);
-    padding: var(--space-5) var(--space-5) var(--space-4);
-    box-sizing: border-box;
-    background: var(--action-bg);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-floating);
-}
-
-.confirm-title {
-    margin: 0 0 6px;
-    font-size: var(--font-lg);
-    font-weight: 700;
-    color: var(--color-text);
-}
-
-.confirm-detail {
-    margin: 0 0 12px;
-    font-size: var(--font-md);
-    color: var(--color-text-muted);
-}
-
+/* Lista de consecuencias dentro de la ventana "¿Cancelar este arancel?" (la ventana es app-ventana, HU-094). */
 .confirm-list {
-    margin: 0 0 18px;
+    margin: 0;
     padding-left: var(--space-4);
     display: grid;
     gap: var(--space-2);
     font-size: var(--font-md);
     line-height: 1.4;
     color: var(--color-text);
-}
-
-.confirm-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-3);
-}
-
-.confirm-back,
-.confirm-danger {
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-md);
-    font-family: inherit;
-    font-size: var(--font-md);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s ease, opacity 0.15s ease;
-}
-
-.confirm-back {
-    border: 1px solid var(--action-border-strong);
-    background: transparent;
-    color: var(--color-text);
-}
-
-.confirm-back:hover:not(:disabled) {
-    background: var(--color-bg-hover);
-}
-
-.confirm-danger {
-    border: 0;
-    background: var(--color-danger-strong);
-    color: #ffffff;
-}
-
-.confirm-danger:hover:not(:disabled) {
-    background: var(--color-danger);
-}
-
-.confirm-back:disabled,
-.confirm-danger:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 /* ===== PILLS ===== */

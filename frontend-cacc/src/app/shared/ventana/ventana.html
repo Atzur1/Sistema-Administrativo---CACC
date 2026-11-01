@@ -1,5 +1,6 @@
 <div class="ventana-fondo" [class.ventana-fondo-lateral]="forma === 'lateral'" (click)="alTocarFondo($event)">
   <section
+    #cuadro
     class="ventana"
     [class.ventana-angosta]="forma === 'angosta'"
     [class.ventana-ancha]="forma === 'ancha'"
