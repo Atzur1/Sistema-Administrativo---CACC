@@ -415,7 +415,7 @@
 
 .event-partial {
   background: var(--color-info-bg);
-  color: var(--color-info);
+  color: var(--aviso-acento);
 }
 
 .activity-text {
@@ -446,7 +446,7 @@
 
 .badge-partial {
   background: var(--color-info-bg);
-  color: var(--color-info);
+  color: var(--aviso-acento);
 }
 
 .activity-elapsed {

@@ -1,5 +1,7 @@
 import { NgZone, WritableSignal } from '@angular/core';
 
+import { prefiereMovimientoReducido } from './movimiento-reducido';
+
 // Un número a animar: el valor final real, dónde escribir cada frame ya
 // formateado, y cómo formatearlo (moneda compacta, moneda completa, "%", etc).
 export interface CountUpItem {
@@ -18,8 +20,18 @@ export interface CountUpItem {
 //
 // Devuelve una función para cancelar la animación (llamarla en el
 // DestroyRef.onDestroy del componente si puede desmontarse a mitad de camino).
+//
+// Con movimiento reducido (HU-098) no cuenta: muestra el valor final de una.
 export function animateCountUp(zone: NgZone, items: CountUpItem[], durationMs = 800): () => void {
     if (items.length === 0) {
+        return () => {};
+    }
+
+    if (prefiereMovimientoReducido()) {
+        for (const item of items) {
+            const final = Math.round(item.target); // el mismo valor con el que termina la animación
+            item.display.set(item.format ? item.format(final) : String(final));
+        }
         return () => {};
     }
 

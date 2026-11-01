@@ -421,7 +421,7 @@
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-pill);
     background: var(--color-info-bg);
-    color: var(--color-info);
+    color: var(--aviso-acento);
     font-size: var(--font-base);
     font-weight: 700;
 }
@@ -442,12 +442,12 @@
 
 .role-superadmin {
     background: var(--color-brand-tint);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .role-admin {
     background: var(--color-info-bg);
-    color: var(--color-info);
+    color: var(--aviso-acento);
 }
 
 .cell-muted {
@@ -609,7 +609,7 @@
 .icon-button:hover:not(:disabled) {
     background: var(--color-brand-tint);
     border-color: var(--color-brand);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .icon-button:disabled {

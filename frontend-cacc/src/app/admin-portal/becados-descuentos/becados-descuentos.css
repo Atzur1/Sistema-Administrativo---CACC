@@ -622,7 +622,7 @@
 
 .type-benefit {
   background: var(--color-accent-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 /* Empty state, so nobody reads a blank table as a loading failure. */

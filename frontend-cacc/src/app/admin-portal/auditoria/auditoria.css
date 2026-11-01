@@ -349,7 +349,7 @@ tbody tr:hover {
 
 .action-update {
   background: var(--color-info-bg);
-  color: var(--color-info);
+  color: var(--aviso-acento);
 }
 
 .action-delete {
