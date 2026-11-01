@@ -195,7 +195,7 @@ app-export-menu {
 
 .icon-efectivo {
     background: var(--color-brand-tint);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .icon-transferencia {

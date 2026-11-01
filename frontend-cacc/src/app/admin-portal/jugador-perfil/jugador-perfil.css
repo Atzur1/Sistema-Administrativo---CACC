@@ -35,7 +35,7 @@
   font-family: inherit;
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -105,7 +105,7 @@
   height: 60px;
   border-radius: var(--radius-pill);
   background: linear-gradient(150deg, var(--color-brand-tint) 0%, #d3f2e2 100%);
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
   font-size: var(--font-xl);
   font-weight: 700;
   flex-shrink: 0;
@@ -314,7 +314,7 @@
 
 .periodo-cuota-original {
   font-size: var(--font-base);
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 .periodo-total-label {
@@ -322,13 +322,13 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 .periodo-total {
   font-size: var(--font-lg);
   font-weight: 700;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
 }
 
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
@@ -367,7 +367,7 @@
 .abono-monto {
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
 }
 
 /* ===== PAGINATION ===== */
@@ -389,7 +389,7 @@
   font-family: inherit;
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
   cursor: pointer;
   box-shadow: var(--shadow-rest);
   transition:
@@ -450,7 +450,7 @@
   font-family: inherit;
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
   cursor: pointer;
   transition:
     background 0.2s ease,

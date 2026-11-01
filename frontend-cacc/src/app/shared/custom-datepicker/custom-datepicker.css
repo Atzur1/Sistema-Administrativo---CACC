@@ -136,7 +136,7 @@
     place-items: center;
     padding: 0;
     border-radius: var(--radius-md);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
     transition: background 0.15s ease;
 }
 
@@ -274,7 +274,7 @@
     border-radius: var(--radius-md);
     font-size: var(--font-md);
     font-weight: 600;
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
     transition: background 0.15s ease;
 }
 

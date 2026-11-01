@@ -351,7 +351,7 @@
 }
 
 .preview-arrow {
-    color: var(--color-info);
+    color: var(--aviso-acento);
     font-size: var(--font-lg);
 }
 
@@ -578,17 +578,17 @@
 
 .category-male {
     background: var(--color-info-bg);
-    color: var(--color-info);
+    color: var(--aviso-acento);
 }
 
 .category-female {
     background: var(--color-accent-bg);
-    color: var(--color-accent);
+    color: var(--color-accent-text);
 }
 
 .category-category {
     background: var(--color-brand-tint);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .category-enrollment {
@@ -599,7 +599,7 @@
 /* The fee charged today, one waiting to start, and one already replaced */
 .status-current {
     background: var(--color-brand-tint);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .status-scheduled {
