@@ -286,16 +286,64 @@ describe('Usuarios - cambiar el rol con confirmación', () => {
     expect(component.cambioDeRol()).toBeNull();
   });
 
-  it('cancelar no cambia nada y vuelve a dibujar el desplegable con el rol real', async () => {
-    const { component, cambiarRol } = await create();
-    const antes = component.refrescoRoles();
+  // Como lo hace la persona: abre el desplegable de rol de Camila (Administrador) y elige otra opción.
+  const elegirRolDeCamila = (element: HTMLElement, fixture: { detectChanges(): void }, opcion: string) => {
+    const fila = Array.from(element.querySelectorAll<HTMLElement>('.panel-users tbody tr')).find((tr) =>
+      tr.textContent?.includes('camila@cacc.test'),
+    )!;
+    const desplegable = fila.querySelector<HTMLButtonElement>('.rol-select .cs-trigger')!;
+    desplegable.focus();
+    desplegable.click();
+    fixture.detectChanges();
+    Array.from(document.querySelectorAll<HTMLElement>('.cs-menu .cs-option'))
+      .find((o) => o.textContent?.trim() === opcion)!
+      .click();
+    fixture.detectChanges();
+    return desplegable;
+  };
+  const rolQueMuestra = (desplegable: HTMLElement) => desplegable.querySelector('.cs-value')!.textContent!.trim();
+  const esperarFoco = () => new Promise((resolver) => setTimeout(resolver));
 
-    component.onRolHabilitadoChange(ADMIN, 1);
-    component.cancelarCambioDeRol();
+  it('cancelar con el botón Cancelar no cambia nada: el desplegable vuelve a mostrar el rol real y recibe el foco', async () => {
+    const { fixture, element, component, cambiarRol } = await create();
+    const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    expect(rolQueMuestra(desplegable)).toBe('SuperAdmin');
+    expect(element.querySelector('[role="dialog"]')).not.toBeNull();
+
+    element.querySelector<HTMLButtonElement>('.ventana-volver')!.click();
+    fixture.detectChanges();
+    await esperarFoco();
 
     expect(cambiarRol).not.toHaveBeenCalled();
     expect(component.cambioDeRol()).toBeNull();
-    expect(component.refrescoRoles()).toBe(antes + 1);
+    expect(rolQueMuestra(desplegable)).toBe('Administrador');
+    expect(document.activeElement).toBe(desplegable);
+  });
+
+  it('cerrar con Esc tampoco cambia nada: el desplegable vuelve al rol real y recibe el foco', async () => {
+    const { fixture, element, cambiarRol } = await create();
+    const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    await esperarFoco();
+
+    expect(cambiarRol).not.toHaveBeenCalled();
+    expect(element.querySelector('[role="dialog"]')).toBeNull();
+    expect(rolQueMuestra(desplegable)).toBe('Administrador');
+    expect(document.activeElement).toBe(desplegable);
+  });
+
+  it('si el servidor rechaza el cambio, el desplegable vuelve a mostrar el rol real', async () => {
+    const rechazo = vi.fn(() => throwError(() => ({ error: { mensaje: 'Tiene que quedar al menos un SuperAdmin.' } })));
+    const { fixture, element } = await create(undefined, undefined, { cambiarRol: rechazo });
+    const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
+
+    element.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
+    fixture.detectChanges();
+
+    expect(rechazo).toHaveBeenCalled();
+    expect(rolQueMuestra(desplegable)).toBe('Administrador');
   });
 
   it('si el servidor lo rechaza muestra su motivo y deja el rol como estaba', async () => {

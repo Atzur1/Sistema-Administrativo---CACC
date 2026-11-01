@@ -65,6 +65,12 @@ export class CustomSelect implements ControlValueAccessor, OnDestroy {
 
   @ViewChild('trigger') private triggerRef?: ElementRef<HTMLButtonElement>;
 
+  // El botón del desplegable, para devolverle el foco desde afuera (por ejemplo, al cerrar una ventana que se
+  // abrió al elegir una opción: HU-094).
+  get elementoFoco(): HTMLElement | null {
+    return this.triggerRef?.nativeElement ?? null;
+  }
+
   // El menú no se queda dentro del componente: al abrirse se muestra en <body>, pegado al botón
   // y siguiéndolo (ver FloatingPanel), para que ningún panel de la pantalla lo tape o recorte.
   private readonly menu: FloatingPanel;

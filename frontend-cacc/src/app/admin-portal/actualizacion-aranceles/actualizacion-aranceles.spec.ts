@@ -1,8 +1,14 @@
+import { ChangeDetectorRef } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { FormBuilder } from '@angular/forms';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { ActualizacionAranceles } from './actualizacion-aranceles';
 import { EnrollmentFeeModel } from '../../models/EnrollmentFeeModel';
+import { ArancelesService } from '../../services/aranceles';
+import { EnrollmentFeeService } from '../../services/enrollment-fees';
+import { PagosService } from '../../services/pagos';
+import { NotificationService } from '../../shared/notifications/notification.service';
 
 // Inscripción por género en "Actualización de aranceles". Se prueba la lógica de la pantalla (formulario y mapeo) sin
 // dibujarla: el gráfico de cuotas necesita un canvas que el entorno de pruebas no tiene.
@@ -421,5 +427,108 @@ describe('ActualizacionAranceles - HU-069 increase modes', () => {
     component.setVista('inscripcion');
 
     expect(component.increaseMode).toBe('absolute');
+  });
+});
+
+// HU-094, corrección de QA (30/10): "¿Cancelar este arancel?" usa la ventana común del portal, como el resto.
+describe('ActualizacionAranceles - ventana para cancelar un arancel', () => {
+  const FILA = {
+    id: 41, target: 'genero:Masculino', category: 'male' as const, categoryLabel: 'Masculino',
+    amount: '$ 25.000', validFrom: '2099-03-01', validTo: null, status: 'Programado', statusClass: 'status-scheduled',
+  };
+
+  async function crearPantalla(cancelar: ReturnType<typeof vi.fn> = vi.fn(() => of(undefined))) {
+    const notify = vi.fn();
+    await TestBed.configureTestingModule({
+      imports: [ActualizacionAranceles],
+      providers: [
+        { provide: ArancelesService, useValue: { getResumen: () => of({}), getHistorial: () => of([]), programar: vi.fn(), cancelar } },
+        { provide: EnrollmentFeeService, useValue: { getAllEnrollmentFees: () => of([]) } },
+        { provide: PagosService, useValue: { getCategorias: () => of([]) } },
+        { provide: NotificationService, useValue: { notify } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ActualizacionAranceles);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const el = fixture.nativeElement as HTMLElement;
+    // La pantalla usa campos comunes (no señales): se marca para redibujar, como hace ella con detectChanges().
+    const refrescar = () => {
+      fixture.componentRef.injector.get(ChangeDetectorRef).detectChanges();
+    };
+    const abrir = () => {
+      component.askCancel(FILA as never);
+      refrescar();
+    };
+    return { fixture, component, el, abrir, refrescar, cancelar, notify };
+  }
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('es la ventana común: diálogo modal con título, cruz y la acción en tono de peligro', async () => {
+    const { el, abrir } = await crearPantalla();
+    abrir();
+
+    const dialogo = el.querySelector('app-ventana [role="dialog"]')!;
+    expect(dialogo).not.toBeNull();
+    expect(dialogo.getAttribute('aria-modal')).toBe('true');
+    expect(dialogo.hasAttribute('cdkTrapFocus') || dialogo.hasAttribute('cdktrapfocus')).toBe(true);
+    expect(el.querySelector('.ventana-titulo')!.textContent).toContain('¿Cancelar este arancel?');
+    expect(el.querySelector('.ventana-subtitulo')!.textContent).toContain('Masculino');
+    expect(el.querySelector('.ventana-cerrar')).not.toBeNull();
+    expect(el.querySelector('.ventana')!.classList).toContain('ventana-peligro');
+    expect(el.querySelector('.ventana-confirmar')!.classList).toContain('es-peligro');
+    expect(el.querySelector('.ventana-confirmar')!.textContent).toContain('Cancelar arancel');
+    expect(el.querySelector('.confirm-overlay')).toBeNull(); // la ventana propia de antes ya no existe
+  });
+
+  it('se cierra con Esc, con la cruz y con Volver, sin cancelar nada', async () => {
+    const { el, abrir, refrescar, cancelar } = await crearPantalla();
+
+    abrir();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    refrescar();
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
+
+    abrir();
+    el.querySelector<HTMLButtonElement>('.ventana-cerrar')!.click();
+    refrescar();
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
+
+    abrir();
+    el.querySelector<HTMLButtonElement>('.ventana-volver')!.click();
+    refrescar();
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
+
+    expect(cancelar).not.toHaveBeenCalled();
+  });
+
+  it('Cancelar arancel lo cancela una sola vez, avisa y cierra la ventana', async () => {
+    const { el, abrir, refrescar, cancelar, notify } = await crearPantalla();
+    abrir();
+
+    el.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
+    refrescar();
+
+    expect(cancelar).toHaveBeenCalledTimes(1);
+    expect(cancelar).toHaveBeenCalledWith(41);
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining('Arancel cancelado'), 'success');
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('mientras se cancela no se puede cerrar ni volver a confirmar', async () => {
+    const pendiente = new Subject<void>();
+    const { el, abrir, refrescar, cancelar } = await crearPantalla(vi.fn(() => pendiente.asObservable()));
+    abrir();
+
+    el.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
+    refrescar();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    el.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
+    refrescar();
+
+    expect(el.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(el.querySelector('.ventana-confirmar')!.textContent).toContain('Cancelando…');
+    expect(cancelar).toHaveBeenCalledTimes(1);
   });
 });

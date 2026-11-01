@@ -17,6 +17,7 @@ import {
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
 import { HelpHint } from '../../shared/help-hint/help-hint';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
+import { Ventana } from '../../shared/ventana/ventana';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { TariffHistoryItemModel } from '../../models/TariffModel';
 import { IncreaseMode, calculateNewTariff, needsCurrentTariff, sanitizePercentage } from './tariff-increase';
@@ -53,7 +54,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
     selector: 'app-actualizacion-aranceles',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect, CustomDatepicker, HelpHint],
+    imports: [CommonModule, ReactiveFormsModule, BaseChartDirective, CustomSelect, CustomDatepicker, HelpHint, Ventana],
     templateUrl: './actualizacion-aranceles.html',
     styleUrl: './actualizacion-aranceles.css',
 })

@@ -167,7 +167,7 @@
     <!-- Every fee change, newest first, both categories in a single table -->
     <article class="panel panel-history">
       <header class="panel-head">
-        <h2 class="panel-title">{{ vista === 'inscripcion' ? 'Historial de la inscripción' : 'Historial y aranceles programados' }}</h2>
+        <h2 class="panel-title" #tituloHistorial tabindex="-1">{{ vista === 'inscripcion' ? 'Historial de la inscripción' : 'Historial y aranceles programados' }}</h2>
         <span class="panel-subtitle">{{ vista === 'inscripcion'
           ? 'Todos los cambios de la inscripción por género, del más reciente al más antiguo'
           : 'Todos los cambios de cuota (por género y por categoría), del más reciente al más antiguo' }}</span>
@@ -255,27 +255,28 @@
     }
   </section>
 
-  <!-- ===== CONFIRMAR CANCELACIÓN DE UN ARANCEL ===== -->
+  <!-- ===== CONFIRMAR CANCELACIÓN DE UN ARANCEL =====
+       Ventana común del portal (shared/ventana, HU-094): cruz, Esc, foco atrapado y tono de peligro. Si el arancel se
+       cancela, su fila desaparece de la tabla: el foco vuelve al título del historial. -->
   @if (cancelTarget) {
-    <div class="confirm-overlay" (click)="closeCancel()">
-      <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="cancel-title" (click)="$event.stopPropagation()">
-        <h3 id="cancel-title" class="confirm-title">¿Cancelar este arancel?</h3>
-        <p class="confirm-detail">
-          <strong>{{ cancelTarget.categoryLabel }}</strong> · {{ cancelTarget.amount }} · desde el {{ formatDate(cancelTarget.validFrom) }}
-        </p>
-        <ul class="confirm-list">
-          <li>Se quita este arancel de todos los jugadores a los que alcanza.</li>
-          <li>Se eliminan las cuotas pendientes sin pagos emitidas con él.</li>
-          <li>Si alguna de esas cuotas ya tiene un pago, no se puede cancelar.</li>
-          <li>Las cuotas se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.</li>
-        </ul>
-        <div class="confirm-actions">
-          <button type="button" class="confirm-back" (click)="closeCancel()" [disabled]="cancelando">Volver</button>
-          <button type="button" class="confirm-danger" (click)="confirmCancel()" [disabled]="cancelando">
-            {{ cancelando ? 'Cancelando…' : 'Cancelar arancel' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-ventana
+      titulo="¿Cancelar este arancel?"
+      [subtitulo]="cancelTarget.categoryLabel + ' · ' + cancelTarget.amount + ' · desde el ' + formatDate(cancelTarget.validFrom)"
+      [peligro]="true"
+      textoVolver="Volver"
+      textoConfirmar="Cancelar arancel"
+      textoEnCurso="Cancelando…"
+      [enCurso]="cancelando"
+      [focoAlCerrar]="tituloHistorial"
+      (confirmar)="confirmCancel()"
+      (cerrar)="closeCancel()"
+    >
+      <ul class="confirm-list">
+        <li>Se quita este arancel de todos los jugadores a los que alcanza.</li>
+        <li>Se eliminan las cuotas pendientes sin pagos emitidas con él.</li>
+        <li>Si alguna de esas cuotas ya tiene un pago, no se puede cancelar.</li>
+        <li>Las cuotas se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.</li>
+      </ul>
+    </app-ventana>
   }
 </div>

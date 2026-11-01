@@ -1,6 +1,6 @@
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgModel } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { AuthService } from '../../services/auth';
@@ -21,6 +21,9 @@ export type PestanaUsuarios = 'habilitadas' | 'candidatos' | 'deshabilitadas';
 export interface CambioDeRol {
   usuario: PortalUserModel;
   rol: RolPortal;
+  // El desplegable de la fila: si el cambio no se aplica, vuelve a mostrar el rol real y recibe el foco.
+  modelo?: NgModel;
+  selector?: CustomSelect;
 }
 
 @Component({
@@ -63,11 +66,10 @@ export class Usuarios implements OnInit {
   botonMenu: HTMLElement | null = null;
 
   // "Cambiar rol": un cambio de rol da o quita permisos, así que no se aplica al elegirlo en el desplegable sino
-  // después de confirmarlo. `refrescoRoles` vuelve a dibujar los desplegables cuando se cancela, para que
-  // muestren de nuevo el rol que la cuenta realmente tiene.
+  // después de confirmarlo. Si se cancela (o el servidor lo rechaza), el desplegable vuelve a mostrar el rol que la
+  // cuenta realmente tiene (ver restaurarDesplegable).
   cambioDeRol = signal<CambioDeRol | null>(null);
   rolSubmitting = signal(false);
-  refrescoRoles = signal(0);
 
   // "Editar candidato": corrige nombre/apellido/DNI (no el mail) antes de habilitar, por
   // si hubo un error de carga. El DNI es el usuario con el que va a ingresar.
@@ -321,12 +323,12 @@ export class Usuarios implements OnInit {
 
   // Elegir otro rol en el desplegable NO lo aplica: abre una confirmación que explica qué cambia. Un clic de más
   // en una lista de permisos no puede dar acceso total a alguien ni dejar a un SuperAdmin sin el suyo.
-  onRolHabilitadoChange(usuario: PortalUserModel, valor: string | number | null): void {
+  onRolHabilitadoChange(usuario: PortalUserModel, valor: string | number | null, modelo?: NgModel, selector?: CustomSelect): void {
     if (valor !== 1 && valor !== 2) return;
     if (valor === usuario.rolPortal) return;
 
     this.menuAbierto.set(null);
-    this.cambioDeRol.set({ usuario, rol: valor });
+    this.cambioDeRol.set({ usuario, rol: valor, modelo, selector });
   }
 
   // Qué le dice la confirmación a quien está por cambiar un rol.
@@ -351,9 +353,16 @@ export class Usuarios implements OnInit {
 
   cancelarCambioDeRol(): void {
     if (this.rolSubmitting()) return;
+    const cambio = this.cambioDeRol();
     this.cambioDeRol.set(null);
-    // El desplegable ya muestra el rol nuevo; se vuelve a dibujar para que vuelva a mostrar el real.
-    this.refrescoRoles.update((n) => n + 1);
+    if (cambio) this.restaurarDesplegable(cambio);
+  }
+
+  // El desplegable ya muestra el rol elegido, pero como la cuenta sigue con el suyo, [ngModel] no ve ningún cambio
+  // y no lo corrige solo (por eso volver a dibujar la fila no alcanzaba: QA, HU-094). Se le vuelve a escribir el
+  // rol real directamente, sin recrear la fila, así el foco puede volver a ese mismo desplegable.
+  private restaurarDesplegable(cambio: CambioDeRol): void {
+    cambio.modelo?.control.setValue(cambio.usuario.rolPortal);
   }
 
   confirmarCambioDeRol(): void {
@@ -372,7 +381,7 @@ export class Usuarios implements OnInit {
         },
         error: (error) => {
           this.cambioDeRol.set(null);
-          this.refrescoRoles.update((n) => n + 1);
+          this.restaurarDesplegable(cambio);
           this.notifications.notify(
             error?.error?.mensaje ?? 'No se pudo cambiar el rol. Verificá que quede al menos un SuperAdmin.',
             'error',
