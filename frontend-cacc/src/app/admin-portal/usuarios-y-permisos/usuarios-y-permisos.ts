@@ -1,9 +1,12 @@
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgModel } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { AuthService } from '../../services/auth';
+import { PendingActionsService } from '../../services/pending-actions';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
 import { normalizeText } from '../../shared/normalize-text';
@@ -16,6 +19,7 @@ const ROL_OPTIONS: CustomSelectOption[] = [
 ];
 
 export type PestanaUsuarios = 'habilitadas' | 'candidatos' | 'deshabilitadas';
+const PESTANAS: readonly PestanaUsuarios[] = ['habilitadas', 'candidatos', 'deshabilitadas'];
 
 // Un cambio de rol pendiente de confirmación: todavía no se aplicó, se aplica recién al confirmar.
 export interface CambioDeRol {
@@ -38,15 +42,31 @@ export class Usuarios implements OnInit {
   readonly rolLabels = ROL_PORTAL_LABELS;
 
   private readonly authService = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  // HU-104: los candidatos son un pendiente de la campanita. Se leen del estado compartido (la misma consulta que usa
+  // la campanita, como máximo una por minuto) y se actualizan ahí al habilitar o corregir a alguien.
+  private readonly pendientes = inject(PendingActionsService);
 
-  // Lista que se muestra: una por vez, con el contador de cada una en su pestaña.
+  // Lista que se muestra: una por vez, con el contador de cada una en su pestaña. Va también en la dirección
+  // (?pestana=candidatos) para poder entrar directo a una pestaña desde la campanita.
   pestana = signal<PestanaUsuarios>('habilitadas');
 
   loading = signal(true);
-  loadError = signal<string | null>(null);
+  // Errores de las listas que carga esta pantalla (habilitadas y deshabilitadas).
+  private errorListas = signal<string | null>(null);
   habilitados = signal<PortalUserModel[]>([]);
-  candidatos = signal<PortalUserCandidateModel[]>([]);
+  readonly candidatos = computed<PortalUserCandidateModel[]>(() => this.pendientes.candidates() ?? []);
   deshabilitados = signal<PortalUserModel[]>([]);
+
+  readonly loadError = computed<string | null>(() => {
+    if (this.errorListas()) return this.errorListas();
+    if (this.pendientes.candidatesStatus() !== 'error') return null;
+    return this.pendientes.candidates() === null
+      ? 'No se pudo cargar la lista de candidatos.'
+      : 'No se pudo actualizar la lista de candidatos: se muestran los últimos datos obtenidos.';
+  });
 
   // Búsqueda sobre la lista que se está viendo (nombre, apellido, DNI o correo). Los contadores de las pestañas
   // siguen mostrando el total, no el resultado de la búsqueda.
@@ -110,21 +130,27 @@ export class Usuarios implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Normalmente ya lo inició el Portal Administrativo: llamarlo de nuevo no consulta otra vez.
+    this.pendientes.start();
     this.cargar();
+
+    // ?pestana=candidatos (o habilitadas / deshabilitadas). Escucha los cambios para que el enlace de la campanita
+    // funcione también si ya se está en esta pantalla; un valor desconocido deja la pestaña de habilitadas.
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const pedida = params.get('pestana');
+      this.pestana.set(PESTANAS.includes(pedida as PestanaUsuarios) ? (pedida as PestanaUsuarios) : 'habilitadas');
+      this.menuAbierto.set(null);
+    });
   }
 
+  // Habilitadas y deshabilitadas. Los candidatos no se piden acá: vienen del estado compartido de pendientes.
   cargar(): void {
     this.loading.set(true);
-    this.loadError.set(null);
+    this.errorListas.set(null);
 
     this.usuariosService.getHabilitados().subscribe({
       next: (rows) => this.habilitados.set(rows),
-      error: () => this.loadError.set('No se pudo cargar la lista de usuarios habilitados.'),
-    });
-
-    this.usuariosService.getCandidatos().subscribe({
-      next: (rows) => this.candidatos.set(rows),
-      error: () => this.loadError.set('No se pudo cargar la lista de candidatos.'),
+      error: () => this.errorListas.set('No se pudo cargar la lista de usuarios habilitados.'),
     });
 
     this.usuariosService
@@ -132,13 +158,20 @@ export class Usuarios implements OnInit {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (rows) => this.deshabilitados.set(rows),
-        error: () => this.loadError.set('No se pudo cargar la lista de cuentas deshabilitadas.'),
+        error: () => this.errorListas.set('No se pudo cargar la lista de cuentas deshabilitadas.'),
       });
   }
 
+  // La pestaña elegida queda en la dirección (reemplazándola, sin sumar pasos al historial del navegador).
   cambiarPestana(pestana: PestanaUsuarios): void {
     this.pestana.set(pestana);
     this.menuAbierto.set(null);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { pestana: pestana === 'habilitadas' ? null : pestana },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   get totalHabilitados(): number {
@@ -271,9 +304,8 @@ export class Usuarios implements OnInit {
       .pipe(finalize(() => this.editarSubmitting.set(false)))
       .subscribe({
         next: () => {
-          candidato.nombre = nombre;
-          candidato.apellido = apellido;
-          candidato.dni = dni.replace(/\D/g, ''); // el servidor lo guarda solo con dígitos
+          // Sigue siendo candidata, con sus datos nuevos (el servidor guarda el DNI solo con dígitos).
+          this.pendientes.updateCandidate(candidato.idUsuario, { nombre, apellido, dni });
           this.dialogEditar.set(null);
           this.notifications.notify('Datos corregidos.', 'success');
         },
@@ -311,6 +343,9 @@ export class Usuarios implements OnInit {
           this.notifications.notify(respuesta.mensaje, 'success');
           this.dialogCandidato.set(null);
           this.rolElegido.delete(candidato.idUsuario);
+          // HU-104: ya tiene acceso (aunque haya fallado el correo, la respuesta es 200): deja de ser candidata en la
+          // campanita y en esta lista, sin volver a pedir candidatos. Habilitadas sí se vuelve a pedir.
+          this.pendientes.resolveCandidate(candidato.idUsuario);
           this.cargar();
         },
         error: (error) => {

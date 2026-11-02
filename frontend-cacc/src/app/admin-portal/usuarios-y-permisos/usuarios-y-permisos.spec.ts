@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 
 import { Usuarios } from './usuarios-y-permisos';
@@ -6,6 +8,8 @@ import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { AuthService } from '../../services/auth';
 import { PortalUserCandidateModel, PortalUserModel } from '../../models/PortalUserModel';
+import { CuotasFaltantesService } from '../../services/cuotas-faltantes';
+import { PendingActionsService } from '../../services/pending-actions';
 
 // Botón "Resetear contraseña" del SuperAdmin: le manda a una cuenta habilitada el enlace para elegir una contraseña
 // nueva. El enlace llega al correo de la propia cuenta; el SuperAdmin no ve ni fija la contraseña.
@@ -37,6 +41,9 @@ async function create(
   await TestBed.configureTestingModule({
     imports: [Usuarios],
     providers: [
+      provideRouter([]),
+      // HU-104: los candidatos llegan del coordinador de pendientes (que usa estas mismas consultas).
+      { provide: CuotasFaltantesService, useValue: { getMeses: () => of([]) } },
       {
         provide: UsuariosPortalService,
         useValue: {
@@ -49,7 +56,7 @@ async function create(
         },
       },
       { provide: NotificationService, useValue: { notify } },
-      { provide: AuthService, useValue: { getUsuario: () => opciones.yo ?? null } },
+      { provide: AuthService, useValue: { getUsuario: () => opciones.yo ?? null, isSuperAdmin: () => true, getToken: () => 't' } },
     ],
   }).compileComponents();
 
@@ -201,7 +208,7 @@ describe('Usuarios - Corregir el DNI de un candidato', () => {
     expect(editarCandidato).toHaveBeenCalledWith(20, {
       nombre: 'Carla', apellido: 'Candidata', dni: '30.555.777',
     });
-    expect(candidato.dni).toBe('30555777');
+    expect(component.candidatos()[0].dni).toBe('30555777');
   });
 
   // El mail no se modifica desde el portal: si se pudiera, un SuperAdmin podría habilitar la cuenta de otra
@@ -550,6 +557,7 @@ describe('Usuarios - Reactivar con rol', () => {
     await TestBed.configureTestingModule({
       imports: [Usuarios],
       providers: [
+        provideRouter([]),
         {
           provide: UsuariosPortalService,
           useValue: {
@@ -583,5 +591,109 @@ describe('Usuarios - Reactivar con rol', () => {
     component.confirmarReactivarAccion();
 
     expect(reactivar).toHaveBeenCalledWith(INACTIVO.idUsuario, 1);
+  });
+});
+
+// HU-104: los candidatos son un pendiente de la campanita. La pantalla los lee del estado compartido (sin otra
+// consulta) y se puede entrar directo a la pestaña Candidatos con ?pestana=candidatos.
+describe('Usuarios - pendientes compartidos con la campanita (HU-104)', () => {
+  const OTRO: PortalUserCandidateModel = { ...CANDIDATO, idUsuario: 21, nombre: 'Luis', email: 'luis@cacc.test' };
+
+  async function crearConRuta(url: string, habilitar = vi.fn(() => of({ mensaje: 'Cuenta habilitada. Se envió un correo para que active su acceso.' }))) {
+    const getCandidatos = vi.fn(() => of([{ ...CANDIDATO }, { ...OTRO }]));
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: 'admin/portal/usuarios', component: Usuarios }, { path: 'admin/portal/resumen-general', children: [] }]),
+        { provide: CuotasFaltantesService, useValue: { getMeses: () => of([]) } },
+        {
+          provide: UsuariosPortalService,
+          useValue: {
+            getCandidatos,
+            getHabilitados: () => of([ADMIN]),
+            getDeshabilitados: () => of([]),
+            habilitar,
+          },
+        },
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+        { provide: AuthService, useValue: { getUsuario: () => null, isSuperAdmin: () => true, getToken: () => 't' } },
+      ],
+    });
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl(url, Usuarios);
+    return { harness, component, getCandidatos, habilitar, pendientes: TestBed.inject(PendingActionsService) };
+  }
+
+  afterEach(() => TestBed.inject(PendingActionsService).stop());
+
+  it('entrar con ?pestana=candidatos abre directamente la pestaña Candidatos', async () => {
+    const { component } = await crearConRuta('/admin/portal/usuarios?pestana=candidatos');
+
+    expect(component.pestana()).toBe('candidatos');
+  });
+
+  it('si ya está en Usuarios, el enlace de la campanita también cambia la pestaña', async () => {
+    const { harness, component } = await crearConRuta('/admin/portal/usuarios');
+    expect(component.pestana()).toBe('habilitadas');
+
+    await harness.navigateByUrl('/admin/portal/usuarios?pestana=candidatos');
+
+    expect(component.pestana()).toBe('candidatos');
+  });
+
+  it('elegir otra pestaña la deja en la dirección, así el enlace funciona aunque se haya cambiado a mano', async () => {
+    const { harness, component } = await crearConRuta('/admin/portal/usuarios?pestana=candidatos');
+
+    component.cambiarPestana('habilitadas');
+    await harness.fixture.whenStable();
+    await harness.navigateByUrl('/admin/portal/usuarios?pestana=candidatos');
+
+    expect(component.pestana()).toBe('candidatos');
+  });
+
+  it('un valor desconocido deja una pestaña válida', async () => {
+    const { component } = await crearConRuta('/admin/portal/usuarios?pestana=cualquiera');
+
+    expect(component.pestana()).toBe('habilitadas');
+  });
+
+  it('usa los candidatos del estado compartido: no hace otra consulta propia', async () => {
+    const { component, getCandidatos } = await crearConRuta('/admin/portal/usuarios');
+
+    expect(component.candidatos().map((c) => c.idUsuario)).toEqual([20, 21]);
+    expect(getCandidatos).toHaveBeenCalledTimes(1);
+  });
+
+  it('habilitar confirmado quita solo a esa persona, al instante y sin volver a pedir candidatos', async () => {
+    const { component, getCandidatos, pendientes } = await crearConRuta('/admin/portal/usuarios?pestana=candidatos');
+
+    component.abrirHabilitar(component.candidatos()[0]);
+    component.confirmarHabilitar();
+
+    expect(component.candidatos().map((c) => c.idUsuario)).toEqual([21]);
+    expect(pendientes.total()).toBe(1);
+    expect(getCandidatos).toHaveBeenCalledTimes(1);
+  });
+
+  it('si el servidor habilitó pero no pudo mandar el correo (200), igual deja de ser candidata', async () => {
+    const habilitar = vi.fn(() => of({ mensaje: 'Se habilitó el acceso, pero no se pudo enviar el correo de activación. Reintentá desde Usuarios y Permisos.' }));
+    const { component, pendientes } = await crearConRuta('/admin/portal/usuarios?pestana=candidatos', habilitar);
+
+    component.abrirHabilitar(component.candidatos()[0]);
+    component.confirmarHabilitar();
+
+    expect(pendientes.items().map((p) => p.key)).toEqual(['candidato:21']);
+  });
+
+  it('abrir, cancelar o un error al habilitar no descuentan', async () => {
+    const habilitar = vi.fn(() => throwError(() => ({ error: { mensaje: 'No se encontró a esa persona.' } })));
+    const { component, pendientes } = await crearConRuta('/admin/portal/usuarios?pestana=candidatos', habilitar);
+
+    component.abrirHabilitar(component.candidatos()[0]);
+    component.cerrarHabilitar();
+    component.abrirHabilitar(component.candidatos()[0]);
+    component.confirmarHabilitar();
+
+    expect(pendientes.total()).toBe(2);
+    expect(component.dialogError()).toBe('No se encontró a esa persona.');
   });
 });

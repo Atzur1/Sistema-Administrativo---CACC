@@ -6,6 +6,7 @@ import { CUOTAS_AL_DIA_HINT, ResumenGeneral, describeTrend } from './resumen-gen
 import { EstadisticasService } from '../../services/estadisticas';
 import { AuthService } from '../../services/auth';
 import { CuotasFaltantesService } from '../../services/cuotas-faltantes';
+import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { GeneralSummaryModel, SummaryTrendsModel } from '../../models/GeneralSummaryModel';
 
 // HU-099: Resumen General con tarjetas clicables, variación mensual, gráfico legible y explicación de "Cuotas al día".
@@ -47,8 +48,10 @@ async function crear(resumen: GeneralSummaryModel = summary()) {
     providers: [
       provideRouter([]),
       { provide: EstadisticasService, useValue: { getResumenGeneral: () => of(resumen).pipe(delay(0)) } },
-      { provide: AuthService, useValue: { getUsuario: () => ({ firstName: 'Octavio' }) } },
+      { provide: AuthService, useValue: { getUsuario: () => ({ firstName: 'Octavio' }), isSuperAdmin: () => true, getToken: () => 't' } },
       { provide: CuotasFaltantesService, useValue: { getMeses: () => of([]) } },
+      // HU-104: el aviso de cuotas faltantes lee los meses del coordinador de pendientes, que también consulta candidatos.
+      { provide: UsuariosPortalService, useValue: { getCandidatos: () => of([]) } },
     ],
   }).compileComponents();
 

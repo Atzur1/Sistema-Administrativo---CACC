@@ -7,6 +7,7 @@ import { filter } from 'rxjs/operators';
 import { Toast } from '../shared/toast/toast';
 import { NotificationBell } from '../shared/notification-bell/notification-bell';
 import { DtAdminChat } from '../shared/dt-admin-chat/dt-admin-chat';
+import { PendingActionsService } from '../services/pending-actions';
 
 @Component({
     selector: 'app-admin-portal',
@@ -45,6 +46,8 @@ private pageTitles: Record<string, string> = {
 };
 
 private destroyRef = inject(DestroyRef);
+// HU-104: pendientes de acción de la campanita (solo SuperAdmin; para otro rol no consulta nada).
+private pendientes = inject(PendingActionsService);
 
 constructor(
     private router: Router,
@@ -69,6 +72,12 @@ this.router.events
 
     // Set initial title on load
     this.updatePageTitle();
+
+    // HU-104: los pendientes arrancan al entrar al portal, entre por la pantalla que sea, sin frenar su carga (no es
+    // un resolver ni condiciona el router-outlet). Al salir del portal —cierre de sesión o sesión vencida, que
+    // navegan fuera— se detienen y se borran.
+    this.pendientes.start();
+    this.destroyRef.onDestroy(() => this.pendientes.stop());
     }
 
   // Reads the last URL segment and maps it to a display name.
@@ -118,6 +127,7 @@ cambiarPortal() {
 
 // Log out and return to the login screen
 cerrarSesion() {
+    this.pendientes.stop();
     this.authService.cerrarSesion();
     this.router.navigate(['/']);
     }

@@ -1,6 +1,7 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CuotasFaltantesService } from '../../../services/cuotas-faltantes';
+import { PendingActionsService } from '../../../services/pending-actions';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { estaVencida, vencimientoDelPeriodo } from '../../../shared/calendario-cuotas';
 import { Ventana } from '../../../shared/ventana/ventana';
@@ -28,7 +29,14 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
   styleUrl: './aviso-cuotas-faltantes.css',
 })
 export class AvisoCuotasFaltantes implements OnInit {
-  meses: MonthWithMissingFeesModel[] = [];
+  // HU-104: los meses son un pendiente de la campanita. Se leen del estado compartido (la misma consulta, como máximo
+  // una por minuto) y se actualizan ahí al generar. Si la consulta falla y no hay datos, el aviso no se muestra y el
+  // resto del Resumen General sigue funcionando (la campanita sí avisa del error).
+  private readonly pendientes = inject(PendingActionsService);
+
+  get meses(): MonthWithMissingFeesModel[] {
+    return this.pendientes.months() ?? [];
+  }
 
   // La franja arranca resumida (una línea); el listado de meses se despliega a pedido.
   expandido = false;
@@ -47,7 +55,8 @@ export class AvisoCuotasFaltantes implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cargarMeses();
+    // Normalmente ya lo inició el Portal Administrativo: llamarlo de nuevo no consulta otra vez.
+    this.pendientes.start();
   }
 
   nombreMes(mes: MonthWithMissingFeesModel): string {
@@ -138,25 +147,14 @@ export class AvisoCuotasFaltantes implements OnInit {
         this.generando = false;
         this.notifications.notify(respuesta.mensaje, 'success');
         this.cerrar();
-        this.cargarMeses();
+        // La generación del mes es completa y transaccional: con la respuesta OK ese mes ya no tiene faltantes
+        // ("creadas = 0" quiere decir que ya estaban todas). Se quita del aviso y de la campanita sin otra consulta.
+        this.pendientes.resolveMonth(mes.periodo);
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.generando = false;
         this.errorDialogo = err.error?.mensaje ?? 'No se pudieron generar las cuotas. No se creó ninguna.';
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  private cargarMeses(): void {
-    this.service.getMeses().subscribe({
-      next: (meses) => {
-        this.meses = meses;
-        this.cdr.detectChanges();
-      },
-      // Si el aviso no se puede cargar, el resto del Resumen General sigue funcionando.
-      error: () => {
-        this.meses = [];
         this.cdr.detectChanges();
       },
     });
