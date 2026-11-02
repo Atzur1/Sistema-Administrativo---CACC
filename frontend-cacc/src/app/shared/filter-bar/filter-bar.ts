@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild, inject } from '@angular/core';
 
 // Lo que espera la búsqueda por texto a que se termine de escribir antes de buscar (HU-097).
 export const SEARCH_DEBOUNCE_MS = 300;
@@ -44,6 +44,9 @@ export class ActiveFiltersCache {
   styleUrl: './filter-bar.css',
 })
 export class FilterBar implements OnDestroy {
+  private readonly cdr = inject(ChangeDetectorRef);
+  @ViewChild('campo') private campo?: ElementRef<HTMLInputElement>;
+
   // Sin texto de búsqueda no hay buscador.
   @Input() textoBusqueda = '';
   @Input() etiqueta = 'Filtros';
@@ -81,6 +84,24 @@ export class FilterBar implements OnDestroy {
     event.preventDefault();
     this.cancelarEspera();
     this.emitirBusqueda();
+  }
+
+  // HU-102: deja el buscador vacío y descarta lo que estaba por buscar. Lo usa "Limpiar filtros" de la barra y lo
+  // pueden llamar las pantallas que limpian desde otro lugar (por ejemplo, el estado vacío de resultados): si la
+  // búsqueda aplicada ya estaba vacía, la entrada [busqueda] no cambia y el texto escrito volvería a buscarse.
+  reiniciarBusqueda(): void {
+    this.cancelarEspera();
+    this.texto = '';
+    this.ultimoEmitido = '';
+    // Se vacía el campo a mano: si el binding [value] ya valía '' no lo vuelve a escribir, y el navegador conserva
+    // lo que se tipeó.
+    if (this.campo) this.campo.nativeElement.value = '';
+    this.cdr.markForCheck();
+  }
+
+  limpiarTodo(): void {
+    this.reiniciarBusqueda();
+    this.limpiar.emit();
   }
 
   ngOnDestroy(): void {

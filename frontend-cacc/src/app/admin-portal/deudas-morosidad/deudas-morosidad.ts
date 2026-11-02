@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   OnInit,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -54,7 +55,9 @@ interface DebtorHighlight {
   idJugador: number;
   initials: string;
   player: string;
-  detail: string;
+  category: string;
+  // HU-102: lo urgente, dicho con texto (además del color): "3 cuotas vencidas".
+  overdue: string;
   amount: string;
 }
 
@@ -132,6 +135,10 @@ const SITUACION_BAJA = 'Dados de baja';
 export class DeudasMorosidad implements OnInit {
   cargando = true;
 
+  // La barra de filtros compartida (HU-097/HU-102), para descartar una búsqueda escrita y no aplicada al limpiar
+  // desde el estado vacío de resultados.
+  @ViewChild(FilterBar) private barraFiltros?: FilterBar;
+
   // Banner: valores globales del club por default; si hay una categoría
   // filtrada (HU-020, QA 24/09), se recalcula sobre ese subgrupo — ver
   // recalcularBanner().
@@ -204,6 +211,9 @@ export class DeudasMorosidad implements OnInit {
   // Guardado para poder recalcular el banner cuando cambia la categoría
   // elegida, sin pedirlo de nuevo al servidor cada vez (HU-020, QA 24/09).
   private resumenGlobal: PaymentSummaryModel | null = null;
+  // HU-102: la categoría con la que se calculó el encabezado (null = todo el club; undefined = todavía no se
+  // calculó). Buscar, elegir estado o situación no cambia el alcance de las métricas, así que no las recalcula.
+  private categoriaDelBanner: string | null | undefined = undefined;
 
   constructor(
     private pagosService: PagosService,
@@ -227,7 +237,7 @@ export class DeudasMorosidad implements OnInit {
       next: ({ pendientes, resumen }) => {
         this.allPendientes = pendientes;
         this.resumenGlobal = resumen;
-        this.recalcularBanner();
+        this.recalcularBanner(true);
       },
       error: () => {
         this.cdr.detectChanges();
@@ -272,7 +282,7 @@ export class DeudasMorosidad implements OnInit {
             ),
           ];
         }
-        this.aplicarFiltro();
+        this.aplicarFiltro(true);
         this.cargando = false;
         this.cdr.detectChanges();
       },
@@ -340,6 +350,7 @@ export class DeudasMorosidad implements OnInit {
   }
 
   limpiarFiltros(): void {
+    this.barraFiltros?.reiniciarBusqueda();
     this.selectedCategoria = null;
     this.selectedEstado = null;
     this.selectedSituacion = null;
@@ -418,7 +429,8 @@ export class DeudasMorosidad implements OnInit {
     this.aplicarFiltro();
   }
 
-  private aplicarFiltro(): void {
+  // forzarBanner: cuando llegan datos nuevos del servidor, el subtotal de la categoría puede haber cambiado.
+  private aplicarFiltro(forzarBanner = false): void {
     const categoria = this.categoriaActiva;
     let filtrados = this.allRows;
 
@@ -454,7 +466,7 @@ export class DeudasMorosidad implements OnInit {
       .filter((p) => p.estadoDeportivo === 'inhabilitado')
       .slice(0, 5)
       .map(mapHighlight);
-    this.recalcularBanner();
+    this.recalcularBanner(forzarBanner);
     this.cdr.detectChanges();
   }
 
@@ -463,13 +475,17 @@ export class DeudasMorosidad implements OnInit {
   // ESA categoría, no seguir mostrando los totales globales del club. Se
   // calcula sobre allRows (la misma lista que alimenta la grilla de abajo)
   // para que el subtotal coincida exacto con lo que se ve en pantalla.
-  private recalcularBanner(): void {
+  // HU-102: búsqueda, estado y situación filtran la lista, no las métricas: con la misma categoría (y sin datos
+  // nuevos, forzar = false) el encabezado queda como está, sin volver a contar desde $0.
+  private recalcularBanner(forzar = false): void {
     const categoria = this.categoriaActiva;
+    if (!forzar && categoria === this.categoriaDelBanner) return;
 
     if (categoria) {
       const filas = this.allRows.filter((p) => p.categoria === categoria);
       const montoTotal = filas.reduce((acc, p) => acc + p.montoTotal, 0);
       const inhabilitados = filas.filter((p) => p.estadoDeportivo === 'inhabilitado').length;
+      this.categoriaDelBanner = categoria;
       this.animateBannerMetrics([
         { label: 'Deuda total', raw: montoTotal, format: formatCompactCurrency },
         { label: 'Deudores', raw: filas.length, format: (n) => String(n) },
@@ -482,6 +498,7 @@ export class DeudasMorosidad implements OnInit {
     // llegó la respuesta de /pagos/resumen, se deja el banner como está
     // (placeholders) — esa misma respuesta va a llamar a este método de nuevo.
     if (!this.resumenGlobal) return;
+    this.categoriaDelBanner = null;
     this.animateBannerMetrics(buildBannerTargets(this.resumenGlobal, this.allPendientes));
   }
 
@@ -566,7 +583,8 @@ function mapHighlight(p: AlumnoRow): DebtorHighlight {
     idJugador: p.idJugador,
     initials: initialsOf(p.nombreCompleto),
     player: p.nombreCompleto,
-    detail: `${p.categoria} · ${p.cantidadVencidas} cuotas vencidas`,
+    category: p.categoria,
+    overdue: `${p.cantidadVencidas} ${p.cantidadVencidas === 1 ? 'cuota vencida' : 'cuotas vencidas'}`,
     amount: formatCompactCurrency(p.montoTotal),
   };
 }

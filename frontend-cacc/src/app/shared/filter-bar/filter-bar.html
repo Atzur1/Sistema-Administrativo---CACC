@@ -7,7 +7,7 @@
           <circle cx="11" cy="11" r="7"></circle>
           <path d="m20 20-4-4"></path>
         </svg>
-        <input type="search" [value]="texto" [placeholder]="textoBusqueda" [attr.aria-label]="textoBusqueda"
+        <input #campo type="search" [value]="texto" [placeholder]="textoBusqueda" [attr.aria-label]="textoBusqueda"
                (input)="alEscribir($any($event.target).value)" (keydown.enter)="buscarAhora($event)" />
       </label>
     }
@@ -15,7 +15,7 @@
     <ng-content />
 
     <button type="button" class="boton boton-fantasma filter-bar-clear" [disabled]="filtrosActivos.length === 0"
-            (click)="limpiar.emit()">Limpiar filtros</button>
+            (click)="limpiarTodo()">Limpiar filtros</button>
   </div>
 
   <ng-content select="[filterBarMore]" />

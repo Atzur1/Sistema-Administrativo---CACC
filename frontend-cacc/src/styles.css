@@ -529,9 +529,9 @@ app-admin-portal,
    Cada pantalla pone su color con dos variables en su :host; sin ellas, verde:
      --section-accent     color del ícono
      --section-accent-bg  fondo suave del cuadro del ícono
-   Colores por sección: verde = plata (cuotas, aranceles, recaudación, actividad),
-   violeta = beneficios (becados), rojo = alerta (deudas), azul = control
-   (usuarios, reportes, auditoría).
+   Colores por sección: verde = plata (cuotas, aranceles, recaudación, actividad, deudas),
+   violeta = beneficios (becados), azul = control (usuarios, reportes, auditoría).
+   El rojo no es color de sección (HU-102): queda para lo urgente, como las etiquetas de cuotas vencidas.
    ===================================================================== */
 .page-header {
   display: flex;
