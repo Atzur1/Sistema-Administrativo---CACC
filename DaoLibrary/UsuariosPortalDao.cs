@@ -50,7 +50,7 @@ namespace DaoLibrary
             var resultado = new List<UsuarioPortal>();
 
             const string query = @"
-                SELECT PK_id_usuario, nombre, apellido, dni, email, rol_portal, activo, activacion_pendiente
+                SELECT PK_id_usuario, nombre, apellido, dni, email, rol_portal, activo, activacion_pendiente, token_version
                 FROM USUARIOS JOIN PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona
                 WHERE acceso_portal = 1
                 ORDER BY apellido, nombre";
@@ -69,7 +69,8 @@ namespace DaoLibrary
                     Email = reader["email"] as string ?? string.Empty,
                     RolPortal = Convert.ToInt32(reader["rol_portal"]),
                     Activo = Convert.ToBoolean(reader["activo"]),
-                    ActivacionPendiente = Convert.ToBoolean(reader["activacion_pendiente"])
+                    ActivacionPendiente = Convert.ToBoolean(reader["activacion_pendiente"]),
+                    Revision = Convert.ToInt32(reader["token_version"])
                 });
             }
 
@@ -222,48 +223,55 @@ namespace DaoLibrary
             return actualizar.ExecuteNonQuery() == 1 ? (HabilitarResultado.Ok, email) : (HabilitarResultado.NoEncontrado, null);
         }
 
-        public bool CambiarRol(int idUsuario, int nuevoRolPortal)
+        public (CambiarRolResultado Resultado, CambioDeRol? Cambio) CambiarRol(int idUsuario, int nuevoRolPortal, int revisionEsperada)
         {
-            if (nuevoRolPortal != 1 && nuevoRolPortal != 2) return false;
+            if (nuevoRolPortal != 1 && nuevoRolPortal != 2) return (CambiarRolResultado.RolInvalido, null);
 
             using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
+            var resultado = CambiarRolCore(conexion, transaccion, idUsuario, nuevoRolPortal, revisionEsperada);
+            if (resultado.Resultado == CambiarRolResultado.Ok) transaccion.Commit(); else transaccion.Rollback();
+            return resultado;
+        }
 
+        internal static (CambiarRolResultado Resultado, CambioDeRol? Cambio) CambiarRolCore(
+            SqlConnection conexion, SqlTransaction transaccion, int idUsuario, int nuevoRolPortal, int revisionEsperada)
+        {
+            if (nuevoRolPortal != 1 && nuevoRolPortal != 2) return (CambiarRolResultado.RolInvalido, null);
+
+            int rolActual;
+            int revisionActual;
             using (var bloquear = new SqlCommand(
-                "SELECT rol_portal FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
+                "SELECT rol_portal, token_version FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
                 conexion, transaccion))
             {
                 bloquear.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-                var actual = bloquear.ExecuteScalar();
-                if (actual is null)
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
-
-                var rolActual = Convert.ToInt32(actual);
-                if (rolActual == 1 && nuevoRolPortal != 1 && !QuedaOtroSuperAdminHabilitado(conexion, transaccion, idUsuario))
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
+                using var lector = bloquear.ExecuteReader();
+                if (!lector.Read()) return (CambiarRolResultado.NoEncontrado, null);
+                rolActual = Convert.ToInt32(lector["rol_portal"]);
+                revisionActual = Convert.ToInt32(lector["token_version"]);
             }
 
-            using (var actualizar = new SqlCommand(
-                "UPDATE dbo.USUARIOS SET rol_portal = @rol, token_version = token_version + 1 WHERE PK_id_usuario = @id AND acceso_portal = 1",
-                conexion, transaccion))
-            {
-                actualizar.Parameters.Add("@rol", SqlDbType.Int).Value = nuevoRolPortal;
-                actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-                if (actualizar.ExecuteNonQuery() != 1)
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
-            }
+            if (revisionActual != revisionEsperada) return (CambiarRolResultado.RevisionDesactualizada, null);
+            if (rolActual == 1 && nuevoRolPortal != 1 && !QuedaOtroSuperAdminHabilitado(conexion, transaccion, idUsuario, soloOperativos: true))
+                return (CambiarRolResultado.UltimoSuperAdmin, null);
 
-            transaccion.Commit();
-            return true;
+            // La condición sobre token_version se repite en el UPDATE: la escritura y su precondición son una sola
+            // sentencia. USUARIOS tiene trigger de auditoría, así que la revisión nueva sale por OUTPUT ... INTO.
+            using var actualizar = new SqlCommand(
+                @"DECLARE @nueva TABLE (revision INT);
+                  UPDATE dbo.USUARIOS SET rol_portal = @rol, token_version = token_version + 1
+                  OUTPUT INSERTED.token_version INTO @nueva
+                  WHERE PK_id_usuario = @id AND acceso_portal = 1 AND token_version = @revision;
+                  SELECT revision FROM @nueva;",
+                conexion, transaccion);
+            actualizar.Parameters.Add("@rol", SqlDbType.Int).Value = nuevoRolPortal;
+            actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
+            actualizar.Parameters.Add("@revision", SqlDbType.Int).Value = revisionEsperada;
+            var revisionNueva = actualizar.ExecuteScalar();
+            if (revisionNueva is null) return (CambiarRolResultado.RevisionDesactualizada, null);
+
+            return (CambiarRolResultado.Ok, new CambioDeRol(idUsuario, rolActual, nuevoRolPortal, Convert.ToInt32(revisionNueva)));
         }
 
         public bool Deshabilitar(int idUsuario)
@@ -309,12 +317,15 @@ namespace DaoLibrary
 
         // Nunca deja que la última operación sobre un SuperAdmin (bajarle el rol o
         // deshabilitarlo) apague el acceso de todo el club: siempre tiene que
-        // quedar, como mínimo, otro SuperAdmin habilitado.
-        private static bool QuedaOtroSuperAdminHabilitado(SqlConnection conexion, SqlTransaction transaccion, int idUsuarioExcluido)
+        // quedar, como mínimo, otro SuperAdmin habilitado. soloOperativos (cambio de rol) además exige que ese otro
+        // pueda ingresar hoy: con la activación completa y una contraseña propia. Deshabilitar todavía cuenta
+        // también a los que tienen la activación pendiente.
+        private static bool QuedaOtroSuperAdminHabilitado(SqlConnection conexion, SqlTransaction transaccion, int idUsuarioExcluido, bool soloOperativos = false)
         {
+            var operativos = soloOperativos ? " AND activacion_pendiente = 0 AND contrasenia IS NOT NULL" : "";
             using var contar = new SqlCommand(
-                @"SELECT COUNT(*) FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK)
-                  WHERE rol_portal = 1 AND acceso_portal = 1 AND activo = 1 AND PK_id_usuario <> @id",
+                $@"SELECT COUNT(*) FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK)
+                  WHERE rol_portal = 1 AND acceso_portal = 1 AND activo = 1 AND PK_id_usuario <> @id{operativos}",
                 conexion, transaccion);
             contar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuarioExcluido;
             return Convert.ToInt32(contar.ExecuteScalar()) > 0;

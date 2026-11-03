@@ -76,7 +76,8 @@ const SECCIONES: Record<string, string> = {
   JUGADORES_DESCUENTOS: 'Beneficio de jugador',
   JUGADORES: 'Ficha de jugador',
   PERSONA: 'Datos personales',
-  USUARIO: 'Cuenta administrativa',
+  // HU-105: el trigger de USUARIOS graba la sección como 'USUARIOS' (con 'USUARIO' el filtro no encontraba nada).
+  USUARIOS: 'Cuenta administrativa',
   CATEGORIAS: 'División',
   TIPO_DESCUENTO: 'Tipo de beneficio',
   TOKEN_ACCESO_CUENTA: 'Acceso a cuenta',
@@ -446,7 +447,8 @@ export class Auditoria {
         if (cambio('activo') && !siNo(despues?.['activo'])) return `Canceló ${cuyo}`;
         return `Modificó ${cuyo}`;
       }
-      case 'USUARIO': {
+      case 'USUARIO':
+      case 'USUARIOS': {
         const cuenta = quien ? `la cuenta de ${quien}` : 'una cuenta';
         if (item.action === 'INSERT') return quien ? `Creó la cuenta de ${quien}` : 'Creó una cuenta administrativa';
         if (cambio('credencialActualizada') || cambio('activacionPendiente')) {
@@ -503,6 +505,7 @@ export class Auditoria {
       case 'PERSONA':
         return nombre('persona', item.entityId);
       case 'USUARIO':
+      case 'USUARIOS':
         return nombre('usuario', item.entityId);
       case 'CATEGORIAS':
         return nombre('categoria', item.entityId);

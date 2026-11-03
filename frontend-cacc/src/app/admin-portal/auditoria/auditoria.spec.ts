@@ -475,3 +475,39 @@ describe('Auditoria - filtros', () => {
     expect(el.querySelector('.scope-note')).toBeNull();
   });
 });
+
+// HU-105: el trigger de USUARIOS graba la sección como 'USUARIOS'. Un cambio de rol y su "Deshacer" son dos
+// modificaciones reales de la cuenta, con quién las hizo y el rol de antes y de después.
+describe('Auditoria - cuentas administrativas (HU-105)', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const cambioDeRol = (antes: number, despues: number, id: number): Evento => evento({
+    id, entity: 'USUARIOS', entityId: '4', action: 'UPDATE',
+    beforeJson: `{"email":"camila@cacc.test","idRol":2,"activo":true,"activacionPendiente":false,"accesoPortal":true,"rolPortal":${antes},"credencialActualizada":false}`,
+    afterJson: `{"email":"camila@cacc.test","idRol":2,"activo":true,"activacionPendiente":false,"accesoPortal":true,"rolPortal":${despues},"credencialActualizada":false}`,
+  });
+
+  it('la sección "Cuenta administrativa" filtra por USUARIOS, que es lo que graba la base', async () => {
+    const { component, http } = await create();
+
+    expect(component.secciones).toContainEqual({ value: 'USUARIOS', label: 'Cuenta administrativa' });
+    expect(component.secciones.some((s) => s.value === 'USUARIO')).toBe(false);
+
+    component.entity = 'USUARIOS';
+    component.buscarAhora();
+    http.expectOne((r) => r.url.endsWith('/auditoria/cambios') && r.params.get('entidad') === 'USUARIOS')
+      .flush({ page: 1, pageSize: 50, total: 0, items: [] });
+  });
+
+  it('el cambio de rol y su deshacer se leen como dos cambios de rol de la misma cuenta, con quién los hizo', async () => {
+    const { component } = await create();
+    const nombres = { 'usuario:4': 'Candidata, Camila' };
+    const cambio = { ...cambioDeRol(2, 1, 10), references: nombres };
+    const deshacer = { ...cambioDeRol(1, 2, 11), references: nombres };
+
+    expect(component.resumen(cambio)).toBe('Cambió el rol de la cuenta de Candidata, Camila');
+    expect(component.resumen(deshacer)).toBe('Cambió el rol de la cuenta de Candidata, Camila');
+    expect(component.contexto(cambio)).toBe('Cuenta administrativa n.º 4');
+    expect(component.sujeto(deshacer)).toBe('Candidata, Camila');
+  });
+});

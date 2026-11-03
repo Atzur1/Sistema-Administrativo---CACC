@@ -21,6 +21,9 @@ export interface PortalUserModel {
   rolPortal: RolPortal;
   activo: boolean;
   activacionPendiente: boolean;
+  // HU-105: revisión de la cuenta (sube con cada cambio de rol, deshabilitación, cierre de sesión o contraseña
+  // completada, y nunca baja). El cambio de rol se manda condicionado a ella.
+  revision: number;
 }
 
 export type RolPortal = 1 | 2;
@@ -37,6 +40,19 @@ export interface EnableUserRequestModel {
 
 export interface ChangeRoleRequestModel {
   rolPortal: RolPortal;
+  // La revisión que vio la pantalla (o la que devolvió el cambio anterior): si la cuenta ya no la tiene, el servidor
+  // rechaza el cambio en vez de pisar uno posterior.
+  revisionEsperada: number;
+}
+
+// Estado de la cuenta después del cambio, tal como quedó en el servidor. Deshacer es otro cambio con rolAnterior y
+// esta revisión.
+export interface ChangeRoleResultModel {
+  idUsuario: number;
+  rolAnterior: RolPortal;
+  rolPortal: RolPortal;
+  revision: number;
+  mensaje: string;
 }
 
 export interface EditCandidateRequestModel {

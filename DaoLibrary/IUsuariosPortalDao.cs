@@ -22,6 +22,22 @@ namespace DaoLibrary
         DniEnUso
     }
 
+    public enum CambiarRolResultado
+    {
+        Ok,
+        // No existe o ya no tiene acceso al portal.
+        NoEncontrado,
+        // La cuenta cambió (rol, sesión, contraseña o acceso) después de la revisión que se mandó.
+        RevisionDesactualizada,
+        // No quedaría ningún otro SuperAdmin que pueda ingresar.
+        UltimoSuperAdmin,
+        RolInvalido
+    }
+
+    // Estado de la cuenta después de cambiarle el rol, leído en la misma transacción. Con Revision se condiciona el
+    // próximo cambio (por ejemplo, deshacer este) a que nada la haya modificado en el medio.
+    public sealed record CambioDeRol(int IdUsuario, int RolAnterior, int RolPortal, int Revision);
+
     public interface IUsuariosPortalDao
     {
         // Gente cargada por el otro equipo con FK_id_rol de SuperAdmin/Administrador
@@ -48,9 +64,11 @@ namespace DaoLibrary
         // el enlace de activación. Devuelve el email para poder enviar el correo.
         (HabilitarResultado Resultado, string? Email) Habilitar(int idUsuario, string emailConfirmado, int rolPortal);
 
-        // Cambia el rol de alguien ya habilitado. Corta su sesión abierta
-        // (token_version+1). Rechaza dejar el club sin ningún SuperAdmin habilitado.
-        bool CambiarRol(int idUsuario, int nuevoRolPortal);
+        // Cambia el rol de alguien ya habilitado, solo si su token_version sigue siendo revisionEsperada (la que vio
+        // el SuperAdmin): así un pedido viejo no pisa un cambio posterior, aunque el rol haya vuelto al mismo valor.
+        // Corta su sesión abierta (token_version+1, que es la revisión nueva). Rechaza dejar el club sin otro
+        // SuperAdmin que pueda ingresar (con acceso, activo y con la activación completa).
+        (CambiarRolResultado Resultado, CambioDeRol? Cambio) CambiarRol(int idUsuario, int nuevoRolPortal, int revisionEsperada);
 
         // Revoca el acceso y corta la sesión abierta. Mismo resguardo que CambiarRol:
         // no puede deshabilitar al último SuperAdmin habilitado.

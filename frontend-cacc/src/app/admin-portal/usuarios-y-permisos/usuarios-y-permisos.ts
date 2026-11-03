@@ -1,4 +1,4 @@
-import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgModel } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { finalize } from 'rxjs';
 import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { AuthService } from '../../services/auth';
 import { PendingActionsService } from '../../services/pending-actions';
+import { RoleChangesService, RoleState } from '../../services/role-changes';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/custom-select';
 import { normalizeText } from '../../shared/normalize-text';
@@ -48,6 +49,10 @@ export class Usuarios implements OnInit {
   // HU-104: los candidatos son un pendiente de la campanita. Se leen del estado compartido (la misma consulta que usa
   // la campanita, como máximo una por minuto) y se actualizan ahí al habilitar o corregir a alguien.
   private readonly pendientes = inject(PendingActionsService);
+  // HU-105: cambios de rol en curso o que todavía se pueden deshacer, y el último estado confirmado de cada cuenta.
+  readonly cambiosDeRol = inject(RoleChangesService);
+  // La relectura que ya estaba al abrir la pantalla es vieja: la pantalla carga su propia lista.
+  private relecturaVista = this.cambiosDeRol.snapshot();
 
   // Lista que se muestra: una por vez, con el contador de cada una en su pestaña. Va también en la dirección
   // (?pestana=candidatos) para poder entrar directo a una pestaña desde la campanita.
@@ -85,9 +90,9 @@ export class Usuarios implements OnInit {
   // cerrarse: la opción en sí desaparece al cerrarse el menú (HU-094, corrección de QA).
   botonMenu: HTMLElement | null = null;
 
-  // "Cambiar rol": un cambio de rol da o quita permisos, así que no se aplica al elegirlo en el desplegable sino
-  // después de confirmarlo. Si se cancela (o el servidor lo rechaza), el desplegable vuelve a mostrar el rol que la
-  // cuenta realmente tiene (ver restaurarDesplegable).
+  // "Cambiar rol" de la propia cuenta: no se aplica al elegirlo en el desplegable sino después de confirmarlo. Si se
+  // cancela (o el servidor lo rechaza), el desplegable vuelve a mostrar el rol que la cuenta realmente tiene (ver
+  // restaurarDesplegable). El de otra cuenta se aplica en el acto y se puede deshacer (HU-105).
   cambioDeRol = signal<CambioDeRol | null>(null);
   rolSubmitting = signal(false);
 
@@ -127,7 +132,21 @@ export class Usuarios implements OnInit {
   constructor(
     private readonly usuariosService: UsuariosPortalService,
     private readonly notifications: NotificationService,
-  ) {}
+  ) {
+    // Un cambio o un "Deshacer" confirmado por el servidor (aunque se haya hecho desde otra pantalla) se refleja en la
+    // fila si es más nuevo que lo que la fila muestra.
+    effect(() => {
+      const estados = this.cambiosDeRol.states();
+      untracked(() => this.habilitados.update((filas) => aplicarEstados(filas, estados)));
+    });
+    // Tras una demora o un conflicto, el coordinador relee las cuentas habilitadas: esa lectura reemplaza la lista.
+    effect(() => {
+      const relectura = this.cambiosDeRol.snapshot();
+      if (!relectura || relectura === this.relecturaVista) return;
+      this.relecturaVista = relectura;
+      untracked(() => this.habilitados.set(aplicarEstados(relectura, this.cambiosDeRol.states())));
+    });
+  }
 
   ngOnInit(): void {
     // Normalmente ya lo inició el Portal Administrativo: llamarlo de nuevo no consulta otra vez.
@@ -149,7 +168,7 @@ export class Usuarios implements OnInit {
     this.errorListas.set(null);
 
     this.usuariosService.getHabilitados().subscribe({
-      next: (rows) => this.habilitados.set(rows),
+      next: (rows) => this.habilitados.set(aplicarEstados(rows, this.cambiosDeRol.states())),
       error: () => this.errorListas.set('No se pudo cargar la lista de usuarios habilitados.'),
     });
 
@@ -356,14 +375,41 @@ export class Usuarios implements OnInit {
 
   // ===== Cambiar rol de alguien ya habilitado =====
 
-  // Elegir otro rol en el desplegable NO lo aplica: abre una confirmación que explica qué cambia. Un clic de más
-  // en una lista de permisos no puede dar acceso total a alguien ni dejar a un SuperAdmin sin el suyo.
+  // HU-105: el rol de otra cuenta se cambia en el acto y se puede deshacer durante 5000 ms desde el aviso (es un
+  // cambio reversible). El de la propia cuenta sigue pidiendo confirmación: quitarse el acceso total no se puede
+  // deshacer desde esta misma sesión, porque el cambio la corta.
   onRolHabilitadoChange(usuario: PortalUserModel, valor: string | number | null, modelo?: NgModel, selector?: CustomSelect): void {
     if (valor !== 1 && valor !== 2) return;
     if (valor === usuario.rolPortal) return;
 
     this.menuAbierto.set(null);
-    this.cambioDeRol.set({ usuario, rol: valor, modelo, selector });
+    const cambio: CambioDeRol = { usuario, rol: valor, modelo, selector };
+    if (this.esMiCuenta(usuario)) {
+      this.cambioDeRol.set(cambio);
+      return;
+    }
+    void this.aplicarCambioDeRol(cambio, true);
+  }
+
+  // Qué se ve debajo del rol mientras la cuenta tiene una operación abierta (y no acepta otro cambio).
+  estadoDelRol(usuario: PortalUserModel): string | null {
+    switch (this.cambiosDeRol.phase(usuario.idUsuario)) {
+      case 'saving': return 'Guardando…';
+      case 'undoable': return 'Se puede deshacer';
+      case 'undoing': return 'Deshaciendo…';
+      default: return null;
+    }
+  }
+
+  private async aplicarCambioDeRol(cambio: CambioDeRol, undoable: boolean): Promise<void> {
+    const desenlace = await this.cambiosDeRol.change(cambio.usuario, cambio.rol, { undoable });
+    if (desenlace === 'applied') return;
+    // El rol quedó como estaba (o no se sabe): el desplegable vuelve a mostrar el que la cuenta tiene confirmado.
+    this.restaurarDesplegable(cambio);
+    if (desenlace === 'blocked') {
+      const nombre = `${cambio.usuario.nombre} ${cambio.usuario.apellido}`.trim();
+      this.notifications.notify(`Esperá a que termine el cambio anterior de ${nombre} (o a que venza el plazo para deshacerlo).`, 'cancelled');
+    }
   }
 
   // Qué le dice la confirmación a quien está por cambiar un rol.
@@ -397,32 +443,22 @@ export class Usuarios implements OnInit {
   // y no lo corrige solo (por eso volver a dibujar la fila no alcanzaba: QA, HU-094). Se le vuelve a escribir el
   // rol real directamente, sin recrear la fila, así el foco puede volver a ese mismo desplegable.
   private restaurarDesplegable(cambio: CambioDeRol): void {
-    cambio.modelo?.control.setValue(cambio.usuario.rolPortal);
+    const confirmado = this.habilitados().find((u) => u.idUsuario === cambio.usuario.idUsuario) ?? cambio.usuario;
+    cambio.modelo?.control.setValue(confirmado.rolPortal);
   }
 
-  confirmarCambioDeRol(): void {
+  // Solo para la propia cuenta (las demás no pasan por la confirmación). Sin "Deshacer": el aviso es el toast de siempre.
+  async confirmarCambioDeRol(): Promise<void> {
     const cambio = this.cambioDeRol();
     if (!cambio || this.rolSubmitting()) return;
 
     this.rolSubmitting.set(true);
-    this.usuariosService
-      .cambiarRol(cambio.usuario.idUsuario, { rolPortal: cambio.rol })
-      .pipe(finalize(() => this.rolSubmitting.set(false)))
-      .subscribe({
-        next: (respuesta) => {
-          cambio.usuario.rolPortal = cambio.rol;
-          this.cambioDeRol.set(null);
-          this.notifications.notify(respuesta.mensaje, 'success');
-        },
-        error: (error) => {
-          this.cambioDeRol.set(null);
-          this.restaurarDesplegable(cambio);
-          this.notifications.notify(
-            error?.error?.mensaje ?? 'No se pudo cambiar el rol. Verificá que quede al menos un SuperAdmin.',
-            'error',
-          );
-        },
-      });
+    try {
+      await this.aplicarCambioDeRol(cambio, false);
+    } finally {
+      this.rolSubmitting.set(false);
+      this.cambioDeRol.set(null);
+    }
   }
 
   // ===== Deshabilitar =====
@@ -535,4 +571,17 @@ export class Usuarios implements OnInit {
         },
       });
   }
+}
+
+// Pone en cada fila el rol confirmado por el servidor si es más nuevo (mayor revisión) que el que trae la fila.
+function aplicarEstados(filas: PortalUserModel[], estados: ReadonlyMap<number, RoleState>): PortalUserModel[] {
+  if (estados.size === 0) return filas;
+  let cambio = false;
+  const nuevas = filas.map((fila) => {
+    const estado = estados.get(fila.idUsuario);
+    if (!estado || estado.revision <= fila.revision) return fila;
+    cambio = true;
+    return { ...fila, rolPortal: estado.rolPortal, revision: estado.revision };
+  });
+  return cambio ? nuevas : filas;
 }

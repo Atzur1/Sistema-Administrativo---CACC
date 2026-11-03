@@ -12,5 +12,9 @@ namespace EntityLibrary
         public int RolPortal { get; set; }
         public bool Activo { get; set; }
         public bool ActivacionPendiente { get; set; }
+
+        // token_version de la cuenta (solo en ListarHabilitados). Sube con cada cambio de rol, deshabilitación,
+        // cierre de sesión o contraseña completada, y nunca baja: un cambio de rol se condiciona a esta revisión.
+        public int Revision { get; set; }
     }
 }

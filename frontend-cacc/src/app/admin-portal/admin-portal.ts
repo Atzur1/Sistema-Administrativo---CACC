@@ -8,11 +8,13 @@ import { Toast } from '../shared/toast/toast';
 import { NotificationBell } from '../shared/notification-bell/notification-bell';
 import { DtAdminChat } from '../shared/dt-admin-chat/dt-admin-chat';
 import { PendingActionsService } from '../services/pending-actions';
+import { RoleChangesService } from '../services/role-changes';
+import { UndoNotices } from '../shared/undo-notices/undo-notices';
 
 @Component({
     selector: 'app-admin-portal',
     standalone: true,
-    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Toast, NotificationBell, DtAdminChat],
+    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Toast, NotificationBell, DtAdminChat, UndoNotices],
     templateUrl: './admin-portal.html',
     styleUrl: './admin-portal.css',
 })
@@ -48,6 +50,8 @@ private pageTitles: Record<string, string> = {
 private destroyRef = inject(DestroyRef);
 // HU-104: pendientes de acción de la campanita (solo SuperAdmin; para otro rol no consulta nada).
 private pendientes = inject(PendingActionsService);
+// HU-105: cambios de rol que todavía se pueden deshacer. Sus avisos siguen al navegar dentro del portal.
+private cambiosDeRol = inject(RoleChangesService);
 
 constructor(
     private router: Router,
@@ -78,6 +82,8 @@ this.router.events
     // navegan fuera— se detienen y se borran.
     this.pendientes.start();
     this.destroyRef.onDestroy(() => this.pendientes.stop());
+    // HU-105: al salir del portal (sesión vencida incluida) no queda ningún "Deshacer" de la sesión anterior.
+    this.destroyRef.onDestroy(() => this.cambiosDeRol.clear());
     }
 
   // Reads the last URL segment and maps it to a display name.
@@ -128,6 +134,7 @@ cambiarPortal() {
 // Log out and return to the login screen
 cerrarSesion() {
     this.pendientes.stop();
+    this.cambiosDeRol.clear();
     this.authService.cerrarSesion();
     this.router.navigate(['/']);
     }

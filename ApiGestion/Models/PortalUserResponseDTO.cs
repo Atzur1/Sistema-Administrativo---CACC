@@ -13,6 +13,8 @@ public class PortalUserResponseDTO
     public int RolPortal { get; set; }
     public bool Activo { get; set; }
     public bool ActivacionPendiente { get; set; }
+    // Revision the role change is conditioned on (see RoleChangeRequestDTO). Only meaningful for enabled accounts.
+    public int Revision { get; set; }
 
     public static PortalUserResponseDTO FromEntity(UsuarioPortal user)
     {
@@ -25,7 +27,8 @@ public class PortalUserResponseDTO
             Email = user.Email,
             RolPortal = user.RolPortal,
             Activo = user.Activo,
-            ActivacionPendiente = user.ActivacionPendiente
+            ActivacionPendiente = user.ActivacionPendiente,
+            Revision = user.Revision
         };
     }
 }

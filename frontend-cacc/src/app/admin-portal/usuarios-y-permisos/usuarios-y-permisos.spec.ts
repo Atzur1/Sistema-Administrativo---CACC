@@ -1,22 +1,26 @@
+import { ChangeDetectorRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { Usuarios } from './usuarios-y-permisos';
 import { UsuariosPortalService } from '../../services/usuarios-portal';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { AuthService } from '../../services/auth';
-import { PortalUserCandidateModel, PortalUserModel } from '../../models/PortalUserModel';
+import { ChangeRoleRequestModel, ChangeRoleResultModel, PortalUserCandidateModel, PortalUserModel } from '../../models/PortalUserModel';
 import { CuotasFaltantesService } from '../../services/cuotas-faltantes';
 import { PendingActionsService } from '../../services/pending-actions';
+import { RoleChangesService } from '../../services/role-changes';
+import { UndoNoticesService } from '../../shared/undo-notices/undo-notices';
 
 // Botón "Resetear contraseña" del SuperAdmin: le manda a una cuenta habilitada el enlace para elegir una contraseña
 // nueva. El enlace llega al correo de la propia cuenta; el SuperAdmin no ve ni fija la contraseña.
 
 const ADMIN: PortalUserModel = {
   idUsuario: 7, nombre: 'Camila', apellido: 'Candidata', dni: '30111222',
-  email: 'camila@cacc.test', rolPortal: 2, activo: true, activacionPendiente: false,
+  email: 'camila@cacc.test', rolPortal: 2, activo: true, activacionPendiente: false, revision: 3,
 };
 const SIN_ACTIVAR: PortalUserModel = { ...ADMIN, idUsuario: 8, nombre: 'Nuevo', email: 'nuevo@cacc.test', activacionPendiente: true };
 const INACTIVO: PortalUserModel = { ...ADMIN, idUsuario: 9, nombre: 'Baja', email: 'baja@cacc.test', activo: false };
@@ -25,11 +29,18 @@ const CANDIDATO: PortalUserCandidateModel = {
   idUsuario: 20, nombre: 'Carla', apellido: 'Candidata', dni: '30.555.666', email: 'carla@cacc.test', fkIdRolSugerido: 2,
 };
 
-// Opciones extra para armar la pantalla: la cuenta con la que se inició sesión y el doble de "cambiar rol".
+// Opciones extra para armar la pantalla: la cuenta con la que se inició sesión, el doble de "cambiar rol" y la lista
+// de habilitadas.
 interface OpcionesCreate {
   yo?: { email: string; dni?: string } | null;
   cambiarRol?: ReturnType<typeof vi.fn>;
+  getHabilitados?: () => Observable<PortalUserModel[]>;
 }
+
+// Por defecto el servidor acepta el cambio: el rol pedido con la revisión siguiente (HU-105).
+const aceptarCambio = (id: number, req: ChangeRoleRequestModel) => of<ChangeRoleResultModel>({
+  idUsuario: id, rolAnterior: req.rolPortal === 1 ? 2 : 1, rolPortal: req.rolPortal, revision: req.revisionEsperada + 1, mensaje: 'Rol actualizado.',
+});
 
 async function create(
   resetear = vi.fn(() => of({ mensaje: 'Se envió el enlace.' })),
@@ -37,7 +48,7 @@ async function create(
   opciones: OpcionesCreate = {},
 ) {
   const notify = vi.fn();
-  const cambiarRol = opciones.cambiarRol ?? vi.fn(() => of({ mensaje: 'Rol actualizado.' }));
+  const cambiarRol = opciones.cambiarRol ?? vi.fn(aceptarCambio);
   await TestBed.configureTestingModule({
     imports: [Usuarios],
     providers: [
@@ -48,7 +59,7 @@ async function create(
         provide: UsuariosPortalService,
         useValue: {
           getCandidatos: () => of([{ ...CANDIDATO }]),
-          getHabilitados: () => of([ADMIN, SIN_ACTIVAR, INACTIVO]),
+          getHabilitados: opciones.getHabilitados ?? (() => of([ADMIN, SIN_ACTIVAR, INACTIVO])),
           getDeshabilitados: () => of([]),
           resetearContrasena: resetear,
           editarCandidato,
@@ -260,66 +271,211 @@ describe('Usuarios - Corregir el DNI de un candidato', () => {
 });
 
 // Las tres listas (habilitadas, candidatos, deshabilitadas) se ven de a una, con su contador en la pestaña.
-// Cambiar el rol da o quita permisos: no se aplica al elegirlo en el desplegable sino al confirmar.
-describe('Usuarios - cambiar el rol con confirmación', () => {
+
+// Como lo hace la persona: abre el desplegable de rol de Camila (Administrador) y elige otra opción.
+const elegirRolDeCamila = (element: HTMLElement, fixture: { detectChanges(): void }, opcion: string) => {
+  const fila = Array.from(element.querySelectorAll<HTMLElement>('.panel-users tbody tr')).find((tr) =>
+    tr.textContent?.includes('camila@cacc.test'),
+  )!;
+  const desplegable = fila.querySelector<HTMLButtonElement>('.rol-select .cs-trigger')!;
+  desplegable.focus();
+  desplegable.click();
+  fixture.detectChanges();
+  Array.from(document.querySelectorAll<HTMLElement>('.cs-menu .cs-option'))
+    .find((o) => o.textContent?.trim() === opcion)!
+    .click();
+  fixture.detectChanges();
+  return desplegable;
+};
+const rolQueMuestra = (desplegable: HTMLElement) => desplegable.querySelector('.cs-value')!.textContent!.trim();
+const esperar = () => new Promise((resolver) => setTimeout(resolver));
+const filaDeCamila = (element: HTMLElement) =>
+  Array.from(element.querySelectorAll<HTMLElement>('.panel-users tbody tr')).find((tr) => tr.textContent?.includes('camila@cacc.test'))!;
+// Refresca la vista de un componente OnPush después de un cambio que llegó por una promesa.
+const refrescar = (fixture: { componentRef: { injector: { get(t: typeof ChangeDetectorRef): ChangeDetectorRef } }; detectChanges(): void }) => {
+  fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
+  fixture.detectChanges();
+};
+
+// HU-105: el rol de otra cuenta se cambia en el acto (sin ventana) y se puede deshacer durante 5000 ms.
+describe('Usuarios - cambiar el rol de otra cuenta y deshacerlo (HU-105)', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('elegir otro rol lo aplica en el acto, sin ventana, con la revisión que trajo la lista', async () => {
+    const { fixture, element, component, cambiarRol } = await create();
+
+    const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    await esperar();
+    refrescar(fixture);
+
+    expect(element.querySelector('[role="dialog"]')).toBeNull();
+    expect(component.cambioDeRol()).toBeNull();
+    expect(cambiarRol).toHaveBeenCalledWith(7, { rolPortal: 1, revisionEsperada: 3 });
+    expect(rolQueMuestra(desplegable)).toBe('SuperAdmin');
+    expect(component.habilitados().find((u) => u.idUsuario === 7)).toEqual(expect.objectContaining({ rolPortal: 1, revision: 4 }));
+    expect(ADMIN.rolPortal).toBe(2); // la lista original no se toca: la fila se reemplaza con el estado confirmado
+    expect(TestBed.inject(UndoNoticesService).notices()).toEqual([
+      expect.objectContaining({ message: 'Camila Candidata ahora es SuperAdmin.', undoLabel: 'Deshacer el cambio de rol de Camila Candidata' }),
+    ]);
+  });
+
+  it('"Deshacer" manda el rol anterior con la revisión nueva y la fila vuelve a mostrarlo', async () => {
+    const { fixture, element, cambiarRol, notify } = await create();
+    const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    await esperar();
+    const avisos = TestBed.inject(UndoNoticesService);
+
+    avisos.undo(avisos.notices()[0].id);
+    await esperar();
+    refrescar(fixture);
+
+    expect(cambiarRol).toHaveBeenLastCalledWith(7, { rolPortal: 2, revisionEsperada: 4 });
+    expect(rolQueMuestra(desplegable)).toBe('Administrador');
+    expect(avisos.notices()).toEqual([]);
+    expect(notify).toHaveBeenCalledWith('Se deshizo el cambio: Camila Candidata volvió a ser Administrador.', 'success');
+  });
+
+  it('mientras se puede deshacer, otro cambio de la misma cuenta no sale; vencidos los 5000 ms, sí', async () => {
+    const { fixture, element, cambiarRol, notify } = await create();
+    vi.useFakeTimers();
+    const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    await vi.advanceTimersByTimeAsync(0);
+    refrescar(fixture);
+    expect(filaDeCamila(element).querySelector('.rol-estado')!.textContent!.trim()).toBe('Se puede deshacer');
+
+    elegirRolDeCamila(element, fixture, 'Administrador');
+    await vi.advanceTimersByTimeAsync(0);
+    refrescar(fixture);
+
+    expect(cambiarRol).toHaveBeenCalledTimes(1);
+    expect(rolQueMuestra(desplegable)).toBe('SuperAdmin');
+    expect(notify).toHaveBeenCalledWith(
+      'Esperá a que termine el cambio anterior de Camila Candidata (o a que venza el plazo para deshacerlo).', 'cancelled');
+
+    await vi.advanceTimersByTimeAsync(5000);
+    refrescar(fixture);
+    expect(filaDeCamila(element).querySelector('.rol-estado')).toBeNull();
+
+    elegirRolDeCamila(element, fixture, 'Administrador');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cambiarRol).toHaveBeenCalledTimes(2);
+    expect(cambiarRol).toHaveBeenLastCalledWith(7, { rolPortal: 2, revisionEsperada: 4 });
+  });
+
+  it('mientras se guarda, la fila lo dice', async () => {
+    const respuesta = new Subject<ChangeRoleResultModel>();
+    const { fixture, element } = await create(undefined, undefined, { cambiarRol: vi.fn(() => respuesta) });
+
+    elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    refrescar(fixture);
+
+    expect(filaDeCamila(element).querySelector('.rol-estado')!.textContent!.trim()).toBe('Guardando…');
+    expect(TestBed.inject(UndoNoticesService).notices()).toEqual([]); // el plazo para deshacer no empieza todavía
+  });
+
+  it('si el servidor lo rechaza, muestra su motivo y el desplegable vuelve al rol real', async () => {
+    const rechazo = vi.fn(() => throwError(() => new HttpErrorResponse({
+      status: 409, error: { codigo: 'ultimo-superadmin', mensaje: 'No se puede: tiene que quedar al menos otro SuperAdmin que pueda ingresar.' },
+    })));
+    const { fixture, element, notify } = await create(undefined, undefined, { cambiarRol: rechazo });
+
+    const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    await esperar();
+    refrescar(fixture);
+
+    expect(rolQueMuestra(desplegable)).toBe('Administrador');
+    expect(notify).toHaveBeenCalledWith('No se puede: tiene que quedar al menos otro SuperAdmin que pueda ingresar.', 'error');
+    expect(TestBed.inject(UndoNoticesService).notices()).toEqual([]);
+  });
+
+  it('si la cuenta cambió en el medio, la fila pasa a mostrar lo que relee del servidor', async () => {
+    let lecturas = 0;
+    const getHabilitados = () => of(++lecturas === 1 ? [ADMIN, SIN_ACTIVAR, INACTIVO] : [{ ...ADMIN, rolPortal: 1 as const, revision: 9 }, SIN_ACTIVAR, INACTIVO]);
+    const conflicto = vi.fn(() => throwError(() => new HttpErrorResponse({
+      status: 409, error: { codigo: 'revision-desactualizada', mensaje: 'La cuenta cambió desde que se cargó la pantalla: revisá su rol actual.' },
+    })));
+    const { fixture, element, component } = await create(undefined, undefined, { cambiarRol: conflicto, getHabilitados });
+
+    const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    await esperar();
+    refrescar(fixture);
+
+    expect(component.habilitados().find((u) => u.idUsuario === 7)).toEqual(expect.objectContaining({ rolPortal: 1, revision: 9 }));
+    expect(rolQueMuestra(desplegable)).toBe('SuperAdmin');
+  });
+
+  it('el aviso sigue al salir de la pantalla, y deshacer desde ahí también funciona', async () => {
+    const { fixture, element, cambiarRol } = await create();
+    elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    await esperar();
+
+    fixture.destroy();
+    const avisos = TestBed.inject(UndoNoticesService);
+    expect(avisos.notices()).toHaveLength(1);
+    avisos.undo(avisos.notices()[0].id);
+    await esperar();
+
+    expect(cambiarRol).toHaveBeenLastCalledWith(7, { rolPortal: 2, revisionEsperada: 4 });
+    expect(TestBed.inject(RoleChangesService).states().get(7)).toEqual({ idUsuario: 7, rolPortal: 2, revision: 5 });
+  });
+
+  it('al volver a la pantalla, la fila muestra el último estado confirmado aunque la lista llegue vieja', async () => {
+    const { fixture, element } = await create();
+    elegirRolDeCamila(element, fixture, 'SuperAdmin');
+    await esperar();
+    fixture.destroy();
+
+    const otra = TestBed.createComponent(Usuarios);
+    otra.detectChanges();
+
+    expect(otra.componentInstance.habilitados().find((u) => u.idUsuario === 7)).toEqual(expect.objectContaining({ rolPortal: 1, revision: 4 }));
+  });
+});
+
+// La propia cuenta: quitarse el acceso total no se puede deshacer desde la misma sesión, así que sigue pidiendo
+// confirmación, con su advertencia.
+describe('Usuarios - cambiar el rol de la propia cuenta con confirmación', () => {
+  const YO = { email: 'camila@cacc.test', dni: '30111222' };
+
   it('elegir otro rol no lo aplica: abre la confirmación y no llama al servidor', async () => {
-    const { component, cambiarRol } = await create();
+    const { component, cambiarRol } = await create(undefined, undefined, { yo: YO });
 
     component.onRolHabilitadoChange(ADMIN, 1);
 
     expect(component.cambioDeRol()).toEqual({ usuario: ADMIN, rol: 1 });
     expect(cambiarRol).not.toHaveBeenCalled();
-    expect(ADMIN.rolPortal).toBe(2); // sigue siendo Administrador hasta que se confirme
   });
 
   it('elegir el mismo rol que ya tiene no pide nada', async () => {
-    const { component } = await create();
+    const { component, cambiarRol } = await create(undefined, undefined, { yo: YO });
 
     component.onRolHabilitadoChange(ADMIN, 2);
 
     expect(component.cambioDeRol()).toBeNull();
+    expect(cambiarRol).not.toHaveBeenCalled();
   });
 
-  it('confirmar aplica el cambio, avisa y cierra la confirmación', async () => {
-    const usuario = { ...ADMIN, idUsuario: 70 };
-    const { component, cambiarRol, notify } = await create();
+  it('confirmar aplica el cambio con la revisión, avisa con el toast y no ofrece deshacer', async () => {
+    const { component, cambiarRol, notify } = await create(undefined, undefined, { yo: YO });
 
-    component.onRolHabilitadoChange(usuario, 1);
-    component.confirmarCambioDeRol();
+    component.onRolHabilitadoChange(ADMIN, 1);
+    await component.confirmarCambioDeRol();
 
-    expect(cambiarRol).toHaveBeenCalledWith(70, { rolPortal: 1 });
-    expect(usuario.rolPortal).toBe(1);
+    expect(cambiarRol).toHaveBeenCalledWith(7, { rolPortal: 1, revisionEsperada: 3 });
     expect(notify).toHaveBeenCalledWith('Rol actualizado.', 'success');
     expect(component.cambioDeRol()).toBeNull();
+    expect(TestBed.inject(UndoNoticesService).notices()).toEqual([]);
   });
 
-  // Como lo hace la persona: abre el desplegable de rol de Camila (Administrador) y elige otra opción.
-  const elegirRolDeCamila = (element: HTMLElement, fixture: { detectChanges(): void }, opcion: string) => {
-    const fila = Array.from(element.querySelectorAll<HTMLElement>('.panel-users tbody tr')).find((tr) =>
-      tr.textContent?.includes('camila@cacc.test'),
-    )!;
-    const desplegable = fila.querySelector<HTMLButtonElement>('.rol-select .cs-trigger')!;
-    desplegable.focus();
-    desplegable.click();
-    fixture.detectChanges();
-    Array.from(document.querySelectorAll<HTMLElement>('.cs-menu .cs-option'))
-      .find((o) => o.textContent?.trim() === opcion)!
-      .click();
-    fixture.detectChanges();
-    return desplegable;
-  };
-  const rolQueMuestra = (desplegable: HTMLElement) => desplegable.querySelector('.cs-value')!.textContent!.trim();
-  const esperarFoco = () => new Promise((resolver) => setTimeout(resolver));
-
   it('cancelar con el botón Cancelar no cambia nada: el desplegable vuelve a mostrar el rol real y recibe el foco', async () => {
-    const { fixture, element, component, cambiarRol } = await create();
+    const { fixture, element, component, cambiarRol } = await create(undefined, undefined, { yo: YO });
     const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
     expect(rolQueMuestra(desplegable)).toBe('SuperAdmin');
     expect(element.querySelector('[role="dialog"]')).not.toBeNull();
 
     element.querySelector<HTMLButtonElement>('.ventana-volver')!.click();
     fixture.detectChanges();
-    await esperarFoco();
+    await esperar();
 
     expect(cambiarRol).not.toHaveBeenCalled();
     expect(component.cambioDeRol()).toBeNull();
@@ -328,12 +484,12 @@ describe('Usuarios - cambiar el rol con confirmación', () => {
   });
 
   it('cerrar con Esc tampoco cambia nada: el desplegable vuelve al rol real y recibe el foco', async () => {
-    const { fixture, element, cambiarRol } = await create();
+    const { fixture, element, cambiarRol } = await create(undefined, undefined, { yo: YO });
     const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
-    await esperarFoco();
+    await esperar();
 
     expect(cambiarRol).not.toHaveBeenCalled();
     expect(element.querySelector('[role="dialog"]')).toBeNull();
@@ -341,32 +497,23 @@ describe('Usuarios - cambiar el rol con confirmación', () => {
     expect(document.activeElement).toBe(desplegable);
   });
 
-  it('si el servidor rechaza el cambio, el desplegable vuelve a mostrar el rol real', async () => {
+  it('si el servidor lo rechaza, muestra su motivo y el desplegable vuelve al rol real', async () => {
     const rechazo = vi.fn(() => throwError(() => ({ error: { mensaje: 'Tiene que quedar al menos un SuperAdmin.' } })));
-    const { fixture, element } = await create(undefined, undefined, { cambiarRol: rechazo });
+    const { fixture, element, notify } = await create(undefined, undefined, { yo: YO, cambiarRol: rechazo });
     const desplegable = elegirRolDeCamila(element, fixture, 'SuperAdmin');
 
     element.querySelector<HTMLButtonElement>('.ventana-confirmar')!.click();
     fixture.detectChanges();
+    await esperar();
+    refrescar(fixture);
 
     expect(rechazo).toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith('Tiene que quedar al menos un SuperAdmin.', 'error');
     expect(rolQueMuestra(desplegable)).toBe('Administrador');
   });
 
-  it('si el servidor lo rechaza muestra su motivo y deja el rol como estaba', async () => {
-    const rechazo = vi.fn(() => throwError(() => ({ error: { mensaje: 'Tiene que quedar al menos un SuperAdmin.' } })));
-    const usuario = { ...ADMIN, idUsuario: 71, rolPortal: 1 as const };
-    const { component, notify } = await create(undefined, undefined, { cambiarRol: rechazo });
-
-    component.onRolHabilitadoChange(usuario, 2);
-    component.confirmarCambioDeRol();
-
-    expect(notify).toHaveBeenCalledWith('Tiene que quedar al menos un SuperAdmin.', 'error');
-    expect(usuario.rolPortal).toBe(1);
-  });
-
   it('la confirmación explica qué cambia: dar acceso total o quitarlo', async () => {
-    const { component } = await create();
+    const { component } = await create(undefined, undefined, { yo: YO });
 
     component.onRolHabilitadoChange(ADMIN, 1);
     expect(component.textoCambioDeRol!.titulo).toContain('acceso total');
@@ -377,11 +524,10 @@ describe('Usuarios - cambiar el rol con confirmación', () => {
     expect(component.textoCambioDeRol!.cuerpo).toContain('solo va a ver Cobranza');
   });
 
-  it('si es la propia cuenta y se quita el acceso total, lo advierte', async () => {
-    const { component } = await create(undefined, undefined, { yo: { email: 'camila@cacc.test', dni: '30111222' } });
-    const propia = { ...ADMIN, rolPortal: 1 as const };
+  it('si se quita el acceso total, lo advierte', async () => {
+    const { component } = await create(undefined, undefined, { yo: YO });
 
-    component.onRolHabilitadoChange(propia, 2);
+    component.onRolHabilitadoChange({ ...ADMIN, rolPortal: 1 }, 2);
 
     expect(component.textoCambioDeRol!.advertencia).toContain('tu propia cuenta');
   });

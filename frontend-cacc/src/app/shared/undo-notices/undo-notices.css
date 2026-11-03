@@ -1,0 +1,57 @@
+/* Abajo al centro: no tapa el toast (arriba a la derecha) ni el asistente (abajo a la derecha). */
+.undo-notices {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: max-content;
+    max-width: calc(100vw - 32px);
+}
+
+.undo-notice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    background: var(--color-text-dark);
+    color: #ffffff;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-floating);
+    font-size: var(--font-md);
+    line-height: 1.4;
+}
+
+.undo-notice-message {
+    flex: 1;
+}
+
+.undo-notice-action {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-md, 8px);
+    background: transparent;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.undo-notice-action:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.undo-notice-action:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.undo-notice-action[aria-disabled='true'] {
+    cursor: progress;
+    opacity: 0.8;
+}

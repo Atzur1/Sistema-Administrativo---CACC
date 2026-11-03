@@ -150,13 +150,21 @@ namespace ApiGestion.Controllers
             }
         }
 
-        // PUT api/usuarios/5/rol -> cambia el rol de alguien ya habilitado.
+        // PUT api/usuarios/5/rol { "rolPortal": 2, "revisionEsperada": 7 } -> cambia el rol de alguien ya habilitado si
+        // la cuenta sigue en la revisión que vio la pantalla. Devuelve el estado canónico (rol anterior, rol y revisión
+        // nuevos): deshacer es otro PUT con el rol anterior y esa revisión.
         [HttpPut("{id}/rol")]
-        public IActionResult CambiarRol(int id, [FromBody] ChangeRoleRequestDTO request)
+        public IActionResult CambiarRol(int id, [FromBody] RoleChangeRequestDTO request)
         {
-            if (!_usuariosDao.CambiarRol(id, request.RolPortal))
-                return Conflict(new { mensaje = "No se pudo cambiar el rol: verificá que la cuenta esté habilitada y que quede al menos un SuperAdmin." });
-            return Ok(new { mensaje = "Rol actualizado." });
+            var (resultado, cambio) = _usuariosDao.CambiarRol(id, request.RolPortal, request.RevisionEsperada!.Value);
+            return resultado switch
+            {
+                CambiarRolResultado.Ok => Ok(RoleChangeResponseDTO.FromResult(cambio!)),
+                CambiarRolResultado.NoEncontrado => NotFound(new { mensaje = "La cuenta ya no está habilitada.", codigo = "no-encontrada" }),
+                CambiarRolResultado.RevisionDesactualizada => Conflict(new { mensaje = "La cuenta cambió desde que se cargó la pantalla: revisá su rol actual.", codigo = "revision-desactualizada" }),
+                CambiarRolResultado.UltimoSuperAdmin => Conflict(new { mensaje = "No se puede: tiene que quedar al menos otro SuperAdmin que pueda ingresar.", codigo = "ultimo-superadmin" }),
+                _ => BadRequest(new { mensaje = "El rol elegido no es válido.", codigo = "rol-invalido" }),
+            };
         }
 
         // POST api/usuarios/5/deshabilitar -> revoca el acceso y corta la sesión.
