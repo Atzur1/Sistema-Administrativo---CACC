@@ -1,0 +1,39 @@
+# Verificación temporal de la rama merge/framd-a-main (PR #109): compila y corre las pruebas.
+# Las pruebas de integración ([IntegracionFact]) se saltean: necesitan CACC_TEST_DB con una base real.
+name: Verificacion main
+on:
+  push:
+    branches: [ci/prueba-main]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '9.0.x' }
+      - name: Compilar
+        run: |
+          set -o pipefail
+          dotnet build ApiGestion.Tests/ApiGestion.Tests.csproj -c Release 2>&1 | tee build.log || { bash .ci/log2annot.sh "Backend build" build.log; exit 1; }
+      - name: Pruebas
+        run: dotnet test ApiGestion.Tests/ApiGestion.Tests.csproj -c Release --no-build --logger trx --results-directory tr
+      - name: Resultado de pruebas
+        if: always()
+        run: python3 .ci/trx2annot.py tr Backend
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend-cacc } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci
+      - name: Compilar
+        run: |
+          set -o pipefail
+          npx ng build 2>&1 | tee ../fe-build.log || { bash ../.ci/log2annot.sh "Frontend build" ../fe-build.log; exit 1; }
+      - name: Pruebas
+        run: |
+          set -o pipefail
+          npx ng test --watch=false 2>&1 | tee ../fe-test.log || { bash ../.ci/log2annot.sh "Frontend tests" ../fe-test.log; exit 1; }
+          bash ../.ci/log2annot.sh "Frontend tests OK" ../fe-test.log | grep notice || true
