@@ -1,9 +1,15 @@
-# Verificación temporal de la rama merge/framd-a-main (PR #109): compila y corre las pruebas.
-# Las pruebas de integración ([IntegracionFact]) se saltean: necesitan CACC_TEST_DB con una base real.
-name: Verificacion HU-090-validaciones-en-espanol
+# Verificación automática: en cada PR a main y en cada push a main compila y corre las pruebas del backend y del
+# frontend. Las pruebas de integración ([IntegracionFact]) se saltean: necesitan CACC_TEST_DB con una base real.
+# Las fallas aparecen como anotaciones en la pestaña Checks del PR (scripts en .ci/).
+name: Verificacion
 on:
+  pull_request:
+    branches: [main]
   push:
-    branches: [ci/prueba-HU-090-validaciones-en-espanol]
+    branches: [main]
+concurrency:
+  group: verificacion-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   backend:
     runs-on: ubuntu-latest
