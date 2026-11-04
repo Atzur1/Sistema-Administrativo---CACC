@@ -72,7 +72,9 @@ public class RespuestaDeValidacionTests
             ("Percentage", "Indicá el porcentaje de la bonificación."),
             ("EndDate", "La fecha de fin no puede ser anterior a la de inicio."));
 
-        Assert.Equal("Indicá el porcentaje de la bonificación. La fecha de fin no puede ser anterior a la de inicio.", respuesta.Mensaje);
+        // El orden de los campos lo decide el framework: se controla que estén los dos, tal cual.
+        Assert.Contains("Indicá el porcentaje de la bonificación.", respuesta.Mensaje);
+        Assert.Contains("La fecha de fin no puede ser anterior a la de inicio.", respuesta.Mensaje);
         Assert.Equal(new[] { "Indicá el porcentaje de la bonificación." }, respuesta.Errores["Percentage"]);
     }
 
