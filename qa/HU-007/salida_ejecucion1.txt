@@ -1,0 +1,23 @@
+[PASS] LOG-SA    POST /api/auth/login -> 200; role=1; portales=['administrativo', 'deportivo', 'personas']; id_categoria=[]
+[PASS] LOG-ADM   POST /api/auth/login -> 200; role=2; portales=['administrativo']; id_categoria=[]
+[PASS] LOG-DT2   POST /api/auth/login -> 200; role=0; portales=['deportivo']; id_categoria=['2', '3']
+[PASS] LOG-PF1   POST /api/auth/login -> 200; role=0; portales=['deportivo']; id_categoria=['2']
+[PASS] LOG-DT0   POST /api/auth/login -> 200; role=0; portales=['deportivo']; id_categoria=[]
+[PASS] LOG-MED   POST /api/auth/login -> 200; role=0; portales=['deportivo']; id_categoria=[]
+[PASS] CAT-01    claims id_categoria del token -> ['2', '3']
+[PASS] SIN-01    POST /api/auth/login -> 401 {'mensaje': 'Usuario o contraseña incorrectos.'}
+[PASS] API-DT2   64 endpoints del Portal Administrativo -> OK 64/64
+[PASS] API-PF1   64 endpoints del Portal Administrativo -> OK 64/64
+[PASS] API-DT0   64 endpoints del Portal Administrativo -> OK 64/64
+[PASS] API-MED   64 endpoints del Portal Administrativo -> OK 64/64
+[PASS] API-ADM   64 endpoints del Portal Administrativo -> OK 64/64
+[PASS] API-SA    64 endpoints del Portal Administrativo -> OK 64/64
+[PASS] DAT-SA    POST /api/integracion/v1/estado-deuda/lote con los 4 DNI -> 200; ve ['J2', 'J3', 'J4', 'J5']; montos=False
+[PASS] DAT-MED   POST /api/integracion/v1/estado-deuda/lote con los 4 DNI -> 200; ve ['J2', 'J3', 'J4', 'J5']; montos=False
+[PASS] DAT-DT2   POST /api/integracion/v1/estado-deuda/lote con los 4 DNI -> 200; ve ['J2', 'J3', 'J5']; montos=False
+[PASS] DAT-PF1   POST /api/integracion/v1/estado-deuda/lote con los 4 DNI -> 200; ve ['J2']; montos=False
+[PASS] DAT-DT0   POST /api/integracion/v1/estado-deuda/lote con los 4 DNI -> 200; ve []; montos=False
+[PASS] DAT-02    GET estado-deuda/dni/{J4} -> 404
+[PASS] DAT-03    POST estado-deuda/lote -> 403
+
+Resumen: {'PASS': 21, 'FAIL': 0, 'BLOCKED': 0} -> qa/HU-007/evidencia_ejecucion1.json

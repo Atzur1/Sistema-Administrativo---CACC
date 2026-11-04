@@ -7,6 +7,11 @@
   "Cors": {
     "AllowedOrigins": [ "http://localhost:4200" ]
   },
+  "Integracion": {
+    "ClienteDeportivo": {
+      "Clave": "REEMPLAZAR-con-dotnet-user-secrets-ver-InstructivoEquipo"
+    }
+  },
   "Security": {
     "SuperAdminEmail": ""
   },

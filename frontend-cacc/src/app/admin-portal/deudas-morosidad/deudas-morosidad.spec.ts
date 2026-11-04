@@ -1,7 +1,7 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { NEVER, from } from 'rxjs';
+import { NEVER, from, of } from 'rxjs';
 
 import { DeudasMorosidad } from './deudas-morosidad';
 import { PagosService } from '../../services/pagos';
@@ -68,7 +68,7 @@ async function create(
     providers: [
       provideRouter([]),
       { provide: PagosService, useValue: pagosService },
-      { provide: ReportesService, useValue: {} },
+      { provide: ReportesService, useValue: { contar: vi.fn(() => of({tipo: 'deudores', cantidadFilas: debtors.length})) } },
       { provide: NotificationService, useValue: { notify: vi.fn() } },
     ],
   }).compileComponents();

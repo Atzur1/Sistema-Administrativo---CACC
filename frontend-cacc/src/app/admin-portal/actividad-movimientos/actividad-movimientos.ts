@@ -22,6 +22,7 @@ import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter
 import { LatestRequest } from '../../shared/latest-request';
 import { PagosService } from '../../services/pagos';
 import { RecentPaymentModel } from '../../models/PaymentModel';
+import { SECCIONES } from '../secciones';
 
 // One row in the "Pagos registrados" table
 interface PaymentRow {
@@ -73,6 +74,9 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
     styleUrl: './actividad-movimientos.css',
 })
 export class ActividadMovimientos implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['actividad-movimientos'];
+
 
     private zone = inject(NgZone);
     private destroyRef = inject(DestroyRef);

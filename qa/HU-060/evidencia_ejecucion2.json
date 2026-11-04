@@ -1,0 +1,539 @@
+{
+  "fecha": "2026-10-29T12:22:35",
+  "fechaNegocio": "2026-10-29",
+  "altaEmiteCuotaDelMes": true,
+  "duracionSegundos": 9,
+  "base": "ClubCamionerosUnificadaV2_HU059_Prueba",
+  "servidor": "(localdb)\\MSSQLLocalDB",
+  "administrativoDll": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\ApiGestion\\bin\\Debug\\net9.0\\ApiGestion.dll",
+  "deportivoDll": "C:\\Users\\FramD\\AppData\\Local\\Temp\\cacc-hu059\\trabajo\\ellos\\BackEnd\\CACC.API\\bin\\Debug\\net9.0\\CACC.API.dll",
+  "hu056Disponible": false,
+  "ids": {
+    "superAdmin": 1,
+    "personaPrevia98600002": 11,
+    "jugadorPrevio98600003": 5,
+    "jugador98600001": 0,
+    "jugador98600004": 0,
+    "jugador98600005": 0,
+    "jugador98600002": 0,
+    "jugador98600006": 0,
+    "jugador98600008": 0,
+    "usuarioAdministrador98600012": 8
+  },
+  "totales": {
+    "pass": 14,
+    "fail": 0,
+    "blocked": 29
+  },
+  "grupos": [
+    {
+      "Grupo": "Auditoría",
+      "Estado": "BLOCKED",
+      "Casos": 2,
+      "Pass": 0,
+      "Fail": 0,
+      "Blocked": 2
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Estado": "BLOCKED",
+      "Casos": 7,
+      "Pass": 1,
+      "Fail": 0,
+      "Blocked": 6
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Estado": "BLOCKED",
+      "Casos": 6,
+      "Pass": 0,
+      "Fail": 0,
+      "Blocked": 6
+    },
+    {
+      "Grupo": "Caso 3 inscripción masculina",
+      "Estado": "BLOCKED",
+      "Casos": 2,
+      "Pass": 0,
+      "Fail": 0,
+      "Blocked": 2
+    },
+    {
+      "Grupo": "Caso 4 jugadora",
+      "Estado": "BLOCKED",
+      "Casos": 3,
+      "Pass": 0,
+      "Fail": 0,
+      "Blocked": 3
+    },
+    {
+      "Grupo": "Caso 5 DNI repetido",
+      "Estado": "BLOCKED",
+      "Casos": 2,
+      "Pass": 0,
+      "Fail": 0,
+      "Blocked": 2
+    },
+    {
+      "Grupo": "Caso 6 sin categoría",
+      "Estado": "BLOCKED",
+      "Casos": 2,
+      "Pass": 1,
+      "Fail": 0,
+      "Blocked": 1
+    },
+    {
+      "Grupo": "Caso 7 sin DNI",
+      "Estado": "BLOCKED",
+      "Casos": 2,
+      "Pass": 1,
+      "Fail": 0,
+      "Blocked": 1
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Estado": "PASS",
+      "Casos": 4,
+      "Pass": 4,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 9 sin arancel",
+      "Estado": "BLOCKED",
+      "Casos": 2,
+      "Pass": 0,
+      "Fail": 0,
+      "Blocked": 2
+    },
+    {
+      "Grupo": "Dependencias",
+      "Estado": "BLOCKED",
+      "Casos": 2,
+      "Pass": 0,
+      "Fail": 0,
+      "Blocked": 2
+    },
+    {
+      "Grupo": "Entorno",
+      "Estado": "PASS",
+      "Casos": 4,
+      "Pass": 4,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Logs",
+      "Estado": "PASS",
+      "Casos": 1,
+      "Pass": 1,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Reintentos",
+      "Estado": "BLOCKED",
+      "Casos": 2,
+      "Pass": 0,
+      "Fail": 0,
+      "Blocked": 2
+    }
+  ],
+  "casos": [
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-1",
+      "Caso": "SQL Server responde y la base tiene las precondiciones de HU-059 y HU-060",
+      "Estado": "PASS",
+      "Esperado": "2 personas 9860xxxx",
+      "Obtenido": "precondiciones 9860xxxx",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-2",
+      "Caso": "API Administrativa lista (login: lee USUARIOS en SQL)",
+      "Estado": "PASS",
+      "Esperado": "200",
+      "Obtenido": "login -> 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-3",
+      "Caso": "API Deportiva lista (GET /api/jugadores: lee JUGADORES en SQL)",
+      "Estado": "PASS",
+      "Esperado": "200",
+      "Obtenido": "GET /api/jugadores -> 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-4",
+      "Caso": "Los fixtures cubren la jerarquía: cat. con arancel | fallback de género | cat. femenina | sin arancel | inscripción M | inscripción F",
+      "Estado": "PASS",
+      "Esperado": "monto|monto|monto|(vacío)|monto|(vacío)",
+      "Obtenido": "1500.00|1000.00|800.00||500.00|",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Dependencias",
+      "Id": "DEP-1",
+      "Caso": "HU-056: el Administrativo ofrece POST /api/integracion/v1/jugadores",
+      "Estado": "BLOCKED",
+      "Esperado": "ruta existente (400 con errorCode)",
+      "Obtenido": "404 ",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Dependencias",
+      "Id": "DEP-2",
+      "Caso": "HU-054: el contrato documenta el alta (POST /api/integracion/v1/jugadores)",
+      "Estado": "BLOCKED",
+      "Esperado": "sección en docs/integracion/README.md",
+      "Obtenido": "no documentado",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-1",
+      "Caso": "El alta del contrato sin credencial o con una inválida: 401 y no crea nada",
+      "Estado": "PASS",
+      "Esperado": "401/401; personas sin cambio",
+      "Obtenido": "401/401; personas 12 -> 12",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-2",
+      "Caso": "Ningún frontend (Administrativo ni Deportivo) tiene la credencial ni llama a /api/integracion: el alta va backend a backend",
+      "Estado": "PASS",
+      "Esperado": "0 archivos",
+      "Obtenido": "0 archivos",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-0",
+      "Caso": "Sin el alta del Administrativo, el Deportivo no deja una identidad a medias ni la da por completada",
+      "Estado": "PASS",
+      "Esperado": ">=400; 0|0|0|0",
+      "Obtenido": "503; 0|0|0|0",
+      "Detalle": "{\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-1",
+      "Caso": "POST /api/jugadores del Deportivo: 201 con el id del jugador",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-2",
+      "Caso": "Base: una PERSONA y un JUGADOR, con nombre, apellido, DNI, género, categoría y FK correctos",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-3",
+      "Caso": "Identidad compartida: el Deportivo y el Administrativo devuelven el MISMO jugador; no hay una persona equivalente duplicada",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-4",
+      "Caso": "Padrón del Administrativo (GET /api/jugadores): aparece activo, con su DNI y categoría",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-5",
+      "Caso": "Búsqueda de Cuotas y Pagos (GET /api/players/search) lo encuentra por DNI",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-6",
+      "Caso": "Cobranzas: está en el padrón de cuentas (GET /api/pagos/player-accounts) y su cuenta se puede consultar",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-1",
+      "Caso": "Calendario HU-083 (alta el 2026-10-29): 1 cuota de 2026-10-01",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-2",
+      "Caso": "Calendario HU-083, la otra rama: alta antes del día 10 (no debe emitir la cuota)",
+      "Estado": "BLOCKED",
+      "Esperado": "fecha de negocio controlada",
+      "Obtenido": "la API no admite reloj inyectable",
+      "Detalle": "RelojNegocio.Hoy usa la hora real de Argentina; el reloj inyectable existe solo en el servicio (pruebas de HU-056, en rojo por NotImplementedException). No se cambia la fecha de la máquina."
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-3",
+      "Caso": "HU-048 caso A: categoría con arancel propio -> el de la categoría",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-4",
+      "Caso": "HU-048 caso B: categoría sin arancel propio -> el de su género",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-5",
+      "Caso": "La cuota lleva el arancel vigente al emitir, no el último cargado (1800.00, futuro)",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 3 inscripción masculina",
+      "Id": "INS-1",
+      "Caso": "Varón: UNA inscripción del jugador, con el arancel de inscripción vigente, separada de la cuota",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 3 inscripción masculina",
+      "Id": "INS-2",
+      "Caso": "Varón por el fallback de género: también UNA inscripción",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Reintentos",
+      "Id": "REI-1",
+      "Caso": "La misma alta nueva dos veces más: 200 sin duplicar persona, jugador, cuota ni inscripción",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 4 jugadora",
+      "Id": "FEM-1",
+      "Caso": "Jugadora: persona Femenino en la categoría 13",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 4 jugadora",
+      "Id": "FEM-2",
+      "Caso": "Jugadora: NO recibe inscripción (ni masculina ni en $0)",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 4 jugadora",
+      "Id": "FEM-3",
+      "Caso": "Jugadora: la cuota sigue el calendario y el arancel de su categoría",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 5 DNI repetido",
+      "Id": "DNI-1",
+      "Caso": "PERSONA existente sin JUGADOR: se reutiliza (misma PK, sin pisar sus datos) y el JUGADOR apunta a ella",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 5 DNI repetido",
+      "Id": "DNI-2",
+      "Caso": "PERSONA + JUGADOR ya existentes: reenviar el alta no duplica persona, jugador, cuota ni inscripción",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Reintentos",
+      "Id": "REI-2",
+      "Caso": "Reintento del alta con DNI existente: 200 y nada duplicado",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 6 sin categoría",
+      "Id": "CAT-1",
+      "Caso": "Deportivo: 400 (campo idCategoria), sin identidad ni cargos",
+      "Estado": "PASS",
+      "Esperado": "400 idCategoria; 0|0|0|0",
+      "Obtenido": "400 idCategoria; 0|0|0|0",
+      "Detalle": "{\"message\":\"La categoría es obligatoria.\",\"field\":\"idCategoria\"}"
+    },
+    {
+      "Grupo": "Caso 6 sin categoría",
+      "Id": "CAT-2",
+      "Caso": "Contrato del Administrativo sin idCategoria: 400 INVALID_INPUT (field idCategoria), rechazo registrado, sin datos",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 404 "
+    },
+    {
+      "Grupo": "Caso 7 sin DNI",
+      "Id": "SDN-1",
+      "Caso": "Deportivo: 400, sin crear una identidad sin DNI ni cargos",
+      "Estado": "PASS",
+      "Esperado": "400; personas sin cambio",
+      "Obtenido": "400; personas 12 -> 12",
+      "Detalle": "{\"message\":\"El nombre y el DNI son obligatorios.\"}"
+    },
+    {
+      "Grupo": "Caso 7 sin DNI",
+      "Id": "SDN-2",
+      "Caso": "Contrato del Administrativo sin DNI: 400 INVALID_INPUT (field dni), rechazo registrado, sin datos",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 404 "
+    },
+    {
+      "Grupo": "Caso 9 sin arancel",
+      "Id": "SAR-1",
+      "Caso": "Jugadora en categoría sin arancel y género sin arancel: se registra (política de HU-056) sin cuota inventada ni cargos en $0",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Caso 9 sin arancel",
+      "Id": "SAR-2",
+      "Caso": "Después del caso sin arancel, otra alta válida e independiente se procesa completa",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Auditoría",
+      "Id": "AUD-1",
+      "Caso": "Alta exitosa auditada: PERSONAS y JUGADORES INSERT, origen PortalDeportivo, operador del token, fecha de hoy",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Auditoría",
+      "Id": "AUD-2",
+      "Caso": "Altas rechazadas: ningún INSERT auditado como alta completada",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 404 "
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Id": "NOJ-1",
+      "Caso": "El Deportivo crea DT, Médico y Administrador (POST /api/staff): PERSONA + USUARIO con su rol",
+      "Estado": "PASS",
+      "Esperado": "201 x3; 98600010:4,98600011:3,98600012:1",
+      "Obtenido": "201/201/201; 98600010:4,98600011:3,98600012:1",
+      "Detalle": "98600010 201 {\"message\":\"Colaborador de staff registrado con éxito.\",\"idStaff\":2,\"nombreCompleto\":\"Staff Hu Sesenta 98600010\"} || 98600011 201 {\"message\":\"Colaborador de staff registrado con éxito.\",\"idStaff\":3,\"nombreCompleto\":\"Staff Hu Sesenta 98600011\"} || 98600012 201 {\"message\":\"Colaborador de "
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Id": "NOJ-2",
+      "Caso": "El Administrativo habilita al Administrador (candidatos + POST /api/usuarios/{id}/habilitar)",
+      "Estado": "PASS",
+      "Esperado": "200 (candidato); 200; acceso 1|2",
+      "Obtenido": "200; 200; acceso 1|2",
+      "Detalle": "{\"mensaje\":\"Se habilitó el acceso, pero no se pudo enviar el correo de activación. Reintentá desde Usuarios y Permisos.\"}"
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Id": "NOJ-3",
+      "Caso": "Staff y cuentas de portal no son JUGADORES ni tienen cuotas o inscripciones, después de la generación manual y la automática",
+      "Estado": "PASS",
+      "Esperado": "generación 200 + automática; 0 jugadores|0 cargos",
+      "Obtenido": "200 + cuota de control = 1; 0|0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Id": "NOJ-4",
+      "Caso": "No aparecen en el padrón, en la búsqueda de Cuotas y Pagos ni en el padrón de cobranzas",
+      "Estado": "PASS",
+      "Esperado": "0|0|0",
+      "Obtenido": "0|0|0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-6",
+      "Caso": "Tras la generación manual y la automática: la cuota del alta no se duplica y conserva su monto",
+      "Estado": "BLOCKED",
+      "Esperado": "HU-056 disponible",
+      "Obtenido": "HU-056 no disponible",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada. Respuesta del flujo: 503 {\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "Logs",
+      "Id": "LOG-1",
+      "Caso": "Los logs de las dos APIs no contienen la credencial, la clave JWT, contraseñas ni tokens",
+      "Estado": "PASS",
+      "Esperado": "0",
+      "Obtenido": "0",
+      "Detalle": ""
+    }
+  ]
+}

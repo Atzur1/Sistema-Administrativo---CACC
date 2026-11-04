@@ -1,0 +1,289 @@
+[
+  {
+    "Caso": "S1. Baja sin credencial (token válido)",
+    "Esperado": "401",
+    "Obtenido": "401",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"UNAUTHORIZED\",\"message\":\"Falta la credencial del sistema que llama o no es válida.\",\"exito\":false,\"mensaje\":\"Falta la credencial del sistema que l"
+  },
+  {
+    "Caso": "S2. Baja con credencial inválida",
+    "Esperado": "401",
+    "Obtenido": "401",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"UNAUTHORIZED\",\"message\":\"Falta la credencial del sistema que llama o no es válida.\",\"exito\":false,\"mensaje\":\"Falta la credencial del sistema que l"
+  },
+  {
+    "Caso": "S3. Baja con credencial válida SIN token",
+    "Esperado": "401",
+    "Obtenido": "401",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"UNAUTHORIZED\",\"message\":\"Falta el token de sesión o ya no es válido. Iniciá sesión de nuevo.\",\"exito\":false,\"mensaje\":\"Falta el token de sesión o "
+  },
+  {
+    "Caso": "S4. Baja con un rol sin permiso (Médica)",
+    "Esperado": "403",
+    "Obtenido": "403",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"FORBIDDEN\",\"message\":\"Tu rol no tiene permiso para usar este servicio.\",\"exito\":false,\"mensaje\":\"Tu rol no tiene permiso para usar este servicio.\""
+  },
+  {
+    "Caso": "S5. Reincorporación sin credencial",
+    "Esperado": "401",
+    "Obtenido": "401",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"UNAUTHORIZED\",\"message\":\"Falta la credencial del sistema que llama o no es válida.\",\"exito\":false,\"mensaje\":\"Falta la credencial del sistema que l"
+  },
+  {
+    "Caso": "S6. Ningún rechazo de seguridad tocó al jugador",
+    "Esperado": "fecha_baja NULL",
+    "Obtenido": "NULL",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "V1. Jugador inexistente",
+    "Esperado": "404",
+    "Obtenido": "404",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"NOT_FOUND\",\"message\":\"No existe el jugador 999999999.\",\"exito\":false,\"mensaje\":\"No existe el jugador 999999999.\"}"
+  },
+  {
+    "Caso": "V2. Id de jugador 0",
+    "Esperado": "400",
+    "Obtenido": "400",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"INVALID_INPUT\",\"message\":\"Indicá un jugador válido.\",\"field\":\"idJugador\",\"exito\":false,\"mensaje\":\"Indicá un jugador válido.\"}"
+  },
+  {
+    "Caso": "V3. Sin cuerpo (falta la fecha)",
+    "Esperado": "400",
+    "Obtenido": "400",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"INVALID_INPUT\",\"message\":\"Indicá la fecha de baja con el formato yyyy-MM-dd.\",\"field\":\"fechaBaja\",\"exito\":false,\"mensaje\":\"Indicá la fecha de baja"
+  },
+  {
+    "Caso": "V4. Fecha con otro formato (15/10/2026)",
+    "Esperado": "400",
+    "Obtenido": "400",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"INVALID_INPUT\",\"message\":\"Indicá la fecha de baja con el formato yyyy-MM-dd.\",\"field\":\"fechaBaja\",\"exito\":false,\"mensaje\":\"Indicá la fecha de baja"
+  },
+  {
+    "Caso": "V5. Fecha futura (2026-10-30)",
+    "Esperado": "400",
+    "Obtenido": "400",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"INVALID_INPUT\",\"message\":\"La fecha de baja no puede ser futura.\",\"field\":\"fechaBaja\",\"exito\":false,\"mensaje\":\"La fecha de baja no puede ser futura"
+  },
+  {
+    "Caso": "V6. JSON mal formado",
+    "Esperado": "400",
+    "Obtenido": "400",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"INVALID_INPUT\",\"message\":\"El dato \\\"fechaBaja\\\" no tiene un formato válido.\",\"field\":\"fechaBaja\",\"exito\":false,\"mensaje\":\"El dato \\\"fechaBaja\\\" no"
+  },
+  {
+    "Caso": "V7. Baja anterior al alta (B entró el 20/10)",
+    "Esperado": "422",
+    "Obtenido": "422",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"UNPROCESSABLE\",\"message\":\"La fecha de baja no puede ser anterior al ingreso del jugador al club (20/10/2026).\",\"exito\":false,\"mensaje\":\"La fecha d"
+  },
+  {
+    "Caso": "V8. Ninguna validación registró una baja",
+    "Esperado": "0 bajas",
+    "Obtenido": "0",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "B1. Baja de A con fecha efectiva 2026-10-15",
+    "Esperado": "200",
+    "Obtenido": "200",
+    "Resultado": "PASS",
+    "Respuesta": "{\"idJugador\":1148,\"estado\":\"baja\",\"fechaBaja\":\"2026-10-15\",\"yaEstabaDadoDeBaja\":false}"
+  },
+  {
+    "Caso": "B2. Reintento idéntico (respuesta perdida)",
+    "Esperado": "200",
+    "Obtenido": "200",
+    "Resultado": "PASS",
+    "Respuesta": "{\"idJugador\":1148,\"estado\":\"baja\",\"fechaBaja\":\"2026-10-15\",\"yaEstabaDadoDeBaja\":true}"
+  },
+  {
+    "Caso": "B3. Otra baja con otra fecha",
+    "Esperado": "409",
+    "Obtenido": "409",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"CONFLICT\",\"message\":\"El jugador ya está dado de baja desde el 15/10/2026: no se registra otra baja.\",\"exito\":false,\"mensaje\":\"El jugador ya está d"
+  },
+  {
+    "Caso": "B4. estado-deuda informa la baja al QR",
+    "Esperado": "200",
+    "Obtenido": "200",
+    "Resultado": "PASS",
+    "Respuesta": "{\"dni\":\"98579001\",\"idJugador\":1148,\"estado\":\"baja\",\"accesoPermitido\":false,\"fechaBaja\":\"2026-10-15\"}"
+  },
+  {
+    "Caso": "B5. Baja lógica: mismo jugador y persona, fecha efectiva y activo=0",
+    "Esperado": "1148|1249|2026-10-15|0",
+    "Obtenido": "1148|1249|2026-10-15|0",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "B6. Deuda y pagos hasta el mes de la baja intactos (ago vencida, sep parcial + abono, oct)",
+    "Esperado": "sin cambios",
+    "Obtenido": "sin cambios",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "B7. La cuota de noviembre sin pagos (posterior a la baja) se quitó",
+    "Esperado": "0",
+    "Obtenido": "0",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "B8. Deudas y Morosidad sigue mostrando a A con su deuda y su fecha de baja",
+    "Esperado": "200",
+    "Obtenido": "200",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "B9. JUGADORES_PERIODOS cierra la permanencia",
+    "Esperado": "2026-08-01..2026-10-15",
+    "Obtenido": "2026-08-01..2026-10-15",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "B10. Un solo evento de baja, origen PortalDeportivo y operador del token",
+    "Esperado": "1|PortalDeportivo|6",
+    "Obtenido": "1|PortalDeportivo|6",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "B11. La baja rechazada de B no dejó eventos",
+    "Esperado": "0",
+    "Obtenido": "0",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "C1. Seis bajas simultáneas: todas 200, una sola efectiva, un solo evento",
+    "Esperado": "200x6, 1, 1",
+    "Obtenido": "200,200,200,200,200,200, 1, 1",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "R1. Categoría inexistente",
+    "Esperado": "422",
+    "Obtenido": "422",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"UNPROCESSABLE\",\"message\":\"No existe la categoría con id 999999.\",\"exito\":false,\"mensaje\":\"No existe la categoría con id 999999.\"}"
+  },
+  {
+    "Caso": "R2. Categoría 0",
+    "Esperado": "400",
+    "Obtenido": "400",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"INVALID_INPUT\",\"message\":\"Indicá una categoría válida.\",\"field\":\"idCategoria\",\"exito\":false,\"mensaje\":\"Indicá una categoría válida.\"}"
+  },
+  {
+    "Caso": "R3. Reincorporar a un jugador activo (B)",
+    "Esperado": "409",
+    "Obtenido": "409",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"CONFLICT\",\"message\":\"El jugador ya está activo: no hay nada que reincorporar.\",\"exito\":false,\"mensaje\":\"El jugador ya está activo: no hay nada que"
+  },
+  {
+    "Caso": "R4. Reincorporación de A (sin cuerpo: conserva categoría)",
+    "Esperado": "200",
+    "Obtenido": "200",
+    "Resultado": "PASS",
+    "Respuesta": "{\"idJugador\":1148,\"fechaAlta\":\"2026-10-29\",\"categoriaCambiada\":false}"
+  },
+  {
+    "Caso": "R5. Reintento de la reincorporación",
+    "Esperado": "409",
+    "Obtenido": "409",
+    "Resultado": "PASS",
+    "Respuesta": "{\"errorCode\":\"CONFLICT\",\"message\":\"El jugador ya está activo: no hay nada que reincorporar.\",\"exito\":false,\"mensaje\":\"El jugador ya está activo: no hay nada que"
+  },
+  {
+    "Caso": "R6. Mismo jugador y persona; fecha_baja NULL; fecha_alta = hoy; misma categoría",
+    "Esperado": "1148|1249|NULL|2026-10-29|249",
+    "Obtenido": "1148|1249|NULL|2026-10-29|249",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "R7. Reingreso el día 29 (>= 10): la cuota de octubre ya existía, no se duplica; nada posterior",
+    "Esperado": "4|1|0",
+    "Obtenido": "4|1|0",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "R8. La deuda anterior sigue igual después del reingreso",
+    "Esperado": "sin cambios",
+    "Obtenido": "sin cambios",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "R9. Historial: la baja queda y se abre un período nuevo",
+    "Esperado": "2026-08-01..2026-10-15|2026-10-29..",
+    "Obtenido": "2026-08-01..2026-10-15|2026-10-29..",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "R10. Reincorporación auditada una vez con origen PortalDeportivo",
+    "Esperado": "1|PortalDeportivo",
+    "Obtenido": "1|PortalDeportivo",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "R11. estado-deuda vuelve a evaluar la deuda (ya no 'baja')",
+    "Esperado": "200",
+    "Obtenido": "200",
+    "Resultado": "PASS",
+    "Respuesta": "{\"dni\":\"98579001\",\"idJugador\":1148,\"estado\":\"inhabilitado\",\"accesoPermitido\":false,\"fechaBaja\":null}"
+  },
+  {
+    "Caso": "R12. Reincorporación de C con otra categoría",
+    "Esperado": "200",
+    "Obtenido": "200",
+    "Resultado": "PASS",
+    "Respuesta": "{\"idJugador\":1150,\"fechaAlta\":\"2026-10-29\",\"categoriaCambiada\":true}"
+  },
+  {
+    "Caso": "R13. C queda en la categoría nueva (cobro y pertenencia)",
+    "Esperado": "1|1",
+    "Obtenido": "1|1",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "L1. La credencial y los tokens no aparecen en el log",
+    "Esperado": "0",
+    "Obtenido": "0 credencial",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  },
+  {
+    "Caso": "L2. Los rechazos quedan en el log con la plantilla del endpoint",
+    "Esperado": "presente",
+    "Obtenido": "",
+    "Resultado": "PASS",
+    "Respuesta": ""
+  }
+]

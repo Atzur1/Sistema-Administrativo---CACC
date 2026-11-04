@@ -278,6 +278,33 @@ public class UsuariosPortalDaoIntegrationTests
         finally { transaction.Rollback(); connection.Dispose(); }
     }
 
+    // HU-061 (LAST-05, SCRUM-583): deshabilitar al único SuperAdmin operativo tampoco se permite aunque haya otro con
+    // la activación pendiente; una vez que ese otro activa su cuenta, sí.
+    [IntegracionFact]
+    public void Deshabilitar_ElUltimoSuperAdmin_NoCuentaALosQueTienenLaActivacionPendiente()
+    {
+        var (connection, transaction) = Abrir();
+        try
+        {
+            SinOtrosSuperAdmins(connection, transaction);
+            int unico = InsertarCuentaConAcceso(connection, transaction, "90410014", "super-unico-desh@cacc.test", rolPortal: 1);
+            int pendiente = InsertarCuentaConAcceso(connection, transaction, "90410015", "super-pendiente-desh@cacc.test", rolPortal: 1, operativa: false);
+
+            Assert.False(UsuariosPortalDao.DeshabilitarCore(connection, transaction, unico));
+            Assert.Equal(1, RolYRevision(connection, transaction, unico).Rol);
+
+            using (var activar = new SqlCommand(
+                "UPDATE dbo.USUARIOS SET activacion_pendiente = 0, contrasenia = N'hash-de-prueba' WHERE PK_id_usuario = @id", connection, transaction))
+            {
+                activar.Parameters.AddWithValue("@id", pendiente);
+                activar.ExecuteNonQuery();
+            }
+
+            Assert.True(UsuariosPortalDao.DeshabilitarCore(connection, transaction, unico));
+        }
+        finally { transaction.Rollback(); connection.Dispose(); }
+    }
+
     [IntegracionFact]
     public void CambiarRol_DeUnaCuentaSinAccesoOConRolInvalido_NoEscribe()
     {

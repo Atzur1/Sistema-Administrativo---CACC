@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="d2d54db1-f2dc-48b4-835b-ad0499c437db" name="FramD@GABINETE1 2026-10-31 19:06:12" runUser="GABINETE1\CodexSandboxOffline" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-31T19:06:12.6564856-03:00" queuing="2026-10-31T19:06:12.6564860-03:00" start="2026-10-31T19:06:12.0382271-03:00" finish="2026-10-31T19:06:12.7228157-03:00" />
+  <TestSettings name="default" id="0ad060d6-2975-4cd7-b6ac-cc3ace98bec2">
+    <Deployment runDeploymentRoot="FramD_GABINETE1_2026-10-31_19_06_12" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="5a2025c3-a408-421a-aea6-775fb85c39c1" testId="d1ca7b93-09e3-05c8-c2dd-d7042786618e" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 10, sortBy: &quot;PK_id_pago&quot;, sortDirection: &quot;desc&quot;)" computerName="GABINETE1" duration="00:00:00.0050575" startTime="2026-10-31T19:06:12.6131100-03:00" endTime="2026-10-31T19:06:12.6131101-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5a2025c3-a408-421a-aea6-775fb85c39c1" />
+    <UnitTestResult executionId="835d0a09-0af0-467b-87fe-d208ff180868" testId="ad6a9532-4c50-6aa2-e144-4df2c353d5ae" testName="ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Fecha, descendente: False, esperado: &quot;COALESCE(p.fecha_hora_registro, CAST(p.fecha_pago &quot;···)" computerName="GABINETE1" duration="00:00:00.0000751" startTime="2026-10-31T19:06:12.6126168-03:00" endTime="2026-10-31T19:06:12.6126169-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="835d0a09-0af0-467b-87fe-d208ff180868">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Equal() Failure: Strings differ&#xD;
+           ↓ (pos 0)&#xD;
+Expected: "COALESCE(p.fecha_hora_registro, CAST(p.fe"···&#xD;
+Actual:   "p.fecha_pago ASC, p.fecha_hora_registro A"···&#xD;
+           ↑ (pos 0)</Message>
+          <StackTrace>   at ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(OrdenPagosDelPeriodo orden, Boolean descendente, String esperado) in C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionController.Tests.cs:line 136&#xD;
+   at InvokeStub_RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="399900dd-366e-4a4d-b6c0-4f5461572b8f" testId="1de63442-ef66-dbd6-ca13-18d62fa1fa18" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 10, sortBy: &quot;fecha_pago; DROP TABLE PAGOS--&quot;, sortDirection: &quot;desc&quot;)" computerName="GABINETE1" duration="00:00:00.0000023" startTime="2026-10-31T19:06:12.6136117-03:00" endTime="2026-10-31T19:06:12.6136118-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="399900dd-366e-4a4d-b6c0-4f5461572b8f" />
+    <UnitTestResult executionId="0ca40e04-6a6a-4833-be7d-2d57cdd24287" testId="73b16459-ecc1-cf57-f026-a680d9fe9269" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_TraduceElOrdenAlEnum(sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;, orden: Fecha, descendente: True)" computerName="GABINETE1" duration="00:00:00.0002071" startTime="2026-10-31T19:06:12.6348562-03:00" endTime="2026-10-31T19:06:12.6348562-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0ca40e04-6a6a-4833-be7d-2d57cdd24287" />
+    <UnitTestResult executionId="4b4539ea-14cf-4104-a6fe-ac72049f124a" testId="c13b07de-bdc7-828c-831e-71a076b48501" testName="ApiGestion.Tests.RecaudacionControllerTests.PeriodoInvalido_Responde400_EnLosDosEndpoints(anio: 1999, mes: 5)" computerName="GABINETE1" duration="00:00:00.0000066" startTime="2026-10-31T19:06:12.6341048-03:00" endTime="2026-10-31T19:06:12.6341049-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4b4539ea-14cf-4104-a6fe-ac72049f124a" />
+    <UnitTestResult executionId="fff2f5d0-4270-459f-a862-3e2c99594eef" testId="4cea8179-1c72-2a42-1584-ea77b089b116" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_TraduceElOrdenAlEnum(sortBy: &quot;monto&quot;, sortDirection: &quot;asc&quot;, orden: Monto, descendente: False)" computerName="GABINETE1" duration="00:00:00.0000108" startTime="2026-10-31T19:06:12.6348781-03:00" endTime="2026-10-31T19:06:12.6348781-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fff2f5d0-4270-459f-a862-3e2c99594eef" />
+    <UnitTestResult executionId="7ea3b62e-de35-4f55-b6fa-b770e10fde4f" testId="d88e4759-a1a4-7e6b-6db2-328062db6e56" testName="ApiGestion.Tests.RecaudacionControllerTests.Totales_NoTraenElDetalleNiDependenDeLaPagina" computerName="GABINETE1" duration="00:00:00.0268678" startTime="2026-10-31T19:06:12.6593241-03:00" endTime="2026-10-31T19:06:12.6593247-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7ea3b62e-de35-4f55-b6fa-b770e10fde4f" />
+    <UnitTestResult executionId="63dea52a-96ed-416c-93a7-48a3dceb9a47" testId="6eca5ede-7846-16b1-f0f3-b1202853a009" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_SinParametros_UsaLosDefaultsDeHu088_FechaDescendente" computerName="GABINETE1" duration="00:00:00.0022521" startTime="2026-10-31T19:06:12.6348037-03:00" endTime="2026-10-31T19:06:12.6348038-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="63dea52a-96ed-416c-93a7-48a3dceb9a47" />
+    <UnitTestResult executionId="c18a9b4d-945d-4b8d-ac79-8c44e7c994f2" testId="f4de86ab-27c7-da25-6b82-a49a7a7147dc" testName="ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Fecha, descendente: True, esperado: &quot;COALESCE(p.fecha_hora_registro, CAST(p.fecha_pago &quot;···)" computerName="GABINETE1" duration="00:00:00.0027096" startTime="2026-10-31T19:06:12.6117659-03:00" endTime="2026-10-31T19:06:12.6117664-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c18a9b4d-945d-4b8d-ac79-8c44e7c994f2">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Equal() Failure: Strings differ&#xD;
+           ↓ (pos 0)&#xD;
+Expected: "COALESCE(p.fecha_hora_registro, CAST(p.fe"···&#xD;
+Actual:   "p.fecha_pago DESC, p.fecha_hora_registro "···&#xD;
+           ↑ (pos 0)</Message>
+          <StackTrace>   at ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(OrdenPagosDelPeriodo orden, Boolean descendente, String esperado) in C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionController.Tests.cs:line 136&#xD;
+   at InvokeStub_RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="84b8a6e8-257f-4e4e-88ac-061e397713a6" testId="2b6971ae-70a6-d872-d956-da371dc4c4a5" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 0, pageSize: 10, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" computerName="GABINETE1" duration="00:00:00.0000203" startTime="2026-10-31T19:06:12.6340366-03:00" endTime="2026-10-31T19:06:12.6340366-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="84b8a6e8-257f-4e4e-88ac-061e397713a6" />
+    <UnitTestResult executionId="01fa890f-bd57-4198-9417-3a4e2d8c128c" testId="94cad513-f78d-6e19-2f9d-de3445c72246" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 10, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc, PK_id_pago&quot;)" computerName="GABINETE1" duration="00:00:00.0000037" startTime="2026-10-31T19:06:12.6335580-03:00" endTime="2026-10-31T19:06:12.6335581-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="01fa890f-bd57-4198-9417-3a4e2d8c128c" />
+    <UnitTestResult executionId="5e983299-928e-421b-ba04-ab7eba565370" testId="b1a6b9e4-aca8-8716-11a9-7e8097ea4e7b" testName="ApiGestion.Tests.RecaudacionControllerTests.PeriodoInvalido_Responde400_EnLosDosEndpoints(anio: 2026, mes: 13)" computerName="GABINETE1" duration="00:00:00.0001573" startTime="2026-10-31T19:06:12.6340872-03:00" endTime="2026-10-31T19:06:12.6340873-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5e983299-928e-421b-ba04-ab7eba565370" />
+    <UnitTestResult executionId="4ce4fd0a-8d47-4d30-9d3c-cab64d29b0cb" testId="01764040-335b-bb0e-a6cc-45109bc20b67" testName="ApiGestion.Tests.RecaudacionControllerTests.Orden_DesconocidoNoArmaSql" computerName="GABINETE1" duration="00:00:00.0004146" startTime="2026-10-31T19:06:12.6341307-03:00" endTime="2026-10-31T19:06:12.6341308-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4ce4fd0a-8d47-4d30-9d3c-cab64d29b0cb" />
+    <UnitTestResult executionId="3ebac82d-ca8a-4223-b712-a0ade6fe0e68" testId="849c3c3a-2fa2-20ba-5583-27c3339e2bae" testName="ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Monto, descendente: True, esperado: &quot;p.monto_final DESC, p.PK_id_pago DESC&quot;)" computerName="GABINETE1" duration="00:00:00.0001632" startTime="2026-10-31T19:06:12.6016126-03:00" endTime="2026-10-31T19:06:12.6016127-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3ebac82d-ca8a-4223-b712-a0ade6fe0e68" />
+    <UnitTestResult executionId="a334207f-1eb4-4731-88bd-405a1791c1b8" testId="398c823a-caad-3ec1-2a08-cdfd0098f0c8" testName="ApiGestion.Tests.RecaudacionControllerTests.LaFechaViajaConDiaYHoraDelClubSinAmbiguedad" computerName="GABINETE1" duration="00:00:00.0122518" startTime="2026-10-31T19:06:12.6716654-03:00" endTime="2026-10-31T19:06:12.6716655-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a334207f-1eb4-4731-88bd-405a1791c1b8" />
+    <UnitTestResult executionId="dfd41404-53a7-41bb-9b8f-7bf9cca376bf" testId="fbdd17a4-3e3c-da71-2cc4-46ae965dd0d2" testName="ApiGestion.Tests.RecaudacionControllerTests.PeriodoInvalido_Responde400_EnLosDosEndpoints(anio: 2026, mes: 0)" computerName="GABINETE1" duration="00:00:00.0022380" startTime="2026-10-31T19:06:12.6340683-03:00" endTime="2026-10-31T19:06:12.6340683-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dfd41404-53a7-41bb-9b8f-7bf9cca376bf" />
+    <UnitTestResult executionId="05528990-c06e-4da4-bfed-9f33f6634234" testId="64155448-f71f-05e4-0300-e330d92a8172" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 10, sortBy: &quot;fecha&quot;, sortDirection: &quot;arriba&quot;)" computerName="GABINETE1" duration="00:00:00.0000183" startTime="2026-10-31T19:06:12.6135713-03:00" endTime="2026-10-31T19:06:12.6135714-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="05528990-c06e-4da4-bfed-9f33f6634234" />
+    <UnitTestResult executionId="79b0b1db-1d97-4045-a385-f52d5e260ace" testId="bbd3a27d-3bbd-1102-f774-d96912057a76" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 0, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" computerName="GABINETE1" duration="00:00:00.0000028" startTime="2026-10-31T19:06:12.6336628-03:00" endTime="2026-10-31T19:06:12.6336629-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="79b0b1db-1d97-4045-a385-f52d5e260ace" />
+    <UnitTestResult executionId="fc1d6823-8fac-41d1-bed1-560404a5ed45" testId="a83cd1be-9778-53ac-78f2-9478db3a0b86" testName="ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Monto, descendente: False, esperado: &quot;p.monto_final ASC, p.PK_id_pago ASC&quot;)" computerName="GABINETE1" duration="00:00:00.0034256" startTime="2026-10-31T19:06:12.5995784-03:00" endTime="2026-10-31T19:06:12.5995941-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fc1d6823-8fac-41d1-bed1-560404a5ed45" />
+    <UnitTestResult executionId="21c36165-1cbf-4b5d-8c61-3095b5f735b3" testId="0274969d-c53a-a1e7-5d9a-21f99aeb3e6e" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_DevuelveLaPaginaConElTotalDelPeriodo" computerName="GABINETE1" duration="00:00:00.0015146" startTime="2026-10-31T19:06:12.6341530-03:00" endTime="2026-10-31T19:06:12.6341530-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="21c36165-1cbf-4b5d-8c61-3095b5f735b3" />
+    <UnitTestResult executionId="ca693e0f-3110-4373-b071-661377c193c0" testId="2f2c22c3-1ae4-9e5f-5ff7-40acbd14dc2f" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: -1, pageSize: 10, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" computerName="GABINETE1" duration="00:00:00.0000031" startTime="2026-10-31T19:06:12.6135928-03:00" endTime="2026-10-31T19:06:12.6135929-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ca693e0f-3110-4373-b071-661377c193c0" />
+    <UnitTestResult executionId="6f42094c-e0b9-4a66-9fd1-9dfd1fc2b475" testId="0ca91fdd-adbc-8925-d410-c3d83e0ad93c" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_TraduceElOrdenAlEnum(sortBy: &quot;fecha&quot;, sortDirection: &quot;asc&quot;, orden: Fecha, descendente: False)" computerName="GABINETE1" duration="00:00:00.0044043" startTime="2026-10-31T19:06:12.6348358-03:00" endTime="2026-10-31T19:06:12.6348358-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6f42094c-e0b9-4a66-9fd1-9dfd1fc2b475" />
+    <UnitTestResult executionId="6d4221c9-7dd3-4816-834f-6ed504d84105" testId="a9b122ab-2bdb-45d3-fc1c-062e19cb4be4" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 2147483647, pageSize: 100, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" computerName="GABINETE1" duration="00:00:00.0069316" startTime="2026-10-31T19:06:12.6340046-03:00" endTime="2026-10-31T19:06:12.6340047-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6d4221c9-7dd3-4816-834f-6ed504d84105">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.IsType() Failure: Value is not the exact type&#xD;
+Expected: typeof(Microsoft.AspNetCore.Mvc.BadRequestObjectResult)&#xD;
+Actual:   typeof(Microsoft.AspNetCore.Mvc.OkObjectResult)</Message>
+          <StackTrace>   at ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(Int32 page, Int32 pageSize, String sortBy, String sortDirection) in C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionController.Tests.cs:line 63&#xD;
+   at InvokeStub_RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="030088b4-2e26-4ee2-be59-c8b7776bb8a8" testId="160a281f-168a-a81b-ee89-d40da6af5d2b" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_TraduceElOrdenAlEnum(sortBy: &quot;MONTO&quot;, sortDirection: &quot;DESC&quot;, orden: Monto, descendente: True)" computerName="GABINETE1" duration="00:00:00.0000081" startTime="2026-10-31T19:06:12.6348964-03:00" endTime="2026-10-31T19:06:12.6348964-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="030088b4-2e26-4ee2-be59-c8b7776bb8a8" />
+    <UnitTestResult executionId="70b99df4-95d1-4c68-8f8a-e9d4beaf65a8" testId="66f400e7-7fad-c15d-c621-8f9f680c07f9" testName="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 101, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" computerName="GABINETE1" duration="00:00:00.0003515" startTime="2026-10-31T19:06:12.6135293-03:00" endTime="2026-10-31T19:06:12.6135294-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70b99df4-95d1-4c68-8f8a-e9d4beaf65a8" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Orden_DesconocidoNoArmaSql" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="01764040-335b-bb0e-a6cc-45109bc20b67">
+      <Execution id="4ce4fd0a-8d47-4d30-9d3c-cab64d29b0cb" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Orden_DesconocidoNoArmaSql" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 0, pageSize: 10, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="2b6971ae-70a6-d872-d956-da371dc4c4a5">
+      <Execution id="84b8a6e8-257f-4e4e-88ac-061e397713a6" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 10, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc, PK_id_pago&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="94cad513-f78d-6e19-2f9d-de3445c72246">
+      <Execution id="01fa890f-bd57-4198-9417-3a4e2d8c128c" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_TraduceElOrdenAlEnum(sortBy: &quot;MONTO&quot;, sortDirection: &quot;DESC&quot;, orden: Monto, descendente: True)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="160a281f-168a-a81b-ee89-d40da6af5d2b">
+      <Execution id="030088b4-2e26-4ee2-be59-c8b7776bb8a8" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_TraduceElOrdenAlEnum" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_DevuelveLaPaginaConElTotalDelPeriodo" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="0274969d-c53a-a1e7-5d9a-21f99aeb3e6e">
+      <Execution id="21c36165-1cbf-4b5d-8c61-3095b5f735b3" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_DevuelveLaPaginaConElTotalDelPeriodo" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_TraduceElOrdenAlEnum(sortBy: &quot;fecha&quot;, sortDirection: &quot;asc&quot;, orden: Fecha, descendente: False)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="0ca91fdd-adbc-8925-d410-c3d83e0ad93c">
+      <Execution id="6f42094c-e0b9-4a66-9fd1-9dfd1fc2b475" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_TraduceElOrdenAlEnum" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Fecha, descendente: False, esperado: &quot;COALESCE(p.fecha_hora_registro, CAST(p.fecha_pago &quot;···)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="ad6a9532-4c50-6aa2-e144-4df2c353d5ae">
+      <Execution id="835d0a09-0af0-467b-87fe-d208ff180868" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Orden_EsUnaListaCerradaConDesempatePorId" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.PeriodoInvalido_Responde400_EnLosDosEndpoints(anio: 2026, mes: 0)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="fbdd17a4-3e3c-da71-2cc4-46ae965dd0d2">
+      <Execution id="dfd41404-53a7-41bb-9b8f-7bf9cca376bf" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="PeriodoInvalido_Responde400_EnLosDosEndpoints" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.PeriodoInvalido_Responde400_EnLosDosEndpoints(anio: 1999, mes: 5)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="c13b07de-bdc7-828c-831e-71a076b48501">
+      <Execution id="4b4539ea-14cf-4104-a6fe-ac72049f124a" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="PeriodoInvalido_Responde400_EnLosDosEndpoints" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.LaFechaViajaConDiaYHoraDelClubSinAmbiguedad" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="398c823a-caad-3ec1-2a08-cdfd0098f0c8">
+      <Execution id="a334207f-1eb4-4731-88bd-405a1791c1b8" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="LaFechaViajaConDiaYHoraDelClubSinAmbiguedad" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: -1, pageSize: 10, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="2f2c22c3-1ae4-9e5f-5ff7-40acbd14dc2f">
+      <Execution id="ca693e0f-3110-4373-b071-661377c193c0" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 10, sortBy: &quot;fecha_pago; DROP TABLE PAGOS--&quot;, sortDirection: &quot;desc&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="1de63442-ef66-dbd6-ca13-18d62fa1fa18">
+      <Execution id="399900dd-366e-4a4d-b6c0-4f5461572b8f" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 0, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="bbd3a27d-3bbd-1102-f774-d96912057a76">
+      <Execution id="79b0b1db-1d97-4045-a385-f52d5e260ace" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_TraduceElOrdenAlEnum(sortBy: &quot;monto&quot;, sortDirection: &quot;asc&quot;, orden: Monto, descendente: False)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="4cea8179-1c72-2a42-1584-ea77b089b116">
+      <Execution id="fff2f5d0-4270-459f-a862-3e2c99594eef" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_TraduceElOrdenAlEnum" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_SinParametros_UsaLosDefaultsDeHu088_FechaDescendente" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="6eca5ede-7846-16b1-f0f3-b1202853a009">
+      <Execution id="63dea52a-96ed-416c-93a7-48a3dceb9a47" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_SinParametros_UsaLosDefaultsDeHu088_FechaDescendente" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 101, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="66f400e7-7fad-c15d-c621-8f9f680c07f9">
+      <Execution id="70b99df4-95d1-4c68-8f8a-e9d4beaf65a8" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Fecha, descendente: True, esperado: &quot;COALESCE(p.fecha_hora_registro, CAST(p.fecha_pago &quot;···)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="f4de86ab-27c7-da25-6b82-a49a7a7147dc">
+      <Execution id="c18a9b4d-945d-4b8d-ac79-8c44e7c994f2" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Orden_EsUnaListaCerradaConDesempatePorId" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Totales_NoTraenElDetalleNiDependenDeLaPagina" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="d88e4759-a1a4-7e6b-6db2-328062db6e56">
+      <Execution id="7ea3b62e-de35-4f55-b6fa-b770e10fde4f" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Totales_NoTraenElDetalleNiDependenDeLaPagina" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 10, sortBy: &quot;PK_id_pago&quot;, sortDirection: &quot;desc&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="d1ca7b93-09e3-05c8-c2dd-d7042786618e">
+      <Execution id="5a2025c3-a408-421a-aea6-775fb85c39c1" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Monto, descendente: True, esperado: &quot;p.monto_final DESC, p.PK_id_pago DESC&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="849c3c3a-2fa2-20ba-5583-27c3339e2bae">
+      <Execution id="3ebac82d-ca8a-4223-b712-a0ade6fe0e68" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Orden_EsUnaListaCerradaConDesempatePorId" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Monto, descendente: False, esperado: &quot;p.monto_final ASC, p.PK_id_pago ASC&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="a83cd1be-9778-53ac-78f2-9478db3a0b86">
+      <Execution id="fc1d6823-8fac-41d1-bed1-560404a5ed45" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Orden_EsUnaListaCerradaConDesempatePorId" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.PeriodoInvalido_Responde400_EnLosDosEndpoints(anio: 2026, mes: 13)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="b1a6b9e4-aca8-8716-11a9-7e8097ea4e7b">
+      <Execution id="5e983299-928e-421b-ba04-ab7eba565370" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="PeriodoInvalido_Responde400_EnLosDosEndpoints" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_TraduceElOrdenAlEnum(sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;, orden: Fecha, descendente: True)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="73b16459-ecc1-cf57-f026-a680d9fe9269">
+      <Execution id="0ca40e04-6a6a-4833-be7d-2d57cdd24287" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_TraduceElOrdenAlEnum" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 1, pageSize: 10, sortBy: &quot;fecha&quot;, sortDirection: &quot;arriba&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="64155448-f71f-05e4-0300-e330d92a8172">
+      <Execution id="05528990-c06e-4da4-bfed-9f33f6634234" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+    <UnitTest name="ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 2147483647, pageSize: 100, sortBy: &quot;fecha&quot;, sortDirection: &quot;desc&quot;)" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="a9b122ab-2bdb-45d3-fc1c-062e19cb4be4">
+      <Execution id="6d4221c9-7dd3-4816-834f-6ed504d84105" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionControllerTests" name="Pagos_ParametrosInvalidos_Responden400_SinConsultar" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="d1ca7b93-09e3-05c8-c2dd-d7042786618e" executionId="5a2025c3-a408-421a-aea6-775fb85c39c1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ad6a9532-4c50-6aa2-e144-4df2c353d5ae" executionId="835d0a09-0af0-467b-87fe-d208ff180868" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1de63442-ef66-dbd6-ca13-18d62fa1fa18" executionId="399900dd-366e-4a4d-b6c0-4f5461572b8f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="73b16459-ecc1-cf57-f026-a680d9fe9269" executionId="0ca40e04-6a6a-4833-be7d-2d57cdd24287" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c13b07de-bdc7-828c-831e-71a076b48501" executionId="4b4539ea-14cf-4104-a6fe-ac72049f124a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4cea8179-1c72-2a42-1584-ea77b089b116" executionId="fff2f5d0-4270-459f-a862-3e2c99594eef" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d88e4759-a1a4-7e6b-6db2-328062db6e56" executionId="7ea3b62e-de35-4f55-b6fa-b770e10fde4f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6eca5ede-7846-16b1-f0f3-b1202853a009" executionId="63dea52a-96ed-416c-93a7-48a3dceb9a47" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f4de86ab-27c7-da25-6b82-a49a7a7147dc" executionId="c18a9b4d-945d-4b8d-ac79-8c44e7c994f2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2b6971ae-70a6-d872-d956-da371dc4c4a5" executionId="84b8a6e8-257f-4e4e-88ac-061e397713a6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="94cad513-f78d-6e19-2f9d-de3445c72246" executionId="01fa890f-bd57-4198-9417-3a4e2d8c128c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b1a6b9e4-aca8-8716-11a9-7e8097ea4e7b" executionId="5e983299-928e-421b-ba04-ab7eba565370" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="01764040-335b-bb0e-a6cc-45109bc20b67" executionId="4ce4fd0a-8d47-4d30-9d3c-cab64d29b0cb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="849c3c3a-2fa2-20ba-5583-27c3339e2bae" executionId="3ebac82d-ca8a-4223-b712-a0ade6fe0e68" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="398c823a-caad-3ec1-2a08-cdfd0098f0c8" executionId="a334207f-1eb4-4731-88bd-405a1791c1b8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fbdd17a4-3e3c-da71-2cc4-46ae965dd0d2" executionId="dfd41404-53a7-41bb-9b8f-7bf9cca376bf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="64155448-f71f-05e4-0300-e330d92a8172" executionId="05528990-c06e-4da4-bfed-9f33f6634234" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bbd3a27d-3bbd-1102-f774-d96912057a76" executionId="79b0b1db-1d97-4045-a385-f52d5e260ace" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a83cd1be-9778-53ac-78f2-9478db3a0b86" executionId="fc1d6823-8fac-41d1-bed1-560404a5ed45" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0274969d-c53a-a1e7-5d9a-21f99aeb3e6e" executionId="21c36165-1cbf-4b5d-8c61-3095b5f735b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2f2c22c3-1ae4-9e5f-5ff7-40acbd14dc2f" executionId="ca693e0f-3110-4373-b071-661377c193c0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0ca91fdd-adbc-8925-d410-c3d83e0ad93c" executionId="6f42094c-e0b9-4a66-9fd1-9dfd1fc2b475" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a9b122ab-2bdb-45d3-fc1c-062e19cb4be4" executionId="6d4221c9-7dd3-4816-834f-6ed504d84105" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="160a281f-168a-a81b-ee89-d40da6af5d2b" executionId="030088b4-2e26-4ee2-be59-c8b7776bb8a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="66f400e7-7fad-c15d-c621-8f9f680c07f9" executionId="70b99df4-95d1-4c68-8f8a-e9d4beaf65a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="25" executed="25" passed="22" failed="3" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.19)&#xD;
+[xUnit.net 00:00:00.07]   Discovering: ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.17]   Discovered:  ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.17]   Starting:    ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.22]       Assert.Equal() Failure: Strings differ&#xD;
+[xUnit.net 00:00:00.22]                  ↓ (pos 0)&#xD;
+[xUnit.net 00:00:00.22]       Expected: "COALESCE(p.fecha_hora_registro, CAST(p.fe"···&#xD;
+[xUnit.net 00:00:00.22]       Actual:   "p.fecha_pago DESC, p.fecha_hora_registro "···&#xD;
+[xUnit.net 00:00:00.22]                  ↑ (pos 0)&#xD;
+[xUnit.net 00:00:00.22]       Stack Trace:&#xD;
+[xUnit.net 00:00:00.22]         C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionController.Tests.cs(136,0): at ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(OrdenPagosDelPeriodo orden, Boolean descendente, String esperado)&#xD;
+[xUnit.net 00:00:00.22]            at InvokeStub_RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(Object, Span`1)&#xD;
+[xUnit.net 00:00:00.22]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:00.22]       Assert.Equal() Failure: Strings differ&#xD;
+[xUnit.net 00:00:00.22]                  ↓ (pos 0)&#xD;
+[xUnit.net 00:00:00.22]       Expected: "COALESCE(p.fecha_hora_registro, CAST(p.fe"···&#xD;
+[xUnit.net 00:00:00.22]       Actual:   "p.fecha_pago ASC, p.fecha_hora_registro A"···&#xD;
+[xUnit.net 00:00:00.22]                  ↑ (pos 0)&#xD;
+[xUnit.net 00:00:00.22]       Stack Trace:&#xD;
+[xUnit.net 00:00:00.22]         C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionController.Tests.cs(136,0): at ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(OrdenPagosDelPeriodo orden, Boolean descendente, String esperado)&#xD;
+[xUnit.net 00:00:00.22]            at InvokeStub_RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(Object, Span`1)&#xD;
+[xUnit.net 00:00:00.22]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:00.24]       Assert.IsType() Failure: Value is not the exact type&#xD;
+[xUnit.net 00:00:00.24]       Expected: typeof(Microsoft.AspNetCore.Mvc.BadRequestObjectResult)&#xD;
+[xUnit.net 00:00:00.24]       Actual:   typeof(Microsoft.AspNetCore.Mvc.OkObjectResult)&#xD;
+[xUnit.net 00:00:00.24]       Stack Trace:&#xD;
+[xUnit.net 00:00:00.24]         C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionController.Tests.cs(63,0): at ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(Int32 page, Int32 pageSize, String sortBy, String sortDirection)&#xD;
+[xUnit.net 00:00:00.24]            at InvokeStub_RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(Object, Span`1)&#xD;
+[xUnit.net 00:00:00.24]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:00.28]   Finished:    ApiGestion.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="GABINETE1" outcome="Error" timestamp="2026-10-31T19:06:12.6101800-03:00">
+        <Text>[xUnit.net 00:00:00.22]     ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Fecha, descendente: True, esperado: "COALESCE(p.fecha_hora_registro, CAST(p.fecha_pago "···) [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="GABINETE1" outcome="Error" timestamp="2026-10-31T19:06:12.6121376-03:00">
+        <Text>[xUnit.net 00:00:00.22]     ApiGestion.Tests.RecaudacionControllerTests.Orden_EsUnaListaCerradaConDesempatePorId(orden: Fecha, descendente: False, esperado: "COALESCE(p.fecha_hora_registro, CAST(p.fecha_pago "···) [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="GABINETE1" outcome="Error" timestamp="2026-10-31T19:06:12.6623724-03:00">
+        <Text>[xUnit.net 00:00:00.24]     ApiGestion.Tests.RecaudacionControllerTests.Pagos_ParametrosInvalidos_Responden400_SinConsultar(page: 2147483647, pageSize: 100, sortBy: "fecha", sortDirection: "desc") [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

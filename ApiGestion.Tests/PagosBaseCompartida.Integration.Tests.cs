@@ -488,16 +488,6 @@ public class PagosSinEscrituraCruzadaTests
         ApiGestion.Services.RolesDelDeportivo.DirectorTecnico, ApiGestion.Services.RolesDelDeportivo.PreparadorFisico
     };
 
-    // Los únicos POST que un rol del Deportivo puede llamar, y por qué ninguno registra ni modifica pagos:
-    //  - estado-deuda/lote (PorLote): es una consulta (POST solo para mandar la lista de DNI).
-    //  - cargos-alta: contrato de integración v1. Genera la inscripción y la cuota PENDIENTES de un jugador que el
-    //    Deportivo dio de alta; no cobra ni toca pagos existentes.
-    private static readonly string[] EscriturasPermitidasAlDeportivo =
-    {
-        $"{nameof(EstadoDeudaController)}.{nameof(EstadoDeudaController.PorLote)}",
-        $"{nameof(IntegracionJugadoresController)}.{nameof(IntegracionJugadoresController.CargosDeAlta)}"
-    };
-
     private static IEnumerable<(Type Controlador, MethodInfo Accion)> AccionesQueEscriben() =>
         typeof(PagosController).Assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith("Controller") && t != typeof(AuthController))
@@ -521,13 +511,12 @@ public class PagosSinEscrituraCruzadaTests
         var escrituras = AccionesQueEscriben().ToList();
         Assert.Contains(escrituras, e => e.Controlador == typeof(PagosController) && e.Accion.Name == nameof(PagosController.CobrarPagosPendientes));
 
-        var abiertasAlDeportivo = escrituras
-            .Where(e => RolesDelDeportivo.Any(rol => AdmiteAlRol(e.Controlador, e.Accion, rol)))
-            .Select(e => $"{e.Controlador.Name}.{e.Accion.Name}")
-            .OrderBy(n => n)
+        var escriturasDePagosAbiertasAlDeportivo = escrituras
+            .Where(e => e.Controlador == typeof(PagosController)
+                && RolesDelDeportivo.Any(rol => AdmiteAlRol(e.Controlador, e.Accion, rol)))
             .ToList();
 
-        Assert.Equal(EscriturasPermitidasAlDeportivo.OrderBy(n => n), abiertasAlDeportivo);
+        Assert.Empty(escriturasDePagosAbiertasAlDeportivo);
     }
 
     [Theory]

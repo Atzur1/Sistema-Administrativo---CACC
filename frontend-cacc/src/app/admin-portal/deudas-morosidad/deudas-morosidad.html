@@ -13,7 +13,7 @@
     </span>
 
     <div class="header-text">
-      <h1 class="header-title">Deudas y Morosidad</h1>
+      <h1 class="header-title">{{ tituloPantalla }}</h1>
       <span class="header-subtitle">Control de jugadores con cuotas impagas · Temporada 2026</span>
     </div>
 
@@ -74,7 +74,7 @@
           </div>
 
           <!-- HU-021: exporta la lista respetando el filtro de categoría activo (menú compartido, HU-097) -->
-          <app-export-menu [enCurso]="exportando" (exportar)="exportarDeudores($event)" />
+          <app-report-export-menu tipo="deudores" [idCategoria]="idCategoriaActivo" [enCurso]="exportando" (exportar)="exportarDeudores($event)" />
         </div>
 
         @if (!cargando) {

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from './api-url';
-import { CollectionPeriodModel } from '../models/CollectionPeriodModel';
+import { CollectionPeriodModel, PeriodPaymentsPageModel, PeriodPaymentsQuery } from '../models/CollectionPeriodModel';
 
 @Injectable({ providedIn: 'root' })
 export class RecaudacionService {
@@ -13,13 +13,28 @@ export class RecaudacionService {
 
   constructor(private http: HttpClient) {}
 
-  // Un mes sin cobros no es un error: devuelve todo en cero y detalle vacío.
+  // Totales del período completo (tarjetas y donut). Un mes sin cobros no es un error: devuelve todo en cero.
   getDelPeriodo(anio: number, mes: number, idCategoria?: number | null): Observable<CollectionPeriodModel> {
     let params = new HttpParams().set('anio', anio).set('mes', mes);
     if (idCategoria != null) {
       params = params.set('idCategoria', idCategoria);
     }
     return this.http.get<CollectionPeriodModel>(this.API_URL, { params });
+  }
+
+  // HU-107: una página de "Pagos del período". El servidor filtra, ordena y pagina; acá no se corta ni se ordena nada.
+  getPagos(consulta: PeriodPaymentsQuery): Observable<PeriodPaymentsPageModel> {
+    let params = new HttpParams()
+      .set('anio', consulta.anio)
+      .set('mes', consulta.mes)
+      .set('page', consulta.page)
+      .set('pageSize', consulta.pageSize)
+      .set('sortBy', consulta.sortBy)
+      .set('sortDirection', consulta.sortDirection);
+    if (consulta.idCategoria != null) {
+      params = params.set('idCategoria', consulta.idCategoria);
+    }
+    return this.http.get<PeriodPaymentsPageModel>(`${this.API_URL}/pagos`, { params });
   }
 
   exportarPdf(anio: number, mes: number, idCategoria?: number | null): Observable<HttpResponse<Blob>> {

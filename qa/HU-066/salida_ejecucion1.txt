@@ -1,0 +1,97 @@
+== Reset de la base ClubCamionerosUnificadaV2_HU059_Prueba (HU-059)
+  Esquema unificado creado en ClubCamionerosUnificadaV2_HU059_Prueba.
+  Migraciones al día (25 de database/migrations aplicadas).
+  Cuentas ficticias y fixtures: personas=5 jugadores=4 cuotas=5
+  Estado inicial verificado (5|4|5|0|1|1) en 2 s.
+  Precondiciones de HU-066: hu066: personas sin jugador=20
+Fecha de negocio (club, SQL Server): 2026-10-31 | salida: C:\Users\FramD\AppData\Local\Temp\cacc-hu066\ejecucion_20261031_123713
+== Levantando las APIs
+PASS    ENV-1    API Administrativa lista (login del SuperAdmin: lee USUARIOS en SQL)  [esperado: 200 | obtenido: login -> 200]
+PASS    ENV-2    Login del Administrador 30000005 (rol 2): opera los pagos, para distinguir operadores en la auditoría  [esperado: 200 | obtenido: 200]
+PASS    ENV-3    API Deportiva lista (GET /api/jugadores: lee JUGADORES en SQL)  [esperado: 200 | obtenido: GET /api/jugadores -> 200]
+PASS    DEP-1    HU-056: POST /api/integracion/v1/jugadores existe (400 con errorCode)  [esperado: 400 + errorCode | obtenido: 400]
+PASS    DEP-2    HU-055: sin X-Integration-Key la integración responde 401 (las pruebas usan el flujo autenticado real)  [esperado: 401 | obtenido: 401]
+PASS    SEQ-0    HU-053: PK de JUGADORES y PAGOS con DEFAULT NEXT VALUE FOR (SEQ_JUGADORES / SEQ_PAGOS, NO CACHE)  [esperado: 2 defaults de secuencia, sin caché | obtenido: PAGOS.PK_id_pago=(NEXT VALUE FOR [dbo].[SEQ_PAGOS]), JUGADORES.PK_id_jugador=(NEXT VALUE FOR [dbo].[SEQ_JUGADORES]) | SEQ_PAGOS cache=0 actual=5, SEQ_JUGADORES cache=0 actual=4]
+PASS    DL-0     Detección de deadlocks disponible (sesión system_health de Extended Events activa)  [esperado: 1 | obtenido: 1]
+PASS    INT-0    Línea de base de integridad (problemas históricos previos, se documentan aparte y no se atribuyen a HU-066)  [esperado: registrado | obtenido: sin problemas previos]
+PASS    SEQ-TS   dbo.SEQ_JUGADORES: 16 sesiones simultáneas x 100 NEXT VALUE FOR -> 1600 valores distintos  [esperado: 1600 distintos | obtenido: 1600 valores, 1600 distintos]
+PASS    SEQ-TS   dbo.SEQ_PAGOS: 16 sesiones simultáneas x 100 NEXT VALUE FOR -> 1600 valores distintos  [esperado: 1600 distintos | obtenido: 1600 valores, 1600 distintos]
+PASS    CTX-1    Pool de conexiones: la MISMA sesión física reutilizada no conserva idUsuario/origen de la operación anterior  [esperado: mismo SPID; NULL|NULL | obtenido: SPID 82->82; NULL|NULL]
+PASS    CTX-2    Pool chico (4) con 16 hilos: la mitad setea operador/origen y la otra mitad no; nadie lee el de otra operación  [esperado: 0 contaminadas | obtenido: 800 aperturas, 796 reutilizaciones, 0 contaminadas]
+PASS    C1-1     10 iteraciones: alta del portal + alta del Deportivo + staff del Deportivo + un staff que revierte, a la vez -> 201 x3, una persona por DNI, jugador con categoría y cuota del mes, staff sin jugador; el que revierte no deja nada  [esperado: 10/10 | obtenido: 10/10]
+PASS    C1-10    Ráfaga de 10 altas simultáneas (portal / Deportivo / staff): todas 201, 10 personas distintas, ningún registro perdido  [esperado: 10 x 201; 0 estados incorrectos | obtenido: 10 x 201; 0 incorrectos; personas 10, jugadores 7]
+PASS    C1-20    Ráfaga de 20 altas simultáneas (portal / Deportivo / staff): todas 201, 20 personas distintas, ningún registro perdido  [esperado: 20 x 201; 0 estados incorrectos | obtenido: 20 x 201; 0 incorrectos; personas 20, jugadores 14]
+PASS    C1-50    Ráfaga de 50 altas simultáneas (portal / Deportivo / staff): todas 201, 50 personas distintas, ningún registro perdido  [esperado: 50 x 201; 0 estados incorrectos | obtenido: 50 x 201; 0 incorrectos; personas 50, jugadores 34]
+PASS    SEQ-1    Los PK_id_jugador de todas las altas simultáneas son distintos y salen de SEQ_JUGADORES (<= current_value)  [esperado: 75 distintos | obtenido: 75 distintos de 75]
+PASS    C1-INT   Integridad después del escenario: 0 huérfanos nuevos, 0 duplicados, FK y triggers activos, secuencias por delante de los ids  [esperado: 0 problemas nuevos; secuencias ok | obtenido: 0 nuevos; secuencias 1/1]
+PASS    C2-1     portal + Deportivo, mismo DNI nuevo (10 iteraciones): UNA persona, un jugador con una cuota y una inscripción, sin errores 5xx (conflicto controlado o reutilización)  [esperado: 10/10 | obtenido: 10/10]
+PASS    C2-2     staff del Deportivo (SQL directo) + alta del Deportivo, mismo DNI nuevo (10 iteraciones): UNA persona, un jugador con una cuota y una inscripción, sin errores 5xx (conflicto controlado o reutilización)  [esperado: 10/10 | obtenido: 10/10]
+PASS    C2-3     alta del portal + staff del Deportivo, mismo DNI nuevo (10 iteraciones): UNA persona, un jugador si el portal gana (si no, 409 y la persona del staff) con una cuota y una inscripción, sin errores 5xx (conflicto controlado o reutilización)  [esperado: 10/10 | obtenido: 10/10]
+PASS    C2-10    10 altas simultáneas del MISMO DNI (mitad portal, mitad Deportivo): una persona, un jugador, una cuota, una inscripción; un solo 201  [esperado: 1|1|0|1|1|3; un 201 | obtenido: 1|1|0|1|1|3; 1 x 201; códigos 200/200/200/200/201/400/400/400/400/400]
+PASS    C2-20    20 altas simultáneas del MISMO DNI (mitad portal, mitad Deportivo): una persona, un jugador, una cuota, una inscripción; un solo 201  [esperado: 1|1|0|1|1|3; un 201 | obtenido: 1|1|0|1|1|3; 1 x 201; códigos 200/200/200/200/200/200/200/200/200/201/400/400/400/400/400/400/400/400/400/400]
+PASS    C2-INT   Integridad después del escenario: 0 huérfanos nuevos, 0 duplicados, FK y triggers activos, secuencias por delante de los ids  [esperado: 0 problemas nuevos; secuencias ok | obtenido: 0 nuevos; secuencias 1/1]
+PASS    C3-1     Persona existente SIN jugador: 2 altas del Deportivo + 1 del portal a la vez -> 1 jugador de ESA persona, categoría 3, una cuota y una inscripción (10 iteraciones)  [esperado: 10/10 | obtenido: 10/10]
+PASS    C3-INT   Integridad después del escenario: 0 huérfanos nuevos, 0 duplicados, FK y triggers activos, secuencias por delante de los ids  [esperado: 0 problemas nuevos; secuencias ok | obtenido: 0 nuevos; secuencias 1/1]
+PASS    C4-1     Generación mensual (otro proceso del Administrativo) + 3 altas del portal + 3 del Deportivo + 2 pagos adelantados del mes, a la vez (10 iteraciones): exactamente UNA cuota del mes para cada uno  [esperado: 10/10 | obtenido: 10/10]
+PASS    C4-2     Las operaciones de C4 se superpusieron de verdad (compuerta: esperaban juntas; libre: la cuota del generador cae dentro de la ráfaga)  [esperado: >= 5 de 10 | obtenido: 6 de 10]
+PASS    C4-INT   Integridad después del escenario: 0 huérfanos nuevos, 0 duplicados, FK y triggers activos, secuencias por delante de los ids  [esperado: 0 problemas nuevos; secuencias ok | obtenido: 0 nuevos; secuencias 1/1]
+PASS    C5-1     2 generadores mensuales + 3 generaciones manuales del mes anterior a la vez (5 iteraciones): UNA cuota por jugador y período, y la suma de 'creadas' = faltantes detectados  [esperado: 5/5 | obtenido: 5/5]
+PASS    C5-INT   Integridad después del escenario: 0 huérfanos nuevos, 0 duplicados, FK y triggers activos, secuencias por delante de los ids  [esperado: 0 problemas nuevos; secuencias ok | obtenido: 0 nuevos; secuencias 1/1]
+PASS    C6-1     Generador mensual + generación manual + 8 pagos (registrar, cobro, adelantado) + baja del Deportivo a la vez (5 iteraciones): ningún pago perdido, ninguna cuota duplicada, ningún error  [esperado: 5/5 | obtenido: 5/5]
+PASS    C6-2     Bloqueo de los pagos durante la generación: ninguno llega al límite técnico más bajo de la cadena (5 s del Deportivo -> Administrativo; el bloqueo de cobros y SqlCommand esperan 30 s)  [esperado: < 5000 ms | obtenido: máx. 257 ms; p95 252 ms (55 pagos)]
+PASS    C6-INT   Integridad después del escenario: 0 huérfanos nuevos, 0 duplicados, FK y triggers activos, secuencias por delante de los ids  [esperado: 0 problemas nuevos; secuencias ok | obtenido: 0 nuevos; secuencias 1/1]
+PASS    C7-1     Misma cuota a la vez (10 iteraciones): total x2 / cobro x2 / registrar+cobro -> un 200 y un 400, cobrada UNA vez; dos parciales de 400 -> saldo 200 (sin actualización perdida)  [esperado: 10/10 | obtenido: 10/10]
+PASS    C7-10    10 abonos parciales simultáneos de $100 sobre una cuota de $1000: todos 200, la cuota queda saldada exacta (ningún abono perdido ni de más)  [esperado: 10 x 200; 0:0|10:1000|1000 | obtenido: 10 x 200; 0:0|10:1000|1000]
+PASS    C7-20    20 abonos parciales simultáneos de $50 sobre una cuota de $1000: todos 200, la cuota queda saldada exacta (ningún abono perdido ni de más)  [esperado: 20 x 200; 0:0|20:1000|1000 | obtenido: 20 x 200; 0:0|20:1000|1000]
+PASS    C7-50    50 abonos parciales simultáneos de $20 sobre una cuota de $1000: todos 200, la cuota queda saldada exacta (ningún abono perdido ni de más)  [esperado: 50 x 200; 0:0|50:1000|1000 | obtenido: 50 x 200; 0:0|50:1000|1000]
+PASS    C7-INT   Integridad después del escenario: 0 huérfanos nuevos, 0 duplicados, FK y triggers activos, secuencias por delante de los ids  [esperado: 0 problemas nuevos; secuencias ok | obtenido: 0 nuevos; secuencias 1/1]
+PASS    AUD-1    Ningún evento con origen PortalDeportivo lleva otro operador que el del token del Deportivo  [esperado: 0 | obtenido: 0]
+PASS    AUD-2    Los pagos (Administrador 30000005) quedan con origen PortalAdministrativo y ese operador, aunque corrieron mezclados con pedidos de integración  [esperado: 0|0 | obtenido: 0|0]
+PASS    AUD-3    Las altas del Deportivo (integración) quedan con origen PortalDeportivo; las del portal, con PortalAdministrativo y el SuperAdmin  [esperado: 0|0 | obtenido: 0|0]
+PASS    AUD-4    Las cuotas del mes que emitió SOLO el generador (100 jugadores): un evento cada una, origen PortalAdministrativo y sin operador (no heredan los de otra conexión)  [esperado: 0 incorrectos; 100 eventos | obtenido: 0 incorrectos; 100 eventos]
+PASS    AUD-5    Las escrituras directas del Deportivo (staff) no heredan un origen de otra conexión: origen NULL (el backend del Deportivo no lo sella; ver BUG-059-1)  [esperado: 0 | obtenido: 0]
+PASS    AUD-6    Operaciones revertidas bajo concurrencia (10 staff que insertan PERSONAS y fallan en USUARIOS) no dejan la persona ni su evento: 0 eventos INSERT de entidades que no existen  [esperado: 0 fantasma; 0 personas | obtenido: 0 fantasma; 0 personas]
+PASS    DL-1     0 deadlocks en la corrida (system_health: xml_deadlock_report desde el inicio de las pruebas; logs: 1205/interbloqueo)  [esperado: 0|0 | obtenido: 0|0]
+PASS    ERR-1    0 timeouts, 0 vencimientos del bloqueo de cobros, 0 respuestas 5xx o sin respuesta  [esperado: 0|0|0 | obtenido: 0|0|0]
+PASS    TRG-1    0 errores de trigger: ni 334 (OUTPUT sin INTO con triggers) ni los THROW de los triggers de género  [esperado: 0|0 | obtenido: 0|0]
+PASS    ERR-2    0 violaciones de unicidad o de FK sin manejar en los logs  [esperado: 0|0 | obtenido: 0|0]
+PASS    TRG-2    Código de las dos APIs: ningún OUTPUT INSERTED/DELETED sin INTO (patrón que provoca el error 334 con los triggers de auditoría)  [esperado: 0 | obtenido: 0]
+PASS    LOG-1    Los logs de las APIs y los generadores no contienen la credencial, la clave JWT, contraseñas ni tokens  [esperado: 0 | obtenido: 0]
+
+== Tiempos por caso (ms)
+
+caso                                                      operaciones    p50     p95     max
+----                                                      -----------    ---     ---     ---
+C1                                                                 40 197.70  461.20  490.30
+C1-carga                                                           80 520.70 2101.30 2337.20
+C2-carga                                                           30  32.20   55.60   57.90
+C2:alta del portal + staff del Deportivo                           20  64.90  120.70  130.60
+C2:portal + Deportivo                                              20  17.00  170.50  171.60
+C2:staff del Deportivo (SQL directo) + alta del Deportivo          20  68.50  119.80  129.20
+C3                                                                 30  10.30 3049.60 3063.40
+C4                                                                 80  53.10  111.90  141.80
+C5                                                                 15  91.00  103.10  104.10
+C6                                                                 65 111.00  250.70  256.60
+C7                                                                 80  29.30   64.40   68.20
+C7-carga                                                           80  36.00   82.70   88.20
+
+
+== Bloqueos: {"esperasDeBloqueoSqlServer":"1439 esperas LCK_M_*, 79428 ms en total (toda la instancia, durante la corrida)","maxEsperandoBloqueoCobros":17.0,"maxSesionesBloqueadas":23.0,"maxEsperaObservadaMs":3031.0,"tiposEspera":["LATCH_EX","LCK_M_RIn_NL","LCK_M_RS_U","LCK_M_S","LCK_M_X","MEMORY_ALLOCATION_EXT","PAGELATCH_EX","PAGELATCH_SH","PREEMPTIVE_OS_QUERYREGISTRY","SEQUENCE_GENERATION","WAIT_ON_SYNC_STATISTICS_REFRESH","WRITE_COMPLETION","WRITELOG"],"bloqueosEntreSistemas":["CACC-Administrativo <- CACC-Deportivo (LCK_M_RS_U)","CACC-Administrativo <- CACC-Deportivo (LCK_M_X)","CACC-Administrativo <- HU066-Tecnica (LCK_M_X)","CACC-Administrativo-Generador <- HU066-Tecnica (LCK_M_X)","CACC-Deportivo <- CACC-Administrativo (LATCH_EX)","CACC-Deportivo <- CACC-Administrativo (LCK_M_RIn_NL)","CACC-Deportivo <- CACC-Administrativo (LCK_M_X)"],"aislamientoSesiones":["CACC-Administrativo-Generador:2","CACC-Administrativo:2","CACC-Deportivo:2","HU066-Tecnica:2","SQLCMD:2"]}
+
+== Resumen por grupo
+Auditoría: PASS (6 PASS, 0 FAIL, 0 BLOCKED)
+Caso 1 altas distintas: PASS (6 PASS, 0 FAIL, 0 BLOCKED)
+Caso 2 mismo DNI: PASS (6 PASS, 0 FAIL, 0 BLOCKED)
+Caso 3 jugadores: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Caso 4 alta + generación: PASS (3 PASS, 0 FAIL, 0 BLOCKED)
+Caso 5 generación + generación: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Caso 6 pago + generación: PASS (3 PASS, 0 FAIL, 0 BLOCKED)
+Caso 7 pago + pago: PASS (5 PASS, 0 FAIL, 0 BLOCKED)
+Dependencias: PASS (5 PASS, 0 FAIL, 0 BLOCKED)
+Entorno: PASS (3 PASS, 0 FAIL, 0 BLOCKED)
+Errores y bloqueos: PASS (5 PASS, 0 FAIL, 0 BLOCKED)
+Logs: PASS (1 PASS, 0 FAIL, 0 BLOCKED)
+Técnicas SQL: PASS (4 PASS, 0 FAIL, 0 BLOCKED)
+
+Total: 51 PASS | 0 FAIL | 0 BLOCKED   (111 s, 560 operaciones en 88 ráfagas, base ClubCamionerosUnificadaV2_HU059_Prueba)
+Evidencia: C:\Users\FramD\AppData\Local\Temp\cacc-hu066\ejecucion_20261031_123713

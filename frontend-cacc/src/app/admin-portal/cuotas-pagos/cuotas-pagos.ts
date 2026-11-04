@@ -23,6 +23,7 @@ import { LatestRequest } from '../../shared/latest-request';
 import { MEDIOS_DE_PAGO, guardarUltimoMedioPago, leerUltimoMedioPago } from '../../shared/ultimo-medio-pago';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 import { PaymentSummaryModel, PendingDebtorModel, PendingFeeDetailModel } from '../../models/PaymentModel';
+import { SECCIONES } from '../secciones';
 
 const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -73,6 +74,9 @@ const MESES = [
   styleUrl: './cuotas-pagos.css',
 })
 export class CuotasPagos implements OnInit, OnDestroy {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['cuotas-pagos'];
+
 
   @ViewChild('buscador') private buscador?: ElementRef<HTMLInputElement>;
   @ViewChild('montoCuota') private montoCuota?: ElementRef<HTMLInputElement>;

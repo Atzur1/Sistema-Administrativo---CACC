@@ -17,18 +17,16 @@ var conexionSql = builder.Configuration.GetConnectionString("ConexionSQL") ?? ""
 // el límite de intentos de login por IP se compartía entre TODOS los usuarios, y la redirección a HTTPS
 // no sabía que el pedido original ya era HTTPS. Opt-in (ForwardedHeaders:Enabled=true) porque confiar en
 // X-Forwarded-For sin un proxy delante permitiría falsear la IP y saltear el límite.
+// Solo se aceptan esos headers de un proxy confiable (ProxyConfiable): la lista del despliegue o, sin ella, loopback y redes
+// privadas. Se valida al arrancar: una IP o red mal escrita no deja arrancar la API.
 var usarCabecerasDeProxy = builder.Configuration.GetValue<bool>("ForwardedHeaders:Enabled");
+bool proxyPorDefecto = false;
 if (usarCabecerasDeProxy)
 {
+    var opcionesProxy = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions();
+    proxyPorDefecto = ApiGestion.Services.ProxyConfiable.Configurar(opcionesProxy, builder.Configuration);
     builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
-    {
-        options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
-            | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
-        // Solo el salto del proxy de la plataforma, que no tiene una IP fija conocida.
-        options.ForwardLimit = 1;
-        options.KnownNetworks.Clear();
-        options.KnownProxies.Clear();
-    });
+        ApiGestion.Services.ProxyConfiable.Configurar(options, builder.Configuration));
 }
 
 builder.Services.AddControllers();
@@ -104,7 +102,8 @@ builder.Services.AddSwaggerGen(opciones =>
         Title = "API de integración con el Portal Deportivo",
         Version = "v1",
         Description = "Estado de habilitación de los jugadores para el QR de ingreso y los listados del Portal Deportivo. " +
-            "Autenticación: el token (JWT) del usuario, el mismo en los dos portales. La respuesta nunca incluye montos."
+            "Autenticación: la credencial de sistema del Portal Deportivo (header X-Integration-Key, solo desde su backend) " +
+            "y el token (JWT) del usuario que opera, el mismo en los dos portales. La respuesta nunca incluye montos."
     });
     opciones.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Portal Administrativo", Version = "v1" });
     opciones.DocInclusionPredicate((documento, api) =>
@@ -129,6 +128,15 @@ builder.Services.AddSwaggerGen(opciones =>
             Array.Empty<string>()
         }
     });
+    // HU-055: solo en el documento de integración (la credencial no sirve en el resto del Portal).
+    opciones.AddSecurityDefinition("IntegrationKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Name = ApiGestion.Services.IntegrationClientCredentials.Header,
+        Description = "Credencial de sistema del Portal Deportivo. La envía su backend; nunca el navegador."
+    });
+    opciones.DocumentFilter<ApiGestion.Services.IntegrationKeySecurityFilter>();
 });
 
 builder.Services.AddScoped<DaoLibrary.AuthDao>(provider =>
@@ -167,6 +175,8 @@ builder.Services.AddScoped<DaoLibrary.IEstadoDeudaDao>(provider =>
 builder.Services.AddScoped<DaoLibrary.ICategoriasDao>(provider =>
     new DaoLibrary.CategoriasDao(conexionSql));
 
+builder.Services.AddScoped<DaoLibrary.IReportesDao>(_ => new DaoLibrary.ReportesDao(conexionSql));
+
 // Recaudación mensual por medio de pago (HU-018)
 builder.Services.AddScoped<DaoLibrary.IRecaudacionDao>(provider =>
     new DaoLibrary.RecaudacionDao(conexionSql));
@@ -197,17 +207,38 @@ builder.Services.AddScoped<DaoLibrary.EnrollmentFeeDAO>(provider =>
     new DaoLibrary.EnrollmentFeeDAO(conexionSql));
 builder.Services.AddScoped<DaoLibrary.PlayerDAO>(provider =>
     new DaoLibrary.PlayerDAO(conexionSql));
+builder.Services.AddScoped<DaoLibrary.IIntegracionRechazosDao>(provider =>
+    new DaoLibrary.IntegracionRechazosDao(conexionSql));
+builder.Services.AddScoped<ServiceLibrary.IRegistroRechazos, ApiGestion.Services.RegistroRechazosIntegracion>();
 builder.Services.AddScoped<DaoLibrary.EnrollmentDAO>(provider =>
     new DaoLibrary.EnrollmentDAO(conexionSql));
 builder.Services.AddScoped<ServiceLibrary.IInscripcionesService>(provider => new ServiceLibrary.InscripcionesService(
     provider.GetRequiredService<DaoLibrary.EnrollmentDAO>(),
     provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
     provider.GetRequiredService<DaoLibrary.IJugadoresDao>()));
+// Fecha de negocio fija SOLO para pruebas de punta a punta (HU-060): permite probar las dos ramas del calendario de cuotas
+// (día 10) sin tocar la hora de la máquina. Afecta únicamente al alta de jugadores; fuera de Development y Testing la API no
+// arranca si está configurada, así que nunca llega a Producción.
+Func<DateTime>? relojAltas = null;
+string? fechaNegocioPruebas = builder.Configuration["Pruebas:FechaNegocio"];
+if (!string.IsNullOrWhiteSpace(fechaNegocioPruebas))
+{
+    if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
+        throw new InvalidOperationException("Pruebas:FechaNegocio solo se admite en los entornos Development y Testing.");
+    DateTime fechaFija = DateTime.ParseExact(fechaNegocioPruebas.Trim(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    relojAltas = () => fechaFija;
+}
 builder.Services.AddScoped<ServiceLibrary.IJugadoresAltaService>(provider => new ServiceLibrary.JugadoresAltaService(
     provider.GetRequiredService<DaoLibrary.PlayerDAO>(),
     provider.GetRequiredService<DaoLibrary.ICategoriasDao>(),
     provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
-    provider.GetRequiredService<DaoLibrary.IArancelesDao>()));
+    provider.GetRequiredService<DaoLibrary.IArancelesDao>(),
+    relojAltas,
+    rechazos: provider.GetRequiredService<ServiceLibrary.IRegistroRechazos>()));
+// Baja y reincorporación informadas por el Portal Deportivo (HU-057): las mismas reglas que la baja y la reactivación del portal.
+builder.Services.AddScoped<ServiceLibrary.IJugadoresBajaService>(provider => new ServiceLibrary.JugadoresBajaService(
+    new DaoLibrary.JugadoresDao(conexionSql),
+    provider.GetRequiredService<DaoLibrary.ICategoriasDao>()));
 
 // Becados y descuentos
 builder.Services.AddScoped<DaoLibrary.DiscountDao>(provider =>
@@ -223,6 +254,11 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.StartsWith("REEMPLAZAR", StringComparison.OrdinalIgnoreCase) || Encoding.UTF8.GetByteCount(jwtKey) < 32 ||
     string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
     throw new InvalidOperationException("La configuración Jwt:Key (mínimo 32 bytes), Jwt:Issuer y Jwt:Audience es obligatoria.");
+
+// HU-055: credencial de sistema del Portal Deportivo para la API de integración. Obligatoria en todo entorno: sin ella
+// (o si es débil) la API no arranca. No hay valor por defecto.
+builder.Services.AddSingleton(ApiGestion.Services.IntegrationClientCredentials.FromConfiguration(builder.Configuration));
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -304,7 +340,24 @@ if (!app.Environment.IsDevelopment())
 }
 
 if (usarCabecerasDeProxy)
+{
+    if (proxyPorDefecto)
+        app.Logger.LogWarning("ForwardedHeaders: sin {Proxies} ni {Redes}, se confía solo en loopback y redes privadas. " +
+            "Configurá la lista del despliegue si el proxy llega desde otra red.",
+            ApiGestion.Services.ProxyConfiable.ConfigProxies, ApiGestion.Services.ProxyConfiable.ConfigRedes);
     app.UseForwardedHeaders();
+}
+
+// Fuera de Development y Testing, solo HTTPS (HttpsObligatorioMiddleware): un pedido HTTP se rechaza antes de validar
+// credenciales o tokens. Seguridad:PermitirHttpSinTls=true lo desactiva SOLO para probar un contenedor en la propia máquina;
+// queda avisado en el log.
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
+{
+    if (app.Configuration.GetValue<bool>("Seguridad:PermitirHttpSinTls"))
+        app.Logger.LogWarning("Seguridad:PermitirHttpSinTls=true: la API acepta HTTP. Las credenciales viajan en claro; no usar en un despliegue.");
+    else
+        app.UseMiddleware<ApiGestion.HttpsObligatorioMiddleware>();
+}
 
 // Cualquier excepción que un controller no atrape responde un 500 con el mismo formato que el resto de la
 // API ({ exito, mensaje }), sin detalles internos; el detalle queda en el log.
@@ -318,8 +371,14 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 
 // HU-058: la API de integración con el Portal Deportivo tiene su propio manejo de errores (contrato { errorCode, message,
 // field }, log sanitizado). Va antes de la autenticación y del rate limiting para dar formato también a sus 401/403/429.
+// HU-055: después, la credencial de sistema del Portal Deportivo (X-Integration-Key). Sin ella no se llega ni a validar el
+// token del usuario; con ella el pedido sigue igual que siempre. Solo en estas rutas: en el resto del Portal no vale nada.
 app.UseWhen(context => ApiGestion.Services.IntegrationErrors.IsIntegrationRequest(context.Request.Path),
-    integracion => integracion.UseMiddleware<ApiGestion.IntegrationErrorHandlingMiddleware>());
+    integracion =>
+    {
+        integracion.UseMiddleware<ApiGestion.IntegrationErrorHandlingMiddleware>();
+        integracion.UseMiddleware<ApiGestion.IntegrationClientAuthenticationMiddleware>();
+    });
 
 if (app.Environment.IsDevelopment())
 {
@@ -348,4 +407,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-

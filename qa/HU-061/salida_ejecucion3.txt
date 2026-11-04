@@ -1,0 +1,50 @@
+[PASS] ENV-01    verificar estado inicial de los datos de prueba -> {"SA1": {"persona": 1, "acceso": 1, "rol": "1", "pendiente": 0, "version": 0, "activo": 1}, "CAND": {"persona": 2, "acceso": 0, "rol": "NULL", "pendiente": 0, "version": 0, "activo": 1}, "CAND2": {"persona": 3, "acceso": 0, "rol": "NULL", "pendiente": 0, "version": 0, "activo": 1}, "DEP": {"persona": 4, "acceso": 0, "rol": "NULL", "pendiente": 0, "version": 0, "activo": 1}, "CAND3": {"persona": 5, "acceso": 0, "rol": "NULL", "pendiente": 0, "version": 0, "activo": 1}}
+[PASS] SES-01    POST /api/auth/login -> 200, role=1, alg=HS256, rol_portal=1, tokenVersion=0, roles=['1', 'Administrador (Tesorero)']
+[BLOCKED] SES-02    algoritmo de firma del JWT (HU-UNI-02) -> alg=HS256 (clave simetrica Jwt:Key)
+[BLOCKED] SES-03    transporte de la sesion (HU-UNI-03) -> el token viaja en el cuerpo JSON; sin Set-Cookie; el frontend lo guarda en sessionStorage y lo manda como Bearer
+[PASS] HAB-01    GET /api/usuarios/candidatos -> 200 [2, 3, 5]
+[PASS] HAB-02    login con su contrasena deportiva -> 200 role=0
+[PASS] HAB-03    POST /api/usuarios/{CAND}/habilitar rol Administrador -> 200 {'mensaje': 'Cuenta habilitada. Se envi¾ un correo para que active su acceso.'}
+[PASS] HAB-04    estado en base de CAND -> persona 2->2, acceso=1, rol=2, pendiente=1, PERSONAS 6->6, USUARIOS 5->5
+[PASS] HAB-05    activacion GENERADA (token en base + enlace) -> tokens=[['ACTIVACION', '0', '30']]; enlace=http://localhost:4200/crear-contrasena
+[BLOCKED] HAB-06    activacion ENVIADA / RECIBIDA -> no verificable: la API escribio el enlace en su log y no intento SMTP; no hay buzon de prueba en este entorno
+[PASS] HAB-07    listas de Usuarios y Permisos -> en candidatos=False; habilitado={'idUsuario': 2, 'nombre': 'Qa', 'apellido': 'Candidato Deportivo', 'dni': '90610003', 'email': 'cand@cacc.test', 'rolPortal': 2, 'activo': True, 'activacionPendiente': True}
+[FAIL] HAB-08    login con su contrasena deportiva (para usar el Deportivo) -> 401 {'mensaje': 'Usuario o contrase±a incorrectos.'}
+[FAIL] HAB-09    seguir usando ese token -> 401
+[PASS] HAB-10    POST /api/auth/account-access/complete -> 200 {'mensaje': 'La contrase±a se actualiz¾. Ya puede iniciar sesi¾n.'}; pendiente=0
+[PASS] HAB-11    reusar el enlace de activacion -> 400
+[PASS] HAB-12    login con la contrasena nueva -> 200 role=2 rol_portal=2 roles=['2'] id_rol=None
+[PASS] HAB-13    login con la contrasena deportiva anterior -> 401
+[PASS] SA-01     64 endpoints del Portal Administrativo -> OK 64/64
+[PASS] ADM-01    64 endpoints del Portal Administrativo -> OK 64/64
+[FAIL] ADM-02    POST /api/integracion/v1/jugadores/{id}/cargos-alta -> 401
+[PASS] CRU-01    login comun -> 200 role=0 roles=['Director TÚcnico']
+[PASS] CRU-02    64 endpoints del Portal Administrativo -> OK 64/64
+[FAIL] CRU-03    GET estado-deuda (consulta permitida al Deportivo, acotada a sus categorias) -> 401
+[PASS] CRU-04    64 endpoints del Portal Administrativo -> OK 64/64
+[PASS] ROL-01    GET resumen-general (solo SuperAdmin) -> 403
+[PASS] ROL-02    PUT /api/usuarios/{CAND}/rol -> SuperAdmin -> 200; rol=1; version 1->2
+[PASS] ROL-03    usar la sesion anterior al cambio -> pagos/resumen 401, resumen-general 401
+[PASS] ROL-04    nueva sesion -> login 200 role=1; resumen-general 200; usuarios 200
+[PASS] ROL-05    PUT /api/usuarios/{CAND}/rol -> Administrador; usar la sesion de SuperAdmin -> cambio 200; sesion vieja 401
+[PASS] ROL-06    nueva sesion -> login 200 role=2; resumen-general 403; pagos 200
+[PASS] AUD-01    POST /api/players/{JUG}/discount (beca 50%) -> 201; eventos=[['JUGADORES_DESCUENTOS', 'INSERT', '2', 'cand@cacc.test', '90610003', '2026-10-29T18:14:19.6586056']]
+[PASS] AUD-02    PUT discount (editar: solo SuperAdmin) -> 403; eventos nuevos=0
+[PASS] DES-01    POST /api/usuarios/{CAND}/deshabilitar -> 200; acceso=0; version 3->4
+[PASS] DES-02    GET pagos/resumen y POST void con la sesion vieja -> 401, 401
+[PASS] DES-03    login y uso del Portal Administrativo -> login 200 role=0; pagos/resumen 403
+[PASS] DES-04    listas -> deshabilitados=[2] candidatos=[5, 3]
+[PASS] REH-01    POST /api/usuarios/{CAND}/reactivar con el rol propuesto -> 200; persona 2; rol 2->2; PERSONAS 6->6; USUARIOS 5->5
+[PASS] REH-02    usar la sesion vieja despues de reactivar -> 401
+    (429 en /api/auth/login: espero 62 s la ventana del limite)
+[PASS] REH-03    login con la misma contrasena y sesion nueva -> 200 role=2; 200; 403
+[PASS] LAST-01   PUT rol propio -> Administrador; POST deshabilitar propio -> rol 409, deshabilitar 409; antes={'persona': 1, 'acceso': 1, 'rol': '1', 'pendiente': 0, 'version': 0, 'activo': 1} despues={'persona': 1, 'acceso': 1, 'rol': '1', 'pendiente': 0, 'version': 0, 'activo': 1}; eventos nuevos=0
+[PASS] LAST-02   la sesion de SA1 sigue funcionando -> 200
+[PASS] LAST-03   habilitar CAND2 como SuperAdmin y activarlo -> 200, 200, 200 role=1
+[PASS] LAST-04   bajar CAND2 a Administrador, subirlo y deshabilitarlo -> 200, 200, 200
+[PASS] LAST-05   PUT rol propio -> Administrador -> 409 {'mensaje': 'No se pudo cambiar el rol: verificß que la cuenta estÚ habilitada y que quede al menos un SuperAdmin.'}; SA1 rol 1->1; SuperAdmin operativos=1; recuperacion publica de CAND3: 200, tokens RECUPERACION=0
+[PASS] AUD-03    AUDITORIA_CAMBIOS de USUARIOS/CAND -> 7 eventos: ['4 INSERT NULL NULL 2026-10-29T18:14:08.1196199 NULL false NULL NULL false', '13 UPDATE 1 sa1@cacc.test 2026-10-29T18:14:11.8774753 false true NULL 2 false', '15 UPDATE 2 cand@cacc.test 2026-10-29T18:14:13.8786446 true true 2 2 true', '17 UPDATE 1 sa1@cacc.test 2026-10-29T18:14:18.9226206 true true 2 1 false', '18 UPDATE 1 sa1@cacc.test 2026-10-29T18:14:19.2703857 true true 1 2 false', '20 UPDATE 1 sa1@cacc.test 2026-10-29T18:14:19.9315814 true false 2 2 false', '21 UPDATE 1 sa1@cacc.test 2026-10-29T18:14:20.4430779 false true 2 2 false']
+[PASS] AUD-04    GET /api/auditoria/cambios?entidad=USUARIOS (HU-041) -> 200; total=17; ejemplo={"id": 29, "userId": 1, "userEmail": "sa1@cacc.test", "userName": "Qa", "userSurname": "Superadmin Uno", "userDni": "90610001", "entity": "USUARIOS", "entityId": "5", "action": "UPDATE", "timestampUtc": "2026-10-29T18:15:25.7071056Z", "beforeJson": "{\"email\":\"cand3@cacc.test\",\"idRol\":1,\"activo\":true,\"activacionPendiente\":false,\"accesoPortal\":false,\"rolPortal\":null,\"credencialActuali
+[PASS] SES-04    POST /api/auth/logout y reusar el token -> 204; 401
+
+Resumen: {'PASS': 40, 'FAIL': 4, 'BLOCKED': 3} -> qa\HU-061\evidencia_ejecucion3.json

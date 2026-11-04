@@ -1,0 +1,13 @@
+PASS  UI-1     Revisar impacto abre el resumen con los números del backend | {"subtitulo":"Nuevo arancel del género Masculino desde el 01/01/2027","datos":["Cambio: Aumento del 10 % sobre el arancel vigente","Alcance: Género Masculino · 10 categorías: Cebollitas, Femenino, Pt AFA 2009, Pt AFA 2010, Pt AFA 2012, Pt preAFA 2013, Pt preAFA 2014, Pt preAFA 2015, Pt 2016, Pt 2017","Rige desde: 01/01/2027","Arancel vigente hoy: $ 85.000","Nuevo arancel: $ 93.500","Jugadores afectados: 1503","Diferencia mensual estimada: Sin cambio"],"filas":10}
+PASS  A11Y-1   Al abrir, el foco queda dentro del resumen | ventana-cerrar
+PASS  CONF-1   Varias categorías: Confirmar deshabilitado hasta escribir la cantidad | El cambio alcanza a 10 categorías. Escribí 1503 para confirmar
+PASS  CONF-2   Con teclado: 1502 lo deja deshabilitado, 1503 lo habilita | {"antes":false,"despues":true,"input":"1503","escrito":"1503","jugadores":1503,"valida":true}
+PASS  A11Y-2   Tab sigue dentro del resumen (Volver / Confirmar) | Volver
+PASS  RESP     notebook 1024x768: el resumen entra en la pantalla, sin scroll horizontal y con todos los datos | {"filas":10,"thead":true,"etiqueta":"none"}
+PASS  RESP     tablet 768x1024: el resumen entra en la pantalla, sin scroll horizontal y con todos los datos | {"filas":10,"thead":true,"etiqueta":"none"}
+PASS  RESP     celular 375x812: el resumen entra en la pantalla, sin scroll horizontal y con todos los datos | {"filas":10,"thead":false,"etiqueta":"\"Género\""}
+PASS  CANC-1   Esc cierra el resumen y no se programa nada | 8 -> 8 aranceles
+PASS  UI-2     Cero jugadores: lo dice claramente, sin desglose ni dinero inventado, y confirma con el botón | {"datos":["Cambio: Monto fijo de $ 50.000","Alcance: Categoría HU106 sin jugadores","Rige desde: 01/01/2027","Arancel vigente hoy: Sin arancel","Nuevo arancel: $ 50.000","Jugadores afectados: 0","Diferencia mensual estimada: Sin cambio"],"notas":["Jugadores afectados: 0. Hoy ningún jugador en el club usaría este arancel en la cuota de enero de 2027, así que no cambia la recaudación de ese mes. Igual queda programado para quien lo use después.","No cambia ninguna cuota emitida: las de enero de 2027 se generan el 10/01/2027 con este monto.","Las cuotas de meses anteriores conservan su monto."]}
+PASS  INV-1    Cambiar un dato del cambio descarta el resumen (hay que volver a revisarlo) | cerrado
+
+Total: 11 PASS | 0 FAIL

@@ -17,10 +17,27 @@ namespace ApiGestion.Reports
         private const string ColorTransferencia = "#2563eb";
 
         private static readonly string[] Columnas =
-            { "Jugador", "DNI", "Categoría", "Medio de pago", "Monto" };
+            { "Fecha", "Jugador", "DNI", "Categoría", "Medio de pago", "Monto" };
 
-        // Jugador y categoría necesitan más lugar que el DNI o el medio de pago.
-        private static readonly float[] Anchos = { 3.2f, 1.5f, 2.3f, 1.8f, 1.7f };
+        // Jugador y categoría necesitan más lugar que el DNI. La fecha con hora ("31/10/2026 14:35") y el chip
+        // "Transferencia" tienen que entrar en una línea: con menos ancho se partían en dos.
+        private static readonly float[] Anchos = { 2.3f, 2.5f, 1.6f, 1.9f, 2.0f, 1.5f };
+
+        // HU-107: la fecha de cada cobro es la hora real de registro, que la base ya guarda en hora del
+        // club. Los pagos anteriores a esa columna solo tienen el día. El PDF la escribe como la pantalla
+        // (31/10/2026 14:35); el CSV en ISO (2026-10-31 14:35), que no depende de la configuración
+        // regional y Excel reconoce como fecha. Los dos aclaran la zona en el encabezado.
+        private static string FechaPdf(PagoDelPeriodo p)
+            => p.FechaHoraRegistro is DateTime registro
+                ? registro.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)
+                : p.FechaPago.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+        private static string FechaCsv(PagoDelPeriodo p)
+            => p.FechaHoraRegistro is DateTime registro
+                ? registro.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+                : p.FechaPago.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        private static string Horario => $"Hora del club ({RelojNegocio.Zona})";
 
         // "6 pagos · 75 %". Con total cero el porcentaje no se puede calcular,
         // así que se informa el vacío en vez de dividir por cero.
@@ -48,6 +65,7 @@ namespace ApiGestion.Reports
                 new[] { "Emitido", RelojNegocio.Ahora.ToString("dd/MM/yyyy HH:mm") },
                 new[] { "Período", periodoLabel },
                 new[] { "Categoría", categoriaLabel },
+                new[] { "Fechas", Horario },
                 Array.Empty<string>(),
                 new[] { "RESUMEN", "Cobros", "Monto ($)" },
                 new[] { "Efectivo", datos.PagosEfectivo.ToString(), datos.Efectivo.ToString("0", Ars) },
@@ -57,6 +75,7 @@ namespace ApiGestion.Reports
 
             var rows = datos.Detalle.Select(p => new[]
             {
+                FechaCsv(p),
                 p.Jugador,
                 p.Dni,
                 p.Categoria,
@@ -64,7 +83,7 @@ namespace ApiGestion.Reports
                 p.Monto.ToString("0", Ars),
             }).ToList();
 
-            string[] columnas = { "Jugador", "DNI", "Categoría", "Medio de pago", "Monto ($)" };
+            string[] columnas = { "Fecha", "Jugador", "DNI", "Categoría", "Medio de pago", "Monto ($)" };
             return CsvBuilder.Build(meta, columnas, rows, separator: ';');
         }
 
@@ -78,6 +97,7 @@ namespace ApiGestion.Reports
                 new("Período", periodoLabel),
                 new("Categoría", categoriaLabel),
                 new("Cobros procesados", datos.Pagos.ToString()),
+                new("Fechas", Horario),
             };
 
             var kpis = new List<PdfKpi>
@@ -95,6 +115,7 @@ namespace ApiGestion.Reports
 
             var rows = datos.Detalle.Select(p => new[]
             {
+                FechaPdf(p),
                 p.Jugador,
                 p.Dni,
                 p.Categoria,
@@ -108,7 +129,7 @@ namespace ApiGestion.Reports
                 Kpis = kpis,
                 Distribution = reparto,
                 ColumnWeights = Anchos,
-                BadgeColumn = 3,
+                BadgeColumn = 4,
                 BadgeStyle = medio => medio switch
                 {
                     "Efectivo" => new PdfBadgeStyle("#dff3e7", "#0d4223"),
@@ -117,6 +138,7 @@ namespace ApiGestion.Reports
                 },
                 TotalLabel = $"Total recaudado ({datos.Pagos} {(datos.Pagos == 1 ? "cobro" : "cobros")})",
                 TotalValue = Pesos(datos.Total),
+                TotalValueColumnSpan = 2,
             };
 
             return PdfReportBuilder.BuildDocument(
@@ -126,7 +148,7 @@ namespace ApiGestion.Reports
                 columns: Columnas,
                 rows: rows,
                 emptyMessage: "No se registraron cobros en este período.",
-                rightAlignedColumns: new HashSet<int> { 4 },
+                rightAlignedColumns: new HashSet<int> { 5 },
                 extras: extras);
         }
     }

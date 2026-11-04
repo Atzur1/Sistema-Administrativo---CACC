@@ -1,0 +1,147 @@
+{
+  "fecha": "2026-10-29T15:09:02",
+  "duracionSegundos": 6,
+  "base": "ClubCamionerosUnificadaV2_HU059_Prueba",
+  "servidor": "(localdb)\\MSSQLLocalDB",
+  "administrativoDll": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\ApiGestion\\bin\\Debug\\net9.0\\ApiGestion.dll",
+  "deportivoDll": "C:\\Users\\FramD\\AppData\\Local\\Temp\\cacc-hu059\\trabajo\\ellos\\BackEnd\\CACC.API\\bin\\Debug\\net9.0\\CACC.API.dll",
+  "ids": {
+    "superAdmin": 1,
+    "jugadorActivo98560001": 5,
+    "jugadorBaja98560002": 6,
+    "jugadorInexistente": 100006
+  },
+  "totales": {
+    "pass": 14,
+    "fail": 0,
+    "blocked": 0
+  },
+  "casos": [
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-1",
+      "Caso": "SQL Server responde y la base tiene las precondiciones 9856xxxx",
+      "Estado": "PASS",
+      "Esperado": "2 jugadores",
+      "Obtenido": "activo 5, baja 6",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-2",
+      "Caso": "API Administrativa lista (login: lee USUARIOS en SQL)",
+      "Estado": "PASS",
+      "Esperado": "200",
+      "Obtenido": "login -> 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-3",
+      "Caso": "API Deportiva lista (GET /api/jugadores: lee JUGADORES en SQL)",
+      "Estado": "PASS",
+      "Esperado": "200",
+      "Obtenido": "GET /api/jugadores -> 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-4",
+      "Caso": "El jugador activo arranca en la cat. 3 con historial (1 pagado, 1 pendiente)",
+      "Estado": "PASS",
+      "Esperado": "3|3|-; 2 cargos",
+      "Obtenido": "3|3|-; 6:Cuota:1000.00:1000.00:1:2026-08-01:2026-08-05,7:Cuota:1000.00:1000.00:0:2026-09-01:-",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-1",
+      "Caso": "Deportivo PUT categoría 3 -> 4: 200 cambiado; cobro en 4, pertenencia conserva 3 y suma 4; auditado PortalDeportivo con el operador",
+      "Estado": "PASS",
+      "Esperado": "200; cambiado; 4|3,4|-; >=1 UPDATE auditado",
+      "Obtenido": "200; cambiado True; 4|3,4|-; 1 auditado(s)",
+      "Detalle": "{\"idJugador\":5,\"idCategoria\":4,\"cambiado\":true}"
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-2",
+      "Caso": "El cambio no modifica el historial financiero (cuota pagada y pendiente intactas)",
+      "Estado": "PASS",
+      "Esperado": "6:Cuota:1000.00:1000.00:1:2026-08-01:2026-08-05,7:Cuota:1000.00:1000.00:0:2026-09-01:-",
+      "Obtenido": "6:Cuota:1000.00:1000.00:1:2026-08-01:2026-08-05,7:Cuota:1000.00:1000.00:0:2026-09-01:-",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-3",
+      "Caso": "Repetir el mismo cambio: 200 cambiado=false, sin escrituras nuevas ni cambios",
+      "Estado": "PASS",
+      "Esperado": "200; cambiado=false; 4|3,4|-; auditoría 2",
+      "Obtenido": "200; cambiado False; 4|3,4|-; auditoría 2",
+      "Detalle": "{\"idJugador\":5,\"idCategoria\":4,\"cambiado\":false}"
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-4",
+      "Caso": "Categoría inexistente: 422, rechazo CambioCategoria registrado con origen PortalDeportivo, nada cambia",
+      "Estado": "PASS",
+      "Esperado": "422; +1 rechazo CambioCategoria|UNPROCESSABLE|PortalDeportivo|5; 4|3,4|-",
+      "Obtenido": "422; rechazos 0 -> 1; CambioCategoria|UNPROCESSABLE|PortalDeportivo|5; 4|3,4|-",
+      "Detalle": "{\"message\":\"La categoría indicada no existe.\",\"field\":null}"
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-5",
+      "Caso": "Categoría 0: 400 en el Deportivo y 400 INVALID_INPUT (field idCategoria) en el contrato; nada cambia",
+      "Estado": "PASS",
+      "Esperado": "400 / 400 INVALID_INPUT idCategoria",
+      "Obtenido": "400 / 400 INVALID_INPUT idCategoria",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-6",
+      "Caso": "Jugador inexistente: 404 NOT_FOUND en el contrato y 404 en el Deportivo",
+      "Estado": "PASS",
+      "Esperado": "404 NOT_FOUND / 404",
+      "Obtenido": "404 NOT_FOUND / 404",
+      "Detalle": "404 {\"message\":\"No existe el jugador 100006.\",\"field\":null}"
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-7",
+      "Caso": "Jugador dado de baja: 422 y la categoría no cambia",
+      "Estado": "PASS",
+      "Esperado": "422; 3|3|2026-09-30",
+      "Obtenido": "422; 3|3|2026-09-30",
+      "Detalle": "{\"message\":\"No se puede cambiar la categoría de un jugador dado de baja.\",\"field\":null}"
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-8",
+      "Caso": "Contrato sin credencial o con una inválida: 401 y nada cambia",
+      "Estado": "PASS",
+      "Esperado": "401/401; 4|3,4|-",
+      "Obtenido": "401/401; 4|3,4|-",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Cambio de categoría",
+      "Id": "PUT-9",
+      "Caso": "Volver a la cat. 3: 200 cambiado; cobro en 3, pertenencia 3,4 sin duplicados; historial intacto",
+      "Estado": "PASS",
+      "Esperado": "200; 3|3,4|-",
+      "Obtenido": "200; 3|3,4|-",
+      "Detalle": "{\"idJugador\":5,\"idCategoria\":3,\"cambiado\":true}"
+    },
+    {
+      "Grupo": "Logs",
+      "Id": "LOG-1",
+      "Caso": "Los logs de las dos APIs no contienen la credencial, la clave JWT ni tokens",
+      "Estado": "PASS",
+      "Esperado": "0",
+      "Obtenido": "0",
+      "Detalle": ""
+    }
+  ]
+}

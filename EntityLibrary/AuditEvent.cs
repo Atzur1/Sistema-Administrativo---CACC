@@ -14,6 +14,8 @@ public sealed class AuditEvent
     public DateTime TimestampUtc { get; init; }
     public string? BeforeJson { get; init; }
     public string? AfterJson { get; init; }
+    // HU-055: sistema que hizo el pedido ("PortalDeportivo" si entró por la API de integración); null = Portal Administrativo.
+    public string? SourceSystem { get; init; }
 
     // Los nombres de lo que el evento menciona solo por número (el jugador 3, la división 5...), listos para
     // mostrar. La clave es "tipo:número" (ver DaoLibrary.AuditReferences), por ejemplo "jugador:3" ->

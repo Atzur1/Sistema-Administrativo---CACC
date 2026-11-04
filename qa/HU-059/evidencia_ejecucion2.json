@@ -1,0 +1,415 @@
+{
+  "fecha": "2026-10-29T10:29:18",
+  "hoyClub": "2026-10-29",
+  "duracionSegundos": 8,
+  "base": "ClubCamionerosUnificadaV2_HU059_Prueba",
+  "servidor": "(localdb)\\MSSQLLocalDB",
+  "administrativoDll": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\ApiGestion\\bin\\Debug\\net9.0\\ApiGestion.dll",
+  "deportivoDll": "C:\\Users\\FramD\\AppData\\Local\\Temp\\cacc-hu059\\trabajo\\ellos\\BackEnd\\CACC.API\\bin\\Debug\\net9.0\\CACC.API.dll",
+  "totales": {
+    "pass": 32,
+    "fail": 1,
+    "blocked": 5
+  },
+  "historias": [
+    {
+      "Grupo": "Entorno",
+      "Estado": "PASS",
+      "Casos": 3
+    },
+    {
+      "Grupo": "HU-054 contrato",
+      "Estado": "PASS",
+      "Casos": 4
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Estado": "PASS",
+      "Casos": 6
+    },
+    {
+      "Grupo": "HU-056 alta",
+      "Estado": "BLOCKED",
+      "Casos": 4
+    },
+    {
+      "Grupo": "HU-056 DNI existente",
+      "Estado": "BLOCKED",
+      "Casos": 2
+    },
+    {
+      "Grupo": "HU-056 reintento",
+      "Estado": "BLOCKED",
+      "Casos": 1
+    },
+    {
+      "Grupo": "HU-057 baja (contrato)",
+      "Estado": "PASS",
+      "Casos": 4
+    },
+    {
+      "Grupo": "HU-057 baja (desde el Deportivo)",
+      "Estado": "FAIL",
+      "Casos": 3
+    },
+    {
+      "Grupo": "HU-057 deuda histórica",
+      "Estado": "PASS",
+      "Casos": 3
+    },
+    {
+      "Grupo": "HU-057 generación de cuotas",
+      "Estado": "PASS",
+      "Casos": 7
+    },
+    {
+      "Grupo": "Logs",
+      "Estado": "PASS",
+      "Casos": 1
+    }
+  ],
+  "casos": [
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-1",
+      "Caso": "SQL Server responde y la base de prueba tiene los datos iniciales",
+      "Estado": "PASS",
+      "Esperado": "5 usuarios",
+      "Obtenido": "USUARIOS",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-2",
+      "Caso": "API Administrativa lista (login: lee USUARIOS en SQL)",
+      "Estado": "PASS",
+      "Esperado": "200",
+      "Obtenido": "login -> 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-3",
+      "Caso": "API Deportiva lista (GET /api/jugadores: lee JUGADORES en SQL)",
+      "Estado": "PASS",
+      "Esperado": "200",
+      "Obtenido": "GET /api/jugadores -> 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-1",
+      "Caso": "Sin credencial de sistema: 401 con el contrato de error y sin datos",
+      "Estado": "PASS",
+      "Esperado": "401",
+      "Obtenido": "401",
+      "Detalle": "{\"errorCode\":\"UNAUTHORIZED\",\"message\":\"Falta la credencial del sistema que llama o no es válida.\",\"exito\":false,\"mensaje\":\"Falta la credencial del sistema que llama o no es válida.\"}"
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-2",
+      "Caso": "Credencial inválida: 401 sin datos",
+      "Estado": "PASS",
+      "Esperado": "401",
+      "Obtenido": "401",
+      "Detalle": "{\"errorCode\":\"UNAUTHORIZED\",\"message\":\"Falta la credencial del sistema que llama o no es válida.\",\"exito\":false,\"mensaje\":\"Falta la credencial del sistema que llama o no es válida.\"}"
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-3",
+      "Caso": "Credencial válida + token: 200 con el estado",
+      "Estado": "PASS",
+      "Esperado": "200 habilitado",
+      "Obtenido": "200 habilitado",
+      "Detalle": "{\"dni\":\"98590003\",\"idJugador\":3,\"estado\":\"habilitado\",\"accesoPermitido\":true,\"fechaBaja\":null}"
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-4",
+      "Caso": "Credencial válida SIN token de usuario: 401 (la credencial no es un usuario)",
+      "Estado": "PASS",
+      "Esperado": "401",
+      "Obtenido": "401",
+      "Detalle": "{\"errorCode\":\"UNAUTHORIZED\",\"message\":\"Falta el token de sesión o ya no es válido. Iniciá sesión de nuevo.\",\"exito\":false,\"mensaje\":\"Falta el token de sesión o ya no es válido. Iniciá sesión de nuevo.\"}"
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-5",
+      "Caso": "API -> API: el Deportivo (con su credencial) obtiene del Administrativo el estado de un jugador con 2 cuotas vencidas",
+      "Estado": "PASS",
+      "Esperado": "200 INHABILITADO",
+      "Obtenido": "200 INHABILITADO",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-6",
+      "Caso": "API -> API con credencial equivocada: el Administrativo no entrega el estado (SIN VERIFICAR)",
+      "Estado": "PASS",
+      "Esperado": "SIN VERIFICAR",
+      "Obtenido": "SIN VERIFICAR",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-054 contrato",
+      "Id": "CON-1",
+      "Caso": "Dato inválido: 400 INVALID_INPUT con field",
+      "Estado": "PASS",
+      "Esperado": "400 INVALID_INPUT fechaBaja",
+      "Obtenido": "400 INVALID_INPUT fechaBaja",
+      "Detalle": "{\"errorCode\":\"INVALID_INPUT\",\"message\":\"Indicá la fecha de baja con el formato yyyy-MM-dd.\",\"field\":\"fechaBaja\",\"exito\":false,\"mensaje\":\"Indicá la fecha de baja con el formato yyyy-MM-dd.\"}"
+    },
+    {
+      "Grupo": "HU-054 contrato",
+      "Id": "CON-2",
+      "Caso": "Jugador inexistente: 404 NOT_FOUND con cuerpo",
+      "Estado": "PASS",
+      "Esperado": "404 NOT_FOUND",
+      "Obtenido": "404 NOT_FOUND",
+      "Detalle": "{\"errorCode\":\"NOT_FOUND\",\"message\":\"No existe el jugador 999999999.\",\"exito\":false,\"mensaje\":\"No existe el jugador 999999999.\"}"
+    },
+    {
+      "Grupo": "HU-054 contrato",
+      "Id": "CON-3",
+      "Caso": "Rol sin permiso (Médica): 403 FORBIDDEN",
+      "Estado": "PASS",
+      "Esperado": "403 FORBIDDEN",
+      "Obtenido": "403",
+      "Detalle": "{\"errorCode\":\"FORBIDDEN\",\"message\":\"Tu rol no tiene permiso para usar este servicio.\",\"exito\":false,\"mensaje\":\"Tu rol no tiene permiso para usar este servicio.\"}"
+    },
+    {
+      "Grupo": "HU-054 contrato",
+      "Id": "CON-4",
+      "Caso": "Ningún rechazo del contrato modificó al jugador",
+      "Estado": "PASS",
+      "Esperado": "0 bajas",
+      "Obtenido": "0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-056 alta",
+      "Id": "ALT-1",
+      "Caso": "Alta de una persona nueva desde el Deportivo (persona, jugador, categoría, cargos)",
+      "Estado": "BLOCKED",
+      "Esperado": "201 + 1 persona, 1 jugador, inscripción y cuota según calendario",
+      "Obtenido": "503; persona|jugador|cuotas|inscripciones = 0|0|0|0",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada en el Administrativo"
+    },
+    {
+      "Grupo": "HU-056 alta",
+      "Id": "ALT-1b",
+      "Caso": "El alta rechazada no dejó datos a medias",
+      "Estado": "PASS",
+      "Esperado": "0|0|0|0",
+      "Obtenido": "0|0|0|0",
+      "Detalle": "{\"message\":\"El Portal Administrativo no responde: el jugador no se registró. Intentá de nuevo.\"}"
+    },
+    {
+      "Grupo": "HU-056 alta",
+      "Id": "ALT-2",
+      "Caso": "El jugador aparece en el Administrativo y disponible para cobranzas",
+      "Estado": "BLOCKED",
+      "Esperado": "visible",
+      "Obtenido": "no se creó",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada en el Administrativo"
+    },
+    {
+      "Grupo": "HU-056 alta",
+      "Id": "ALT-3",
+      "Caso": "Auditoría del alta con origen PortalDeportivo",
+      "Estado": "BLOCKED",
+      "Esperado": "PortalDeportivo",
+      "Obtenido": "no se creó",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada en el Administrativo"
+    },
+    {
+      "Grupo": "HU-056 DNI existente",
+      "Id": "DNI-1",
+      "Caso": "Alta con un DNI cuya persona ya existe: misma persona, un jugador nuevo",
+      "Estado": "BLOCKED",
+      "Esperado": "1 persona (9), 1 jugador",
+      "Obtenido": "503; 1|0|0|0",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada en el Administrativo"
+    },
+    {
+      "Grupo": "HU-056 DNI existente",
+      "Id": "DNI-1b",
+      "Caso": "La persona existente no se duplicó ni se modificó",
+      "Estado": "PASS",
+      "Esperado": "1|9",
+      "Obtenido": "1|9",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-056 reintento",
+      "Id": "REA-1",
+      "Caso": "Repetir el alta no duplica persona, jugador, cuota ni inscripción",
+      "Estado": "BLOCKED",
+      "Esperado": "200 creado=false; mismas cuentas",
+      "Obtenido": "503; 0|0|0|0",
+      "Detalle": "POST /api/integracion/v1/jugadores en el Administrativo responde 404 : HU-056 no está implementada en el Administrativo"
+    },
+    {
+      "Grupo": "HU-057 baja (contrato)",
+      "Id": "BAJ-1",
+      "Caso": "Baja informada con fecha efectiva 2026-09-20: 200 y baja lógica (el jugador y su persona siguen)",
+      "Estado": "PASS",
+      "Esperado": "200; 1|98590001|2026-09-20|0",
+      "Obtenido": "200; 1|98590001|2026-09-20|0",
+      "Detalle": "{\"idJugador\":1,\"estado\":\"baja\",\"fechaBaja\":\"2026-09-20\",\"yaEstabaDadoDeBaja\":false}"
+    },
+    {
+      "Grupo": "HU-057 baja (contrato)",
+      "Id": "BAJ-2",
+      "Caso": "Auditoría: un evento UPDATE con origen PortalDeportivo y el operador del token",
+      "Estado": "PASS",
+      "Esperado": "1|PortalDeportivo|1|UPDATE",
+      "Obtenido": "1|PortalDeportivo|1|UPDATE",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 baja (contrato)",
+      "Id": "BAJ-3",
+      "Caso": "Reintento de la misma baja: 200 yaEstabaDadoDeBaja, sin un segundo evento",
+      "Estado": "PASS",
+      "Esperado": "200 true; 1 evento",
+      "Obtenido": "200 True; 1 evento(s)",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 baja (contrato)",
+      "Id": "BAJ-4",
+      "Caso": "Otra fecha sobre una baja registrada: 409 CONFLICT, se conserva la primera",
+      "Estado": "PASS",
+      "Esperado": "409; 2026-09-20",
+      "Obtenido": "409",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 baja (desde el Deportivo)",
+      "Id": "BJD-1",
+      "Caso": "DELETE /api/jugadores/{id} del Deportivo: baja lógica (el jugador sigue, con fecha de baja)",
+      "Estado": "PASS",
+      "Esperado": "200; 1|hoy",
+      "Obtenido": "200; 1|2026-10-29",
+      "Detalle": "{\"message\":\"Jugador dado de baja correctamente. Su historial se conserva.\"}"
+    },
+    {
+      "Grupo": "HU-057 baja (desde el Deportivo)",
+      "Id": "BJD-2",
+      "Caso": "La baja la procesa el Administrativo por el contrato HU-057 (auditoría con origen PortalDeportivo)",
+      "Estado": "FAIL",
+      "Esperado": "1|PortalDeportivo",
+      "Obtenido": "1|NULL",
+      "Detalle": "Si el origen es NULL, el Deportivo escribió fecha_baja directo en la base compartida en lugar de llamar a POST /api/integracion/v1/jugadores/{id}/baja."
+    },
+    {
+      "Grupo": "HU-057 baja (desde el Deportivo)",
+      "Id": "BJD-3",
+      "Caso": "Reintento de la baja desde el Deportivo: sin segunda baja ni otro evento",
+      "Estado": "PASS",
+      "Esperado": "200; 1 evento",
+      "Obtenido": "200; 1 evento(s)",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 deuda histórica",
+      "Id": "DEU-1",
+      "Caso": "Las cuotas anteriores (agosto y septiembre) siguen iguales después de la baja (contrato y Deportivo)",
+      "Estado": "PASS",
+      "Esperado": "sin cambios",
+      "Obtenido": "sin cambios",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 deuda histórica",
+      "Id": "DEU-2",
+      "Caso": "Deudas y Morosidad sigue mostrando a los dos dados de baja con sus 2 cuotas y la fecha de baja",
+      "Estado": "PASS",
+      "Esperado": "F1 y F2: 2 cuotas, con fechaBaja",
+      "Obtenido": "F1: 2 09/20/2026 00:00:00 | F2: 2 10/29/2026 00:00:00",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 deuda histórica",
+      "Id": "DEU-3",
+      "Caso": "estado-deuda informa 'baja' al Deportivo (QR)",
+      "Estado": "PASS",
+      "Esperado": "200 baja",
+      "Obtenido": "200 baja",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 generación de cuotas",
+      "Id": "GEN-1",
+      "Caso": "Detección de faltantes de septiembre (mes cerrado): incluye al activo de control y no al dado de baja el 15/07",
+      "Estado": "PASS",
+      "Esperado": "baja 200; incluye 98590003, no 98590006",
+      "Obtenido": "baja 200; 98590003",
+      "Detalle": "[{\"idJugador\":3,\"nombreCompleto\":\"Control Activo, Prueba\",\"dni\":\"98590003\",\"categoria\":\"Pt  AFA 2009\",\"monto\":1000.00}]"
+    },
+    {
+      "Grupo": "HU-057 generación de cuotas",
+      "Id": "GEN-1b",
+      "Caso": "Generación manual de faltantes (agosto y septiembre): el activo las recibe y el dado de baja no",
+      "Estado": "PASS",
+      "Esperado": "control 1|1, baja 0|0",
+      "Obtenido": "200/200; control 1|1, baja 0|0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 generación de cuotas",
+      "Id": "GEN-1c",
+      "Caso": "La deuda anterior del dado de baja (julio) sigue pendiente",
+      "Estado": "PASS",
+      "Esperado": "1",
+      "Obtenido": "1",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 generación de cuotas",
+      "Id": "GEN-2",
+      "Caso": "Generador automático: emite la cuota de 2026-10-01 al activo y NO a los dados de baja (20/09 y 15/07)",
+      "Estado": "PASS",
+      "Esperado": "control 1, bajas 0|0",
+      "Obtenido": "control 1, bajas 0|0",
+      "Detalle": "cuota de control = 1"
+    },
+    {
+      "Grupo": "HU-057 generación de cuotas",
+      "Id": "GEN-3",
+      "Caso": "Cobro por adelantado de noviembre a un dado de baja: rechazado (400) y sin cuota emitida",
+      "Estado": "PASS",
+      "Esperado": "400; 0 filas",
+      "Obtenido": "400; 0 filas",
+      "Detalle": "{\"exito\":false,\"mensaje\":\"No se puede registrar un pago para Noviembre 2026: no hay un arancel vigente para este jugador en ese mes, o el jugador no estaba en el club (antes de su alta o después de su baja).\"}"
+    },
+    {
+      "Grupo": "HU-057 generación de cuotas",
+      "Id": "GEN-4",
+      "Caso": "Ninguna cuota posterior al mes de la baja para los dados de baja por contrato",
+      "Estado": "PASS",
+      "Esperado": "0|0",
+      "Obtenido": "0|0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-057 generación de cuotas",
+      "Id": "GEN-5",
+      "Caso": "El dado de baja hoy desde el Deportivo conserva solo lo que le corresponde por la regla del mes de la baja",
+      "Estado": "PASS",
+      "Esperado": "1 (mes de la baja)",
+      "Obtenido": "1",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Logs",
+      "Id": "LOG-1",
+      "Caso": "Los logs de las dos APIs no contienen la credencial, la clave JWT ni tokens",
+      "Estado": "PASS",
+      "Esperado": "0",
+      "Obtenido": "0",
+      "Detalle": ""
+    }
+  ]
+}

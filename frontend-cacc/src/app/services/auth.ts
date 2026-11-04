@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router, CanActivateFn, ActivatedRouteSnapshot } from '@angular/router';
+import { Router, CanActivateFn, ActivatedRouteSnapshot, UrlTree } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { API_BASE_URL } from './api-url';
 import { environment } from '../../environments/environment';
@@ -8,6 +8,10 @@ import { navegador } from './navegador';
 import { LoginModel, LoginResponseModel } from '../models/LoginModel';
 
 const SESSION_KEY = 'cacc-session';
+
+// HU-007: valor de ?sesion= con el que el login muestra NO_TIENE_ACCESOS.
+export const SIN_ACCESO = 'sin-acceso';
+export const NO_TIENE_ACCESOS = 'Tu cuenta no tiene accesos habilitados.';
 
 // HU-022: mensaje para quien fuerza la URL de una sección financiera sin rol
 // administrativo. Se declara en la ruta (data.accesoDenegado) y lo lee el guard.
@@ -84,16 +88,39 @@ export class AuthService {
     return this.getRol() === 1;
   }
 
-  // Donde cae cada cuenta recien logueada (y a donde se la devuelve si pide una pantalla que no es suya):
-  //  - SuperAdmin (1): la eleccion de portales; es el unico que la ve.
-  //  - Administrador (2): directo al Portal Administrativo, sin pasar por la eleccion.
-  //  - Cuenta sin acceso al Administrativo (rol 0: Médico, Director Técnico, Don QR…): directo al Portal Deportivo.
-  irAlInicio(router: Router): void {
-    if (this.getRol() === 0) {
-      this.abrirPortalDeportivo();
-      return;
+  // HU-007: el destino sale de los portales que manda el backend (PortalesDeLaCuenta), no del nombre del rol:
+  //  - varios portales con el Administrativo (el SuperAdmin): la elección de portales.
+  //  - solo el Administrativo (el Administrador): directo al Portal Administrativo.
+  //  - solo el Deportivo (Director Técnico, Preparador Físico, Médico, Don QR…): directo al Portal Deportivo,
+  //    sin renderizar nada del Administrativo.
+  //  - ninguno: null. Nunca se cae en el Administrativo por defecto.
+  destinoInicial(): '/portales' | '/admin/portal' | 'deportivo' | null {
+    const portales = this.getUsuario()?.portales ?? [];
+    if (portales.includes('administrativo')) return portales.length > 1 ? '/portales' : '/admin/portal';
+    if (portales.includes('deportivo')) return 'deportivo';
+    return null;
+  }
+
+  // Donde cae cada cuenta recien logueada (y a donde se la devuelve si pide una pantalla que no es suya).
+  // false: no hay a dónde ir; la sesión se cierra y vuelve al login con el aviso.
+  irAlInicio(router: Router): boolean {
+    const destino = this.destinoInicial();
+    if (destino === 'deportivo') return this.abrirPortalDeportivo();
+    if (destino) {
+      router.navigate([destino]);
+      return true;
     }
-    router.navigate([this.isSuperAdmin() ? '/portales' : '/admin/portal']);
+    this.logout();
+    router.navigate(['/'], { queryParams: { sesion: SIN_ACCESO } });
+    return false;
+  }
+
+  // Para adminGuard, cuando una cuenta sin rol administrativo pide una ruta del Administrativo: un solo salto y nunca
+  // de vuelta a otra ruta del Administrativo (si no, los guards se mandarían la cuenta entre sí sin fin).
+  salirDelAdministrativo(router: Router): false | UrlTree {
+    if (this.destinoInicial() === 'deportivo' && this.abrirPortalDeportivo()) return false;
+    this.logout();
+    return router.createUrlTree(['/'], { queryParams: { sesion: SIN_ACCESO } });
   }
 
   // El Portal Deportivo es otro sitio y no comparte el almacenamiento del navegador: se le entrega la sesión en el
@@ -133,7 +160,7 @@ export class AuthService {
     try {
       const session = JSON.parse(raw) as LoginResponseModel;
       const payload = session.token.split('.')[1];
-      if (!payload || !session.email || !session.token || !Number.isInteger(session.role))
+      if (!payload || !session.email || !session.token || !Number.isInteger(session.role) || !Array.isArray(session.portales))
         throw new Error('Invalid session');
       const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
       const claims = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')));
@@ -174,7 +201,7 @@ export const portalesGuard: CanActivateFn = () => {
     return false;
   }
 
-  if (!authService.isSuperAdmin()) {
+  if (authService.destinoInicial() !== '/portales') {
     authService.irAlInicio(router);
     return false;
   }
@@ -192,10 +219,10 @@ export const adminGuard: CanActivateFn = (_route, state) => {
     return false;
   }
 
+  // HU-007: quien solo tiene el Deportivo va directo allá (antes pasaba por /portales y de ahí al Deportivo).
   if (!authService.isAdmin()) {
     alert(accesoDenegadoDe(state.root) ?? 'No tienes permisos para acceder al Portal Administrativo.');
-    router.navigate(['/portales']);
-    return false;
+    return authService.salirDelAdministrativo(router);
   }
 
   return true;

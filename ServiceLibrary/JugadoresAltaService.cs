@@ -1,6 +1,7 @@
 using DaoLibrary;
 using DaoLibrary.Exceptions;
 using EntityLibrary;
+using System.Globalization;
 
 namespace ServiceLibrary
 {
@@ -18,6 +19,13 @@ namespace ServiceLibrary
         // Genera los cargos de alta (inscripción y cuota del mes) de un jugador que YA existe, por ejemplo uno que dio
         // de alta el Portal Deportivo directamente en la base. Aplica las mismas reglas que Registrar y es idempotente.
         ResultadoOperacion<CargosGenerados> GenerarCargosDeAlta(int idJugador);
+
+        // HU-056: el alta que pide el Portal Deportivo (persona + jugador + cargos, todo o nada). Es idempotente.
+        // correlacion: el id del pedido, para el registro de rechazos.
+        ResultadoOperacion<AltaIntegracionRegistrada> AltaDesdeIntegracion(SolicitudAltaIntegracion solicitud, string? correlacion = null);
+
+        // HU-056: cambio de categoría pedido por el Portal Deportivo. No toca ningún cargo ya emitido.
+        ResultadoOperacion<CambioCategoriaRealizado> CambiarCategoria(int idJugador, int? idCategoria, string? correlacion = null);
     }
 
     // Alta de un jugador (HU-033) y los cargos que genera:
@@ -34,16 +42,18 @@ namespace ServiceLibrary
         private readonly EnrollmentFeeDAO _enrollmentFeeDao;
         private readonly IArancelesDao _arancelesDao;
         private readonly Func<DateTime> _hoy;
+        private readonly IRegistroRechazos? _rechazos;
 
         // reloj: solo para las pruebas; en la aplicación se usa la fecha real.
         public JugadoresAltaService(PlayerDAO playerDao, ICategoriasDao categoriasDao, EnrollmentFeeDAO enrollmentFeeDao,
-            IArancelesDao arancelesDao, Func<DateTime>? reloj = null)
+            IArancelesDao arancelesDao, Func<DateTime>? reloj = null, IRegistroRechazos? rechazos = null)
         {
             _playerDao = playerDao;
             _categoriasDao = categoriasDao;
             _enrollmentFeeDao = enrollmentFeeDao;
             _arancelesDao = arancelesDao;
             _hoy = reloj ?? (() => RelojNegocio.Hoy);
+            _rechazos = rechazos;
         }
 
         public ResultadoOperacion<AltaJugadorRegistrada> Registrar(SolicitudAltaJugador solicitud)
@@ -148,6 +158,188 @@ namespace ServiceLibrary
             return ResultadoOperacion<CargosGenerados>.Ok(
                 _playerDao.GenerarCargosDeAlta(idJugador, montoCuota, primerDiaDelMes, montoInscripcion, jugador.FechaAlta));
         }
+
+        public ResultadoOperacion<AltaIntegracionRegistrada> AltaDesdeIntegracion(SolicitudAltaIntegracion solicitud, string? correlacion = null)
+        {
+            DateTime hoy = _hoy().Date;
+            string dni = solicitud.Dni?.Trim() ?? "";
+            // La misma regla que el alta del portal (PlayerRequestDTO) y que valida el Deportivo antes de llamar: 7 u 8 dígitos.
+            // El 6 a 9 de PERSONAS y del login es el rango de identidades que la base admite, no el de un jugador nuevo.
+            if (dni.Length is < 7 or > 8 || dni.Any(c => !char.IsAsciiDigit(c)))
+            {
+                return RechazarAlta(TipoResultado.Invalido, "Indicá un DNI válido de 7 u 8 dígitos.", "dni", correlacion);
+            }
+
+            string? genero = EntityLibrary.Generos.Validos.FirstOrDefault(g =>
+                string.Equals(g, solicitud.Genero?.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (genero is null)
+            {
+                return RechazarAlta(TipoResultado.Invalido, "Indicá un género válido.", "genero", correlacion);
+            }
+
+            if (solicitud.IdCategoria is not > 0)
+            {
+                return RechazarAlta(TipoResultado.Invalido, "Indicá una categoría válida.", "idCategoria", correlacion);
+            }
+
+            int idCategoria = solicitud.IdCategoria.Value;
+            if (!_categoriasDao.ObtenerTodas().Any(c => c.IdCategoria == idCategoria))
+            {
+                return RechazarAlta(TipoResultado.NoProcesable, "La categoría indicada no existe.", "idCategoria", correlacion);
+            }
+
+            // Regla (decidida el 29/10/2026): "no futura" es respecto de la fecha REAL del club (RelojNegocio.Hoy), no de la
+            // fecha de negocio del alta. En producción son la misma; solo difieren con Pruebas:FechaNegocio, que fija el
+            // calendario de cargos pero no cambia qué nacimientos existen.
+            DateTime? fechaNacimiento = null;
+            if (!string.IsNullOrWhiteSpace(solicitud.FechaNacimiento))
+            {
+                if (!DateTime.TryParseExact(solicitud.FechaNacimiento.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out DateTime nacimiento) || nacimiento.Date > RelojNegocio.Hoy.Date)
+                {
+                    return RechazarAlta(TipoResultado.Invalido, "Indicá una fecha de nacimiento válida que no sea futura.",
+                        "fechaNacimiento", correlacion);
+                }
+                fechaNacimiento = nacimiento.Date;
+            }
+
+            DatosAltaIntegracion datos = new(
+                dni,
+                NombreNormalizado(solicitud.Nombre),
+                NombreNormalizado(solicitud.Apellido),
+                genero,
+                fechaNacimiento,
+                idCategoria,
+                hoy);
+
+            ResultadoAltaIntegracion resultado = _playerDao.AltaDesdeIntegracion(datos, contexto =>
+            {
+                DateTime primerDiaDelMes = CalendarioCuotas.PrimerDiaDelMes(hoy);
+                decimal? montoCuota = null;
+                decimal? montoInscripcion = null;
+
+                if (!contexto.JugadorNuevo && contexto.FechaAlta < hoy.AddDays(-DiasParaGenerarCargosDeAlta))
+                {
+                    return new PlanCargosAlta(null, primerDiaDelMes, null);
+                }
+
+                EnrollmentFee? inscripcion = _enrollmentFeeDao.GetCurrentEnrollmentFee(contexto.Genero);
+                if (inscripcion is { Amount: > 0 })
+                {
+                    montoInscripcion = inscripcion.Amount;
+                }
+                else if (contexto.JugadorNuevo && contexto.Genero == Generos.Masculino)
+                {
+                    return new PlanCargosAlta(null, primerDiaDelMes, null,
+                        "No hay un arancel de inscripción vigente para el alta.");
+                }
+
+                if (CalendarioCuotas.YaSeGeneraElMesEnCurso(hoy))
+                {
+                    DateTime ultimoDiaDelMes = primerDiaDelMes.AddMonths(1).AddDays(-1);
+                    montoCuota = _arancelesDao.ObtenerMontoVigente(contexto.Genero, contexto.IdCategoria, ultimoDiaDelMes);
+                }
+
+                return new PlanCargosAlta(montoCuota, primerDiaDelMes, montoInscripcion);
+            });
+
+            return resultado.Estado switch
+            {
+                EstadoAltaIntegracion.Creado or EstadoAltaIntegracion.YaExistia =>
+                    ResultadoOperacion<AltaIntegracionRegistrada>.Ok(new AltaIntegracionRegistrada(
+                        resultado.IdJugador,
+                        resultado.Estado == EstadoAltaIntegracion.Creado,
+                        resultado.PersonaExistente,
+                        resultado.Cargos.Inscripcion,
+                        resultado.Cargos.Cuota)),
+                EstadoAltaIntegracion.FaltanDatosDePersona =>
+                    RechazarAlta(TipoResultado.Invalido, MensajeCampoPersona(resultado.Campo), resultado.Campo, correlacion,
+                        resultado.IdPersona, resultado.IdJugador),
+                EstadoAltaIntegracion.GeneroNoCoincide =>
+                    RechazarAlta(TipoResultado.Conflicto, "El género no coincide con el de la persona existente.",
+                        null, correlacion, resultado.IdPersona, resultado.IdJugador),
+                EstadoAltaIntegracion.VariosJugadores =>
+                    RechazarAlta(TipoResultado.Conflicto, "La persona tiene más de un jugador asociado; requiere revisión manual.",
+                        null, correlacion, resultado.IdPersona, resultado.IdJugador),
+                EstadoAltaIntegracion.VariasPersonas =>
+                    RechazarAlta(TipoResultado.Conflicto, "Hay más de una persona con ese DNI; requiere revisión manual.",
+                        null, correlacion),
+                EstadoAltaIntegracion.JugadorDeBaja =>
+                    RechazarAlta(TipoResultado.Conflicto, "La persona ya tiene un jugador dado de baja.",
+                        null, correlacion, resultado.IdPersona, resultado.IdJugador),
+                EstadoAltaIntegracion.CargosRechazados =>
+                    RechazarAlta(TipoResultado.NoProcesable, resultado.Mensaje ?? "No se pudo determinar el cargo de inscripción.",
+                        null, correlacion, resultado.IdPersona, resultado.IdJugador),
+                _ => throw new InvalidOperationException($"Estado de alta integrada no reconocido: {resultado.Estado}.")
+            };
+        }
+
+        public ResultadoOperacion<CambioCategoriaRealizado> CambiarCategoria(int idJugador, int? idCategoria, string? correlacion = null)
+        {
+            if (idJugador <= 0)
+            {
+                return RechazarCambioCategoria(TipoResultado.Invalido, "Indicá un jugador válido.", "idJugador", correlacion);
+            }
+            if (idCategoria is not > 0)
+            {
+                return RechazarCambioCategoria(TipoResultado.Invalido, "Indicá una categoría válida.", "idCategoria", correlacion,
+                    idJugador: idJugador);
+            }
+            if (!_categoriasDao.ObtenerTodas().Any(c => c.IdCategoria == idCategoria.Value))
+            {
+                return RechazarCambioCategoria(TipoResultado.NoProcesable, "La categoría indicada no existe.", "idCategoria",
+                    correlacion, idJugador: idJugador);
+            }
+
+            ResultadoCambioCategoria resultado = _playerDao.CambiarCategoria(idJugador, idCategoria.Value);
+            return resultado.Estado switch
+            {
+                EstadoCambioCategoria.Cambiado or EstadoCambioCategoria.SinCambio =>
+                    ResultadoOperacion<CambioCategoriaRealizado>.Ok(new CambioCategoriaRealizado(
+                        idJugador, resultado.IdCategoria, resultado.Estado == EstadoCambioCategoria.Cambiado)),
+                EstadoCambioCategoria.NoEncontrado =>
+                    RechazarCambioCategoria(TipoResultado.NoEncontrado, $"No existe el jugador {idJugador}.", null,
+                        correlacion, idJugador: idJugador),
+                EstadoCambioCategoria.DeBaja =>
+                    RechazarCambioCategoria(TipoResultado.NoProcesable, "No se puede cambiar la categoría de un jugador dado de baja.",
+                        null, correlacion, idJugador: idJugador),
+                _ => throw new InvalidOperationException($"Estado de cambio de categoría no reconocido: {resultado.Estado}.")
+            };
+        }
+
+        private ResultadoOperacion<AltaIntegracionRegistrada> RechazarAlta(TipoResultado tipo, string mensaje, string? campo,
+            string? correlacion, int? idPersona = null, int? idJugador = null)
+        {
+            RegistrarRechazo(OperacionesDeIntegracion.AltaJugador, tipo, mensaje, correlacion, idPersona, idJugador);
+            return ResultadoOperacion<AltaIntegracionRegistrada>.Falla(tipo, mensaje, campo);
+        }
+
+        private ResultadoOperacion<CambioCategoriaRealizado> RechazarCambioCategoria(TipoResultado tipo, string mensaje,
+            string? campo, string? correlacion, int? idJugador = null)
+        {
+            RegistrarRechazo(OperacionesDeIntegracion.CambioCategoria, tipo, mensaje, correlacion, null, idJugador);
+            return ResultadoOperacion<CambioCategoriaRealizado>.Falla(tipo, mensaje, campo);
+        }
+
+        private void RegistrarRechazo(string operacion, TipoResultado tipo, string motivo, string? correlacion,
+            int? idPersona, int? idJugador)
+        {
+            _rechazos?.Registrar(operacion, tipo, motivo, correlacion, idPersona, idJugador);
+        }
+
+        private static string? NombreNormalizado(string? nombre)
+        {
+            if (string.IsNullOrWhiteSpace(nombre)) return null;
+            return NombresPropios.Normalizar(nombre.Trim());
+        }
+
+        private static string MensajeCampoPersona(string? campo) => campo switch
+        {
+            "nombre" => "Indicá el nombre de la persona.",
+            "apellido" => "Indicá el apellido de la persona.",
+            "fechaNacimiento" => "Indicá la fecha de nacimiento de la persona.",
+            _ => "Faltan datos de la persona."
+        };
 
         private static ResultadoOperacion<AltaJugadorRegistrada> DniRepetido(string dni)
             => ResultadoOperacion<AltaJugadorRegistrada>.Falla(TipoResultado.Invalido, $"Ya hay una persona registrada con el DNI {dni}.");
