@@ -326,7 +326,7 @@ tbody tr:hover {
   padding: 1px 8px;
   border-radius: 999px;
   background: var(--color-info-bg);
-  color: var(--color-info);
+  color: var(--aviso-acento);
   font-weight: 600;
 }
 
