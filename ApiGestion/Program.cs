@@ -32,16 +32,15 @@ if (usarCabecerasDeProxy)
 }
 
 builder.Services.AddControllers();
-// HU-058: en la API de integración un cuerpo ilegible responde con el contrato { errorCode, message, field }; el resto
-// de la API conserva la respuesta de siempre.
+// HU-058: en la API de integración un cuerpo ilegible responde con el contrato { errorCode, message, field }.
+// HU-090: el resto de la API responde 400 con { mensaje, errores } en español, como cualquier otro rechazo del portal.
 builder.Services.PostConfigure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
 {
-    var respuestaOriginal = options.InvalidModelStateResponseFactory;
     options.InvalidModelStateResponseFactory = context =>
         ApiGestion.Services.IntegrationErrors.IsIntegrationRequest(context.HttpContext.Request.Path)
             ? ApiGestion.Services.IntegrationErrors.FromInvalidModelState(context,
                 context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("ApiGestion.Integracion"))
-            : respuestaOriginal(context);
+            : ApiGestion.Services.RespuestaDeValidacion.Crear(context);
 });
 builder.Services.AddSingleton<Microsoft.AspNetCore.Mvc.Infrastructure.IClientErrorFactory, ApiGestion.Services.IntegrationClientErrorFactory>();
 builder.Services.AddRateLimiter(options =>
