@@ -52,8 +52,10 @@ public class PlayersControllerVoidDiscountTests
     // Regla del club: nadie (ni SuperAdmin ni Administrador) asigna becas o descuentos que empiecen con una
     // cuota que ya no se puede becar, porque eso borraría deuda ya vencida. Se rechaza antes de tocar la base.
     // Siempre es anterior a la última cuota emitida, ya sea que hoy sea antes o después del día 10.
+    // -2 y no -1: antes del día 10 la cuota del mes anterior es la última emitida y, sin pagos, todavía se puede
+    // becar; con -1 la prueba fallaba los primeros nueve días de cada mes.
     [Theory]
-    [InlineData(-1)]
+    [InlineData(-2)]
     [InlineData(-13)]
     public void AssignDiscount_StartingWithAnOldFee_IsRefused(int mesesAtras)
     {

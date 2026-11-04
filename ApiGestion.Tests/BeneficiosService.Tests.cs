@@ -132,6 +132,23 @@ public class BeneficiosServiceTests
         Assert.Contains("#99", resultado.Mensaje);
     }
 
+    // HU-090 (rechazo de QA del 30/10): la superposición nombra el beneficio que choca y su período en dd/mm/aaaa,
+    // para que se sepa qué mover.
+    [Fact]
+    public void AsignarEncimaDeOtroBeneficio_NombraElBeneficioYSuPeriodo()
+    {
+        var (servicio, dao) = Crear(new JugadorResumen { IdJugador = 3 });
+        dao.Choque = new Discount { Id = 5, PlayerId = 3, Type = "Becado", StartDate = new DateTime(2026, 11, 1), EndDate = new DateTime(2026, 12, 31) };
+
+        var resultado = servicio.Asignar(3, Beca(new DateTime(2026, 11, 1), new DateTime(2027, 1, 31)));
+
+        Assert.Equal(TipoResultado.Conflicto, resultado.Tipo);
+        Assert.Equal(
+            "El jugador ya tiene una bonificación para ese período (Becado, del 01/11/2026 al 31/12/2026). Ajustá las fechas o cancelá la existente.",
+            resultado.Mensaje);
+        Assert.Null(dao.Creado);
+    }
+
     [Theory]
     [InlineData(DiscountStatus.Active, "cancelala primero")]
     [InlineData(DiscountStatus.Expired, "vigencia completa")]
@@ -168,7 +185,8 @@ public class BeneficiosServiceTests
         public override List<Discount> GetDiscountsByPlayer(long playerId) => guardado == null ? new() : new() { guardado };
         public override bool VoidDiscount(long playerId, long discountId) => guardado?.Id == discountId;
         public override bool HasPaymentsInPeriod(long playerId, DateTime period) => ConPagosEnLaCuotaEmitida;
-        public override Discount? GetOverlappingDiscount(long playerId, DateTime startDate, DateTime endDate, long excludeId = 0) => null;
+        public Discount? Choque { get; set; }
+        public override Discount? GetOverlappingDiscount(long playerId, DateTime startDate, DateTime endDate, long excludeId = 0) => Choque;
 
         public override Discount? CreateDiscount(Discount discount)
         {
