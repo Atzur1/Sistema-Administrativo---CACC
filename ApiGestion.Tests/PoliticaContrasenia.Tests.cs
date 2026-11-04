@@ -56,9 +56,22 @@ public class PoliticaContraseniaTests
     [InlineData("Camioneros2027")]
     [InlineData("C.A.C.C.2026")]
     [InlineData("Mi-cacc-Norte-77")]
+    [InlineData("Cacc2026-Norte")]
+    [InlineData("C-A-C-C-Norte-77")]
+    [InlineData("Camio-neros-77")]
     public void ConElNombreDelClub_SeRechaza(string contrasenia)
     {
         Assert.Contains(PoliticaContrasenia.Validar(contrasenia, Camila), p => p.Contains("nombre del club"));
+    }
+
+    // HU-087 (rechazo de QA del 30/10): la sigla no se busca uniendo dos palabras distintas. "Vaca-Ccuatro-7" junta
+    // "vaca" y "ccuatro", y eso no es el nombre del club.
+    [Theory]
+    [InlineData("Vaca-Ccuatro-7")]
+    [InlineData("Alpaca Cceres 2031")]
+    public void LaSiglaFormadaAlUnirDosPalabras_NoSeRechaza(string contrasenia)
+    {
+        Assert.Empty(PoliticaContrasenia.Validar(contrasenia, Camila));
     }
 
     // HU-087: apellido compuesto con guion, cada tramo cuenta como dato personal.
