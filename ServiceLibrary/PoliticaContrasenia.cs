@@ -8,7 +8,8 @@ namespace ServiceLibrary
     //  - Al menos 10 caracteres (y no más de 128).
     //  - Letras y números.
     //  - No puede contener el DNI, el nombre, el apellido ni el usuario del correo de la persona.
-    //  - No puede contener el nombre del club ("camioneros", "cacc") ni ser una de las contraseñas más usadas
+    //  - No puede contener el nombre del club ("camioneros", o la sigla "cacc" como palabra o con puntos) ni ser
+    //    una de las contraseñas más usadas
     //    (con o sin números al final).
     public static class PoliticaContrasenia
     {
@@ -33,9 +34,14 @@ namespace ServiceLibrary
             "welcome123", "letmein123", "monkey12345", "dragon12345", "sunshine12", "princess12", "master12345",
         };
 
-        // El nombre del club, en cualquier parte de la contraseña y con cualquier separador ("Camioneros-1931",
-        // "C.A.C.C.2026"): se busca ya normalizada, sin símbolos.
-        private static readonly string[] NombresDelClub = { "camioneros", "cacc" };
+        // El nombre del club. "camioneros" es largo y no aparece por casualidad: se busca en toda la contraseña ya
+        // normalizada, con cualquier separador ("Camioneros-1931", "Camio-neros-77").
+        private const string NombreDelClub = "camioneros";
+
+        // La sigla, en cambio, es corta: buscada sin separadores daría falsos rechazos al unir dos palabras
+        // ("Vaca-Ccuatro-7" -> "vacaccuatro"). Se busca dentro de cada tramo ("Mi-cacc-Norte", "Cacc2026") y en las
+        // letras sueltas seguidas, que es como se escribe con puntos ("C.A.C.C.2026").
+        private const string SiglaDelClub = "cacc";
 
         // Palabras de las listas de contraseñas más usadas. Se comparan contra la contraseña sin los números del
         // final, así "Qwerty12345" y "Argentina2027" caen igual que "qwerty1234" o "argentina2026".
@@ -64,12 +70,59 @@ namespace ServiceLibrary
             string normalizada = Normalizar(valor);
             if (titular.DatosPersonales().Select(Normalizar).Any(dato => dato.Length >= LargoMinimoDeDatoPersonal && normalizada.Contains(dato)))
                 problemas.Add("No puede contener tu DNI, tu nombre, tu apellido ni tu correo.");
-            if (NombresDelClub.Any(normalizada.Contains))
+            if (ContieneNombreDelClub(valor, normalizada))
                 problemas.Add("No puede contener el nombre del club.");
             if (Comunes.Contains(normalizada) || BasesComunes.Contains(normalizada.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')))
                 problemas.Add("Es una contraseña demasiado común. Elegí otra.");
 
             return problemas;
+        }
+
+        private static bool ContieneNombreDelClub(string valor, string normalizada)
+        {
+            if (normalizada.Contains(NombreDelClub)) return true;
+
+            var tramos = Tramos(valor);
+            if (tramos.Any(tramo => tramo.Contains(SiglaDelClub))) return true;
+
+            // Letras sueltas seguidas: "C.A.C.C.2026" -> tramos "c", "a", "c", "c", "2026" -> sigla "cacc".
+            var sigla = new StringBuilder();
+            foreach (var tramo in tramos)
+            {
+                if (tramo.Length == 1 && char.IsLetter(tramo[0]))
+                {
+                    sigla.Append(tramo);
+                    if (sigla.ToString().Contains(SiglaDelClub)) return true;
+                }
+                else
+                {
+                    sigla.Clear();
+                }
+            }
+            return false;
+        }
+
+        // La contraseña cortada en cada símbolo o espacio, con cada tramo normalizado: "Vaca-Ccuatro-7" -> "vaca",
+        // "ccuatro", "7".
+        private static List<string> Tramos(string texto)
+        {
+            var tramos = new List<string>();
+            var actual = new StringBuilder();
+            foreach (char c in texto.Normalize(NormalizationForm.FormD))
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark) continue;
+                if (char.IsLetterOrDigit(c))
+                {
+                    actual.Append(char.ToLowerInvariant(c));
+                }
+                else if (actual.Length > 0)
+                {
+                    tramos.Add(actual.ToString());
+                    actual.Clear();
+                }
+            }
+            if (actual.Length > 0) tramos.Add(actual.ToString());
+            return tramos;
         }
 
         // Minúsculas, sin acentos y solo letras y dígitos: "Pérez-Gómez" -> "perezgomez", "30.111.222" -> "30111222".
