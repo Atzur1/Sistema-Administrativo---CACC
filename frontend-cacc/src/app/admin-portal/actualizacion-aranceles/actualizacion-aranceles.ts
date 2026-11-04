@@ -20,7 +20,6 @@ import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepick
 import { Ventana } from '../../shared/ventana/ventana';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { TariffChangeRequest, TariffChangeType, TariffHistoryItemModel, TariffImpactModel } from '../../models/TariffModel';
-import { Ventana } from '../../shared/ventana/ventana';
 import { IncreaseMode, needsCurrentTariff, sanitizePercentage } from './tariff-increase';
 import { SECCIONES } from '../secciones';
 
