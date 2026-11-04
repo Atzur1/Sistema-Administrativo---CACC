@@ -16,18 +16,21 @@ namespace ServiceLibrary
         public TipoResultado Tipo { get; }
         public T? Valor { get; }
         public string? Mensaje { get; }
+        // Dato de entrada al que se refiere la falla (el "field" del error de integración). Null si no aplica a uno solo.
+        public string? Campo { get; }
 
-        private ResultadoOperacion(TipoResultado tipo, T? valor, string? mensaje)
+        private ResultadoOperacion(TipoResultado tipo, T? valor, string? mensaje, string? campo = null)
         {
             Tipo = tipo;
             Valor = valor;
             Mensaje = mensaje;
+            Campo = campo;
         }
 
         public bool Exito => Tipo == TipoResultado.Ok;
 
         public static ResultadoOperacion<T> Ok(T valor) => new(TipoResultado.Ok, valor, null);
 
-        public static ResultadoOperacion<T> Falla(TipoResultado tipo, string mensaje) => new(tipo, default, mensaje);
+        public static ResultadoOperacion<T> Falla(TipoResultado tipo, string mensaje, string? campo = null) => new(tipo, default, mensaje, campo);
     }
 }

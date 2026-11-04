@@ -148,7 +148,7 @@ namespace DaoLibrary
             comando.Parameters["@montoBase"].Scale = 2;
         }
 
-        public int ContarCuotasConPagos(SqlConnection conexion, SqlTransaction transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
+        public int ContarCuotasConPagos(SqlConnection conexion, SqlTransaction? transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta, decimal? montoBase)
         {
             string query = $@"
                 SELECT COUNT(*) FROM (
@@ -163,6 +163,24 @@ namespace DaoLibrary
 
             using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
             CargarParametrosCuotas(comando, genero, idCategoria, desde, hasta, montoBase);
+            return Convert.ToInt32(comando.ExecuteScalar());
+        }
+
+        // HU-106: cuántas cuotas quitaría EliminarCuotasPendientesSinPagos (sin filtro de monto), para informarlo en la
+        // simulación antes de confirmar. Mismo filtro y misma condición que el borrado; solo cuenta.
+        public int ContarCuotasPendientesSinPagos(SqlConnection conexion, SqlTransaction? transaccion, string? genero, int? idCategoria, DateTime desde, DateTime? hasta)
+        {
+            string query = $@"
+                SELECT COUNT(*)
+                FROM PAGOS p
+                JOIN JUGADORES j ON j.PK_id_jugador = p.FK_id_jugador
+                JOIN PERSONAS pe ON pe.PK_id_persona = j.FK_id_persona
+                WHERE {FiltroCuotasDelArancel}
+                  AND p.estado = 0
+                  AND NOT {CuotaTienePagos};";
+
+            using SqlCommand comando = new SqlCommand(query, conexion, transaccion);
+            CargarParametrosCuotas(comando, genero, idCategoria, desde, hasta, null);
             return Convert.ToInt32(comando.ExecuteScalar());
         }
 
@@ -446,19 +464,7 @@ namespace DaoLibrary
         // HU-020: idCategoria es opcional — null trae el padrón completo (comportamiento previo),
         // con un valor acota el resultado a esa división. El filtro se resuelve en el propio WHERE
         // (no en un HAVING aparte) para que el motor pueda usarlo antes de agrupar.
-        public IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null)
-        {
-            var resultado = new List<PendienteJugador>();
-
-            // El saldo de cada cuota ya sale con el beneficio de Becados y Descuentos aplicado
-            // (si tiene uno vigente para ese período), aunque la cuota se haya cargado antes de
-            // asignarle el beneficio. Un jugador cuyo beneficio le deja todo en $0 desaparece de
-            // este panel (HAVING > 0): no tiene nada pendiente de cobro de verdad.
-            //
-            // HU-033: monto_total suma cuotas e inscripción; cantidad_cuotas cuenta solo cuotas.
-            // cantidad_vencidas cuenta las que ya vencieron (día 10 del mes siguiente): de ella sale el
-            // estado deportivo (Solo entrenamientos / Inhabilitado).
-            string query = $@"
+        internal static readonly string DeudoresSeleccion = $@"
                 SELECT j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja,
                        SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) AS monto_total,
                        COUNT(CASE WHEN ({DescuentosSql.SaldoAjustadoExpr}) > 0 AND pg.concepto = 'Cuota' THEN 1 END) AS cantidad_cuotas,
@@ -473,9 +479,21 @@ namespace DaoLibrary
                   AND (@idCategoria IS NULL OR j.FK_id_categoria = @idCategoria)
                 GROUP BY j.PK_id_jugador, j.FK_id_categoria, p.nombre, p.apellido, p.Dni, c.nombre_categoria, j.fecha_baja
                 HAVING SUM({DescuentosSql.SaldoAjustadoClampleadoExpr}) > 0
-                -- HU-021 (QA, 24/09): el reporte exportado tiene que salir en el mismo orden que la
-                -- grilla de Deudas y Morosidad (cantidad de cuotas primero, monto como desempate).
-                ORDER BY cantidad_cuotas DESC, monto_total DESC";
+";
+
+        public IReadOnlyList<PendienteJugador> ObtenerPendientesAgrupados(int? idCategoria = null)
+        {
+            var resultado = new List<PendienteJugador>();
+
+            // El saldo de cada cuota ya sale con el beneficio de Becados y Descuentos aplicado
+            // (si tiene uno vigente para ese período), aunque la cuota se haya cargado antes de
+            // asignarle el beneficio. Un jugador cuyo beneficio le deja todo en $0 desaparece de
+            // este panel (HAVING > 0): no tiene nada pendiente de cobro de verdad.
+            //
+            // HU-033: monto_total suma cuotas e inscripción; cantidad_cuotas cuenta solo cuotas.
+            // cantidad_vencidas cuenta las que ya vencieron (día 10 del mes siguiente): de ella sale el
+            // estado deportivo (Solo entrenamientos / Inhabilitado).
+            string query = DeudoresSeleccion + " ORDER BY cantidad_cuotas DESC, monto_total DESC";
 
             using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
 
@@ -612,39 +630,7 @@ namespace DaoLibrary
         }
 
         // Panel "Últimos pagos" y reportes: los más recientes, sin filtros.
-        public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top)
-            => ObtenerPagosRegistrados(new FiltroPagosRegistrados { Pagina = 1, TamanioPagina = Math.Clamp(top, 1, 1000) }).Items;
-
-        // Tabla "Pagos registrados" de Actividad y Movimientos: filtros y página resueltos en la base.
-        //
-        // Si una cuota se terminó de pagar (o se viene pagando) en VARIOS abonos (ej. $20.000 +
-        // $50.000), acá tiene que verse como UN solo renglón de $70.000 — no dos líneas
-        // separadas. Por eso se agrupa por jugador+período: se suman los montos, se toma la
-        // fecha/hora del abono más reciente, y su método de pago representa al conjunto.
-        //
-        // es_parcial distingue las dos situaciones sin filtrar ninguna: si todavía queda una
-        // cuota pendiente (estado = 0) de ese mismo jugador+período, lo abonado hasta ahora es
-        // un abono PARCIAL (la cuota sigue abierta); si no queda ninguna, ese grupo terminó de
-        // cubrir el total y es un pago COMPLETO.
-        public PagosRegistradosPagina ObtenerPagosRegistrados(FiltroPagosRegistrados filtro)
-        {
-            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
-            return ObtenerPagosRegistradosCore(conexion, null, filtro);
-        }
-
-        internal static PagosRegistradosPagina ObtenerPagosRegistradosCore(SqlConnection conexion, SqlTransaction? transaccion, FiltroPagosRegistrados filtro)
-        {
-            int tamanio = Math.Clamp(filtro.TamanioPagina, 1, 1000);
-            int pagina = Math.Max(1, filtro.Pagina);
-            string? busqueda = string.IsNullOrWhiteSpace(filtro.Busqueda) ? null : filtro.Busqueda.Trim();
-            bool? parcial = filtro.Estado switch { "Parcial" => true, "Pagado" => false, _ => null };
-
-            // HU-033: el grupo es jugador + período + concepto. Una inscripción pendiente del mes
-            // del alta no esconde la cuota ya pagada ni suma abonos juntos.
-            // Cuotas: solo aparecen cuando están totalmente pagas (sin fila pendiente del mismo
-            // período+concepto). Inscripciones: aparecen siempre, incluso con saldo pendiente.
-            // La búsqueda no distingue mayúsculas ni acentos (COLLATE ..._CI_AI), por nombre o DNI.
-            const string ctes = @"
+        internal const string PagosRegistradosCtes = @"
                 ;WITH Grupos AS (
                     SELECT pg.PK_id_pago, pg.FK_id_jugador, pg.metodo_pago, pg.fecha_vencimiento, pg.concepto,
                         SUM(pg.monto_final) OVER (PARTITION BY pg.FK_id_jugador, pg.fecha_vencimiento, pg.concepto) AS monto_grupo,
@@ -688,6 +674,40 @@ namespace DaoLibrary
                     JOIN CATEGORIAS c ON j.FK_id_categoria = c.PK_id_categoria
                     WHERE g.rn = 1
                 )";
+
+        public IReadOnlyList<PagoReciente> ObtenerUltimosPagos(int top)
+            => ObtenerPagosRegistrados(new FiltroPagosRegistrados { Pagina = 1, TamanioPagina = Math.Clamp(top, 1, 1000) }).Items;
+
+        // Tabla "Pagos registrados" de Actividad y Movimientos: filtros y página resueltos en la base.
+        //
+        // Si una cuota se terminó de pagar (o se viene pagando) en VARIOS abonos (ej. $20.000 +
+        // $50.000), acá tiene que verse como UN solo renglón de $70.000 — no dos líneas
+        // separadas. Por eso se agrupa por jugador+período: se suman los montos, se toma la
+        // fecha/hora del abono más reciente, y su método de pago representa al conjunto.
+        //
+        // es_parcial distingue las dos situaciones sin filtrar ninguna: si todavía queda una
+        // cuota pendiente (estado = 0) de ese mismo jugador+período, lo abonado hasta ahora es
+        // un abono PARCIAL (la cuota sigue abierta); si no queda ninguna, ese grupo terminó de
+        // cubrir el total y es un pago COMPLETO.
+        public PagosRegistradosPagina ObtenerPagosRegistrados(FiltroPagosRegistrados filtro)
+        {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            return ObtenerPagosRegistradosCore(conexion, null, filtro);
+        }
+
+        internal static PagosRegistradosPagina ObtenerPagosRegistradosCore(SqlConnection conexion, SqlTransaction? transaccion, FiltroPagosRegistrados filtro)
+        {
+            int tamanio = Math.Clamp(filtro.TamanioPagina, 1, 1000);
+            int pagina = Math.Max(1, filtro.Pagina);
+            string? busqueda = string.IsNullOrWhiteSpace(filtro.Busqueda) ? null : filtro.Busqueda.Trim();
+            bool? parcial = filtro.Estado switch { "Parcial" => true, "Pagado" => false, _ => null };
+
+            // HU-033: el grupo es jugador + período + concepto. Una inscripción pendiente del mes
+            // del alta no esconde la cuota ya pagada ni suma abonos juntos.
+            // Cuotas: solo aparecen cuando están totalmente pagas (sin fila pendiente del mismo
+            // período+concepto). Inscripciones: aparecen siempre, incluso con saldo pendiente.
+            // La búsqueda no distingue mayúsculas ni acentos (COLLATE ..._CI_AI), por nombre o DNI.
+            const string ctes = PagosRegistradosCtes;
 
             // Dos resultados: los totales (con y sin filtros) y la página pedida. El responsable (auditoría)
             // se busca solo para las filas de la página.

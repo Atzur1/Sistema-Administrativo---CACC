@@ -13,6 +13,7 @@ import { CustomSelect, CustomSelectOption } from '../../shared/custom-select/cus
 import { normalizeText } from '../../shared/normalize-text';
 import { Ventana } from '../../shared/ventana/ventana';
 import { PortalUserCandidateModel, PortalUserModel, ROL_PORTAL_LABELS, RolPortal } from '../../models/PortalUserModel';
+import { SECCIONES } from '../secciones';
 
 const ROL_OPTIONS: CustomSelectOption[] = [
   { value: 1, label: 'SuperAdmin' },
@@ -39,6 +40,9 @@ export interface CambioDeRol {
   styleUrl: './usuarios-y-permisos.css',
 })
 export class Usuarios implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['usuarios'];
+
   readonly rolOptions = ROL_OPTIONS;
   readonly rolLabels = ROL_PORTAL_LABELS;
 

@@ -1,0 +1,29 @@
+Hoy 2026-10-31 | mes futuro 2026-12-01 | categorías con arancel propio: 1,2 | categoría mes en curso: 5
+PASS  AUT-1    Administrador: simular 403, programar 403; sin sesión 401 | 403/403/401
+PASS  SIM-0    10 simulaciones no escriben: ARANCELES, PAGOS (y su contenido) y AUDITORIA_CAMBIOS iguales | 5|29405|35581|-75478198 -> 5|29405|35581|-75478198
+PASS  SIM-1    Masculino +10 %: jugadores por categoría = consulta independiente (bajas y otro género afuera) | backend 3:154,4:150,5:151,6:151,7:151,8:149,9:149,10:149,11:150,12:150,13:150 | esperado 3:154,4:150,5:151,6:151,7:151,8:149,9:149,10:149,11:150,12:150,13:150
+PASS  SIM-2    Monto: base 85.000 -> 93.500 (HU-069 en el backend); todas las líneas 85.000 -> 93.500 | 85000 -> 93500
+PASS  SIM-3    Total: jugadores y diferencia mensual = suma del desglose (8.500 por jugador) | 1654 jugadores, 14059000
+PASS  SIM-4    HU-048: los varones de categorías con arancel propio quedan en excluidos | AFA 20067:150, Pt  AFA 2008:150 | esperado 300
+PASS  SIM-5    Más de una categoría: confirmación reforzada | 11 categorías
+PASS  PERF-1   Simulación < 2 s con 3004 jugadores y 29405 pagos (10 corridas, ida y vuelta HTTP) | mín 24.7 ms, mediana 26.6 ms, máx 103.2 ms
+PASS  CONF-1   Varias categorías con la cantidad mal escrita o sin ella: 400 y nada grabado | 400/400: El cambio alcanza a más de una categoría: para confirmarlo escribí la cantidad de jugadores afectados (1654).
+PASS  STALE-1  Entró una jugadora entre simular y confirmar: 409 con el impacto nuevo (+1) y nada grabado | 409: 762 -> 763; El impacto del cambio es distinto del que revisaste (cambiaron aranceles, jugadores o cuotas mientras tanto). No se guardó nada: revisá el nuevo resumen y volvé a confirmar.
+PASS  STALE-2  Revisado el impacto nuevo, la confirmación se acepta | 200 en 36.4 ms
+PASS  CONF-2   Varias categorías con la cantidad exacta: 200 y el arancel guardado con lo aprobado | 200 en 35 ms | 93500.00|Porcentaje|10.00|85000.00|1654|14059000.00
+PASS  AUD-1    Auditoría: INSERT del SuperAdmin (email_usuario), tipo, valor, anterior, nuevo, jugadores, diferencia y desglose | INSERT|1|superadmin.prueba@ejemplo.com|Porcentaje|10.00|85000.00|93500.00|1654|14059000.00|11
+PASS  HIST-1   Confirmar un mes futuro no toca ninguna cuota ya emitida | checksum -75478198
+PASS  VAL-1    Un segundo arancel para el mismo destino y mes se rechaza ya en la simulación | 400: El género Masculino ya tiene un arancel que rige desde el 01/12/2026, en diciembre de 2026. Cancelalo primero para poder cargar uno nuevo para ese mes.
+PASS  SIM-6    Una categoría, mes en curso: los dos géneros con su monto actual, una sola categoría, cuotas del mes informadas | Femenino 60000->99000 x69; Masculino 85000->99000 x151; pendientes sin pagos 128 (esperado 128), con pagos 92
+PASS  REAL-1   Confirmado: se reemiten exactamente las pendientes que mostró la simulación, todas con 99.000 | 200: 128|99000.00|99000.00 | Arancel programado correctamente. Se volvieron a emitir 128 cuotas pendientes del mes en curso con el monto nuevo. 92 cuotas del mes ya tenían pagos y se mantuvoieron sin cambios.
+PASS  HIST-2   Las cuotas con pagos y las de meses anteriores conservan su monto | pagadas 1930|-906886533 -> 1930|-906886533
+PASS  SIM-7    Categoría sin jugadores: 0 afectados, , sin confirmación reforzada | 0 jugadores, 0
+PASS  VAL-2    Rechazo controlado: porcentaje 1000 | 400: El porcentaje admite hasta 999,99 con dos decimales como máximo.
+PASS  VAL-2    Rechazo controlado: porcentaje 12,345 | 400: El porcentaje admite hasta 999,99 con dos decimales como máximo.
+PASS  VAL-2    Rechazo controlado: porcentaje 0 | 400: El porcentaje tiene que ser mayor a 0.
+PASS  VAL-2    Rechazo controlado: monto fijo sin arancel vigente | 400: La categoría HU106 sin jugadores no tiene un arancel vigente sobre el que calcular el aumento. Usá "Monto absoluto" para definir su primer valor.
+PASS  VAL-2    Rechazo controlado: fecha pasada | 400: La fecha de vigencia no puede ser anterior a hoy (31/10/2026). Los aranceles solo se programan para el mes en curso o meses futuros.
+PASS  VAL-2    Rechazo controlado: tipo inexistente | 400: Tipo de cambio inválido: usá absoluto, porcentaje o montoFijo.
+PASS  PERF-2   Duración medida en el backend (log de la API): todas < 2.000 ms | 13 simulaciones: mín 6 ms, máx 149 ms
+
+Total: 26 PASS | 0 FAIL

@@ -1,0 +1,24 @@
+== Reset de la base ClubCamionerosUnificadaV2_HU059_Prueba (HU-059)
+  Esquema unificado creado en ClubCamionerosUnificadaV2_HU059_Prueba.
+  Migraciones al d¡a (25 de database/migrations aplicadas).
+  Cuentas ficticias y fixtures: personas=5 jugadores=4 cuotas=5
+  Estado inicial verificado (5|4|5|0|1|1) en 2 s.
+  Precondiciones de HU-056: hu056: personas=2 jugadores=2 pagos=2
+== Levantando las APIs
+PASS    ENV-1    SQL Server responde y la base tiene las precondiciones 9856xxxx  [esperado: 2 jugadores | obtenido: activo 5, baja 6]
+PASS    ENV-2    API Administrativa lista (login: lee USUARIOS en SQL)  [esperado: 200 | obtenido: login -> 200]
+PASS    ENV-3    API Deportiva lista (GET /api/jugadores: lee JUGADORES en SQL)  [esperado: 200 | obtenido: GET /api/jugadores -> 200]
+PASS    ENV-4    El jugador activo arranca en la cat. 3 con historial (1 pagado, 1 pendiente)  [esperado: 3|3|-; 2 cargos | obtenido: 3|3|-; 6:Cuota:1000.00:1000.00:1:2026-08-01:2026-08-05,7:Cuota:1000.00:1000.00:0:2026-09-01:-]
+PASS    PUT-1    Deportivo PUT categor¡a 3 -> 4: 200 cambiado; cobro en 4, pertenencia conserva 3 y suma 4; auditado PortalDeportivo con el operador  [esperado: 200; cambiado; 4|3,4|-; >=1 UPDATE auditado | obtenido: 200; cambiado True; 4|3,4|-; 1 auditado(s)]
+PASS    PUT-2    El cambio no modifica el historial financiero (cuota pagada y pendiente intactas)  [esperado: 6:Cuota:1000.00:1000.00:1:2026-08-01:2026-08-05,7:Cuota:1000.00:1000.00:0:2026-09-01:- | obtenido: 6:Cuota:1000.00:1000.00:1:2026-08-01:2026-08-05,7:Cuota:1000.00:1000.00:0:2026-09-01:-]
+PASS    PUT-3    Repetir el mismo cambio: 200 cambiado=false, sin escrituras nuevas ni cambios  [esperado: 200; cambiado=false; 4|3,4|-; auditor¡a 2 | obtenido: 200; cambiado False; 4|3,4|-; auditor¡a 2]
+PASS    PUT-4    Categor¡a inexistente: 422, rechazo CambioCategoria registrado con origen PortalDeportivo, nada cambia  [esperado: 422; +1 rechazo CambioCategoria|UNPROCESSABLE|PortalDeportivo|5; 4|3,4|- | obtenido: 422; rechazos 0 -> 1; CambioCategoria|UNPROCESSABLE|PortalDeportivo|5; 4|3,4|-]
+PASS    PUT-5    Categor¡a 0: 400 en el Deportivo y 400 INVALID_INPUT (field idCategoria) en el contrato; nada cambia  [esperado: 400 / 400 INVALID_INPUT idCategoria | obtenido: 400 / 400 INVALID_INPUT idCategoria]
+PASS    PUT-6    Jugador inexistente: 404 NOT_FOUND en el contrato y 404 en el Deportivo  [esperado: 404 NOT_FOUND / 404 | obtenido: 404 NOT_FOUND / 404]
+PASS    PUT-7    Jugador dado de baja: 422 y la categor¡a no cambia  [esperado: 422; 3|3|2026-09-30 | obtenido: 422; 3|3|2026-09-30]
+PASS    PUT-8    Contrato sin credencial o con una inv lida: 401 y nada cambia  [esperado: 401/401; 4|3,4|- | obtenido: 401/401; 4|3,4|-]
+PASS    PUT-9    Volver a la cat. 3: 200 cambiado; cobro en 3, pertenencia 3,4 sin duplicados; historial intacto  [esperado: 200; 3|3,4|- | obtenido: 200; 3|3,4|-]
+PASS    LOG-1    Los logs de las dos APIs no contienen la credencial, la clave JWT ni tokens  [esperado: 0 | obtenido: 0]
+
+Total: 14 PASS | 0 FAIL | 0 BLOCKED   (6 s, base ClubCamionerosUnificadaV2_HU059_Prueba)
+Evidencia: C:\Users\FramD\AppData\Local\Temp\cacc-hu056\ejecucion_20261029_162433

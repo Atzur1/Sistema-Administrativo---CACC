@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../services/auth';
+import { AuthService, NO_TIENE_ACCESOS, SIN_ACCESO } from '../services/auth';
 import { LoginModel } from '../models/LoginModel';
 
 // Key used to persist the remembered username across visits, independent
@@ -67,8 +67,11 @@ export class Login implements OnInit {
   }
 
   ngOnInit() {
-    if (new URLSearchParams(window.location.search).get('sesion') === 'vencida') {
+    const sesion = new URLSearchParams(window.location.search).get('sesion');
+    if (sesion === 'vencida') {
       this.mensajeError = 'Tu sesión venció o fue revocada. Iniciá sesión nuevamente.';
+    } else if (sesion === SIN_ACCESO) {
+      this.mensajeError = NO_TIENE_ACCESOS;
     }
 
     // Pre-fill the username and tick the checkbox if a previous login left one saved
@@ -113,8 +116,19 @@ export class Login implements OnInit {
       // el próximo evento que sí corra dentro de la zona. NgZone.run() solo
       // no alcanzó acá (a diferencia del sidebar/notificaciones), así que
       // se fuerza detectChanges() explícitamente como red de seguridad.
-      next: () => {
+      next: (respuesta) => {
         this.ngZone.run(() => {
+          // HU-007: sin ningún portal no hay bienvenida ni destino (el backend ya no emite token en ese caso; esto
+          // cubre una respuesta sin portales). Nunca se cae en el Administrativo por defecto.
+          if (!respuesta.portales?.length) {
+            this.authService.logout();
+            this.isSubmitting = false;
+            this.mostrarOverlay = false;
+            this.mensajeError = NO_TIENE_ACCESOS;
+            this.cdr.detectChanges();
+            return;
+          }
+
           // Only persisted on a successful login, so a wrong attempt never
           // saves a username that turned out not to exist
           if (recordarme) {
@@ -151,11 +165,13 @@ export class Login implements OnInit {
           this.mensajeError =
             err.status === 401
               ? 'El DNI o la contraseña no coinciden con una cuenta activa.'
-              : err.status === 429
-                ? (err.error?.mensaje ?? 'Demasiados intentos. Esperá unos minutos antes de volver a intentar.')
-                : err.status === 0
-                  ? 'No se pudo conectar con la API. Verificá que el backend esté iniciado con HTTPS.'
-                  : 'No se pudo completar el inicio de sesión. Revisá la configuración de la API o la base de datos.';
+              : err.status === 403
+                ? (err.error?.mensaje ?? NO_TIENE_ACCESOS)
+                : err.status === 429
+                  ? (err.error?.mensaje ?? 'Demasiados intentos. Esperá unos minutos antes de volver a intentar.')
+                  : err.status === 0
+                    ? 'No se pudo conectar con la API. Verificá que el backend esté iniciado con HTTPS.'
+                    : 'No se pudo completar el inicio de sesión. Revisá la configuración de la API o la base de datos.';
           this.mensajeExito = '';
           this.cdr.detectChanges();
         });

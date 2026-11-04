@@ -1,0 +1,28 @@
+Validación frontend HU108 — 2026-10-31 18:59 America/Buenos_Aires
+
+Directorio: frontend-cacc
+Comando:
+./node_modules/.bin/ng.cmd test --watch=false --include='**/report-export-menu.spec.ts' --include='**/reportes.spec.ts' --include='**/deudas-morosidad.spec.ts' --include='**/recaudacion-mensual.spec.ts'
+
+Salida final:
+Application bundle generation complete. [4.104 seconds] - 2026-10-31T21:59:00.226Z
+RUN v4.1.11 frontend-cacc
+Test Files 4 passed (4)
+Tests 55 passed (55)
+Start at 18:59:00
+Duration 4.13s
+Exit code 0
+
+Cobertura DOM Angular real:
+- Wrapper: carga bloqueada, cero registros con explicación filtros/deshabilitado; cambio filtro invalida; un registro habilita.
+- Reportes rol2: tres tarjetas, estadísticas visibles, sin consultar aranceles ni historial.
+- Reportes SuperAdmin: cuatro tarjetas, historial con persona, formato CSV, reporte amigable y fecha/hora club literal.
+- Regresión DeudasMorosidad y RecaudacionMensual: suites existentes con fakes contar actualizados.
+- Clase wrapper: varias filas, cancelación respuesta vieja, debounce, error y top500.
+
+Checks posteriores:
+./frontend-cacc/node_modules/.bin/tsc.cmd --noEmit -p frontend-cacc/tsconfig.app.json -> exit0
+./frontend-cacc/node_modules/.bin/tsc.cmd --noEmit -p frontend-cacc/tsconfig.spec.json -> exit0
+git diff --check -> exit0 (sólo advertencias LF/CRLF)
+
+No se ejecutó build standalone ni prueba manual en navegador.

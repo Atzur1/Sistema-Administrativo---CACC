@@ -17,7 +17,7 @@
       </svg>
     </span>
     <div class="header-text">
-      <h1 class="header-title">Auditoría</h1>
+      <h1 class="header-title">{{ tituloPantalla }}</h1>
       <span class="header-subtitle">Consultá quién realizó cada cambio y cuándo ocurrió en el Portal Administrativo.</span>
     </div>
     <div class="header-metrics" aria-live="polite">
@@ -162,6 +162,9 @@
                     <div class="person-info">
                       <strong>{{ nombreCompleto(item) }}</strong>
                       <span>{{ datosDePersona(item) }}</span>
+                      @if (vinoDeOtroSistema(item)) {
+                        <span class="origin-tag">Desde el {{ origen(item) }}</span>
+                      }
                     </div>
                   </div>
                 </td>
@@ -225,6 +228,12 @@
         <dt>Quién</dt>
         <dd>{{ nombreCompleto(evento) }}<span>{{ datosDePersona(evento) }}</span></dd>
       </div>
+      @if (origen(evento); as sistema) {
+        <div>
+          <dt>Desde</dt>
+          <dd>{{ sistema }}</dd>
+        </div>
+      }
       <div>
         <dt>Dónde</dt>
         <dd>{{ contexto(evento) }}</dd>

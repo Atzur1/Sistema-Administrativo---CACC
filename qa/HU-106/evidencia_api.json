@@ -1,0 +1,335 @@
+{
+  "fecha": "2026-10-31T16:21:48",
+  "base": "ClubCamionerosUnificadaV2_HU106_Prueba",
+  "hoy": "2026-10-31",
+  "tiemposHttpMs": [
+    103.2,
+    25.3,
+    35.2,
+    26.6,
+    26.8,
+    26.8,
+    26.5,
+    24.7,
+    26.7,
+    26.0
+  ],
+  "tiemposBackendMs": [
+    65,
+    22,
+    25,
+    23,
+    24,
+    24,
+    24,
+    22,
+    22,
+    23,
+    21,
+    149,
+    6
+  ],
+  "simulacionS1": {
+    "tipo": "porcentaje",
+    "valor": 10,
+    "genero": "Masculino",
+    "idCategoria": null,
+    "nombreCategoria": null,
+    "vigenteDesde": "2026-12-01T00:00:00",
+    "montoBase": 85000.0,
+    "montoNuevo": 93500,
+    "mesDeAplicacion": "2026-12-01T00:00:00",
+    "reemplazadoDesde": null,
+    "lineas": [
+      {
+        "idCategoria": 12,
+        "nombreCategoria": "Cebollitas",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 150,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1275000.0
+      },
+      {
+        "idCategoria": 13,
+        "nombreCategoria": "Femenino",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 150,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1275000.0
+      },
+      {
+        "idCategoria": 3,
+        "nombreCategoria": "Pt  AFA 2009",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 154,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1309000.0
+      },
+      {
+        "idCategoria": 4,
+        "nombreCategoria": "Pt  AFA 2010",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 150,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1275000.0
+      },
+      {
+        "idCategoria": 5,
+        "nombreCategoria": "Pt  AFA 2011",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 151,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1283500.0
+      },
+      {
+        "idCategoria": 6,
+        "nombreCategoria": "Pt  AFA 2012",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 151,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1283500.0
+      },
+      {
+        "idCategoria": 7,
+        "nombreCategoria": "Pt  preAFA 2013",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 151,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1283500.0
+      },
+      {
+        "idCategoria": 8,
+        "nombreCategoria": "Pt  preAFA 2014",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 149,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1266500.0
+      },
+      {
+        "idCategoria": 9,
+        "nombreCategoria": "Pt  preAFA 2015",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 149,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1266500.0
+      },
+      {
+        "idCategoria": 10,
+        "nombreCategoria": "Pt 2016",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 149,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1266500.0
+      },
+      {
+        "idCategoria": 11,
+        "nombreCategoria": "Pt 2017",
+        "genero": "Masculino",
+        "montoActual": 85000.0,
+        "montoNuevo": 93500,
+        "jugadores": 150,
+        "diferenciaPorJugador": 8500.0,
+        "diferenciaTotal": 1275000.0
+      }
+    ],
+    "excluidos": [
+      {
+        "idCategoria": 1,
+        "nombreCategoria": "AFA 20067",
+        "jugadores": 150
+      },
+      {
+        "idCategoria": 2,
+        "nombreCategoria": "Pt  AFA 2008",
+        "jugadores": 150
+      }
+    ],
+    "jugadores": 1654,
+    "categorias": 11,
+    "diferenciaMensual": 14059000.0,
+    "mesEnCurso": false,
+    "cuotasDelMesPendientesSinPagos": 0,
+    "cuotasDelMesConPagos": 0,
+    "seEmiteElDia": "2026-12-10T00:00:00",
+    "requiereConfirmacionReforzada": true,
+    "huella": "6F6428DC339E7F4D8849867B1FECB30382A81859924FDBDA82B9FBBC087D7A82"
+  },
+  "resultados": [
+    {
+      "Id": "AUT-1",
+      "Caso": "Administrador: simular 403, programar 403; sin sesión 401",
+      "Estado": "PASS",
+      "Obtenido": "403/403/401"
+    },
+    {
+      "Id": "SIM-0",
+      "Caso": "10 simulaciones no escriben: ARANCELES, PAGOS (y su contenido) y AUDITORIA_CAMBIOS iguales",
+      "Estado": "PASS",
+      "Obtenido": "5|29405|35581|-75478198 -> 5|29405|35581|-75478198"
+    },
+    {
+      "Id": "SIM-1",
+      "Caso": "Masculino +10 %: jugadores por categoría = consulta independiente (bajas y otro género afuera)",
+      "Estado": "PASS",
+      "Obtenido": "backend 3:154,4:150,5:151,6:151,7:151,8:149,9:149,10:149,11:150,12:150,13:150 | esperado 3:154,4:150,5:151,6:151,7:151,8:149,9:149,10:149,11:150,12:150,13:150"
+    },
+    {
+      "Id": "SIM-2",
+      "Caso": "Monto: base 85.000 -> 93.500 (HU-069 en el backend); todas las líneas 85.000 -> 93.500",
+      "Estado": "PASS",
+      "Obtenido": "85000 -> 93500"
+    },
+    {
+      "Id": "SIM-3",
+      "Caso": "Total: jugadores y diferencia mensual = suma del desglose (8.500 por jugador)",
+      "Estado": "PASS",
+      "Obtenido": "1654 jugadores, 14059000"
+    },
+    {
+      "Id": "SIM-4",
+      "Caso": "HU-048: los varones de categorías con arancel propio quedan en excluidos",
+      "Estado": "PASS",
+      "Obtenido": "AFA 20067:150, Pt  AFA 2008:150 | esperado 300"
+    },
+    {
+      "Id": "SIM-5",
+      "Caso": "Más de una categoría: confirmación reforzada",
+      "Estado": "PASS",
+      "Obtenido": "11 categorías"
+    },
+    {
+      "Id": "PERF-1",
+      "Caso": "Simulación < 2 s con 3004 jugadores y 29405 pagos (10 corridas, ida y vuelta HTTP)",
+      "Estado": "PASS",
+      "Obtenido": "mín 24.7 ms, mediana 26.6 ms, máx 103.2 ms"
+    },
+    {
+      "Id": "CONF-1",
+      "Caso": "Varias categorías con la cantidad mal escrita o sin ella: 400 y nada grabado",
+      "Estado": "PASS",
+      "Obtenido": "400/400: El cambio alcanza a más de una categoría: para confirmarlo escribí la cantidad de jugadores afectados (1654)."
+    },
+    {
+      "Id": "STALE-1",
+      "Caso": "Entró una jugadora entre simular y confirmar: 409 con el impacto nuevo (+1) y nada grabado",
+      "Estado": "PASS",
+      "Obtenido": "409: 762 -> 763; El impacto del cambio es distinto del que revisaste (cambiaron aranceles, jugadores o cuotas mientras tanto). No se guardó nada: revisá el nuevo resumen y volvé a confirmar."
+    },
+    {
+      "Id": "STALE-2",
+      "Caso": "Revisado el impacto nuevo, la confirmación se acepta",
+      "Estado": "PASS",
+      "Obtenido": "200 en 36.4 ms"
+    },
+    {
+      "Id": "CONF-2",
+      "Caso": "Varias categorías con la cantidad exacta: 200 y el arancel guardado con lo aprobado",
+      "Estado": "PASS",
+      "Obtenido": "200 en 35 ms | 93500.00|Porcentaje|10.00|85000.00|1654|14059000.00"
+    },
+    {
+      "Id": "AUD-1",
+      "Caso": "Auditoría: INSERT del SuperAdmin (email_usuario), tipo, valor, anterior, nuevo, jugadores, diferencia y desglose",
+      "Estado": "PASS",
+      "Obtenido": "INSERT|1|superadmin.prueba@ejemplo.com|Porcentaje|10.00|85000.00|93500.00|1654|14059000.00|11"
+    },
+    {
+      "Id": "HIST-1",
+      "Caso": "Confirmar un mes futuro no toca ninguna cuota ya emitida",
+      "Estado": "PASS",
+      "Obtenido": "checksum -75478198"
+    },
+    {
+      "Id": "VAL-1",
+      "Caso": "Un segundo arancel para el mismo destino y mes se rechaza ya en la simulación",
+      "Estado": "PASS",
+      "Obtenido": "400: El género Masculino ya tiene un arancel que rige desde el 01/12/2026, en diciembre de 2026. Cancelalo primero para poder cargar uno nuevo para ese mes."
+    },
+    {
+      "Id": "SIM-6",
+      "Caso": "Una categoría, mes en curso: los dos géneros con su monto actual, una sola categoría, cuotas del mes informadas",
+      "Estado": "PASS",
+      "Obtenido": "Femenino 60000->99000 x69; Masculino 85000->99000 x151; pendientes sin pagos 128 (esperado 128), con pagos 92"
+    },
+    {
+      "Id": "REAL-1",
+      "Caso": "Confirmado: se reemiten exactamente las pendientes que mostró la simulación, todas con 99.000",
+      "Estado": "PASS",
+      "Obtenido": "200: 128|99000.00|99000.00 | Arancel programado correctamente. Se volvieron a emitir 128 cuotas pendientes del mes en curso con el monto nuevo. 92 cuotas del mes ya tenían pagos y se mantuvoieron sin cambios."
+    },
+    {
+      "Id": "HIST-2",
+      "Caso": "Las cuotas con pagos y las de meses anteriores conservan su monto",
+      "Estado": "PASS",
+      "Obtenido": "pagadas 1930|-906886533 -> 1930|-906886533"
+    },
+    {
+      "Id": "SIM-7",
+      "Caso": "Categoría sin jugadores: 0 afectados, , sin confirmación reforzada",
+      "Estado": "PASS",
+      "Obtenido": "0 jugadores, 0"
+    },
+    {
+      "Id": "VAL-2",
+      "Caso": "Rechazo controlado: porcentaje 1000",
+      "Estado": "PASS",
+      "Obtenido": "400: El porcentaje admite hasta 999,99 con dos decimales como máximo."
+    },
+    {
+      "Id": "VAL-2",
+      "Caso": "Rechazo controlado: porcentaje 12,345",
+      "Estado": "PASS",
+      "Obtenido": "400: El porcentaje admite hasta 999,99 con dos decimales como máximo."
+    },
+    {
+      "Id": "VAL-2",
+      "Caso": "Rechazo controlado: porcentaje 0",
+      "Estado": "PASS",
+      "Obtenido": "400: El porcentaje tiene que ser mayor a 0."
+    },
+    {
+      "Id": "VAL-2",
+      "Caso": "Rechazo controlado: monto fijo sin arancel vigente",
+      "Estado": "PASS",
+      "Obtenido": "400: La categoría HU106 sin jugadores no tiene un arancel vigente sobre el que calcular el aumento. Usá \"Monto absoluto\" para definir su primer valor."
+    },
+    {
+      "Id": "VAL-2",
+      "Caso": "Rechazo controlado: fecha pasada",
+      "Estado": "PASS",
+      "Obtenido": "400: La fecha de vigencia no puede ser anterior a hoy (31/10/2026). Los aranceles solo se programan para el mes en curso o meses futuros."
+    },
+    {
+      "Id": "VAL-2",
+      "Caso": "Rechazo controlado: tipo inexistente",
+      "Estado": "PASS",
+      "Obtenido": "400: Tipo de cambio inválido: usá absoluto, porcentaje o montoFijo."
+    },
+    {
+      "Id": "PERF-2",
+      "Caso": "Duración medida en el backend (log de la API): todas < 2.000 ms",
+      "Estado": "PASS",
+      "Obtenido": "13 simulaciones: mín 6 ms, máx 149 ms"
+    }
+  ]
+}

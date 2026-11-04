@@ -14,7 +14,7 @@ Con `cacc_api`, aunque alguien consiga ejecutar SQL a través de la API (un erro
 
 ## 2. Primera puesta en producción
 
-Requisitos: SQL Server 2016 o superior, acceso con la cuenta administradora y la configuración de la API lista (ver el paso 5).
+Requisitos: SQL Server 2017 o superior (las migraciones usan `STRING_AGG`), acceso con la cuenta administradora y la configuración de la API lista (ver el paso 5).
 
 1. **Crear la base.** Con la cuenta administradora, ejecutá `database/esquema/ClubCamioneros_crear_base.sql`. Si la base de producción va a tener otro nombre, cambiá `ClubCamionerosCACC` en las líneas `CREATE DATABASE` y `USE`.
 2. **Aplicar las migraciones.** Desde la carpeta publicada de la API, con la cuenta administradora:
@@ -23,7 +23,7 @@ Requisitos: SQL Server 2016 o superior, acceso con la cuenta administradora y la
    dotnet ApiGestion.dll --DatabaseMigrations:SoloMigrar=true --ConnectionStrings:ConexionMigraciones="Server=<servidor>;Database=<base>;User Id=<admin>;Password=<contraseña admin>;TrustServerCertificate=True;"
    ```
 
-   Aplica las migraciones pendientes y termina, sin levantar la API. Necesita la misma configuración que la API (por ejemplo, `Jwt:*`), porque se valida al arrancar.
+   Aplica las migraciones pendientes y termina, sin levantar la API. Necesita la misma configuración que la API (por ejemplo, `Jwt:*` e `Integracion:ClienteDeportivo:Clave`), porque se valida al arrancar.
 3. **Crear el usuario técnico y sus permisos.** Con la cuenta administradora, en este orden:
    - `01_crear_login_api.sql` en **master**. Antes, reemplazá la contraseña por una larga y aleatoria, y el nombre de la base.
    - `02_crear_usuario_en_base.sql` en la **base del club**.
@@ -36,9 +36,16 @@ Requisitos: SQL Server 2016 o superior, acceso con la cuenta administradora y la
    | `ASPNETCORE_ENVIRONMENT` | `Production` |
    | `ConnectionStrings__ConexionSQL` | Cadena con **`cacc_api`** y su contraseña |
    | `Jwt__Key`, `Jwt__Issuer`, `Jwt__Audience` | Clave de al menos 32 bytes, propia de producción |
+   | `Integracion__ClienteDeportivo__Clave` | Credencial del Portal Deportivo para la API de integración (HU-055): al azar, de al menos 32 bytes, sin espacios en los extremos, propia de producción. El backend del Deportivo carga la **misma** en su `AdministrativoApi:ClaveIntegracion`. Rotación: `database/InstructivoEquipo.md`, sección 7.1 |
    | `Email__*` | SMTP del club y `Email__PublicBaseUrl` con la URL pública del frontend (HTTPS) |
    | `Cors__AllowedOrigins__0` | URL pública del frontend |
    | `ForwardedHeaders__Enabled` | `true` solo si la API está detrás de un proxy |
+   | `ForwardedHeaders__KnownProxies` / `ForwardedHeaders__KnownNetworks` | IPs o redes CIDR (separadas por comas) del proxy que termina TLS. Sin ellas solo se confía en loopback y redes privadas: si el proxy de la plataforma llega desde otra red, la API lo trata como un cliente y responde 403 por "no HTTPS" |
+
+   **HTTPS obligatorio.** Fuera de Development la API **rechaza (403)** todo pedido que no llegue por HTTPS (o, detrás de un
+   proxy confiable, con `X-Forwarded-Proto: https`): el JWT y la credencial del Deportivo nunca se aceptan en claro. El
+   backend del Deportivo tiene que usar `https://` en `AdministrativoApi:BaseUrl`. `Seguridad__PermitirHttpSinTls=true`
+   lo desactiva, solo para probar un contenedor en la propia máquina.
 
    No configures `DatabaseMigrations__Enabled`: fuera de desarrollo, la API no migra sola, y con `cacc_api` no podría.
 6. **Arrancar la API** y revisar el log: no tiene que aparecer la advertencia *"La API está conectada a SQL Server con un usuario que puede borrar la auditoría"*.

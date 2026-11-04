@@ -17,9 +17,11 @@ import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { ReportesService } from '../../services/reportes';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { triggerBlobDownload } from '../../shared/download-file';
-import { ExportFormat, ExportMenu } from '../../shared/export-menu/export-menu';
+import { ExportFormat } from '../../shared/export-menu/export-menu';
+import { ReportExportMenu as ExportMenu } from '../../shared/export-menu/report-export-menu';
 import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
 import { CategoryDebtModel, EstadoDeportivo, PaymentSummaryModel, PendingDebtorModel } from '../../models/PaymentModel';
+import { SECCIONES } from '../secciones';
 
 // One row in the debtors ranking table
 interface DebtorRow {
@@ -133,6 +135,9 @@ const SITUACION_BAJA = 'Dados de baja';
   styleUrl: './deudas-morosidad.css',
 })
 export class DeudasMorosidad implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['deudas-morosidad'];
+
   cargando = true;
 
   // La barra de filtros compartida (HU-097/HU-102), para descartar una búsqueda escrita y no aplicada al limpiar
@@ -391,7 +396,7 @@ export class DeudasMorosidad implements OnInit {
   // no contra allPendientes: antes, filtrar/exportar una categoría sin
   // deudores hoy no encontraba ningún id (porque esa categoría no tenía
   // ninguna fila en allPendientes) y el filtro quedaba roto.
-  private get idCategoriaActivo(): number | null {
+  get idCategoriaActivo(): number | null {
     const categoria = this.categoriaActiva;
     if (!categoria) return null;
     return this.categoriasMap.get(categoria) ?? null;

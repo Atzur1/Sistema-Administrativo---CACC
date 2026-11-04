@@ -12,6 +12,7 @@ import { HelpHint } from '../../shared/help-hint/help-hint';
 import {
   GeneralSummaryModel, KpiTrendModel, MonthlyCollectionPointModel, MonthlyCoveragePointModel,
 } from '../../models/GeneralSummaryModel';
+import { SECCIONES } from '../secciones';
 
 Chart.register(...registerables);
 
@@ -104,6 +105,9 @@ const PANTALLAS = {
   styleUrl: './resumen-general.css',
 })
 export class ResumenGeneral implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['resumen-general'];
+
 
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);

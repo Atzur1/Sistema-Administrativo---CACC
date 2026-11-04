@@ -38,6 +38,7 @@ import { PagosService } from '../../services/pagos';
 import { AuthService } from '../../services/auth';
 import { normalizeText } from '../../shared/normalize-text';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
+import { SECCIONES } from '../secciones';
 
 // Player shape this screen was originally built against (repo de Atzur1).
 // Se mantiene local en vez de traer PlayerModel/PlayerService: Laura ya tiene
@@ -81,6 +82,9 @@ type DialogView = 'loading' | 'form' | 'active' | 'confirmCancel' | 'confirmVoid
   styleUrl: './becados-descuentos.css',
 })
 export class BecadosDescuentos implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['becados-descuentos'];
+
   // Header counters, derived from what the API returns. They start as dashes
   // so the screen never shows a made-up number while the request is in flight.
   headerMetrics = signal<HeaderMetric[]>([

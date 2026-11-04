@@ -253,7 +253,7 @@ namespace DaoLibrary
             }
 
             if (revisionActual != revisionEsperada) return (CambiarRolResultado.RevisionDesactualizada, null);
-            if (rolActual == 1 && nuevoRolPortal != 1 && !QuedaOtroSuperAdminHabilitado(conexion, transaccion, idUsuario, soloOperativos: true))
+            if (rolActual == 1 && nuevoRolPortal != 1 && !QuedaOtroSuperAdminHabilitado(conexion, transaccion, idUsuario))
                 return (CambiarRolResultado.UltimoSuperAdmin, null);
 
             // La condición sobre token_version se repite en el UPDATE: la escritura y su precondición son una sola
@@ -278,54 +278,45 @@ namespace DaoLibrary
         {
             using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
             using var transaccion = conexion.BeginTransaction(IsolationLevel.Serializable);
+            var resultado = DeshabilitarCore(conexion, transaccion, idUsuario);
+            if (resultado) transaccion.Commit(); else transaccion.Rollback();
+            return resultado;
+        }
 
+        internal static bool DeshabilitarCore(SqlConnection conexion, SqlTransaction transaccion, int idUsuario)
+        {
             using (var bloquear = new SqlCommand(
                 "SELECT rol_portal FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_usuario = @id AND acceso_portal = 1",
                 conexion, transaccion))
             {
                 bloquear.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
                 var actual = bloquear.ExecuteScalar();
-                if (actual is null)
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
+                if (actual is null) return false;
 
                 var rolActual = Convert.ToInt32(actual);
                 if (rolActual == 1 && !QuedaOtroSuperAdminHabilitado(conexion, transaccion, idUsuario))
-                {
-                    transaccion.Rollback();
                     return false;
-                }
             }
 
-            using (var actualizar = new SqlCommand(
+            using var actualizar = new SqlCommand(
                 "UPDATE dbo.USUARIOS SET acceso_portal = 0, token_version = token_version + 1 WHERE PK_id_usuario = @id AND acceso_portal = 1",
-                conexion, transaccion))
-            {
-                actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
-                if (actualizar.ExecuteNonQuery() != 1)
-                {
-                    transaccion.Rollback();
-                    return false;
-                }
-            }
-
-            transaccion.Commit();
-            return true;
+                conexion, transaccion);
+            actualizar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuario;
+            return actualizar.ExecuteNonQuery() == 1;
         }
 
         // Nunca deja que la última operación sobre un SuperAdmin (bajarle el rol o
         // deshabilitarlo) apague el acceso de todo el club: siempre tiene que
-        // quedar, como mínimo, otro SuperAdmin habilitado. soloOperativos (cambio de rol) además exige que ese otro
-        // pueda ingresar hoy: con la activación completa y una contraseña propia. Deshabilitar todavía cuenta
-        // también a los que tienen la activación pendiente.
-        private static bool QuedaOtroSuperAdminHabilitado(SqlConnection conexion, SqlTransaction transaccion, int idUsuarioExcluido, bool soloOperativos = false)
+        // quedar, como mínimo, otro SuperAdmin habilitado que pueda ingresar hoy: con la activación completa y una
+        // contraseña propia. Uno con la activación pendiente no cuenta, ni para el cambio de rol ni para deshabilitar:
+        // no puede iniciar sesión ni pedir "¿Olvidaste tu contraseña?", y si su enlace vence el club se queda sin
+        // SuperAdmin (HU-061, SCRUM-583).
+        private static bool QuedaOtroSuperAdminHabilitado(SqlConnection conexion, SqlTransaction transaccion, int idUsuarioExcluido)
         {
-            var operativos = soloOperativos ? " AND activacion_pendiente = 0 AND contrasenia IS NOT NULL" : "";
             using var contar = new SqlCommand(
-                $@"SELECT COUNT(*) FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK)
-                  WHERE rol_portal = 1 AND acceso_portal = 1 AND activo = 1 AND PK_id_usuario <> @id{operativos}",
+                @"SELECT COUNT(*) FROM dbo.USUARIOS WITH (UPDLOCK, HOLDLOCK)
+                  WHERE rol_portal = 1 AND acceso_portal = 1 AND activo = 1
+                    AND activacion_pendiente = 0 AND contrasenia IS NOT NULL AND PK_id_usuario <> @id",
                 conexion, transaccion);
             contar.Parameters.Add("@id", SqlDbType.Int).Value = idUsuarioExcluido;
             return Convert.ToInt32(contar.ExecuteScalar()) > 0;

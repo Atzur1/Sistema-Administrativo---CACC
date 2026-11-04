@@ -93,7 +93,7 @@ public class AuditDao(string connectionString) : IAuditDao
 
         const string query = @"
             SELECT a.PK_id_evento, a.id_usuario, a.email_usuario, a.nombre_usuario, a.apellido_usuario, a.dni_usuario,
-                   a.entidad, a.id_entidad, a.accion, a.fecha_utc, a.datos_antes, a.datos_despues
+                   a.entidad, a.id_entidad, a.accion, a.fecha_utc, a.datos_antes, a.datos_despues, a.origen_sistema
             FROM dbo.AUDITORIA_CAMBIOS a";
         using var command = new SqlCommand(query + where + @"
             ORDER BY a.fecha_utc DESC, a.PK_id_evento DESC
@@ -121,7 +121,8 @@ public class AuditDao(string connectionString) : IAuditDao
                 // final: sin ella, el navegador la tomaba por hora local y la mostraba 3 horas adelantada.
                 TimestampUtc = DateTime.SpecifyKind(reader.GetDateTime(9), DateTimeKind.Utc),
                 BeforeJson = reader.IsDBNull(10) ? null : reader.GetString(10),
-                AfterJson = reader.IsDBNull(11) ? null : reader.GetString(11)
+                AfterJson = reader.IsDBNull(11) ? null : reader.GetString(11),
+                SourceSystem = reader.IsDBNull(12) ? null : reader.GetString(12)
             });
         }
 

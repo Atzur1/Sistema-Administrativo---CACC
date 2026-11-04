@@ -1,0 +1,15 @@
+· conectado a Chrome (usuario 95900001, clave definida, 28 caracteres)
+· septiembre cargado
+PASS  NAV-1    Septiembre: 10 filas, columna Fecha primera en dd/MM/yyyy HH:mm, "126 pagos" y "Página 1 de 13" | {"conteo":"126 pagos en Septiembre 2026 · Página 1 de 13","paginas":"Página 1 de 13","encabezados":["Fecha","Jugador","DNI","Categoría","Tipo de pago","Monto"],"primera":["30/09/2026 23:59","HU107 30, Cobro","96000030","Pt AFA 2008","Transferencia","$ 9.000"]}
+PASS  NAV-1b   El donut muestra los pagos de TODO el período (126), igual que el encabezado | {"centro":"126","header":"126"}
+PASS  NAV-2    Siguiente: página 2, otras filas; tarjetas, encabezado y donut idénticos; solo se pidió /pagos | {"paginas":"Página 2 de 13","pedidas":["http://localhost:4200/api/recaudacion/pagos?anio=2026&mes=9&page=2&pageSize=10&sortBy=fecha&sortDirection=desc"],"donut":"111.96636217394023 339.29200658769764","tarjetasIguales":true}
+PASS  NAV-3    Recorrer las 13 páginas con "Siguiente": 126 filas, 126 distintas; en la última "Siguiente" se deshabilita | {"filasVistas":126,"distintas":126,"ultima":6}
+PASS  NAV-4    Clic en Fecha: ascendente, página 1, empieza el 01/09 | {"ariaSort":"ascending","paginas":"Página 1 de 13","primeras":["01/09/2026 08:37","01/09/2026 09:07","01/09/2026 09:07","01/09/2026 12:07"]}
+PASS  NAV-5    Clic en Monto: $100.000 primero; otro clic: $9.000 primero (orden numérico, no de texto) | {"desc":[100000,100000,100000],"asc":[9000,9000,9000],"ariaSort":["none",null,null,null,null,"ascending"]}
+PASS  NAV-6    Teclado: Enter sobre el encabezado Fecha ordena (desc) y el foco sigue en el botón | {"ariaSort":"descending","foco":"Fecha ↓"}
+PASS  NAV-7    Navegador en Asia/Tokyo (+12 h), pantalla recargada: fechas y horas idénticas a las del club (30/09/2026 23:59 sigue en 30/09) | {"zona":"Asia/Tokyo","primera":"30/09/2026 23:59","iguales":true}
+PASS  NAV-8    Exportar CSV y PDF desde la página 3: piden mes y año, sin page/pageSize | ["http://localhost:4200/api/reportes/recaudacion/csv?anio=2026&mes=9","http://localhost:4200/api/reportes/recaudacion/pdf?anio=2026&mes=9"]
+PASS  NAV-9    Octubre (pocos pagos): página 1, "7 pagos", sin paginador, tarjetas del mes nuevo | {"conteo":"7 pagos en Octubre 2026","filas":7,"header":"$ 525.000Total del período7Pagos procesados"}
+PASS  NAV-10   Agosto (vacío): "0 pagos", estado vacío, sin tabla ni paginador, tarjetas en $0 | {"conteo":"0 pagos en Agosto 2026","vacio":"No hay cobros en Agosto 2026","header":"$ 0Total del período0Pagos procesados"}
+PASS  NAV-11   tablet (820px): sin scroll horizontal de página; paginador entero en pantalla; fechas legibles | {"scrollWidth":820,"innerWidth":820,"paginador":{"izq":113,"der":779},"fecha":"30/09/2026 23:59"}
+PASS  NAV-12   celular (390px): sin scroll horizontal de página; paginador entero en pantalla; fechas legibles | {"scrollWidth":390,"innerWidth":390,"paginador":{"izq":41,"der":349},"fecha":"30/09/2026 23:59"}

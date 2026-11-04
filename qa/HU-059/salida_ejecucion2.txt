@@ -1,0 +1,61 @@
+== Reset de la base ClubCamionerosUnificadaV2_HU059_Prueba
+  Esquema unificado creado en ClubCamionerosUnificadaV2_HU059_Prueba.
+  Migraciones al día (25 de database/migrations aplicadas).
+  Cuentas ficticias y fixtures: personas=5 jugadores=4 cuotas=5
+  Estado inicial verificado (5|4|5|0|1|1) en 1 s.
+Hoy (club): 2026-10-29 | último período emitible: 2026-10-01 | salida: C:\Users\FramD\AppData\Local\Temp\cacc-hu059\ejecucion_20261029_102909
+== Levantando las APIs
+PASS    ENV-1    SQL Server responde y la base de prueba tiene los datos iniciales  [esperado: 5 usuarios | obtenido: USUARIOS]
+PASS    ENV-2    API Administrativa lista (login: lee USUARIOS en SQL)  [esperado: 200 | obtenido: login -> 200]
+PASS    ENV-3    API Deportiva lista (GET /api/jugadores: lee JUGADORES en SQL)  [esperado: 200 | obtenido: GET /api/jugadores -> 200]
+PASS    AUT-1    Sin credencial de sistema: 401 con el contrato de error y sin datos  [esperado: 401 | obtenido: 401]
+PASS    AUT-2    Credencial inválida: 401 sin datos  [esperado: 401 | obtenido: 401]
+PASS    AUT-3    Credencial válida + token: 200 con el estado  [esperado: 200 habilitado | obtenido: 200 habilitado]
+PASS    AUT-4    Credencial válida SIN token de usuario: 401 (la credencial no es un usuario)  [esperado: 401 | obtenido: 401]
+PASS    AUT-5    API -> API: el Deportivo (con su credencial) obtiene del Administrativo el estado de un jugador con 2 cuotas vencidas  [esperado: 200 INHABILITADO | obtenido: 200 INHABILITADO]
+PASS    AUT-6    API -> API con credencial equivocada: el Administrativo no entrega el estado (SIN VERIFICAR)  [esperado: SIN VERIFICAR | obtenido: SIN VERIFICAR]
+PASS    CON-1    Dato inválido: 400 INVALID_INPUT con field  [esperado: 400 INVALID_INPUT fechaBaja | obtenido: 400 INVALID_INPUT fechaBaja]
+PASS    CON-2    Jugador inexistente: 404 NOT_FOUND con cuerpo  [esperado: 404 NOT_FOUND | obtenido: 404 NOT_FOUND]
+PASS    CON-3    Rol sin permiso (Médica): 403 FORBIDDEN  [esperado: 403 FORBIDDEN | obtenido: 403]
+PASS    CON-4    Ningún rechazo del contrato modificó al jugador  [esperado: 0 bajas | obtenido: 0]
+BLOCKED ALT-1    Alta de una persona nueva desde el Deportivo (persona, jugador, categoría, cargos)  [esperado: 201 + 1 persona, 1 jugador, inscripción y cuota según calendario | obtenido: 503; persona|jugador|cuotas|inscripciones = 0|0|0|0]
+PASS    ALT-1b   El alta rechazada no dejó datos a medias  [esperado: 0|0|0|0 | obtenido: 0|0|0|0]
+BLOCKED ALT-2    El jugador aparece en el Administrativo y disponible para cobranzas  [esperado: visible | obtenido: no se creó]
+BLOCKED ALT-3    Auditoría del alta con origen PortalDeportivo  [esperado: PortalDeportivo | obtenido: no se creó]
+BLOCKED DNI-1    Alta con un DNI cuya persona ya existe: misma persona, un jugador nuevo  [esperado: 1 persona (9), 1 jugador | obtenido: 503; 1|0|0|0]
+PASS    DNI-1b   La persona existente no se duplicó ni se modificó  [esperado: 1|9 | obtenido: 1|9]
+BLOCKED REA-1    Repetir el alta no duplica persona, jugador, cuota ni inscripción  [esperado: 200 creado=false; mismas cuentas | obtenido: 503; 0|0|0|0]
+PASS    BAJ-1    Baja informada con fecha efectiva 2026-09-20: 200 y baja lógica (el jugador y su persona siguen)  [esperado: 200; 1|98590001|2026-09-20|0 | obtenido: 200; 1|98590001|2026-09-20|0]
+PASS    BAJ-2    Auditoría: un evento UPDATE con origen PortalDeportivo y el operador del token  [esperado: 1|PortalDeportivo|1|UPDATE | obtenido: 1|PortalDeportivo|1|UPDATE]
+PASS    BAJ-3    Reintento de la misma baja: 200 yaEstabaDadoDeBaja, sin un segundo evento  [esperado: 200 true; 1 evento | obtenido: 200 True; 1 evento(s)]
+PASS    BAJ-4    Otra fecha sobre una baja registrada: 409 CONFLICT, se conserva la primera  [esperado: 409; 2026-09-20 | obtenido: 409]
+PASS    BJD-1    DELETE /api/jugadores/{id} del Deportivo: baja lógica (el jugador sigue, con fecha de baja)  [esperado: 200; 1|hoy | obtenido: 200; 1|2026-10-29]
+FAIL    BJD-2    La baja la procesa el Administrativo por el contrato HU-057 (auditoría con origen PortalDeportivo)  [esperado: 1|PortalDeportivo | obtenido: 1|NULL]
+PASS    BJD-3    Reintento de la baja desde el Deportivo: sin segunda baja ni otro evento  [esperado: 200; 1 evento | obtenido: 200; 1 evento(s)]
+PASS    DEU-1    Las cuotas anteriores (agosto y septiembre) siguen iguales después de la baja (contrato y Deportivo)  [esperado: sin cambios | obtenido: sin cambios]
+PASS    DEU-2    Deudas y Morosidad sigue mostrando a los dos dados de baja con sus 2 cuotas y la fecha de baja  [esperado: F1 y F2: 2 cuotas, con fechaBaja | obtenido: F1: 2 09/20/2026 00:00:00 | F2: 2 10/29/2026 00:00:00]
+PASS    DEU-3    estado-deuda informa 'baja' al Deportivo (QR)  [esperado: 200 baja | obtenido: 200 baja]
+PASS    GEN-1    Detección de faltantes de septiembre (mes cerrado): incluye al activo de control y no al dado de baja el 15/07  [esperado: baja 200; incluye 98590003, no 98590006 | obtenido: baja 200; 98590003]
+PASS    GEN-1b   Generación manual de faltantes (agosto y septiembre): el activo las recibe y el dado de baja no  [esperado: control 1|1, baja 0|0 | obtenido: 200/200; control 1|1, baja 0|0]
+PASS    GEN-1c   La deuda anterior del dado de baja (julio) sigue pendiente  [esperado: 1 | obtenido: 1]
+PASS    GEN-2    Generador automático: emite la cuota de 2026-10-01 al activo y NO a los dados de baja (20/09 y 15/07)  [esperado: control 1, bajas 0|0 | obtenido: control 1, bajas 0|0]
+PASS    GEN-3    Cobro por adelantado de noviembre a un dado de baja: rechazado (400) y sin cuota emitida  [esperado: 400; 0 filas | obtenido: 400; 0 filas]
+PASS    GEN-4    Ninguna cuota posterior al mes de la baja para los dados de baja por contrato  [esperado: 0|0 | obtenido: 0|0]
+PASS    GEN-5    El dado de baja hoy desde el Deportivo conserva solo lo que le corresponde por la regla del mes de la baja  [esperado: 1 (mes de la baja) | obtenido: 1]
+PASS    LOG-1    Los logs de las dos APIs no contienen la credencial, la clave JWT ni tokens  [esperado: 0 | obtenido: 0]
+
+== Resumen por historia
+Entorno: PASS
+HU-054 contrato: PASS
+HU-055 autenticación: PASS
+HU-056 alta: BLOCKED
+HU-056 DNI existente: BLOCKED
+HU-056 reintento: BLOCKED
+HU-057 baja (contrato): PASS
+HU-057 baja (desde el Deportivo): FAIL
+HU-057 deuda histórica: PASS
+HU-057 generación de cuotas: PASS
+Logs: PASS
+
+Total: 32 PASS | 1 FAIL | 5 BLOCKED   (8 s, hoy 2026-10-29, base ClubCamionerosUnificadaV2_HU059_Prueba)
+Evidencia: C:\Users\FramD\AppData\Local\Temp\cacc-hu059\ejecucion_20261029_102909

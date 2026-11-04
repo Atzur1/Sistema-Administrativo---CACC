@@ -14,7 +14,7 @@
     </span>
 
     <div class="header-text">
-      <h1 class="header-title">Recaudación Mensual</h1>
+      <h1 class="header-title">{{ tituloPantalla }}</h1>
       <span class="header-subtitle">
         Consultá la recaudación del club por mes y año, y el detalle por medio de pago
       </span>
@@ -86,42 +86,60 @@
 
         <!-- Menú de exportación compartido (HU-097): el archivo lo genera el servidor
              con el período y la categoría que se están viendo. -->
-        <app-export-menu [enCurso]="exportando" (exportar)="exportarRecaudacion($event)" />
+        <app-report-export-menu tipo="recaudacion" [anio]="anioSeleccionado" [mes]="mesExportacion" [idCategoria]="categoriaExportacion" [enCurso]="exportando" (exportar)="exportarRecaudacion($event)" />
       </header>
 
-      <span class="tabla-conteo">
-        @if (cargando) { Cargando… } @else { {{ filas.length }} cobros en {{ periodoLabel }} }
+      <!-- HU-107: el total es el del período completo (lo cuenta el servidor), no las filas de la página. -->
+      <span class="tabla-conteo" aria-live="polite">
+        @if (errorPagos) { Conteo no disponible } @else if (cargandoPagos && totalPagos === 0) { Cargando… } @else {
+          {{ conteoPagos }}@if (totalPaginas > 1) { · Página {{ pagina }} de {{ totalPaginas }} }
+        }
       </span>
 
-      @if (huboError) {
-        <p class="tabla-vacia">No se pudo cargar la recaudación del período. Intentá de nuevo.</p>
-      } @else if (cargando) {
-        <app-cargando texto="Cargando los cobros del período…" forma="tabla" [filas]="6" [columnas]="4" />
-      } @else if (filas.length === 0 && hayFiltros) {
+      @if (errorPagos) {
+        <p class="tabla-vacia" role="alert">No se pudieron cargar los pagos del período.</p>
+        <button type="button" class="pagination-button" (click)="reintentarPagos()">Reintentar</button>
+      } @else if (cargandoPagos && filas.length === 0) {
+        <app-cargando texto="Cargando los cobros del período…" forma="tabla" [filas]="6" [columnas]="5" />
+      } @else if (totalPagos === 0 && hayFiltros) {
         <app-estado-vacio
           icono="busqueda"
           mensaje="Ningún resultado coincide con la búsqueda o los filtros"
           textoAccion="Limpiar filtros"
           (accion)="limpiarFiltros()"
         />
-      } @else if (filas.length === 0) {
+      } @else if (totalPagos === 0) {
         <app-estado-vacio [mensaje]="'No hay cobros en ' + periodoLabel" />
       } @else {
-        <div class="tabla-scroll">
-          <table class="tabla">
+        <div class="tabla-scroll" [attr.aria-busy]="cargandoPagos">
+          <table class="tabla" [class.tabla-actualizando]="cargandoPagos">
+            <caption class="sr-only">Pagos de {{ periodoLabel }}, página {{ pagina }} de {{ totalPaginas }}</caption>
             <thead>
               <tr>
-                <th>Jugador</th>
-                <th>DNI</th>
-                <th>Categoría</th>
-                <th>Tipo de pago</th>
-                <th class="col-monto">Monto</th>
+                <!-- HU-107: el orden lo aplica el servidor sobre todo el período, no sobre la página visible. -->
+                <th scope="col" [attr.aria-sort]="ariaSort('fecha')">
+                  <button type="button" class="orden-boton" (click)="ordenar('fecha')" [attr.aria-label]="textoOrden('fecha')">
+                    Fecha
+                    <span class="orden-indicador" aria-hidden="true">{{ ordenarPor === 'fecha' ? (direccion === 'desc' ? '↓' : '↑') : '↕' }}</span>
+                  </button>
+                </th>
+                <th scope="col">Jugador</th>
+                <th scope="col">DNI</th>
+                <th scope="col">Categoría</th>
+                <th scope="col">Tipo de pago</th>
+                <th scope="col" class="col-monto" [attr.aria-sort]="ariaSort('monto')">
+                  <button type="button" class="orden-boton" (click)="ordenar('monto')" [attr.aria-label]="textoOrden('monto')">
+                    Monto
+                    <span class="orden-indicador" aria-hidden="true">{{ ordenarPor === 'monto' ? (direccion === 'desc' ? '↓' : '↑') : '↕' }}</span>
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
               <!-- Se identifica cada fila por su pago, no por el DNI: un jugador puede tener varios pagos en el mes. -->
               @for (fila of filas; track fila.idPago) {
                 <tr>
+                  <td class="celda-fecha">{{ formatFecha(fila) }}</td>
                   <td class="celda-jugador">{{ fila.jugador }}</td>
                   <td>{{ fila.dni }}</td>
                   <td>{{ fila.categoria }}</td>
@@ -140,6 +158,19 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Mismo paginador que "Pagos registrados" (HU-088) -->
+        @if (totalPaginas > 1) {
+          <nav class="pagination" aria-label="Páginas de pagos del período">
+            <button type="button" class="pagination-button" (click)="irAPagina(pagina - 1)" [disabled]="pagina <= 1 || cargandoPagos">
+              ← Anterior
+            </button>
+            <span class="pagination-status">Página {{ pagina }} de {{ totalPaginas }}</span>
+            <button type="button" class="pagination-button" (click)="irAPagina(pagina + 1)" [disabled]="pagina >= totalPaginas || cargandoPagos">
+              Siguiente →
+            </button>
+          </nav>
+        }
       }
     </article>
 

@@ -1,0 +1,32 @@
+
+[32;1mCaso                                                                             [0m[32;1m   Esperado[0m[32;1m                   Obtenido[0m
+[32;1m----                                                                             [0m [32;1m  --------[0m [32;1m                  --------[0m
+1. Sin credencial (con token v lido)                                                     401                        401
+2. Credencial vac¡a                                                                      401                        401
+3. Credencial inv lida                                                                   401                        401
+3b. Credencial alterada (un car cter)                                                    401                        401
+3c. Alias /api/estado-deuda sin credencial                                               401                        401
+3d. Lote sin credencial                                                                  401                        401
+4. Credencial v lida + token                                                             200                        200
+4b. Credencial v lida + token (lote)                                                     200                        200
+4c. Credencial v lida SIN token                                                          401                        401
+4d. Credencial v lida + rol sin permiso (M‚dica en cargos-alta)                          403                        403
+5. Credencial v lida + DNI inv lido                                                      400                        400
+5b. Credencial v lida + jugador inexistente                                              404                        404
+6. Solo credencial contra /api/usuarios/habilitados                                      401                        401
+6b. Solo credencial contra /api/auditoria/cambios                                        401                        401
+6c. Solo credencial contra /api/pagos                                                    401                        401
+7. Escritura: cargos-alta con credencial + SuperAdmin                                    200                        200
+7b. Eventos de la escritura con origen PortalDeportivo y operador SuperAdmin           todos  1/1 origen, 1/1 operador
+                                                                                                         (PAGOS:INSERT)
+7c. La API de Auditor¡a devuelve el origen (sourceSystem)                                200                        200
+7d. Repetir cargos-alta no duplica (idempotente)                                         200                        200
+8. La credencial y los tokens no aparecen en el log de la API                              0     0 credencial, 0 tokens
+8b. Los rechazos quedan en el log con endpoint y correlaci¢n                            >= 6                          7
+10. Arranque con la credencial 'vac¡a'                                            no arranca             termin¢=True,
+                                                                                                      c¢digo=-532462766
+10. Arranque con la credencial 'd‚bil'                                            no arranca             termin¢=True,
+                                                                                                      c¢digo=-532462766
+9. Development con user-secrets: arranca, acepta su credencial y rechaza sin ella  200 / 401    arranc¢=True, 200 / 401
+
+Total: 24 | PASS: 24 | FAIL: 0

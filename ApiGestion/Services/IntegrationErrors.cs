@@ -75,7 +75,9 @@ public static class IntegrationErrors
             TipoResultado.NoProcesable => (StatusCodes.Status422UnprocessableEntity, IntegrationErrorCodes.Unprocessable),
             _ => (StatusCodes.Status400BadRequest, IntegrationErrorCodes.InvalidInput)
         };
-        return Respond(controller, logger, status, errorCode, result.Mensaje ?? "No se pudo procesar el pedido.");
+        // El contrato lleva "field" solo en los 400: el dato que el Deportivo tiene que corregir.
+        return Respond(controller, logger, status, errorCode, result.Mensaje ?? "No se pudo procesar el pedido.",
+            status == StatusCodes.Status400BadRequest ? result.Campo : null);
     }
 
     // Respuesta a un cuerpo que no se puede leer (JSON mal formado, tipo equivocado). El detalle de System.Text.Json
@@ -91,6 +93,18 @@ public static class IntegrationErrors
             : $"El dato \"{field}\" no tiene un formato válido.";
         Log(logger, context.HttpContext, StatusCodes.Status400BadRequest, IntegrationErrorCodes.InvalidInput,
             field is null ? "Cuerpo del pedido ausente o ilegible." : $"Dato de entrada con formato inválido (campo: {field}).");
+        string? operacion = RegistroRechazosIntegracion.OperacionDe(context.HttpContext);
+        if (operacion is not null)
+        {
+            int? idJugador = int.TryParse(context.HttpContext.Request.RouteValues["idJugador"]?.ToString(), out int parsedId)
+                ? parsedId
+                : null;
+            context.HttpContext.RequestServices.GetService<IRegistroRechazos>()?.RegistrarModeloInvalido(
+                operacion,
+                field is null ? "El cuerpo del pedido falta o no es un JSON válido." : $"Dato de entrada inválido (campo: {field}).",
+                context.HttpContext.TraceIdentifier,
+                idJugador);
+        }
         return new BadRequestObjectResult(Body(IntegrationErrorCodes.InvalidInput, message, field));
     }
 
@@ -149,6 +163,16 @@ public static class IntegrationErrors
         logger.Log(level,
             "Error de integración {ErrorCode} ({Status}). Timestamp: {Timestamp:o}. Endpoint: {Endpoint}. Motivo: {Reason}",
             errorCode, status, DateTimeOffset.UtcNow, EndpointOf(context), LogSanitizer.Sanitize(reason));
+    }
+
+    // HU-055: con el id de correlación del pedido. Lo genera el servidor (TraceIdentifier) y no trae datos del cliente, así
+    // que no pasa por LogSanitizer: su sufijo de 8 dígitos ("0HN...:00000001") se confundía con un DNI y quedaba oculto.
+    public static void Log(ILogger logger, HttpContext context, int status, string errorCode, string reason, string correlationId)
+    {
+        var level = status >= StatusCodes.Status500InternalServerError ? LogLevel.Error : LogLevel.Warning;
+        logger.Log(level,
+            "Error de integración {ErrorCode} ({Status}). Timestamp: {Timestamp:o}. Endpoint: {Endpoint}. Motivo: {Reason} Correlación: {CorrelationId}",
+            errorCode, status, DateTimeOffset.UtcNow, EndpointOf(context), LogSanitizer.Sanitize(reason), correlationId);
     }
 
     // La excepción no se pasa al logger tal cual (su mensaje podría traer datos): va su tipo, su mensaje y la pila, sanitizados.

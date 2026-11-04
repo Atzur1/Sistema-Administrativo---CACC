@@ -1,0 +1,541 @@
+{
+  "fecha": "2026-10-29T16:25:04",
+  "fechaNegocio": "2026-10-29",
+  "altaEmiteCuotaDelMes": true,
+  "duracionSegundos": 14,
+  "base": "ClubCamionerosUnificadaV2_HU059_Prueba",
+  "servidor": "(localdb)\\MSSQLLocalDB",
+  "administrativoDll": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\ApiGestion\\bin\\Debug\\net9.0\\ApiGestion.dll",
+  "deportivoDll": "C:\\Users\\FramD\\AppData\\Local\\Temp\\cacc-hu059\\trabajo\\ellos\\BackEnd\\CACC.API\\bin\\Debug\\net9.0\\CACC.API.dll",
+  "hu056Disponible": true,
+  "ids": {
+    "superAdmin": 1,
+    "personaPrevia98600002": 11,
+    "jugadorPrevio98600003": 5,
+    "jugador98600001": 6,
+    "persona98600001": 13,
+    "jugador98600004": 7,
+    "jugador98600009": 8,
+    "jugador98600005": 9,
+    "jugador98600002": 10,
+    "jugador98600006": 11,
+    "jugador98600008": 12,
+    "usuarioAdministrador98600012": 8
+  },
+  "totales": {
+    "pass": 43,
+    "fail": 0,
+    "blocked": 0
+  },
+  "grupos": [
+    {
+      "Grupo": "Auditoría",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Estado": "PASS",
+      "Casos": 6,
+      "Pass": 6,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Estado": "PASS",
+      "Casos": 7,
+      "Pass": 7,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 3 inscripción masculina",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 4 jugadora",
+      "Estado": "PASS",
+      "Casos": 3,
+      "Pass": 3,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 5 DNI repetido",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 6 sin categoría",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 7 sin DNI",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Estado": "PASS",
+      "Casos": 4,
+      "Pass": 4,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Caso 9 sin arancel",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Dependencias",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Entorno",
+      "Estado": "PASS",
+      "Casos": 4,
+      "Pass": 4,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Logs",
+      "Estado": "PASS",
+      "Casos": 1,
+      "Pass": 1,
+      "Fail": 0,
+      "Blocked": 0
+    },
+    {
+      "Grupo": "Reintentos",
+      "Estado": "PASS",
+      "Casos": 2,
+      "Pass": 2,
+      "Fail": 0,
+      "Blocked": 0
+    }
+  ],
+  "casos": [
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-1",
+      "Caso": "SQL Server responde y la base tiene las precondiciones de HU-059 y HU-060",
+      "Estado": "PASS",
+      "Esperado": "2 personas 9860xxxx",
+      "Obtenido": "precondiciones 9860xxxx",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-2",
+      "Caso": "API Administrativa lista (login: lee USUARIOS en SQL)",
+      "Estado": "PASS",
+      "Esperado": "200",
+      "Obtenido": "login -> 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-3",
+      "Caso": "API Deportiva lista (GET /api/jugadores: lee JUGADORES en SQL)",
+      "Estado": "PASS",
+      "Esperado": "200",
+      "Obtenido": "GET /api/jugadores -> 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Entorno",
+      "Id": "ENV-4",
+      "Caso": "Los fixtures cubren la jerarquía: cat. con arancel | fallback de género | cat. femenina | sin arancel | inscripción M | inscripción F",
+      "Estado": "PASS",
+      "Esperado": "monto|monto|monto|(vacío)|monto|(vacío)",
+      "Obtenido": "1500.00|1000.00|800.00||500.00|",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Dependencias",
+      "Id": "DEP-1",
+      "Caso": "HU-056: el Administrativo ofrece POST /api/integracion/v1/jugadores",
+      "Estado": "PASS",
+      "Esperado": "ruta existente (400 con errorCode)",
+      "Obtenido": "400 INVALID_INPUT",
+      "Detalle": "{\"errorCode\":\"INVALID_INPUT\",\"message\":\"Indicá un DNI válido de 7 u 8 dígitos.\",\"field\":\"dni\",\"exito\":false,\"mensaje\":\"Indicá un DNI válido de 7 u 8 dígitos.\"}"
+    },
+    {
+      "Grupo": "Dependencias",
+      "Id": "DEP-2",
+      "Caso": "HU-054: el contrato documenta el alta (POST /api/integracion/v1/jugadores)",
+      "Estado": "PASS",
+      "Esperado": "sección en docs/integracion/README.md",
+      "Obtenido": "documentado",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-1",
+      "Caso": "El alta del contrato sin credencial o con una inválida: 401 y no crea nada",
+      "Estado": "PASS",
+      "Esperado": "401/401; personas sin cambio",
+      "Obtenido": "401/401; personas 12 -> 12",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "HU-055 autenticación",
+      "Id": "AUT-2",
+      "Caso": "Ningún frontend (Administrativo ni Deportivo) tiene la credencial ni llama a /api/integracion: el alta va backend a backend",
+      "Estado": "PASS",
+      "Esperado": "0 archivos",
+      "Obtenido": "0 archivos",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-1",
+      "Caso": "POST /api/jugadores del Deportivo: 201 con el id del jugador",
+      "Estado": "PASS",
+      "Esperado": "201; id 6; creado",
+      "Obtenido": "201; id 6; creado True",
+      "Detalle": "{\"message\":\"Jugador creado con éxito.\",\"idJugador\":6,\"dni\":\"98600001\",\"nombre\":\"Alta\",\"apellido\":\"Completa Hu\",\"creado\":true}"
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-2",
+      "Caso": "Base: una PERSONA y un JUGADOR, con nombre, apellido, DNI, género, categoría y FK correctos",
+      "Estado": "PASS",
+      "Esperado": "Alta|Completa Hu|98600001|Masculino|4|2026-10-29|1|1; 1|1",
+      "Obtenido": "Alta|Completa Hu|98600001|Masculino|4|2026-10-29|1|1; 1|1|1|1",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-3",
+      "Caso": "Identidad compartida: el Deportivo y el Administrativo devuelven el MISMO jugador; no hay una persona equivalente duplicada",
+      "Estado": "PASS",
+      "Esperado": "200/200 con el DNI; 1 persona",
+      "Obtenido": "200/200; 1 persona(s); id jugador 6, persona 13",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-4",
+      "Caso": "Padrón del Administrativo (GET /api/jugadores): aparece activo, con su DNI y categoría",
+      "Estado": "PASS",
+      "Esperado": "200; activo, DNI, Masculino",
+      "Obtenido": "200; {\"idJugador\":6,\"nombre\":\"Alta\",\"apellido\":\"Completa Hu\",\"dni\":\"98600001\",\"categoria\":\"Pt  AFA 2010\",\"genero\":\"Masculino\",\"fechaAlta\":\"2026-10-29T00:00:00\",\"fechaBaja\":null,\"activo\":true,\"nombreCompleto\":\"Completa Hu, Alta\"}",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-5",
+      "Caso": "Búsqueda de Cuotas y Pagos (GET /api/players/search) lo encuentra por DNI",
+      "Estado": "PASS",
+      "Esperado": "200; 1 resultado",
+      "Obtenido": "200; [{\"id\":6,\"firstName\":\"Alta\",\"lastName\":\"Completa Hu\",\"dni\":\"98600001\",\"categoryName\":\"Pt  AFA 2010\",\"leaveDate\":null}]",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 1 alta completa",
+      "Id": "ALT-6",
+      "Caso": "Cobranzas: está en el padrón de cuentas (GET /api/pagos/player-accounts) y su cuenta se puede consultar",
+      "Estado": "PASS",
+      "Esperado": "200 con el jugador; 200",
+      "Obtenido": "200; 200",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-1",
+      "Caso": "Calendario HU-083 (alta el 2026-10-29): 1 cuota de 2026-10-01",
+      "Estado": "PASS",
+      "Esperado": "1 cuota de 2026-10-01",
+      "Obtenido": "1500.00@2026-10-01",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-2",
+      "Caso": "Calendario HU-083, la otra rama: alta antes del día 10 (2026-10-05): no emite la cuota",
+      "Estado": "PASS",
+      "Esperado": "201; alta 2026-10-05|3; cuota ''; inscripción 500.00@2026-10-05",
+      "Obtenido": "201; alta 2026-10-05|3; cuota ''; inscripción 500.00@2026-10-05",
+      "Detalle": "201 {\"message\":\"Jugador creado con éxito.\",\"idJugador\":8,\"dni\":\"98600009\",\"nombre\":\"Otra\",\"apellido\":\"Rama Hu\",\"creado\":true}"
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "REL-1",
+      "Caso": "Con Pruebas:FechaNegocio en Production la API no arranca (la fecha fija no puede llegar a Producción)",
+      "Estado": "PASS",
+      "Esperado": "termina con error; mensaje de la guarda",
+      "Obtenido": "terminó: True; código -532462766; mensaje: True",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-3",
+      "Caso": "HU-048 caso A: categoría con arancel propio -> el de la categoría",
+      "Estado": "PASS",
+      "Esperado": "1500.00@2026-10-01",
+      "Obtenido": "1500.00@2026-10-01",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-4",
+      "Caso": "HU-048 caso B: categoría sin arancel propio -> el de su género",
+      "Estado": "PASS",
+      "Esperado": "1000.00@2026-10-01",
+      "Obtenido": "1000.00@2026-10-01",
+      "Detalle": "201 {\"message\":\"Jugador creado con éxito.\",\"idJugador\":7,\"dni\":\"98600004\",\"nombre\":\"Fallback\",\"apellido\":\"Genero Hu\",\"creado\":true}"
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-5",
+      "Caso": "La cuota lleva el arancel vigente al emitir, no el último cargado (1800.00, futuro)",
+      "Estado": "PASS",
+      "Esperado": "distinto de 1800.00",
+      "Obtenido": "1500.00@2026-10-01",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 3 inscripción masculina",
+      "Id": "INS-1",
+      "Caso": "Varón: UNA inscripción del jugador, con el arancel de inscripción vigente, separada de la cuota",
+      "Estado": "PASS",
+      "Esperado": "500.00@2026-10-29",
+      "Obtenido": "500.00@2026-10-29",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 3 inscripción masculina",
+      "Id": "INS-2",
+      "Caso": "Varón por el fallback de género: también UNA inscripción",
+      "Estado": "PASS",
+      "Esperado": "500.00@2026-10-29",
+      "Obtenido": "500.00@2026-10-29",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Reintentos",
+      "Id": "REI-1",
+      "Caso": "La misma alta nueva dos veces más: 200 sin duplicar persona, jugador, cuota ni inscripción",
+      "Estado": "PASS",
+      "Esperado": "200/200; 1|1|1|1",
+      "Obtenido": "200/200; 1|1|1|1",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 4 jugadora",
+      "Id": "FEM-1",
+      "Caso": "Jugadora: persona Femenino en la categoría 13",
+      "Estado": "PASS",
+      "Esperado": "201; Femenino|13",
+      "Obtenido": "201; Femenino|13",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 4 jugadora",
+      "Id": "FEM-2",
+      "Caso": "Jugadora: NO recibe inscripción (ni masculina ni en $0)",
+      "Estado": "PASS",
+      "Esperado": "ninguna",
+      "Obtenido": "ninguna",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 4 jugadora",
+      "Id": "FEM-3",
+      "Caso": "Jugadora: la cuota sigue el calendario y el arancel de su categoría",
+      "Estado": "PASS",
+      "Esperado": "800.00@2026-10-01",
+      "Obtenido": "800.00@2026-10-01",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 5 DNI repetido",
+      "Id": "DNI-1",
+      "Caso": "PERSONA existente sin JUGADOR: se reutiliza (misma PK, sin pisar sus datos) y el JUGADOR apunta a ella",
+      "Estado": "PASS",
+      "Esperado": "1|11|Previa|Sin Jugador|11",
+      "Obtenido": "1|11|Previa|Sin Jugador|11",
+      "Detalle": "201 {\"message\":\"Jugador creado con éxito.\",\"idJugador\":10,\"dni\":\"98600002\",\"nombre\":\"Otro\",\"apellido\":\"Nombre Distinto\",\"creado\":true}"
+    },
+    {
+      "Grupo": "Caso 5 DNI repetido",
+      "Id": "DNI-2",
+      "Caso": "PERSONA + JUGADOR ya existentes: reenviar el alta no duplica persona, jugador, cuota ni inscripción",
+      "Estado": "PASS",
+      "Esperado": "200; id 5; 1|1|0|0",
+      "Obtenido": "200; id 5; 1|1|0|0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Reintentos",
+      "Id": "REI-2",
+      "Caso": "Reintento del alta con DNI existente: 200 y nada duplicado",
+      "Estado": "PASS",
+      "Esperado": "200; 1|1|1|1",
+      "Obtenido": "200; 1|1|1|1",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 6 sin categoría",
+      "Id": "CAT-1",
+      "Caso": "Deportivo: 400 (campo idCategoria), sin identidad ni cargos",
+      "Estado": "PASS",
+      "Esperado": "400 idCategoria; 0|0|0|0",
+      "Obtenido": "400 idCategoria; 0|0|0|0",
+      "Detalle": "{\"message\":\"La categoría es obligatoria.\",\"field\":\"idCategoria\"}"
+    },
+    {
+      "Grupo": "Caso 6 sin categoría",
+      "Id": "CAT-2",
+      "Caso": "Contrato del Administrativo sin idCategoria: 400 INVALID_INPUT (field idCategoria), rechazo registrado, sin datos",
+      "Estado": "PASS",
+      "Esperado": "400 INVALID_INPUT idCategoria; AltaJugador|INVALID_INPUT|PortalDeportivo|sin DNI; 0|0|0|0",
+      "Obtenido": "400 INVALID_INPUT idCategoria; AltaJugador|INVALID_INPUT|PortalDeportivo|sin DNI; 0|0|0|0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 7 sin DNI",
+      "Id": "SDN-1",
+      "Caso": "Deportivo: 400, sin crear una identidad sin DNI ni cargos",
+      "Estado": "PASS",
+      "Esperado": "400; personas sin cambio",
+      "Obtenido": "400; personas 16 -> 16",
+      "Detalle": "{\"message\":\"El nombre y el DNI son obligatorios.\"}"
+    },
+    {
+      "Grupo": "Caso 7 sin DNI",
+      "Id": "SDN-2",
+      "Caso": "Contrato del Administrativo sin DNI: 400 INVALID_INPUT (field dni), rechazo registrado, sin datos",
+      "Estado": "PASS",
+      "Esperado": "400 INVALID_INPUT dni; +1 rechazo; personas sin cambio",
+      "Obtenido": "400 INVALID_INPUT dni; rechazos 2 -> 3",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 9 sin arancel",
+      "Id": "SAR-1",
+      "Caso": "Jugadora en categoría sin arancel y género sin arancel: se registra (política de HU-056) sin cuota inventada ni cargos en $0",
+      "Estado": "PASS",
+      "Esperado": "201; 1|1|0|0; 0 en $0",
+      "Obtenido": "201; 1|1|0|0; 0 en $0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 9 sin arancel",
+      "Id": "SAR-2",
+      "Caso": "Después del caso sin arancel, otra alta válida e independiente se procesa completa",
+      "Estado": "PASS",
+      "Esperado": "201; 1000.00@2026-10-01",
+      "Obtenido": "201; 1000.00@2026-10-01",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Auditoría",
+      "Id": "AUD-1",
+      "Caso": "Alta exitosa auditada: PERSONAS y JUGADORES INSERT, origen PortalDeportivo, operador del token, fecha de hoy",
+      "Estado": "PASS",
+      "Esperado": "1|1",
+      "Obtenido": "1|1",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Auditoría",
+      "Id": "AUD-2",
+      "Caso": "Altas rechazadas: ningún INSERT auditado como alta completada",
+      "Estado": "PASS",
+      "Esperado": "0",
+      "Obtenido": "0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Id": "NOJ-1",
+      "Caso": "El Deportivo crea DT, Médico y Administrador (POST /api/staff): PERSONA + USUARIO con su rol",
+      "Estado": "PASS",
+      "Esperado": "201 x3; 98600010:4,98600011:3,98600012:1",
+      "Obtenido": "201/201/201; 98600010:4,98600011:3,98600012:1",
+      "Detalle": "98600010 201 {\"message\":\"Colaborador de staff registrado con éxito.\",\"idStaff\":2,\"nombreCompleto\":\"Staff Hu Sesenta 98600010\"} || 98600011 201 {\"message\":\"Colaborador de staff registrado con éxito.\",\"idStaff\":3,\"nombreCompleto\":\"Staff Hu Sesenta 98600011\"} || 98600012 201 {\"message\":\"Colaborador de "
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Id": "NOJ-2",
+      "Caso": "El Administrativo habilita al Administrador (candidatos + POST /api/usuarios/{id}/habilitar)",
+      "Estado": "PASS",
+      "Esperado": "200 (candidato); 200; acceso 1|2",
+      "Obtenido": "200; 200; acceso 1|2",
+      "Detalle": "{\"mensaje\":\"Se habilitó el acceso, pero no se pudo enviar el correo de activación. Reintentá desde Usuarios y Permisos.\"}"
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Id": "NOJ-3",
+      "Caso": "Staff y cuentas de portal no son JUGADORES ni tienen cuotas o inscripciones, después de la generación manual y la automática",
+      "Estado": "PASS",
+      "Esperado": "generación 200 + automática; 0 jugadores|0 cargos",
+      "Obtenido": "200 + cuota de control = 1; 0|0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 8 no jugadores",
+      "Id": "NOJ-4",
+      "Caso": "No aparecen en el padrón, en la búsqueda de Cuotas y Pagos ni en el padrón de cobranzas",
+      "Estado": "PASS",
+      "Esperado": "0|0|0",
+      "Obtenido": "0|0|0",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Caso 2 cuota y aranceles",
+      "Id": "CUO-6",
+      "Caso": "Tras la generación manual y la automática: la cuota del alta no se duplica y conserva su monto",
+      "Estado": "PASS",
+      "Esperado": "1500.00@2026-10-01",
+      "Obtenido": "1500.00@2026-10-01",
+      "Detalle": ""
+    },
+    {
+      "Grupo": "Logs",
+      "Id": "LOG-1",
+      "Caso": "Los logs de las dos APIs no contienen la credencial, la clave JWT, contraseñas ni tokens",
+      "Estado": "PASS",
+      "Esperado": "0",
+      "Obtenido": "0",
+      "Detalle": ""
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+PASS  H1   Integraci¢n por HTTP con credencial y JWT: 403 FORBIDDEN, sin redirecci¢n  [403 {"errorCode":"FORBIDDEN","message":"La API solo acepta conexiones HTTPS.","exito":false,"mensaje":"La API solo acepta conexiones HTTPS."} Location='']
+PASS  H2   Login por HTTP: 403 con el formato del portal (no llega a validar la contrase¤a)  [403 {"exito":false,"mensaje":"La API solo acepta conexiones HTTPS."}]
+PASS  H3   Alias /api/estado-deuda por HTTP: 403  [403]
+PASS  H4   El log registra el rechazo sin la ruta, el DNI, la credencial ni el token  [rechazo en log: True]
+PASS  H5   Un salto que no es proxy confiable no puede declararse HTTPS: 403  [403 {"errorCode":"FORBIDDEN","message":"La API solo acepta conexiones HTTPS.","exito":false,"mensaje":"La API solo acepta conexiones HTTPS."}]
+PASS  H6   Proxy confiable con https y sin credencial: 401 UNAUTHORIZED de HU-055 (pas¢ el chequeo HTTPS)  [401 {"errorCode":"UNAUTHORIZED","message":"Falta la credencial del sistema que llama o no es v lida.","exito":false,"mensaje":"Falta la credencial del sistema que llama o no es v lida."}]
+PASS  H7   Proxy confiable con https, credencial y un JWT inv lido: 401 del token (llega a la autenticaci¢n)  [401]
+PASS  H8   Proxy confiable que informa http (PUBLIC_SCHEME=http): 403  [403]
+PASS  H9   Sin lista expl¡cita, el log avisa que se usan las redes por defecto  [aviso: True]
+PASS  H10  Con PermitirHttpSinTls: el pedido HTTP sigue (401 por falta de credencial) y el log lo advierte  [401; aviso: True]
+PASS  H11  Ning£n log contiene la credencial, la clave JWT ni el token  [ok]
+
+Total: 11 PASS | 0 FAIL

@@ -1,10 +1,12 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormBuilder } from '@angular/forms';
-import { of, Subject } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Subject, of, throwError } from 'rxjs';
 
 import { ActualizacionAranceles } from './actualizacion-aranceles';
 import { EnrollmentFeeModel } from '../../models/EnrollmentFeeModel';
+import { TariffImpactModel } from '../../models/TariffModel';
 import { ArancelesService } from '../../services/aranceles';
 import { EnrollmentFeeService } from '../../services/enrollment-fees';
 import { PagosService } from '../../services/pagos';
@@ -30,6 +32,20 @@ function crear(fees: EnrollmentFeeModel[] = [], historial: unknown[] = []) {
   return { component, createEnrollmentFee, notify };
 }
 
+function impactoDePrueba(cambios: Partial<TariffImpactModel> = {}): TariffImpactModel {
+  return {
+    tipo: 'porcentaje', valor: 10, genero: 'Masculino', idCategoria: null, nombreCategoria: null,
+    vigenteDesde: '2099-01-01', montoBase: 85000, montoNuevo: 93500, mesDeAplicacion: '2099-01-01', reemplazadoDesde: null,
+    lineas: [
+      { idCategoria: 2, nombreCategoria: 'Sub 15', genero: 'Masculino', montoActual: 85000, montoNuevo: 93500, jugadores: 20, diferenciaPorJugador: 8500, diferenciaTotal: 170000 },
+      { idCategoria: 1, nombreCategoria: 'Sub 17', genero: 'Masculino', montoActual: 85000, montoNuevo: 93500, jugadores: 22, diferenciaPorJugador: 8500, diferenciaTotal: 187000 },
+    ],
+    excluidos: [], jugadores: 42, categorias: 2, diferenciaMensual: 357000, mesEnCurso: false,
+    cuotasDelMesPendientesSinPagos: 0, cuotasDelMesConPagos: 0, seEmiteElDia: '2099-01-10',
+    requiereConfirmacionReforzada: true, huella: 'HUELLA-1',
+    ...cambios,
+  };
+}
 const cargar = (component: ActualizacionAranceles, valores: { target: string; amount: string; validFrom?: string }) =>
   component.feeForm.setValue({ validFrom: '2099-01-01', ...valores });
 
@@ -193,8 +209,9 @@ describe('ActualizacionAranceles - cuota mensual e inscripción en pestañas sep
   });
 });
 
-// HU-069: increase by percentage or by a fixed amount over the current tariff. The API keeps receiving the final
-// absolute amount, so every case checks what reaches arancelesService.programar.
+// HU-069: increase by percentage or by a fixed amount over the current tariff. HU-106: the portal does no money math —
+// it sends what was typed (type + value) to the backend simulation, which works out the final amount and its impact.
+// So every case checks what reaches arancelesService.simular, and that nothing is scheduled before confirming.
 describe('ActualizacionAranceles - HU-069 increase modes', () => {
   const tariff = (id: number, target: { genero?: string; idCategoria?: number }, monto: number, estado = 'Vigente') => ({
     idArancel: id, genero: target.genero ?? null, idCategoria: target.idCategoria ?? null,
@@ -210,16 +227,17 @@ describe('ActualizacionAranceles - HU-069 increase modes', () => {
 
   function setup() {
     const programar = vi.fn(() => of({ mensaje: '' }));
+    const simular = vi.fn(() => of(impactoDePrueba()));
     const component = new ActualizacionAranceles(
       new FormBuilder(),
-      { getResumen: () => of({}), getHistorial: () => of(history), programar } as never,
+      { getResumen: () => of({}), getHistorial: () => of(history), programar, simular } as never,
       { getAllEnrollmentFees: () => of([]), createEnrollmentFee: vi.fn() } as never,
       { getCategorias: () => of([{ idCategoria: 3, nombre: 'AFA' }, { idCategoria: 4, nombre: 'Escuelita' }]) } as never,
       { detectChanges: () => {}, markForCheck: () => {} } as never,
       { notify: vi.fn() } as never,
     );
     component.ngOnInit();
-    return { component, programar };
+    return { component, programar, simular };
   }
 
   const fill = (component: ActualizacionAranceles, target: string, amount: string) =>
@@ -239,106 +257,59 @@ describe('ActualizacionAranceles - HU-069 increase modes', () => {
   });
 
   describe('absolute mode', () => {
-    it('sends the typed amount', () => {
-      const { component, programar } = setup();
+    it('sends the typed amount to the simulation and schedules nothing yet', () => {
+      const { component, programar, simular } = setup();
       fill(component, 'genero:Masculino', '92000');
 
-      expect(component.resultingAmount).toBe(92000);
       component.onSubmit();
-      expect(programar).toHaveBeenCalledWith({ genero: 'Masculino' }, 92000, '2099-01-01');
+      expect(simular).toHaveBeenCalledWith({ genero: 'Masculino', tipo: 'absoluto', valor: 92000, vigenteDesde: '2099-01-01' });
+      expect(programar).not.toHaveBeenCalled();
     });
 
     it('works on a destination without a current tariff (its first fee)', () => {
-      const { component, programar } = setup();
+      const { component, simular } = setup();
       fill(component, 'categoria:4', '50000');
 
       expect(component.feeForm.valid).toBe(true);
       expect(component.amountError).toBeNull();
       component.onSubmit();
-      expect(programar).toHaveBeenCalledWith({ idCategoria: 4 }, 50000, '2099-01-01');
+      expect(simular).toHaveBeenCalledWith({ idCategoria: 4, tipo: 'absoluto', valor: 50000, vigenteDesde: '2099-01-01' });
     });
   });
 
   describe('percentage mode', () => {
-    it('$85.000 + 12,5% sends $95.625', () => {
-      const { component, programar } = setup();
+    it('sends the percentage as typed: the backend works out $85.000 + 12,5%', () => {
+      const { component, simular } = setup();
       component.setIncreaseMode('percentage');
       fill(component, 'genero:Masculino', '12.5');
 
-      expect(component.resultingAmount).toBe(95625);
       component.onSubmit();
-      expect(programar).toHaveBeenCalledWith({ genero: 'Masculino' }, 95625, '2099-01-01');
-    });
-
-    it('rounds to the nearest whole peso before sending', () => {
-      const { component, programar } = setup();
-      component.setIncreaseMode('percentage');
-      // 61.999 * 1,075 = 66.648,925 -> 66.649
-      fill(component, 'genero:Femenino', '7.5');
-
-      component.onSubmit();
-      expect(programar).toHaveBeenCalledWith({ genero: 'Femenino' }, 66649, '2099-01-01');
-    });
-
-    it('recalculates when the destination changes', () => {
-      const { component } = setup();
-      component.setIncreaseMode('percentage');
-      fill(component, 'genero:Masculino', '10');
-      expect(component.resultingAmount).toBe(93500);
-
-      component.feeForm.patchValue({ target: 'categoria:3' });
-      expect(component.resultingAmount).toBe(99000);
+      expect(simular).toHaveBeenCalledWith({ genero: 'Masculino', tipo: 'porcentaje', valor: 12.5, vigenteDesde: '2099-01-01' });
     });
 
     it('accepts "12,5" typed with a comma', () => {
-      const { component } = setup();
+      const { component, simular } = setup();
       component.setIncreaseMode('percentage');
       component.feeForm.patchValue({ target: 'genero:Masculino', validFrom: '2099-01-01' });
       const input = { value: '12,5' } as HTMLInputElement;
 
       component.onAmountInput(input);
+      component.onSubmit();
 
       expect(input.value).toBe('12,5');
       expect(component.feeForm.get('amount')?.value).toBe('12.5');
-      expect(component.resultingAmount).toBe(95625);
+      expect(simular).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'porcentaje', valor: 12.5 }));
     });
   });
 
   describe('fixed amount mode', () => {
-    it('$85.000 + $10.000 sends $95.000', () => {
-      const { component, programar } = setup();
+    it('sends the amount to add as typed', () => {
+      const { component, simular } = setup();
       component.setIncreaseMode('fixed');
       fill(component, 'genero:Masculino', '10000');
 
-      expect(component.resultingAmount).toBe(95000);
       component.onSubmit();
-      expect(programar).toHaveBeenCalledWith({ genero: 'Masculino' }, 95000, '2099-01-01');
-    });
-  });
-
-  describe('preview', () => {
-    it('shows the current tariff and the one that will be scheduled', () => {
-      const { component } = setup();
-      component.setIncreaseMode('percentage');
-      fill(component, 'genero:Masculino', '12.5');
-
-      expect(component.tariffPreview).toEqual({ current: '$85.000', next: '$95.625', difference: '+$10.625' });
-    });
-
-    it('is hidden until there is a destination and a valid result', () => {
-      const { component } = setup();
-      component.setIncreaseMode('percentage');
-      expect(component.tariffPreview).toBeNull();
-
-      fill(component, 'categoria:4', '10');
-      expect(component.tariffPreview).toBeNull();
-    });
-
-    it('says "Sin definir" for a first fee in absolute mode', () => {
-      const { component } = setup();
-      fill(component, 'categoria:4', '50000');
-
-      expect(component.tariffPreview).toEqual({ current: 'Sin definir', next: '$50.000', difference: null });
+      expect(simular).toHaveBeenCalledWith({ genero: 'Masculino', tipo: 'montoFijo', valor: 10000, vigenteDesde: '2099-01-01' });
     });
   });
 
@@ -364,7 +335,7 @@ describe('ActualizacionAranceles - HU-069 increase modes', () => {
     });
 
     it('percentage of 0', () => {
-      const { component, programar } = setup();
+      const { component, simular } = setup();
       component.setIncreaseMode('percentage');
       fill(component, 'genero:Masculino', '0');
       component.feeForm.get('amount')?.markAsTouched();
@@ -372,7 +343,7 @@ describe('ActualizacionAranceles - HU-069 increase modes', () => {
       expect(component.amountError).toBe('El porcentaje tiene que ser mayor a 0.');
       expect(component.feeForm.valid).toBe(false);
       component.onSubmit();
-      expect(programar).not.toHaveBeenCalled();
+      expect(simular).not.toHaveBeenCalled();
     });
 
     it('fixed amount of $0', () => {
@@ -385,7 +356,7 @@ describe('ActualizacionAranceles - HU-069 increase modes', () => {
     });
 
     it('destination without a current tariff, as soon as it is chosen', () => {
-      const { component, programar } = setup();
+      const { component, simular } = setup();
       component.setIncreaseMode('percentage');
       component.feeForm.patchValue({ target: 'categoria:4' });
 
@@ -394,7 +365,7 @@ describe('ActualizacionAranceles - HU-069 increase modes', () => {
       fill(component, 'categoria:4', '10');
       expect(component.feeForm.get('amount')?.hasError('sinArancelVigente')).toBe(true);
       component.onSubmit();
-      expect(programar).not.toHaveBeenCalled();
+      expect(simular).not.toHaveBeenCalled();
     });
 
     it('the same destination is fine back in absolute mode', () => {
@@ -530,5 +501,149 @@ describe('ActualizacionAranceles - ventana para cancelar un arancel', () => {
     expect(el.querySelector('[role="dialog"]')).not.toBeNull();
     expect(el.querySelector('.ventana-confirmar')!.textContent).toContain('Cancelando…');
     expect(cancelar).toHaveBeenCalledTimes(1);
+  });
+});
+
+// HU-106: resumen de impacto antes de confirmar. Los números los da el backend (simular); la pantalla los muestra, pide la
+// confirmación que corresponde y recién confirma con la huella de lo que se revisó.
+describe('ActualizacionAranceles - HU-106 resumen de impacto', () => {
+  function setup(impacto: TariffImpactModel = impactoDePrueba()) {
+    const programar = vi.fn((..._args: unknown[]) => of({ exito: true, mensaje: 'Arancel programado correctamente. Las cuotas con este monto se generan el 10/11/2026.', impacto }));
+    const simular = vi.fn(() => of(impacto));
+    const notify = vi.fn();
+    // El arancel masculino vigente: sin él, el porcentaje no se puede pedir (validación de HU-069).
+    const cargarHistorial = vi.fn(() => of([{
+      idArancel: 10, genero: 'Masculino', idCategoria: null, nombreCategoria: null, monto: 85000,
+      vigenteDesde: '2026-01-01', vigenteHasta: null, estado: 'Vigente', puedeCancelar: false,
+    }]));
+    const component = new ActualizacionAranceles(
+      new FormBuilder(),
+      { getResumen: () => of({}), getHistorial: cargarHistorial, programar, simular } as never,
+      { getAllEnrollmentFees: () => of([]), createEnrollmentFee: vi.fn() } as never,
+      { getCategorias: () => of([]) } as never,
+      { detectChanges: () => {}, markForCheck: () => {} } as never,
+      { notify } as never,
+    );
+    component.ngOnInit();
+    component.setIncreaseMode('percentage');
+    component.feeForm.setValue({ target: 'genero:Masculino', amount: '10', validFrom: '2099-01-01' });
+    cargarHistorial.mockClear();
+    return { component, programar, simular, notify, cargarHistorial };
+  }
+
+  it('Revisar impacto abre el resumen con los números del backend y no programa nada', () => {
+    const { component, programar } = setup();
+
+    component.onSubmit();
+
+    expect(component.impacto?.jugadores).toBe(42);
+    expect(component.cambioImpactoTexto(component.impacto!)).toBe('Aumento del 10 % sobre el arancel vigente');
+    expect(component.categoriasImpactoTexto).toBe('Sub 15, Sub 17');
+    expect(component.diferenciaTexto(357000)).toMatch(/^\+\$\s?357\.000 \(aumento\)$/);
+    expect(component.diferenciaTexto(-2000)).toMatch(/^−\$\s?2\.000 \(baja\)$/);
+    expect(programar).not.toHaveBeenCalled();
+  });
+
+  it('con más de una categoría, Confirmar se habilita solo con la cantidad exacta de jugadores', () => {
+    const { component, programar } = setup();
+    component.onSubmit();
+
+    for (const escrito of ['', '41', '42 ', ' 42', 'cuarenta y dos', '042']) {
+      component.confirmacionEscrita = escrito;
+      expect(component.confirmacionValida).toBe(false);
+      component.confirmarImpacto();
+    }
+    expect(programar).not.toHaveBeenCalled();
+
+    component.onConfirmacionEscrita({ value: '42' } as HTMLInputElement);
+    expect(component.confirmacionValida).toBe(true);
+    component.confirmarImpacto();
+    expect(programar).toHaveBeenCalledWith(
+      { genero: 'Masculino', tipo: 'porcentaje', valor: 10, vigenteDesde: '2099-01-01' }, 'HUELLA-1', 42);
+  });
+
+  it('con una sola categoría alcanza con el botón (sin escribir la cantidad)', () => {
+    const { component, programar } = setup(impactoDePrueba({ categorias: 1, requiereConfirmacionReforzada: false }));
+    component.onSubmit();
+
+    expect(component.confirmacionValida).toBe(true);
+    component.confirmarImpacto();
+    expect(programar).toHaveBeenCalledWith(expect.anything(), 'HUELLA-1', null);
+  });
+
+  it('el aviso de éxito aparece recién con la respuesta del backend, y se recargan los datos', () => {
+    const { component, programar, notify, cargarHistorial } = setup();
+    const respuesta = new Subject<unknown>();
+    programar.mockReturnValueOnce(respuesta as never);
+    component.onSubmit();
+    component.confirmacionEscrita = '42';
+
+    component.confirmarImpacto();
+    expect(component.confirmandoImpacto).toBe(true);
+    expect(notify).not.toHaveBeenCalled();
+
+    respuesta.next({ exito: true, mensaje: 'Arancel programado correctamente. Las cuotas con este monto se generan el 10/11/2026.', impacto: impactoDePrueba() });
+    expect(component.impacto).toBeNull();
+    expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^Aranceles actualizados correctamente: género Masculino pasa a .*93\.500.*42 jugadores.*Las cuotas con este monto se generan el 10\/11\/2026\.$/), 'success');
+    expect(cargarHistorial).toHaveBeenCalled();
+  });
+
+  it('si el impacto cambió (409), no se graba: muestra el nuevo resumen y pide escribir la nueva cantidad', () => {
+    const { component, programar, notify } = setup();
+    const nuevo = impactoDePrueba({ jugadores: 44, huella: 'HUELLA-2' });
+    programar.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 409, error: { mensaje: 'El impacto cambió.', impacto: nuevo } })) as never);
+    component.onSubmit();
+    component.confirmacionEscrita = '42';
+
+    component.confirmarImpacto();
+
+    expect(component.impacto?.huella).toBe('HUELLA-2');
+    expect(component.avisoImpactoActualizado).toBe('El impacto cambió.');
+    expect(component.confirmacionEscrita).toBe('');
+    expect(component.confirmacionValida).toBe(false);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('si falla al grabar, no muestra éxito y deja el resumen abierto para reintentar', () => {
+    const { component, programar, notify } = setup();
+    programar.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 500, error: { mensaje: 'Error interno al programar el arancel.' } })) as never);
+    component.onSubmit();
+    component.confirmacionEscrita = '42';
+
+    component.confirmarImpacto();
+
+    expect(component.errorImpacto).toBe('Error interno al programar el arancel.');
+    expect(component.impacto).not.toBeNull();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('cambiar cualquier dato del form descarta el resumen: hay que volver a revisarlo', () => {
+    const { component } = setup();
+    component.onSubmit();
+    expect(component.impacto).not.toBeNull();
+
+    component.feeForm.patchValue({ amount: '11' });
+
+    expect(component.impacto).toBeNull();
+  });
+
+  it('Volver descarta el resumen sin programar nada', () => {
+    const { component, programar } = setup();
+    component.onSubmit();
+
+    component.cerrarImpacto();
+
+    expect(component.impacto).toBeNull();
+    expect(programar).not.toHaveBeenCalled();
+  });
+
+  it('si la simulación es rechazada (400), avisa el motivo y no abre ningún resumen', () => {
+    const { component, simular, notify } = setup();
+    simular.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 400, error: { mensaje: 'El género Masculino ya tiene un arancel que rige desde el 01/11/2099.' } })) as never);
+
+    component.onSubmit();
+
+    expect(component.impacto).toBeNull();
+    expect(notify).toHaveBeenCalledWith('El género Masculino ya tiene un arancel que rige desde el 01/11/2099.', 'error');
   });
 });
