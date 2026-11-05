@@ -1,0 +1,44 @@
+[
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\nuestro\\ApiGestion\\bin\\Debug\\net9.0\\ApiGestion.dll",
+    "sha256": "E7AEBE19B1247CFB7300E075F71DBE2018B1EFCB40763150C385B54A0EAD5874",
+    "lastWriteTimeUtc": "2026-11-04T20:45:04.5863131Z",
+    "size": 445440
+  },
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\nuestro\\ApiGestion\\bin\\Debug\\net9.0\\DaoLibrary.dll",
+    "sha256": "05DDD9B57D4305589A605F9C6F5BEB5AE386C605D62ED3D0098330CCE210F231",
+    "lastWriteTimeUtc": "2026-11-04T20:34:18.3784168Z",
+    "size": 379392
+  },
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\nuestro\\ApiGestion\\bin\\Debug\\net9.0\\EntityLibrary.dll",
+    "sha256": "ED4F00E19C64234D1033BF1AA52562ACC04942BCAE0E150495782E6A3614690A",
+    "lastWriteTimeUtc": "2026-11-04T20:34:17.4839010Z",
+    "size": 74752
+  },
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\nuestro\\ApiGestion\\bin\\Debug\\net9.0\\ServiceLibrary.dll",
+    "sha256": "D131B7F075F0C3CFBE8CEB757545F1AAB1858EF7647C2D931CBE5FC41D62FE08",
+    "lastWriteTimeUtc": "2026-11-04T20:34:18.9589234Z",
+    "size": 104960
+  },
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\ellos\\BackEnd\\CACC.API\\bin\\Debug\\net9.0\\CACC.API.dll",
+    "sha256": "09DD4D540A89F6C9AF6E6CFE076E8B15DC91BEE2C86525CECF3A1E248211BE9E",
+    "lastWriteTimeUtc": "2026-11-04T20:55:14.9379472Z",
+    "size": 173056
+  },
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\ellos\\BackEnd\\CACC.API\\bin\\Debug\\net9.0\\CACC.DAO.dll",
+    "sha256": "6556B39D912C52C6F0A2739BD9401955CE42445CCFE339B6F0B014803C95D4D1",
+    "lastWriteTimeUtc": "2026-11-04T20:34:23.6587001Z",
+    "size": 218112
+  },
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\ellos\\BackEnd\\CACC.API\\bin\\Debug\\net9.0\\CACC.Entities.dll",
+    "sha256": "0FFFB9F80C2A7E96BC9A0295623AC60E3C0028F4A78D707A9DC74109D982565A",
+    "lastWriteTimeUtc": "2026-11-04T20:34:23.2034275Z",
+    "size": 38912
+  }
+]

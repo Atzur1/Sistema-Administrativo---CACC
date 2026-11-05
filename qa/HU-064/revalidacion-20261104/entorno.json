@@ -1,0 +1,56 @@
+{
+  "capturedAtUtc": "2026-11-04T21:58:20.8691823Z",
+  "database": "HU064_Revalidacion_20261104",
+  "sourceDatabase": "ClubCamionerosUnificadaV2_Prueba",
+  "method": "BACKUP COPY_ONLY + RESTORE; no build; temp backup deleted",
+  "adminUrl": "http://localhost:5328",
+  "deportivoUrl": "http://localhost:5329",
+  "pids": {
+    "deportivo": 17508,
+    "admin": 31312
+  },
+  "previousServicesPreserved": {
+    "deportivo": 15960,
+    "ports": [
+      5318,
+      5319
+    ],
+    "admin": 18988
+  },
+  "admin": {
+    "dirty": true,
+    "commit": "f9d4514",
+    "sha256": "E7AEBE19B1247CFB7300E075F71DBE2018B1EFCB40763150C385B54A0EAD5874",
+    "branch": "FramD",
+    "dll": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\nuestro\\ApiGestion\\bin\\Debug\\net9.0\\ApiGestion.dll"
+  },
+  "deportivo": {
+    "sha256": "09DD4D540A89F6C9AF6E6CFE076E8B15DC91BEE2C86525CECF3A1E248211BE9E",
+    "commit": "a9e690f5",
+    "branch": "fix/SCRUM-805-credencial-integracion",
+    "dll": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\ellos\\BackEnd\\CACC.API\\bin\\Debug\\net9.0\\CACC.API.dll"
+  },
+  "unificacion": {
+    "dirty": true,
+    "commit": "61e1030",
+    "branch": "fix/SCRUM-805-credencial-integracion"
+  },
+  "xe": {
+    "target": "ring_buffer",
+    "databaseId": 27,
+    "correlation": "transaction_id/session_id + operation interval; timestamp event is actual COMMIT event when state=1",
+    "transactionStates": {
+      "Commit": 1,
+      "Rollback": 2,
+      "Begin": 0,
+      "Savepoint": 3
+    },
+    "event": "sqlserver.sql_transaction",
+    "session": "HU064_Revalidacion_20261104"
+  },
+  "limitations": [
+    "Compiled snapshots are prior existing builds; current source changes are not built",
+    "Original runner globally generates fees; isolated DB prevents impact on original players",
+    "Initial attempted processes 27292/7300 failed due occupied ports and were not used"
+  ]
+}

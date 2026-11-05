@@ -36,12 +36,12 @@ namespace ServiceLibrary
 
         // El nombre del club. "camioneros" es largo y no aparece por casualidad: se busca en toda la contraseña ya
         // normalizada, con cualquier separador ("Camioneros-1931", "Camio-neros-77").
-        private const string NombreDelClub = "camioneros";
+        private static readonly string NombreDelClub = Normalizar(EntityLibrary.Club.Nombre);
 
         // La sigla, en cambio, es corta: buscada sin separadores daría falsos rechazos al unir dos palabras
         // ("Vaca-Ccuatro-7" -> "vacaccuatro"). Se busca dentro de cada tramo ("Mi-cacc-Norte", "Cacc2026") y en las
         // letras sueltas seguidas, que es como se escribe con puntos ("C.A.C.C.2026").
-        private const string SiglaDelClub = "cacc";
+        private static readonly string SiglaDelClub = Normalizar(EntityLibrary.Club.Sigla);
 
         // Palabras de las listas de contraseñas más usadas. Se comparan contra la contraseña sin los números del
         // final, así "Qwerty12345" y "Argentina2027" caen igual que "qwerty1234" o "argentina2026".
@@ -62,14 +62,28 @@ namespace ServiceLibrary
 
             if (valor.Length < LongitudMinima)
                 problemas.Add($"Tiene que tener al menos {LongitudMinima} caracteres.");
+            // Tope que ya existía (no lo agrega HU-087): limita el costo del hash ante un pedido malicioso.
             if (valor.Length > LongitudMaxima)
                 problemas.Add($"No puede superar los {LongitudMaxima} caracteres.");
-            if (!valor.Any(char.IsLetter) || !valor.Any(char.IsDigit))
-                problemas.Add("Tiene que combinar letras y números.");
+            if (!valor.Any(char.IsLetter))
+                problemas.Add("Tiene que contener al menos una letra.");
+            if (!valor.Any(char.IsDigit))
+                problemas.Add("Tiene que contener al menos un número.");
 
+            // Un problema por tipo de dato: es la propia persona la que está eligiendo su contraseña, así que decirle
+            // cuál de sus datos aparece no revela nada que no sepa.
             string normalizada = Normalizar(valor);
-            if (titular.DatosPersonales().Select(Normalizar).Any(dato => dato.Length >= LargoMinimoDeDatoPersonal && normalizada.Contains(dato)))
-                problemas.Add("No puede contener tu DNI, tu nombre, tu apellido ni tu correo.");
+            foreach (var (tipo, datos) in titular.DatosPersonales())
+            {
+                if (datos.Select(Normalizar).Any(dato => dato.Length >= LargoMinimoDeDatoPersonal && normalizada.Contains(dato, StringComparison.Ordinal)))
+                    problemas.Add(tipo switch
+                    {
+                        TipoDatoPersonal.Dni => "No puede contener tu DNI.",
+                        TipoDatoPersonal.Nombre => "No puede contener tu nombre.",
+                        TipoDatoPersonal.Apellido => "No puede contener tu apellido.",
+                        _ => "No puede contener el usuario de tu correo."
+                    });
+            }
             if (ContieneNombreDelClub(valor, normalizada))
                 problemas.Add("No puede contener el nombre del club.");
             if (Comunes.Contains(normalizada) || BasesComunes.Contains(normalizada.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')))
@@ -125,8 +139,10 @@ namespace ServiceLibrary
             return tramos;
         }
 
-        // Minúsculas, sin acentos y solo letras y dígitos: "Pérez-Gómez" -> "perezgomez", "30.111.222" -> "30111222".
-        internal static string Normalizar(string texto)
+        // Única normalización de la política, solo para COMPARAR (la contraseña se hashea tal cual se escribió).
+        // Minúsculas, sin acentos y solo letras y dígitos: "Pérez-Gómez" -> "perezgomez", "30.111.222" -> "30111222",
+        // "juan.perez" -> "juanperez".
+        public static string Normalizar(string texto)
         {
             var sb = new StringBuilder(texto.Length);
             foreach (char c in texto.Normalize(NormalizationForm.FormD))
@@ -138,16 +154,25 @@ namespace ServiceLibrary
         }
     }
 
+    internal enum TipoDatoPersonal { Dni, Nombre, Apellido, UsuarioDelCorreo }
+
     // Lo que se sabe de la persona dueña de la cuenta, para que la contraseña no lo contenga.
     public sealed record DatosTitular(string? Nombre, string? Apellido, string? Dni, string? Email)
     {
-        internal IEnumerable<string> DatosPersonales()
+        internal IEnumerable<(TipoDatoPersonal Tipo, IEnumerable<string> Datos)> DatosPersonales()
         {
-            if (!string.IsNullOrWhiteSpace(Dni)) yield return Dni;
-            if (!string.IsNullOrWhiteSpace(Email)) yield return Email.Split('@')[0];
-            // Cada palabra del nombre y del apellido por separado ("Juan Pablo" -> "juan", "pablo"), y también cada
-            // tramo de un apellido compuesto con guion ("Pérez-Gómez" -> "perez", "gomez").
-            foreach (var parte in $"{Nombre} {Apellido}".Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            if (!string.IsNullOrWhiteSpace(Dni)) yield return (TipoDatoPersonal.Dni, new[] { Dni });
+            yield return (TipoDatoPersonal.Nombre, Partes(Nombre));
+            yield return (TipoDatoPersonal.Apellido, Partes(Apellido));
+            // Solo lo anterior a la "@": el dominio no es un dato de la persona.
+            if (!string.IsNullOrWhiteSpace(Email)) yield return (TipoDatoPersonal.UsuarioDelCorreo, new[] { Email.Split('@')[0] });
+        }
+
+        // Cada palabra por separado ("Juan Pablo" -> "juan", "pablo") y también cada tramo de un apellido compuesto con
+        // guion ("Pérez-Gómez" -> "perez", "gomez"). Las partes de menos de 3 letras no se controlan (ver Validar).
+        private static IEnumerable<string> Partes(string? texto)
+        {
+            foreach (var parte in (texto ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 yield return parte;
                 foreach (var tramo in parte.Split(new[] { '-', '\'', '’' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))

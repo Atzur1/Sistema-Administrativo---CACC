@@ -14,7 +14,8 @@ public class AuthDao
     internal const string DniNormalizadoSql = "REPLACE(REPLACE(REPLACE(dni, '.', ''), ' ', ''), '-', '')";
 
     // El usuario es el DNI; mientras dura la transición también se acepta el correo de la cuenta.
-    public Usuario? ValidarLogin(string identificador, string contrasenia)
+    // virtual solo para las pruebas (HU-087: una contraseña histórica sigue sirviendo para entrar).
+    public virtual Usuario? ValidarLogin(string identificador, string contrasenia)
     {
         var buscado = IdentificadorCuenta.Interpretar(identificador);
         if (buscado is null) return null;

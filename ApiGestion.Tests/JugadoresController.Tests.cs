@@ -157,6 +157,92 @@ public class JugadoresControllerTests
         Assert.Empty(pagosDao.HistoryCalls);
     }
 
+    // ---- HU-096: sport status in the player header (GET api/jugadores/{id}) ----
+    // The header of Perfil and Deuda shows the sport status the backend already resolves (EstadoDeudaJugador.Estado,
+    // same rule as Deudas y Morosidad and the integration API). The controller only reads it; it never recomputes it.
+
+    private static JugadoresController CreateHeaderController(JugadorResumen player, FakeEstadoDeudaDao estadoDeudaDao)
+    {
+        return new JugadoresController(new FakeJugadoresDao { Player = player }, new FakePagosDao(), estadoDeudaDao);
+    }
+
+    [Theory]
+    [InlineData(0, "habilitado")]
+    [InlineData(1, "solo_entrenamientos")]
+    [InlineData(2, "inhabilitado")]
+    public void GetPlayer_ReturnsTheSportStatusResolvedByTheDebtStatusSource(int overdueFees, string expectedStatus)
+    {
+        FakeEstadoDeudaDao estadoDeudaDao = new();
+        estadoDeudaDao.Rows.Add(new EstadoDeudaJugador(KnownPlayerId, KnownPlayer.Dni, overdueFees, 85_000m, null));
+
+        IActionResult result = CreateHeaderController(KnownPlayer, estadoDeudaDao).ObtenerJugador(KnownPlayerId);
+
+        PlayerSummaryResponseDTO dto = Assert.IsType<PlayerSummaryResponseDTO>(Assert.IsType<OkObjectResult>(result).Value);
+        Assert.Equal(expectedStatus, dto.EstadoDeportivo);
+        Assert.Equal(new[] { KnownPlayer.Dni }, estadoDeudaDao.RequestedDnis);
+        Assert.Null(estadoDeudaDao.RequestedCategories); // the admin portal sees every category
+    }
+
+    [Fact]
+    public void GetPlayer_PlayerWhoLeftTheClub_ReturnsBaja()
+    {
+        FakeEstadoDeudaDao estadoDeudaDao = new();
+        estadoDeudaDao.Rows.Add(new EstadoDeudaJugador(KnownPlayerId, KnownPlayer.Dni, 3, 85_000m, new DateTime(2026, 9, 30)));
+
+        IActionResult result = CreateHeaderController(KnownPlayer, estadoDeudaDao).ObtenerJugador(KnownPlayerId);
+
+        PlayerSummaryResponseDTO dto = Assert.IsType<PlayerSummaryResponseDTO>(Assert.IsType<OkObjectResult>(result).Value);
+        Assert.Equal("baja", dto.EstadoDeportivo);
+    }
+
+    [Fact]
+    public void GetPlayer_SharedDni_UsesTheRowOfTheRequestedPlayer()
+    {
+        FakeEstadoDeudaDao estadoDeudaDao = new();
+        estadoDeudaDao.Rows.Add(new EstadoDeudaJugador(KnownPlayerId + 1, KnownPlayer.Dni, 2, 170_000m, null));
+        estadoDeudaDao.Rows.Add(new EstadoDeudaJugador(KnownPlayerId, KnownPlayer.Dni, 0, 0m, null));
+
+        IActionResult result = CreateHeaderController(KnownPlayer, estadoDeudaDao).ObtenerJugador(KnownPlayerId);
+
+        PlayerSummaryResponseDTO dto = Assert.IsType<PlayerSummaryResponseDTO>(Assert.IsType<OkObjectResult>(result).Value);
+        Assert.Equal("habilitado", dto.EstadoDeportivo);
+    }
+
+    // The status is secondary to the header: if it cannot be read, the profile still loads and the screen shows
+    // "Estado no disponible" instead of inventing one.
+    [Fact]
+    public void GetPlayer_StatusSourceFails_StillReturnsThePlayerWithoutStatus()
+    {
+        FakeEstadoDeudaDao estadoDeudaDao = new() { Error = new InvalidOperationException("db down") };
+
+        IActionResult result = CreateHeaderController(KnownPlayer, estadoDeudaDao).ObtenerJugador(KnownPlayerId);
+
+        PlayerSummaryResponseDTO dto = Assert.IsType<PlayerSummaryResponseDTO>(Assert.IsType<OkObjectResult>(result).Value);
+        Assert.Equal(KnownPlayer.Dni, dto.Dni);
+        Assert.Null(dto.EstadoDeportivo);
+    }
+
+    [Fact]
+    public void GetPlayer_StatusSourceHasNoRow_ReturnsThePlayerWithoutStatus()
+    {
+        IActionResult result = CreateHeaderController(KnownPlayer, new FakeEstadoDeudaDao()).ObtenerJugador(KnownPlayerId);
+
+        PlayerSummaryResponseDTO dto = Assert.IsType<PlayerSummaryResponseDTO>(Assert.IsType<OkObjectResult>(result).Value);
+        Assert.Null(dto.EstadoDeportivo);
+    }
+
+    [Fact]
+    public void GetPlayer_UnknownPlayer_DoesNotQueryTheStatus()
+    {
+        FakeEstadoDeudaDao estadoDeudaDao = new();
+        JugadoresController controller = new(new FakeJugadoresDao { Player = null }, new FakePagosDao(), estadoDeudaDao);
+
+        IActionResult result = controller.ObtenerJugador(999);
+
+        Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Null(estadoDeudaDao.RequestedDnis);
+    }
+
     // ---- Access and read-only contract ----
 
     [Fact]
@@ -184,6 +270,25 @@ public class JugadoresControllerTests
     // ---- Fakes ----
 
     private record HistoryCall(int PlayerId, int Page, int PageSize);
+
+    private class FakeEstadoDeudaDao : IEstadoDeudaDao
+    {
+        public List<EstadoDeudaJugador> Rows { get; } = new();
+        public Exception? Error { get; init; }
+        public IReadOnlyCollection<string>? RequestedDnis { get; private set; }
+        public IReadOnlyCollection<int>? RequestedCategories { get; private set; }
+
+        public IReadOnlyList<EstadoDeudaJugador> ObtenerPorDni(IReadOnlyCollection<string> dnis, IReadOnlyCollection<int>? categoriasPermitidas)
+        {
+            RequestedDnis = dnis;
+            RequestedCategories = categoriasPermitidas;
+            if (Error != null)
+            {
+                throw Error;
+            }
+            return Rows.Where(row => dnis.Contains(row.Dni)).ToList();
+        }
+    }
 
     private class FakeJugadoresDao : IJugadoresDao
     {

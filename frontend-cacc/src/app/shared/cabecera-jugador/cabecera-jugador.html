@@ -1,0 +1,52 @@
+<!-- Cabecera única de jugador (HU-096). El h1 de la pantalla es el nombre del jugador y vive acá. -->
+<div class="cj-barra">
+  <button type="button" class="boton boton-secundario cj-volver" (click)="irAtras()">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    {{ textoVolver }}
+  </button>
+</div>
+
+@if (jugador) {
+  <header class="cj-tarjeta" [attr.aria-labelledby]="idTitulo">
+    <div class="cj-fila">
+      @if (mostrarFoto) {
+        <img class="cj-avatar cj-foto" [src]="jugador.fotoUrl" [alt]="'Foto de ' + nombreCompleto" (error)="fotoNoCargo()" />
+      } @else {
+        <span class="cj-avatar cj-iniciales" aria-hidden="true">{{ iniciales }}</span>
+      }
+
+      <div class="cj-info">
+        <h1 class="cj-nombre" [id]="idTitulo">{{ nombreCompleto }}</h1>
+        <p class="cj-meta">
+          <span class="cj-dni">DNI {{ jugador.dni }}</span>
+          <span class="cj-separador" aria-hidden="true"> · </span>
+          <span class="cj-categoria">{{ categoria }}</span>
+        </p>
+        <div class="cj-estados">
+          <span class="etiqueta-estado cj-estado" [ngClass]="tonoEstado" [attr.title]="tituloEstado">
+            <span class="cj-solo-lectores">Estado deportivo: </span>{{ textoEstado }}
+          </span>
+          @if (bajaSinEstado) {
+            <span class="cj-baja">Dado de baja el {{ fechaBaja }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="cj-acciones">
+        <ng-content select="[cabeceraAcciones]" />
+      </div>
+    </div>
+
+    <ng-content />
+  </header>
+}

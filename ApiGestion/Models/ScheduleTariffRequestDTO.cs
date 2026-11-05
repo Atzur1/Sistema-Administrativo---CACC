@@ -9,6 +9,7 @@ namespace ApiGestion.Models
     {
         public string? Genero { get; set; }
         public int? IdCategoria { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Indicá el tipo de cambio del arancel.")]
         public string Tipo { get; set; } = "absoluto";
         public decimal Valor { get; set; }
         public DateTime VigenteDesde { get; set; }
@@ -32,6 +33,7 @@ namespace ApiGestion.Models
     public class ScheduleTariffRequestDTO : TariffChangeRequestDTO
     {
         // Huella de la simulación que se revisó.
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Revisá el impacto del cambio antes de confirmarlo.")]
         public string Huella { get; set; } = string.Empty;
 
         // La cantidad de jugadores escrita para confirmar (obligatoria si alcanza más de una categoría).

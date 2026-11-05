@@ -19,6 +19,7 @@ import { HelpHint } from '../../shared/help-hint/help-hint';
 import { CustomDatepicker } from '../../shared/custom-datepicker/custom-datepicker';
 import { Ventana } from '../../shared/ventana/ventana';
 import { NotificationService } from '../../shared/notifications/notification.service';
+import { mensajeDeError } from '../../shared/http-error-message';
 import { TariffChangeRequest, TariffChangeType, TariffHistoryItemModel, TariffImpactModel } from '../../models/TariffModel';
 import { IncreaseMode, needsCurrentTariff, sanitizePercentage } from './tariff-increase';
 import { SECCIONES } from '../secciones';
@@ -352,7 +353,7 @@ export class ActualizacionAranceles implements OnInit {
             },
             error: (err: HttpErrorResponse) => {
                 this.simulandoImpacto = false;
-                this.notifications.notify(err.error?.mensaje ?? 'No se pudo calcular el impacto del cambio. Intentá de nuevo.', 'error');
+                this.notifications.notify(mensajeDeError(err, 'No se pudo calcular el impacto del cambio. Intentá de nuevo.'), 'error');
                 this.cdr.detectChanges();
             },
         });
@@ -413,10 +414,10 @@ export class ActualizacionAranceles implements OnInit {
                 if (err.status === 409 && err.error?.impacto) {
                     // Cambiaron los datos desde la simulación: no se grabó nada. Se muestra el impacto nuevo para revisarlo.
                     this.mostrarImpacto(err.error.impacto as TariffImpactModel);
-                    this.avisoImpactoActualizado = err.error.mensaje ?? 'El impacto cambió desde que lo revisaste: revisá los nuevos números.';
+                    this.avisoImpactoActualizado = mensajeDeError(err, 'El impacto cambió desde que lo revisaste: revisá los nuevos números.');
                 } else {
                     // No se grabó nada: el resumen sigue abierto para reintentar.
-                    this.errorImpacto = err.error?.mensaje ?? 'No se pudo programar el arancel. No se guardó ningún cambio: intentá de nuevo.';
+                    this.errorImpacto = mensajeDeError(err, 'No se pudo programar el arancel. No se guardó ningún cambio: intentá de nuevo.');
                 }
                 this.cdr.detectChanges();
             },
@@ -795,7 +796,7 @@ export class ActualizacionAranceles implements OnInit {
                 this.cancelando = false;
                 this.cancelTarget = null;
                 // Ej.: "No se puede cancelar este arancel: 2 cuotas emitidas con él ya tienen pagos registrados."
-                this.notifications.notify(err.error?.mensaje ?? 'No se pudo cancelar el arancel. Intentá de nuevo.', 'error');
+                this.notifications.notify(mensajeDeError(err, 'No se pudo cancelar el arancel. Intentá de nuevo.'), 'error');
                 this.cdr.detectChanges();
             },
         });
@@ -840,7 +841,7 @@ export class ActualizacionAranceles implements OnInit {
             },
             error: (err: HttpErrorResponse) => {
                 this.enviando = false;
-                const mensaje = err.error?.mensaje ?? 'No se pudo programar el valor de inscripción. Intentá de nuevo.';
+                const mensaje = mensajeDeError(err, 'No se pudo programar el valor de inscripción. Intentá de nuevo.');
                 this.notifications.notify(mensaje, 'error');
                 this.cdr.detectChanges();
             },

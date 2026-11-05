@@ -65,7 +65,7 @@ namespace ServiceLibrary
             if (!_categoriasDao.ObtenerTodas().Any(c => c.IdCategoria == solicitud.IdCategoria))
             {
                 return ResultadoOperacion<AltaJugadorRegistrada>.Falla(TipoResultado.Invalido,
-                    $"No existe la categoría con id {solicitud.IdCategoria}.");
+                    "La categoría elegida no existe.");
             }
 
             decimal? montoInscripcion = null;

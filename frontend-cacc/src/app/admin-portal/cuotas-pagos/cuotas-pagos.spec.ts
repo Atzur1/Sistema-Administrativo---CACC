@@ -445,6 +445,40 @@ describe('CuotasPagos - mostrador: medio de pago y foco después del cobro (HU-1
     expect(component.selectedPlayer?.idJugador).toBe(1);
     expect(component.paymentForm.value.amount).toBe('85000');
   });
+
+  // HU-090: inscripción. Se muestra el { mensaje } de la API; un cuerpo crudo (HTML de un proxy, un texto técnico)
+  // nunca llega al toast.
+  it('an enrollment payment error shows the API message as is', async () => {
+    guardarUltimoMedioPago('Efectivo');
+    const { component, elegir, refrescar, enrollmentService, notify } = await crearMostrador();
+    enrollmentService.registerEnrollmentPayment.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 400, error: { exito: false, mensaje: 'El monto supera el saldo pendiente de la inscripción ($30.000).' } })),
+    );
+    await elegir();
+    component.switchPanelMode('inscripcion');
+    await refrescar();
+
+    component.onSubmitInscripcion();
+    await refrescar();
+
+    expect(notify).toHaveBeenCalledWith('El monto supera el saldo pendiente de la inscripción ($30.000).', 'error');
+  });
+
+  it('an enrollment payment error with a raw body shows the screen fallback, never the raw text', async () => {
+    guardarUltimoMedioPago('Efectivo');
+    const { component, elegir, refrescar, enrollmentService, notify } = await crearMostrador();
+    enrollmentService.registerEnrollmentPayment.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 502, error: '<html><body>502 Bad Gateway</body></html>' })),
+    );
+    await elegir();
+    component.switchPanelMode('inscripcion');
+    await refrescar();
+
+    component.onSubmitInscripcion();
+    await refrescar();
+
+    expect(notify).toHaveBeenCalledWith('No se pudo registrar el pago de inscripción. Intentá de nuevo.', 'error');
+  });
 });
 
 describe('CuotasPagos - utilidades del mostrador (HU-100)', () => {

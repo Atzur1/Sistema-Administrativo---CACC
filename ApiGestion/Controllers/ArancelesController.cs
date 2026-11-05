@@ -111,7 +111,7 @@ namespace ApiGestion.Controllers
                 }
                 if (resultado.SeEmiteElDia is { } dia)
                 {
-                    mensaje += $" Las cuotas con este monto se generan el {dia:dd/MM/yyyy}.";
+                    mensaje += $" Las cuotas con este monto se generan el {FormatoVisible.Fecha(dia)}.";
                 }
                 if (resultado.CuotasReemitidas > 0)
                 {

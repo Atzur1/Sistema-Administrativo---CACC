@@ -218,19 +218,22 @@ describe('AccountAccess - enlace inválido', () => {
 });
 
 describe('Fortaleza y requisitos de la contraseña', () => {
-  it('la longitud mínima y letras+números son obligatorios; el resto son recomendaciones', () => {
+  it('la longitud mínima, las letras y los números son obligatorios; el resto son recomendaciones', () => {
     const requisitos = evaluarRequisitos('');
 
-    expect(requisitos.filter((r) => r.obligatorio).map((r) => r.id)).toEqual(['largo', 'letrasYNumeros']);
+    expect(requisitos.filter((r) => r.obligatorio).map((r) => r.id)).toEqual(['largo', 'letras', 'numeros']);
+    expect(requisitos.filter((r) => r.obligatorio).map((r) => r.texto)).toEqual(['Al menos 10 caracteres', 'Contiene letras', 'Contiene números']);
     expect(requisitos.filter((r) => !r.obligatorio).map((r) => r.id)).toEqual(['mayusculasMinusculas', 'simbolo']);
   });
 
   it('detecta cada requisito', () => {
     const cumplidos = (pw: string) => evaluarRequisitos(pw).filter((r) => r.cumplido).map((r) => r.id);
 
-    expect(cumplidos('abcdefghij')).toEqual(['largo']);
-    expect(cumplidos('Abcdefghi1')).toEqual(['largo', 'letrasYNumeros', 'mayusculasMinusculas']);
-    expect(cumplidos('Abcdefgh1!')).toEqual(['largo', 'letrasYNumeros', 'mayusculasMinusculas', 'simbolo']);
+    expect(cumplidos('abcdefghij')).toEqual(['largo', 'letras']);
+    expect(cumplidos('1234567890')).toEqual(['largo', 'numeros']);
+    expect(cumplidos('abcdefgh1X')).toEqual(['largo', 'letras', 'numeros', 'mayusculasMinusculas']);
+    expect(cumplidos('Abcdefgh1!')).toEqual(['largo', 'letras', 'numeros', 'mayusculasMinusculas', 'simbolo']);
+    expect(cumplidos('Abc1')).toEqual(['letras', 'numeros', 'mayusculasMinusculas']);
     expect(cumplidos('Ñandú12345')).toContain('mayusculasMinusculas'); // contempla ñ y acentos
   });
 
@@ -253,9 +256,18 @@ describe('Fortaleza y requisitos de la contraseña', () => {
     expect(component.form.invalid).toBe(true);
   });
 
-  it('si el servidor rechaza la contraseña por la política, explica el motivo y deja elegir otra', async () => {
+  // HU-087: el servidor es la autoridad (DNI, nombre, apellido, correo, comunes, club). Cada motivo se muestra en su
+  // propia línea, y el mismo enlace sirve para volver a intentar.
+  it('si el servidor rechaza la contraseña por la política, lista cada motivo y deja elegir otra', async () => {
     const complete = vi.fn(() =>
-      throwError(() => ({ status: 400, error: { problemas: ['No puede contener tu DNI, tu nombre, tu apellido ni tu correo.'] } })),
+      throwError(() => ({
+        status: 400,
+        error: {
+          exito: false,
+          mensaje: 'La contraseña no cumple los requisitos: No puede contener tu apellido. Es una contraseña demasiado común. Elegí otra.',
+          problemas: ['No puede contener tu apellido.', 'Es una contraseña demasiado común. Elegí otra.'],
+        },
+      })),
     );
     const { fixture, element, component } = await create('crear', { complete });
 
@@ -263,8 +275,35 @@ describe('Fortaleza y requisitos de la contraseña', () => {
     component.submit();
     fixture.detectChanges();
 
-    expect(texto(element)).toContain('No puede contener tu DNI');
+    const lista = element.querySelector<HTMLElement>('.password-problems')!;
+    expect(texto(lista)).toContain('La contraseña no cumple los requisitos:');
+    expect(Array.from(lista.querySelectorAll<HTMLElement>('li')).map(texto)).toEqual([
+      'No puede contener tu apellido.',
+      'Es una contraseña demasiado común. Elegí otra.',
+    ]);
+    expect(lista.getAttribute('role')).toBe('alert');
     expect(element.querySelector('form')).not.toBeNull();
+    expect(texto(element)).not.toContain('Validation failed');
+  });
+
+  it('después de un rechazo de la política, vuelve a enviar con el MISMO enlace', async () => {
+    const complete = vi
+      .fn()
+      .mockReturnValueOnce(throwError(() => ({ status: 400, error: { problemas: ['Es una contraseña demasiado común. Elegí otra.'] } })))
+      .mockReturnValueOnce(of({ mensaje: 'La contraseña se actualizó. Ya puede iniciar sesión.' }));
+    const { fixture, element, component } = await create('restablecer', { complete });
+
+    llenar(component, 'password123', 'password123');
+    component.submit();
+    fixture.detectChanges();
+    llenar(component, 'Tribuna-Norte-77', 'Tribuna-Norte-77');
+    component.submit();
+    fixture.detectChanges();
+
+    expect(complete).toHaveBeenNthCalledWith(1, 'token-de-prueba', 'password123');
+    expect(complete).toHaveBeenNthCalledWith(2, 'token-de-prueba', 'Tribuna-Norte-77');
+    expect(component.estado).toBe('exito');
+    expect(element.querySelector('.password-problems')).toBeNull();
   });
 });
 
@@ -305,14 +344,33 @@ describe('AccountAccess - campos de contraseña más claros', () => {
     };
 
     expect(texto(element)).toContain('Al menos 10 caracteres');
-    expect(texto(element)).toContain('Letras y números');
+    expect(texto(element)).toContain('Contiene letras');
+    expect(texto(element)).toContain('Contiene números');
     expect(tildadas()).toBe(0);
 
     escribir('clubcamion');
-    expect(tildadas()).toBe(1);
+    expect(tildadas()).toBe(2);
 
     escribir('clubcamion7');
-    expect(tildadas()).toBe(2);
+    expect(tildadas()).toBe(3);
+  });
+
+  // HU-087: el estado de cada requisito no depende solo del color: se dice en texto y cambia el ícono.
+  it('cada requisito dice en texto si está cumplido o pendiente', async () => {
+    const { fixture, element } = await create('crear');
+    const fila = (texto_: string) =>
+      Array.from(element.querySelectorAll<HTMLElement>('.requirements li')).find((li) => texto(li).includes(texto_))!;
+    const input = element.querySelector<HTMLInputElement>('#password')!;
+
+    expect(texto(fila('Contiene números'))).toContain('Pendiente');
+    input.value = 'abc1';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(texto(fila('Contiene números'))).toContain('Cumplido');
+    expect(texto(fila('Al menos 10 caracteres'))).toContain('Pendiente');
+    expect(fila('Contiene números').querySelector('[data-icono="cumplido"]')).not.toBeNull();
+    expect(fila('Al menos 10 caracteres').querySelector('[data-icono="pendiente"]')).not.toBeNull();
   });
 });
 

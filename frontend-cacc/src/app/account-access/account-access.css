@@ -347,6 +347,34 @@
   color: var(--color-bg-card);
 }
 
+/* HU-087: "Cumplido:" / "Pendiente:" para lectores de pantalla (a la vista ya cambia el ícono). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* HU-087: los motivos de la API, uno por línea. */
+.password-problems-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.password-problems-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.password-problems-list li + li {
+  margin-top: 2px;
+}
+
 .requirement-tag {
   margin-left: auto;
   font-style: normal;

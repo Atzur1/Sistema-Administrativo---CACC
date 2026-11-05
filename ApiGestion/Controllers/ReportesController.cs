@@ -244,6 +244,6 @@ namespace ApiGestion.Controllers
         // padrón de deudores no está acotado a un período (es la deuda pendiente de
         // HOY, no de un mes puntual), así que se informa como la temporada vigente
         // hasta la fecha de emisión — mismo criterio que sugirió QA en la revisión.
-        private static string PeriodoLabel() => $"Temporada {RelojNegocio.Ahora.Year}, hasta {RelojNegocio.Ahora:dd/MM/yyyy}";
+        private static string PeriodoLabel() => $"Temporada {RelojNegocio.Ahora.Year}, hasta {FormatoVisible.Fecha(RelojNegocio.Ahora)}";
     }
 }

@@ -29,16 +29,18 @@ if (usarCabecerasDeProxy)
         ApiGestion.Services.ProxyConfiable.Configurar(options, builder.Configuration));
 }
 
-builder.Services.AddControllers();
+// HU-090: los textos de binding de rutas y queries, en español.
+builder.Services.AddControllers(ApiGestion.Services.ErroresDelPortal.ConfigurarMensajesDeBinding);
 // HU-058: en la API de integración un cuerpo ilegible responde con el contrato { errorCode, message, field }.
-// HU-090: el resto de la API responde 400 con { mensaje, errores } en español, como cualquier otro rechazo del portal.
+// HU-090: en el resto del portal, la validación responde 400 con { exito, mensaje } en español (antes, el
+// ValidationProblemDetails del framework, en inglés y sin "mensaje").
 builder.Services.PostConfigure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
         ApiGestion.Services.IntegrationErrors.IsIntegrationRequest(context.HttpContext.Request.Path)
             ? ApiGestion.Services.IntegrationErrors.FromInvalidModelState(context,
                 context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("ApiGestion.Integracion"))
-            : ApiGestion.Services.RespuestaDeValidacion.Crear(context);
+            : ApiGestion.Services.ErroresDelPortal.RespuestaValidacion(context);
 });
 builder.Services.AddSingleton<Microsoft.AspNetCore.Mvc.Infrastructure.IClientErrorFactory, ApiGestion.Services.IntegrationClientErrorFactory>();
 builder.Services.AddRateLimiter(options =>
@@ -145,6 +147,9 @@ builder.Services.AddScoped<DaoLibrary.IAuditDao>(provider =>
     new DaoLibrary.AuditDao(conexionSql));
 builder.Services.AddScoped<DaoLibrary.AccountAccessDao>(provider =>
     new DaoLibrary.AccountAccessDao(conexionSql));
+// HU-087: activación y recuperación de contraseña con la política de contraseñas nuevas.
+builder.Services.AddScoped<DaoLibrary.ITokensAccesoCuenta>(provider => provider.GetRequiredService<DaoLibrary.AccountAccessDao>());
+builder.Services.AddScoped<ServiceLibrary.AccesoCuentaService>();
 builder.Services.AddScoped<DaoLibrary.IUsuariosPortalDao>(provider =>
     new DaoLibrary.UsuariosPortalDao(conexionSql));
 // Solo lo usa el arranque: avisa si el usuario de la base puede borrar la auditoría.

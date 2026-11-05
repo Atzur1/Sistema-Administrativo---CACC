@@ -402,15 +402,6 @@ public class IntegrationControllersErrorContractTests
         Assert.Null(error.Field);
     }
 
-    private sealed class FakeProblemDetailsFactory : Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory
-    {
-        public override ProblemDetails CreateProblemDetails(HttpContext httpContext, int? statusCode = null, string? title = null,
-            string? type = null, string? detail = null, string? instance = null) => new() { Status = statusCode, Title = "problem" };
-
-        public override ValidationProblemDetails CreateValidationProblemDetails(HttpContext httpContext, ModelStateDictionary modelStateDictionary,
-            int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null) => new();
-    }
-
     private sealed class Status415 : Microsoft.AspNetCore.Mvc.Infrastructure.IClientErrorActionResult
     {
         public int? StatusCode => 415;
@@ -422,7 +413,7 @@ public class IntegrationControllersErrorContractTests
     [InlineData("/api/aranceles/programar", false)]
     public void MvcClientErrors_UseTheContractOnlyInIntegration(string path, bool isIntegration)
     {
-        var factory = new IntegrationClientErrorFactory(new FakeProblemDetailsFactory(), Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
+        var factory = new IntegrationClientErrorFactory(Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Path = path;
 
@@ -435,7 +426,9 @@ public class IntegrationControllersErrorContractTests
         }
         else
         {
-            Assert.IsType<ProblemDetails>(result.Value);
+            // HU-090: el resto del portal responde { exito, mensaje } en español (antes, ProblemDetails con title en inglés).
+            Assert.IsNotType<ProblemDetails>(result.Value);
+            Assert.NotNull(result.Value?.GetType().GetProperty("mensaje")?.GetValue(result.Value));
         }
     }
 

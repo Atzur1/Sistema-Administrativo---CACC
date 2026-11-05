@@ -144,7 +144,7 @@ public class BeneficiosServiceTests
 
         Assert.Equal(TipoResultado.Conflicto, resultado.Tipo);
         Assert.Equal(
-            "El jugador ya tiene una bonificación para ese período (Becado, del 01/11/2026 al 31/12/2026). Ajustá las fechas o cancelá la existente.",
+            "El jugador ya tiene la bonificación \"Becado\" programada del 01/11/2026 al 31/12/2026. Ajustá las fechas o cancelá la existente.",
             resultado.Mensaje);
         Assert.Null(dao.Creado);
     }
@@ -176,20 +176,113 @@ public class BeneficiosServiceTests
         Assert.Equal(42, resultado.Valor);
     }
 
+    // ===== HU-090: superposición con otra bonificación (409) =====
+    // El mensaje nombra la bonificación que molesta, si está vigente o programada, y su período en dd/MM/yyyy.
+
+    private static Discount Existente(DiscountStatus estado) => new()
+    {
+        Id = 50,
+        PlayerId = 3,
+        Type = "Beca Completa",
+        Status = estado,
+        StartDate = new DateTime(2026, 10, 1),
+        EndDate = new DateTime(2026, 12, 31),
+    };
+
+    [Theory]
+    [InlineData(DiscountStatus.Active, "vigente")]
+    [InlineData(DiscountStatus.Scheduled, "programada")]
+    public void AsignarSuperpuesto_NombraLaBonificacionSuEstadoYSuPeriodo(DiscountStatus estado, string textoEstado)
+    {
+        var (servicio, dao) = Crear(new JugadorResumen { IdJugador = 3 });
+        dao.Choques.Enqueue(Existente(estado));
+
+        var resultado = servicio.Asignar(3, Beca(new DateTime(2026, 11, 1), new DateTime(2027, 1, 31)));
+
+        Assert.Equal(TipoResultado.Conflicto, resultado.Tipo);
+        Assert.Equal(
+            $"El jugador ya tiene la bonificación \"Beca Completa\" {textoEstado} del 01/10/2026 al 31/12/2026. " +
+            "Ajustá las fechas o cancelá la existente.",
+            resultado.Mensaje);
+        Assert.Null(dao.Creado);
+    }
+
+    [Fact]
+    public void EditarSuperpuesto_TambienNombraLaBonificacionYSuPeriodo()
+    {
+        var actual = new Discount { Id = 42, PlayerId = 3, Status = DiscountStatus.Scheduled, StartDate = new DateTime(2027, 2, 1), EndDate = new DateTime(2027, 3, 31) };
+        var (servicio, dao) = Crear(new JugadorResumen { IdJugador = 3 }, actual);
+        dao.Choques.Enqueue(Existente(DiscountStatus.Active));
+
+        var resultado = servicio.Editar(3, 42, Beca(new DateTime(2026, 12, 1), new DateTime(2027, 3, 31)));
+
+        Assert.Equal(TipoResultado.Conflicto, resultado.Tipo);
+        Assert.Contains("\"Beca Completa\" vigente del 01/10/2026 al 31/12/2026", resultado.Mensaje);
+    }
+
+    // La escritura vuelve a controlar la superposición en su transacción: si otro pedido ganó la carrera, el mensaje
+    // igual nombra la bonificación que quedó grabada.
+    [Fact]
+    public void AsignarPierdeLaCarrera_NombraLaBonificacionQueSeGraboPrimero()
+    {
+        var (servicio, dao) = Crear(new JugadorResumen { IdJugador = 3 });
+        dao.Choques.Enqueue(null);
+        dao.Choques.Enqueue(Existente(DiscountStatus.Scheduled));
+        dao.FallaAlCrear = true;
+
+        var resultado = servicio.Asignar(3, Beca(new DateTime(2026, 11, 1), new DateTime(2027, 1, 31)));
+
+        Assert.Equal(TipoResultado.Conflicto, resultado.Tipo);
+        Assert.Contains("\"Beca Completa\" programada del 01/10/2026 al 31/12/2026", resultado.Mensaje);
+    }
+
+    // Las fechas no dependen de la cultura del servidor: con de-DE "dd/MM/yyyy" saldría 01.10.2026.
+    [Theory]
+    [InlineData("de-DE")]
+    [InlineData("en-US")]
+    [InlineData("nl-NL")]
+    public void LasFechasDelMensajeSalenEnDdMmYyyy_CualquieraSeaLaCulturaDelServidor(string cultura)
+    {
+        var anterior = System.Globalization.CultureInfo.CurrentCulture;
+        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo(cultura);
+        try
+        {
+            var (servicio, dao) = Crear(new JugadorResumen { IdJugador = 3 });
+            dao.Choques.Enqueue(Existente(DiscountStatus.Active));
+            var conflicto = servicio.Asignar(3, Beca(new DateTime(2026, 11, 1), new DateTime(2027, 1, 31)));
+
+            var (servicioBaja, _) = Crear(new JugadorResumen { IdJugador = 3, FechaBaja = new DateTime(2026, 9, 30) });
+            var baja = servicioBaja.Asignar(3, Beca(new DateTime(2026, 11, 1)));
+
+            Assert.Contains("del 01/10/2026 al 31/12/2026", conflicto.Mensaje);
+            Assert.Contains("desde el 30/09/2026", baja.Mensaje);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = anterior;
+        }
+    }
+
     private sealed class DiscountDaoDePrueba(Discount? guardado) : DiscountDao("")
     {
         public bool ConPagosEnLaCuotaEmitida { get; set; }
         public Discount? Creado { get; private set; }
+        // Lo que devuelve cada consulta de superposición, en orden (vacía = no hay choque).
+        public Queue<Discount?> Choques { get; } = new();
+        // Simula que la transacción encontró una superposición (otro pedido grabó primero).
+        public bool FallaAlCrear { get; set; }
 
         public override DiscountType? GetDiscountTypeByName(string name) => new DiscountType { Id = 1, Name = name };
         public override List<Discount> GetDiscountsByPlayer(long playerId) => guardado == null ? new() : new() { guardado };
         public override bool VoidDiscount(long playerId, long discountId) => guardado?.Id == discountId;
         public override bool HasPaymentsInPeriod(long playerId, DateTime period) => ConPagosEnLaCuotaEmitida;
         public Discount? Choque { get; set; }
-        public override Discount? GetOverlappingDiscount(long playerId, DateTime startDate, DateTime endDate, long excludeId = 0) => Choque;
+        public override Discount? GetOverlappingDiscount(long playerId, DateTime startDate, DateTime endDate, long excludeId = 0)
+            => Choques.Count > 0 ? Choques.Dequeue() : Choque;
 
         public override Discount? CreateDiscount(Discount discount)
         {
+            if (FallaAlCrear) return null;
             discount.Id = 77;
             Creado = discount;
             return discount;

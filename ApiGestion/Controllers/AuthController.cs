@@ -21,10 +21,12 @@ namespace ApiGestion.Controllers
         private readonly AccountAccessDao _accountAccessDao;
         private readonly EmailLinkSender _emailSender;
         private readonly LoginThrottle _loginThrottle;
+        private readonly AccesoCuentaService _accesoCuenta;
 
         // Inyectamos el AuthDao y la configuración (para leer la clave JWT)
         public AuthController(AuthDao authDao, IConfiguration config, ILogger<AuthController> logger,
-            AccountAccessDao accountAccessDao, EmailLinkSender emailSender, LoginThrottle loginThrottle)
+            AccountAccessDao accountAccessDao, EmailLinkSender emailSender, LoginThrottle loginThrottle,
+            AccesoCuentaService accesoCuenta)
         {
             _authDao = authDao;
             _config = config;
@@ -32,6 +34,7 @@ namespace ApiGestion.Controllers
             _accountAccessDao = accountAccessDao;
             _emailSender = emailSender;
             _loginThrottle = loginThrottle;
+            _accesoCuenta = accesoCuenta;
         }
 
         [HttpPost("password-reset/request")]
@@ -74,22 +77,19 @@ namespace ApiGestion.Controllers
         // resuelve el propio token, no hace falta que el cliente lo indique.
         [HttpPost("account-access/complete")]
         [EnableRateLimiting("account-complete")]
+        // HU-087: la política de contraseñas nuevas (PoliticaContrasenia) se aplica en AccesoCuentaService. Si la contraseña
+        // no cumple: 400 con { exito, mensaje, problemas } y el enlace sigue sirviendo para corregirla. Un enlace vencido o
+        // usado: 400 con { exito, mensaje } (sin "problemas"), como siempre. El login no pasa por acá ni aplica la política.
         public IActionResult CompletarAcceso([FromBody] CompleteAccountAccessRequestDTO request)
         {
-            var tokenHash = TokenAccesoCuenta.Hash(request.Token);
-            var titular = _accountAccessDao.ObtenerTitularDelToken(tokenHash);
-            if (titular is null)
-                return BadRequest(new { mensaje = "El enlace no es válido o venció." });
+            var resultado = _accesoCuenta.Completar(TokenAccesoCuenta.Hash(request.Token), request.Password);
+            if (resultado.Problemas.Count > 0)
+            {
+                // Sin la contraseña ni el enlace: solo que se rechazó y cuántas reglas faltaron.
+                _logger.LogInformation("Contraseña nueva rechazada por la política ({Cantidad} reglas sin cumplir).", resultado.Problemas.Count);
+            }
 
-            // Política de contraseñas nuevas (las que ya existen siguen funcionando).
-            var problemas = PoliticaContrasenia.Validar(request.Password,
-                new DatosTitular(titular.Value.Nombre, titular.Value.Apellido, titular.Value.Dni, titular.Value.Email));
-            if (problemas.Count > 0)
-                return BadRequest(new { mensaje = "La contraseña no cumple los requisitos: " + string.Join(" ", problemas), problemas });
-
-            if (!_accountAccessDao.CompleteAccountAccess(tokenHash, PasswordHasher.HashPassword(request.Password)))
-                return BadRequest(new { mensaje = "El enlace no es válido o venció." });
-            return Ok(new { mensaje = "La contraseña se actualizó. Ya puede iniciar sesión." });
+            return this.Responder(resultado, _ => Ok(new { mensaje = "La contraseña se actualizó. Ya puede iniciar sesión." }));
         }
 
         [HttpPost("login")]

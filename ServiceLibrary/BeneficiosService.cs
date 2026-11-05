@@ -101,7 +101,7 @@ namespace ServiceLibrary
             if (choque != null) return Superposicion(choque);
 
             Discount? creado = _discountDao.CreateDiscount(beneficio);
-            if (creado == null) return ResultadoOperacion<Discount>.Falla(TipoResultado.Conflicto, MensajeSuperposicion);
+            if (creado == null) return SuperposicionTrasLaEscritura(idJugador, beneficio);
 
             // Se devuelve lo grabado (con jugador, categoría y estado resueltos), la misma forma que el GET.
             return ResultadoOperacion<Discount>.Ok(Buscar(idJugador, creado.Id) ?? creado);
@@ -137,7 +137,7 @@ namespace ServiceLibrary
             if (choque != null) return Superposicion(choque);
 
             bool? actualizado = _discountDao.UpdateDiscount(beneficio);
-            if (actualizado == null) return ResultadoOperacion<Discount>.Falla(TipoResultado.Conflicto, MensajeSuperposicion);
+            if (actualizado == null) return SuperposicionTrasLaEscritura(idJugador, beneficio, actual.Id);
             if (actualizado == false)
             {
                 return ResultadoOperacion<Discount>.Falla(TipoResultado.NoEncontrado, "El jugador no tiene esa bonificación para editar.");
@@ -213,7 +213,7 @@ namespace ServiceLibrary
             if (jugador.FechaBaja != null)
             {
                 return (null, ResultadoOperacion<Discount>.Falla(TipoResultado.NoProcesable,
-                    $"El jugador está dado de baja desde el {jugador.FechaBaja:dd/MM/yyyy}: no se le pueden asignar ni editar becas o descuentos."));
+                    $"El jugador está dado de baja desde el {FormatoVisible.Fecha(jugador.FechaBaja.Value)}: no se le pueden asignar ni editar becas o descuentos."));
             }
 
             DiscountType? motivo = _discountDao.GetDiscountTypeByName(solicitud.Motivo.Trim());
@@ -251,16 +251,34 @@ namespace ServiceLibrary
             $"{CalendarioCuotas.NombreDelPeriodo(primero.Periodo)} " +
             (primero.CuotaYaEmitida
                 ? "(ya emitida y sin pagos). Las anteriores ya vencieron o tienen pagos: becarlas sería condonar deuda."
-                : $"(se emite el {primero.Emision:dd/MM/yyyy}). Las anteriores ya se emitieron: becarlas sería condonar deuda.");
+                : $"(se emite el {FormatoVisible.Fecha(primero.Emision)}). Las anteriores ya se emitieron: becarlas sería condonar deuda.");
 
         // Un beneficio puntual del jugador. Los cancelados a mano no se alcanzan, igual que en el resto del sistema.
         private Discount? Buscar(long idJugador, long idBeneficio)
             => _discountDao.GetDiscountsByPlayer(idJugador).FirstOrDefault(beneficio => beneficio.Id == idBeneficio);
 
-        // Nombra al beneficio que está en el medio, con su período, para que se sepa qué mover.
+        // HU-090: nombra al beneficio que está en el medio, si rige hoy o está programado, y su período (dd/MM/yyyy sin
+        // depender de la cultura del servidor), para que se sepa qué mover. La pantalla lo muestra tal cual: no lo parsea.
         private static ResultadoOperacion<Discount> Superposicion(Discount choque)
-            => ResultadoOperacion<Discount>.Falla(TipoResultado.Conflicto,
-                $"El jugador ya tiene una bonificación para ese período ({choque.Type}, del {choque.StartDate:dd/MM/yyyy} " +
-                $"al {choque.EndDate:dd/MM/yyyy}). Ajustá las fechas o cancelá la existente.");
+        {
+            string estado = choque.Status switch
+            {
+                DiscountStatus.Active => " vigente",
+                DiscountStatus.Scheduled => " programada",
+                _ => ""
+            };
+            return ResultadoOperacion<Discount>.Falla(TipoResultado.Conflicto,
+                $"El jugador ya tiene la bonificación \"{choque.Type}\"{estado} del {FormatoVisible.Fecha(choque.StartDate)} " +
+                $"al {FormatoVisible.Fecha(choque.EndDate)}. Ajustá las fechas o cancelá la existente.");
+        }
+
+        // La escritura rechazó por superposición (otro pedido grabó primero): se vuelve a buscar cuál es para nombrarla.
+        private ResultadoOperacion<Discount> SuperposicionTrasLaEscritura(long idJugador, Discount beneficio, long excluir = 0)
+        {
+            Discount? choque = _discountDao.GetOverlappingDiscount(idJugador, beneficio.StartDate, beneficio.EndDate, excluir);
+            return choque != null
+                ? Superposicion(choque)
+                : ResultadoOperacion<Discount>.Falla(TipoResultado.Conflicto, MensajeSuperposicion);
+        }
     }
 }

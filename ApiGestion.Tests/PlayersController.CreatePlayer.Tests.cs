@@ -219,8 +219,10 @@ public class PlayersControllerCreatePlayerTests
 
         IActionResult result = controller.CreatePlayer(request);
 
-        Assert.IsType<BadRequestObjectResult>(result);
+        BadRequestObjectResult badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Null(players.Created);
+        // HU-090: { mensaje } en español, sin el id interno de la categoría.
+        Assert.Equal("La categoría elegida no existe.", badRequest.Value?.GetType().GetProperty("mensaje")?.GetValue(badRequest.Value));
     }
 
     [Theory]

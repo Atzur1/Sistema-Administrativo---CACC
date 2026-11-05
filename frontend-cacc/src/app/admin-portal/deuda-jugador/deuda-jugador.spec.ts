@@ -115,6 +115,8 @@ interface Opciones {
   deuda?: (PendingFeeDetailModel[] | Error | HttpErrorResponse)[];
   // Un Observable permite controlar cuándo "responde" el backend al cobro.
   cobro?: CollectFeesResponseModel | HttpErrorResponse | Observable<CollectFeesResponseModel>;
+  // Una respuesta por cada lectura del jugador (la última se repite). Un Error simula que falla.
+  jugador?: (PlayerSummaryModel | Error)[];
 }
 
 const secuencia = <T>(lotes: T[]) => {
@@ -138,7 +140,8 @@ async function crear(opciones: Opciones = {}) {
     ),
     registrarPago: vi.fn(),
   };
-  const jugadores = { getJugador: vi.fn(() => respuesta(JUGADOR)) };
+  const siguienteJugador = secuencia(opciones.jugador ?? [JUGADOR]);
+  const jugadores = { getJugador: vi.fn(() => respuesta<PlayerSummaryModel>(siguienteJugador())) };
   const notificaciones = { notify: vi.fn() };
 
   await TestBed.configureTestingModule({
@@ -774,3 +777,94 @@ function vencimientoComoLaApi(primerDiaDelMes: string): string {
   const siguiente = new Date(anio, mes, 10);
   return `${siguiente.getFullYear()}-${String(siguiente.getMonth() + 1).padStart(2, '0')}-10`;
 }
+
+// HU-096: misma cabecera que Perfil de Jugador, con los datos que esta pantalla ya cargó.
+describe('DeudaJugador - cabecera compartida (HU-096)', () => {
+  it('usa la cabecera compartida con el jugador ya cargado, sin pedirlo dos veces', async () => {
+    const { el } = await crear();
+
+    expect(el.querySelector('app-cabecera-jugador .cj-tarjeta')).not.toBeNull();
+    expect(TestBed.inject(JugadoresService).getJugador).toHaveBeenCalledTimes(1);
+  });
+
+  it('muestra nombre, DNI, categoría e iniciales con el mismo formato que Perfil', async () => {
+    const { el } = await crear();
+
+    expect(texto(el.querySelector('h1'))).toBe('PRUEBA, MATIAS');
+    expect(texto(el.querySelector('.cj-meta'))).toBe('DNI 99000003 · AFA 20067');
+    expect(texto(el.querySelector('.cj-iniciales'))).toBe('PM');
+  });
+
+  it('tiene un único h1 y es el nombre del jugador', async () => {
+    const { el } = await crear();
+
+    const h1 = el.querySelectorAll('h1');
+    expect(h1.length).toBe(1);
+    expect(texto(h1[0])).toBe('PRUEBA, MATIAS');
+  });
+
+  it('muestra el estado deportivo que informa el backend', async () => {
+    const { el } = await crear({ jugador: [{ ...JUGADOR, estadoDeportivo: 'inhabilitado' }] });
+
+    const estado = el.querySelector('.cj-estado')!;
+    expect(texto(estado)).toContain('Inhabilitado');
+    expect(estado.classList).toContain('tono-peligro');
+  });
+
+  it('dado de baja muestra la fecha de la baja en la etiqueta de estado', async () => {
+    const { el } = await crear({
+      jugador: [{ ...JUGADOR, estadoDeportivo: 'baja', fechaBaja: '2026-09-30T00:00:00' }],
+    });
+
+    expect(texto(el.querySelector('.cj-estado'))).toContain('Dado de baja el 30/09/2026');
+  });
+
+  it('Volver regresa a Cuotas y Pagos, como antes', async () => {
+    const { el } = await crear();
+
+    el.querySelector<HTMLButtonElement>('.cj-volver')!.click();
+
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith(['/admin/portal/cuotas-pagos']);
+  });
+
+  it('el cobro sigue en la sección Cuotas, fuera de la cabecera', async () => {
+    const { el } = await crear();
+
+    expect(el.querySelector('.panel-cuotas .registrar-pago-button')).not.toBeNull();
+    expect(el.querySelector('app-cabecera-jugador .registrar-pago-button')).toBeNull();
+    expect(el.querySelector('app-cabecera-jugador .cj-acciones')!.children.length).toBe(0);
+  });
+
+  it('los indicadores de deuda siguen dentro de la tarjeta del jugador', async () => {
+    const { el } = await crear();
+
+    expect(el.querySelector('app-cabecera-jugador .cj-tarjeta .total-adeudado')).not.toBeNull();
+  });
+
+  // El estado depende de las cuotas vencidas: después de cobrar se vuelve a leer del backend (no se recalcula acá).
+  it('después de un cobro vuelve a leer el estado deportivo del jugador', async () => {
+    const pagadas = [ENERO_PAGADA, pagada(MARZO), pagada(ABRIL), MAYO_CUBIERTA];
+    const ctx = await crear({
+      cuotas: [[ENERO_PAGADA, MARZO, ABRIL, MAYO_CUBIERTA], pagadas],
+      jugador: [{ ...JUGADOR, estadoDeportivo: 'inhabilitado' }, { ...JUGADOR, estadoDeportivo: 'habilitado' }],
+    });
+
+    await pagar(ctx, [10, 11]);
+
+    expect(TestBed.inject(JugadoresService).getJugador).toHaveBeenCalledTimes(2);
+    expect(texto(ctx.el.querySelector('.cj-estado'))).toContain('Habilitado');
+  });
+
+  it('si esa relectura del jugador falla, conserva la cabecera que ya mostraba', async () => {
+    const ctx = await crear({
+      cuotas: [[ENERO_PAGADA, MARZO, ABRIL, MAYO_CUBIERTA], [ENERO_PAGADA, pagada(MARZO), pagada(ABRIL), MAYO_CUBIERTA]],
+      jugador: [{ ...JUGADOR, estadoDeportivo: 'inhabilitado' }, new Error('fallo')],
+    });
+
+    await pagar(ctx, [10, 11]);
+
+    expect(texto(ctx.el.querySelector('h1'))).toBe('PRUEBA, MATIAS');
+    expect(texto(ctx.el.querySelector('.cj-estado'))).toContain('Inhabilitado');
+    expect(ctx.el.querySelector('.error-text')).toBeNull();
+  });
+});

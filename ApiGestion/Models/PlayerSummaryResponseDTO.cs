@@ -18,6 +18,11 @@ public class PlayerSummaryResponseDTO
     public bool Activo { get; set; }
     public string NombreCompleto { get; set; } = "";
 
+    // HU-096: only GET api/jugadores/{id} fills it (header of Perfil and Deuda). Same texts as EstadoDeportivoTexto:
+    // "habilitado", "solo_entrenamientos", "inhabilitado" or "baja". null = not informed (list endpoint, or it could not
+    // be read): the screen shows "Estado no disponible" and never recomputes it.
+    public string? EstadoDeportivo { get; set; }
+
     public static PlayerSummaryResponseDTO FromEntity(JugadorResumen player)
     {
         return new PlayerSummaryResponseDTO

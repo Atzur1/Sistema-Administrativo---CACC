@@ -646,4 +646,17 @@ describe('ActualizacionAranceles - HU-106 resumen de impacto', () => {
     expect(component.impacto).toBeNull();
     expect(notify).toHaveBeenCalledWith('El género Masculino ya tiene un arancel que rige desde el 01/11/2099.', 'error');
   });
+
+  // HU-090: sin un mensaje utilizable (vacío, un objeto, un cuerpo crudo) se avisa con el texto propio de la pantalla,
+  // nunca con un toast vacío ni "[object Object]".
+  it('si la API no manda un mensaje utilizable, avisa con el texto propio', () => {
+    for (const cuerpo of [{ mensaje: '' }, { mensaje: { detalle: 'x' } }, '<html>502 Bad Gateway</html>', null]) {
+      const { component, simular, notify } = setup();
+      simular.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 400, error: cuerpo })) as never);
+
+      component.onSubmit();
+
+      expect(notify).toHaveBeenLastCalledWith('No se pudo calcular el impacto del cambio. Intentá de nuevo.', 'error');
+    }
+  });
 });

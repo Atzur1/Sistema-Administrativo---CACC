@@ -15,6 +15,7 @@ import { Ventana } from '../../shared/ventana/ventana';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { HelpHint } from '../../shared/help-hint/help-hint';
 import { NotificationService } from '../../shared/notifications/notification.service';
+import { mensajeDeError } from '../../shared/http-error-message';
 import { DiscountService } from '../../services/discounts';
 import {
   BenefitValueType,
@@ -1028,14 +1029,14 @@ export class BecadosDescuentos implements OnInit {
     };
   }
 
-  // Turns an API failure into something the administrator can act on. The API answers { mensaje } in
-  // Spanish (including which benefit is in the way and its period); the texts below are only the fallback
-  // when there is no message (for example, the server could not be reached).
+  // HU-090: the API answers { mensaje } in Spanish (an overlap already names the benefit in the way and its
+  // period in dd/MM/yyyy), and it is shown as is: the screen never reads dates or names out of the text.
+  // The texts below are only the fallback when there is no usable message.
   private messageFor(error: HttpErrorResponse, action: string): string {
-    const mensajeApi = typeof error.error === 'object' ? error.error?.mensaje : null;
-    if (typeof mensajeApi === 'string' && mensajeApi) {
-      return mensajeApi;
-    }
+    return mensajeDeError(error, this.fallbackFor(error, action));
+  }
+
+  private fallbackFor(error: HttpErrorResponse, action: string): string {
     if (error.status === 409) {
       // Anular's 409 is never an overlap (it takes no date range) — it means the benefit is
       // not a cancelled one anymore (someone else voided it, or the screen was out of date).
@@ -1053,10 +1054,6 @@ export class BecadosDescuentos implements OnInit {
     if (error.status === 404) {
       return 'El jugador no tiene una bonificación activa.';
     }
-    if (error.status === 0) {
-      return 'No se pudo conectar con el servidor. Verificá que la API esté levantada.';
-    }
-
     return `No se pudo ${action} la bonificación. Intentá nuevamente.`;
   }
 

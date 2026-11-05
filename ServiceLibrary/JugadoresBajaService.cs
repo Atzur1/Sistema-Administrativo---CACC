@@ -65,9 +65,9 @@ namespace ServiceLibrary
                 BajaJugadorResultado.YaDadoDeBaja when baja.FechaBajaVigente?.Date == fecha
                     => ResultadoOperacion<BajaIntegracionRegistrada>.Ok(new(idJugador, fecha, true)),
                 BajaJugadorResultado.YaDadoDeBaja => ResultadoOperacion<BajaIntegracionRegistrada>.Falla(TipoResultado.Conflicto,
-                    $"El jugador ya está dado de baja desde el {baja.FechaBajaVigente:dd/MM/yyyy}: no se registra otra baja."),
+                    $"El jugador ya está dado de baja desde el {FormatoVisible.Fecha(baja.FechaBajaVigente)}: no se registra otra baja."),
                 BajaJugadorResultado.FechaInvalida => ResultadoOperacion<BajaIntegracionRegistrada>.Falla(TipoResultado.NoProcesable,
-                    $"La fecha de baja no puede ser anterior al ingreso del jugador al club ({baja.InicioPermanencia:dd/MM/yyyy}).", "fechaBaja"),
+                    $"La fecha de baja no puede ser anterior al ingreso del jugador al club ({FormatoVisible.Fecha(baja.InicioPermanencia)}).", "fechaBaja"),
                 _ => ResultadoOperacion<BajaIntegracionRegistrada>.Falla(TipoResultado.NoEncontrado, $"No existe el jugador {idJugador}.")
             };
         }

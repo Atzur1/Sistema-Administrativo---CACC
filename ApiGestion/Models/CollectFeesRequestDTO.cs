@@ -6,10 +6,11 @@ namespace ApiGestion.Models
     {
         public int IdJugador { get; set; }
 
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.MinLength(1)]
-        [System.ComponentModel.DataAnnotations.MaxLength(100)]
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Elegí al menos una cuota para cobrar.")]
+        [System.ComponentModel.DataAnnotations.MinLength(1, ErrorMessage = "Elegí al menos una cuota para cobrar.")]
+        [System.ComponentModel.DataAnnotations.MaxLength(100, ErrorMessage = "Se pueden cobrar hasta 100 cuotas por vez.")]
         public List<int> IdsPago { get; set; } = new();
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Indicá el método de pago.")]
         public string MetodoPago { get; set; } = string.Empty;
     }
 }

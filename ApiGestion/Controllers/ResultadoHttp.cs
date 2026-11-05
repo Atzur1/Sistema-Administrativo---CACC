@@ -14,7 +14,10 @@ internal static class ResultadoHttp
             return siSalioBien(resultado.Valor!);
         }
 
-        var cuerpo = new { exito = false, mensaje = resultado.Mensaje };
+        // HU-087: si la falla trae varias reglas incumplidas (la política de contraseñas), viajan también en "problemas".
+        object cuerpo = resultado.Problemas.Count > 0
+            ? new { exito = false, mensaje = resultado.Mensaje, problemas = resultado.Problemas }
+            : new { exito = false, mensaje = resultado.Mensaje };
         return resultado.Tipo switch
         {
             TipoResultado.NoEncontrado => controller.NotFound(cuerpo),

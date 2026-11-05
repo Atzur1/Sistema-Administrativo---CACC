@@ -1,0 +1,17 @@
+{
+  "status": "RECOVERED_REGRESSION",
+  "method": "sqlserver.sql_transaction filtered database_id27 and transaction_type1 User, ring max_events_limit10000 memory4096KB; sequential API harness; unique BEGIN+COMMIT matching transaction_id within UTC operationStart/adminResponse window",
+  "eventCount": 110,
+  "totalEventsProcessed": 110,
+  "truncated": 0,
+  "dropped": 0,
+  "successfulOperationsWithUniqueCommit": 8,
+  "measurement": "XE event timestamp milliseconds; window correlation, not request trace-id instrumentation",
+  "artifacts": [
+    "commits-regresion.json",
+    "xe-user-final.xml",
+    "cleanup.json"
+  ],
+  "initialAttempt": "Insufficient retention; preserved in medicion-commit-intento-inicial.json and xe-intento-inicial.xml",
+  "limits": "Rejected/no-op cases have no commit assigned; failed write case has rollback. Parent results commitAt remains null; separate file is final measurement evidence."
+}

@@ -12,6 +12,7 @@ import { HelpHint } from '../../shared/help-hint/help-hint';
 import { Cargando } from '../../shared/cargando/cargando';
 import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { Ventana } from '../../shared/ventana/ventana';
+import { CabeceraJugador } from '../../shared/cabecera-jugador/cabecera-jugador';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 import { PaymentHistoryItemModel, PaymentHistoryModel, PaymentHistoryPartialPaymentModel } from '../../models/PaymentHistoryModel';
 
@@ -26,7 +27,7 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-jugador-perfil',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomDatepicker, HelpHint, Cargando, EstadoVacio, Ventana],
+  imports: [CommonModule, FormsModule, CustomDatepicker, HelpHint, Cargando, EstadoVacio, Ventana, CabeceraJugador],
   templateUrl: './jugador-perfil.html',
   styleUrl: './jugador-perfil.css',
 })
@@ -67,13 +68,6 @@ export class JugadorPerfil implements OnInit {
       return 1;
     }
     return Math.ceil(this.historial.total / this.pageSize);
-  }
-
-  get iniciales(): string {
-    if (!this.jugador) {
-      return '';
-    }
-    return `${this.jugador.apellido[0] ?? ''}${this.jugador.nombre[0] ?? ''}`.toUpperCase();
   }
 
   private cargarJugador() {

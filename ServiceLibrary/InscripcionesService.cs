@@ -59,7 +59,7 @@ namespace ServiceLibrary
             }
             if (monto > inscripcion.PendingBalance)
             {
-                return Falla(TipoResultado.Invalido, $"El monto supera el saldo pendiente de la inscripción (${inscripcion.PendingBalance:N0}).");
+                return Falla(TipoResultado.Invalido, $"El monto supera el saldo pendiente de la inscripción ({FormatoVisible.Pesos(inscripcion.PendingBalance)}).");
             }
 
             EnrollmentPayment? pago = _enrollmentDao.CreateEnrollmentPayment(idJugador, monto, metodo, _hoy(), solicitud.IdUsuarioRegistro);
@@ -77,7 +77,7 @@ namespace ServiceLibrary
             }
             if (jugador.FechaBaja != null)
             {
-                return Falla(TipoResultado.Invalido, $"El jugador está dado de baja desde el {jugador.FechaBaja:dd/MM/yyyy}: no se le genera una inscripción nueva.");
+                return Falla(TipoResultado.Invalido, $"El jugador está dado de baja desde el {FormatoVisible.Fecha(jugador.FechaBaja)}: no se le genera una inscripción nueva.");
             }
 
             EnrollmentFee? arancel = _enrollmentFeeDao.GetCurrentEnrollmentFee(jugador.Genero);
@@ -91,7 +91,7 @@ namespace ServiceLibrary
             }
             if (solicitud.Monto > arancel.Amount)
             {
-                return Falla(TipoResultado.Invalido, $"El monto supera el arancel de inscripción (${arancel.Amount:N0}).");
+                return Falla(TipoResultado.Invalido, $"El monto supera el arancel de inscripción ({FormatoVisible.Pesos(arancel.Amount)}).");
             }
 
             EnrollmentPayment? primerPago = _enrollmentDao.CreateEnrollmentAndFirstPayment(

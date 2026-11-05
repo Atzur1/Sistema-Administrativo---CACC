@@ -159,7 +159,7 @@ namespace ServiceLibrary
             if (existente.HasValue)
             {
                 throw new ArancelInvalidoException(
-                    $"{Destino(genero, nombreCategoria)} ya tiene un arancel que rige desde el {existente.Value:dd/MM/yyyy}, " +
+                    $"{Destino(genero, nombreCategoria)} ya tiene un arancel que rige desde el {FormatoVisible.Fecha(existente.Value)}, " +
                     $"en {NombreDelMes(mesDelArancel)}. Cancelalo primero para poder cargar uno nuevo para ese mes.");
             }
 
@@ -295,7 +295,7 @@ namespace ServiceLibrary
                 nombreCategoria = _categoriasDao.ObtenerTodas().FirstOrDefault(c => c.IdCategoria == cambio.IdCategoria.Value)?.Nombre;
                 if (nombreCategoria == null)
                 {
-                    throw new ArancelInvalidoException($"No existe la categoría con id {cambio.IdCategoria.Value}.");
+                    throw new ArancelInvalidoException("La categoría elegida no existe.");
                 }
             }
 
@@ -305,7 +305,7 @@ namespace ServiceLibrary
             if (cambio.VigenteDesde.Date < _hoy().Date)
             {
                 throw new ArancelInvalidoException(
-                    $"La fecha de vigencia no puede ser anterior a hoy ({_hoy():dd/MM/yyyy}). Los aranceles solo se programan para el mes en curso o meses futuros.");
+                    $"La fecha de vigencia no puede ser anterior a hoy ({FormatoVisible.Fecha(_hoy())}). Los aranceles solo se programan para el mes en curso o meses futuros.");
             }
 
             return nombreCategoria;

@@ -88,7 +88,9 @@ public class ArancelesServiceTests
     public void ProgramarArancel_WithAnUnknownCategory_IsRefused()
     {
         var ex = Assert.Throws<ArancelInvalidoException>(() => Create().service.SimularArancel(Cambio(null, 999)));
-        Assert.Contains("999", ex.Message);
+        // HU-090: mensaje de dominio, sin el id interno de la categoría.
+        Assert.Equal("La categoría elegida no existe.", ex.Message);
+        Assert.DoesNotContain("999", ex.Message);
     }
 
     [Fact]

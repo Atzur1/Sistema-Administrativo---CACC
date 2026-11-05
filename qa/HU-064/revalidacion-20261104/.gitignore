@@ -1,0 +1,6 @@
+*.mdf
+*.ldf
+*.bak
+*.xel
+*-stdout.log
+*-stderr.log
