@@ -51,7 +51,7 @@
   height: 60px;
   border-radius: var(--radius-pill);
   background: linear-gradient(150deg, var(--color-brand-tint) 0%, #d3f2e2 100%);
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
   font-size: var(--font-xl);
   font-weight: 700;
   flex-shrink: 0;
