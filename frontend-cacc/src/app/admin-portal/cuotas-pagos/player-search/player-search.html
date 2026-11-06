@@ -64,6 +64,7 @@
                   <td>{{ player.firstName }}</td>
                   <td class="cell-strong">
                     {{ player.lastName }}
+                    <app-discount-badge [discount]="discountOf(player.id)" />
                     @if (player.leaveDate) {
                       <span class="etiqueta-estado tono-neutro tag-baja" title="Dejó el club: no genera cuotas nuevas, pero se le cobra lo que debe">Baja</span>
                     }

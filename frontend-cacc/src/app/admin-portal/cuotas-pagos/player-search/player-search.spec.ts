@@ -6,6 +6,8 @@ import { PlayerSearch } from './player-search';
 import { PlayerSearchService } from '../../../services/player-search';
 import { PlayerSearchResultModel } from '../../../models/PlayerSearchResultModel';
 import { NotificationService } from '../../../shared/notifications/notification.service';
+import { DiscountService } from '../../../services/discounts';
+import { DiscountModel } from '../../../models/DiscountModel';
 
 // HU-023: búsqueda de alumnos por DNI o apellido en el panel de Cuotas.
 
@@ -22,7 +24,10 @@ describe('PlayerSearch (HU-023)', () => {
   let search: ReturnType<typeof vi.fn<(term: string) => Observable<PlayerSearchResultModel[]>>>;
   let notify: ReturnType<typeof vi.fn>;
 
-  async function setup(response: (term: string) => Observable<PlayerSearchResultModel[]>) {
+  async function setup(
+    response: (term: string) => Observable<PlayerSearchResultModel[]>,
+    discounts: () => Observable<Map<number, DiscountModel>> = () => of(new Map<number, DiscountModel>()),
+  ) {
     vi.useFakeTimers();
     search = vi.fn(response);
     notify = vi.fn();
@@ -32,6 +37,7 @@ describe('PlayerSearch (HU-023)', () => {
       providers: [
         { provide: PlayerSearchService, useValue: { search } },
         { provide: NotificationService, useValue: { notify } },
+        { provide: DiscountService, useValue: { getDiscountMap: vi.fn(discounts) } },
       ],
     }).compileComponents();
 
@@ -207,5 +213,52 @@ describe('PlayerSearch (HU-023)', () => {
 
     expect(el().querySelector('table')).toBeNull();
     expect(text()).not.toContain('Ningún resultado coincide');
+  });
+  // SCRUM-597 (HU-014): la bonificación vigente se ve en la grilla, con su tooltip de vigencia.
+  describe('etiqueta de bonificación (HU-014)', () => {
+    const BECADO: DiscountModel = {
+      id: 5,
+      playerId: 10,
+      playerName: 'BAZÁN, NICOLÁS FERNANDO',
+      category: 'AFA 20067',
+      type: 'Becado',
+      valueType: '%',
+      percentage: 50,
+      fixedAmount: null,
+      startDate: '2026-10-01',
+      endDate: '2026-12-31',
+      status: 'Active',
+      isActive: true,
+    };
+
+    async function buscar(discounts: () => Observable<Map<number, DiscountModel>>) {
+      await setup(() => of([BAZAN, { ...BAZAN, id: 11, lastName: 'PEREZ', dni: '40111222' }]), discounts);
+      type('baz');
+      waitDebounce();
+    }
+
+    it('muestra la etiqueta solo en el jugador con bonificación vigente', async () => {
+      await buscar(() => of(new Map([[10, BECADO]])));
+
+      const filas = Array.from(el().querySelectorAll('tbody tr'));
+      expect(filas[0].querySelector('app-discount-badge .discount-badge')).not.toBeNull();
+      expect(filas[0].textContent).toContain('Becado');
+      expect(filas[1].querySelector('app-discount-badge .discount-badge')).toBeNull();
+      expect(filas[1].textContent).not.toContain('Becado');
+    });
+
+    it('la etiqueta trae el tooltip con la vigencia', async () => {
+      await buscar(() => of(new Map([[10, BECADO]])));
+
+      const tooltip = el().querySelector('tbody tr app-discount-badge .discount-tooltip') as HTMLElement | null;
+      expect(tooltip?.textContent).toContain('Rige para las cuotas de');
+    });
+
+    it('si no se pueden cargar las bonificaciones, la grilla funciona igual, sin etiquetas', async () => {
+      await buscar(() => throwError(() => new HttpErrorResponse({ status: 500 })));
+
+      expect(el().querySelectorAll('tbody tr').length).toBe(2);
+      expect(text()).not.toContain('Becado');
+    });
   });
 });

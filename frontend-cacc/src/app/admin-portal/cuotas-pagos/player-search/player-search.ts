@@ -3,6 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subject, catchError, debounceTime, map, merge, of, switchMap } from 'rxjs';
 import { PlayerSearchService } from '../../../services/player-search';
 import { PlayerSearchResultModel } from '../../../models/PlayerSearchResultModel';
+import { DiscountModel } from '../../../models/DiscountModel';
+import { DiscountService } from '../../../services/discounts';
+import { DiscountBadge } from '../../../shared/discount-badge/discount-badge';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { financialLoadErrorMessage } from '../../../shared/http-error-message';
 import { Cargando } from '../../../shared/cargando/cargando';
@@ -17,7 +20,7 @@ type SearchOutcome = { term: string; results: PlayerSearchResultModel[] | null }
 @Component({
   selector: 'app-player-search',
   standalone: true,
-  imports: [Cargando, EstadoVacio],
+  imports: [Cargando, EstadoVacio, DiscountBadge],
   templateUrl: './player-search.html',
   styleUrl: './player-search.css',
 })
@@ -34,14 +37,27 @@ export class PlayerSearch implements OnInit {
   // null = todavía no se buscó nada (o el término es muy corto): no hay grilla ni mensaje.
   readonly results = signal<PlayerSearchResultModel[] | null>(null);
 
+  // Bonificaciones vigentes por jugador (HU-014): la grilla las muestra como etiqueta junto al apellido. Si no se pueden
+  // cargar, la grilla funciona igual, solo que sin etiquetas.
+  private readonly discounts = signal(new Map<number, DiscountModel>());
+
   private readonly typed$ = new Subject<string>();
   private readonly submitted$ = new Subject<string>();
 
   private readonly searchService = inject(PlayerSearchService);
+  private readonly discountService = inject(DiscountService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit() {
+    this.discountService
+      .getDiscountMap()
+      .pipe(
+        catchError(() => of(new Map<number, DiscountModel>())),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((mapa) => this.discounts.set(mapa));
+
     // switchMap: si llega un término nuevo, la respuesta de la búsqueda anterior se descarta
     // y nunca pisa a la más reciente.
     merge(this.typed$.pipe(debounceTime(PlayerSearch.DEBOUNCE_MS)), this.submitted$)
@@ -77,6 +93,11 @@ export class PlayerSearch implements OnInit {
 
   select(player: PlayerSearchResultModel) {
     this.selected.emit(player);
+  }
+
+  // La bonificación vigente del jugador, o null si no tiene (el distintivo no muestra nada con null).
+  discountOf(playerId: number): DiscountModel | null {
+    return this.discounts().get(playerId) ?? null;
   }
 
   get tooShort(): boolean {
