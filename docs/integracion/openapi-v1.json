@@ -1,4 +1,4 @@
-{
+﻿{
     "openapi":  "3.0.1",
     "info":  {
                  "title":  "API de integración con el Portal Deportivo",
@@ -213,6 +213,116 @@
                                                                                            }
                                                                          }
                                                             },
+                  "/api/integracion/v1/jugadores/{idJugador}/baja":  {
+                                                                         "post":  {
+                                                                                      "tags":  [
+                                                                                                   "IntegracionBajas"
+                                                                                               ],
+                                                                                      "parameters":  [
+                                                                                                         {
+                                                                                                             "name":  "idJugador",
+                                                                                                             "in":  "path",
+                                                                                                             "required":  true,
+                                                                                                             "schema":  {
+                                                                                                                            "type":  "integer",
+                                                                                                                            "format":  "int32"
+                                                                                                                        }
+                                                                                                         }
+                                                                                                     ],
+                                                                                      "responses":  {
+                                                                                                        "200":  {
+                                                                                                                    "description":  "OK",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/BajaInformadaResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                },
+                                                                                                        "400":  {
+                                                                                                                    "description":  "Bad Request",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                },
+                                                                                                        "401":  {
+                                                                                                                    "description":  "Unauthorized",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                },
+                                                                                                        "403":  {
+                                                                                                                    "description":  "Forbidden",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                },
+                                                                                                        "404":  {
+                                                                                                                    "description":  "Not Found",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                },
+                                                                                                        "422":  {
+                                                                                                                    "description":  "Unprocessable Content",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                },
+                                                                                                        "429":  {
+                                                                                                                    "description":  "Too Many Requests",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                },
+                                                                                                        "500":  {
+                                                                                                                    "description":  "Internal Server Error",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                },
+                                                                                                        "503":  {
+                                                                                                                    "description":  "Service Unavailable",
+                                                                                                                    "content":  {
+                                                                                                                                    "application/json":  {
+                                                                                                                                                             "schema":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/IntegrationErrorResponseDTO"
+                                                                                                                                                                        }
+                                                                                                                                                         }
+                                                                                                                                }
+                                                                                                                }
+                                                                                                    }
+                                                                                  }
+                                                                     },
                   "/api/integracion/v1/jugadores/{idJugador}/cargos-alta":  {
                                                                                 "post":  {
                                                                                              "tags":  [
@@ -326,6 +436,24 @@
               },
     "components":  {
                        "schemas":  {
+                                       "BajaInformadaResponseDTO":  {
+                                                                        "type":  "object",
+                                                                        "properties":  {
+                                                                                           "idJugador":  {
+                                                                                                             "type":  "integer",
+                                                                                                             "format":  "int32"
+                                                                                                         },
+                                                                                           "cuotasFuturasQuitadas":  {
+                                                                                                                         "type":  "integer",
+                                                                                                                         "format":  "int32"
+                                                                                                                     },
+                                                                                           "beneficiosCancelados":  {
+                                                                                                                        "type":  "integer",
+                                                                                                                        "format":  "int32"
+                                                                                                                    }
+                                                                                       },
+                                                                        "additionalProperties":  false
+                                                                    },
                                        "CargosAltaResponseDTO":  {
                                                                      "type":  "object",
                                                                      "properties":  {
