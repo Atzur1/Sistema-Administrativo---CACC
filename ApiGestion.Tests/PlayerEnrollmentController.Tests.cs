@@ -340,6 +340,7 @@ public class PlayerEnrollmentControllerTests
         public IReadOnlyList<JugadorResumen> ListarJugadores() => throw new NotSupportedException();
         public ResultadoBajaJugador DarDeBaja(int idJugador, DateTime fechaBaja) => throw new NotSupportedException();
         public bool Reactivar(int idJugador) => throw new NotSupportedException();
+        public ResultadoAnulacionAlta AnularAlta(int idJugador) => throw new NotSupportedException();
     }
 
     private class FakeEnrollmentFeeDAO : EnrollmentFeeDAO

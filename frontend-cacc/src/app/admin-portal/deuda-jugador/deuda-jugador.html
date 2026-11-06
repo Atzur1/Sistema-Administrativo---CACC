@@ -4,6 +4,17 @@
   <!-- ===== CABECERA (HU-096): la misma que Perfil de Jugador. Contiene Volver y el h1 de la pantalla.
        El cobro sigue en la sección Cuotas: la cabecera no sabe nada de cobranzas. ===== -->
   <app-cabecera-jugador [jugador]="jugador" (volver)="volver()">
+    @if (esSuperAdmin) {
+      <button
+        cabeceraAcciones
+        type="button"
+        class="boton boton-secundario boton-anular-alta"
+        title="Solo si se cargó por error y todavía no tiene pagos cobrados, becas ni asistencias"
+        (click)="irAAnularAlta()"
+      >
+        Anular alta por error
+      </button>
+    }
     <!-- HU-024/026: total a abonar del estado de cuenta (solo cuotas mensuales). Con datos
          reales cargados se muestra siempre: $0 y "Sin deuda" al estar al día. -->
     @if (estadoCuentaCargado) {
@@ -226,7 +237,7 @@
 
                 <div class="cuota-row-text">
                   <span class="cuota-periodo">{{ cuota.periodo }}</span>
-                  <span class="cuota-original">Cuota: {{ formatMonto(cuota.montoOriginal) }}</span>
+                  <span class="cuota-original">{{ esInscripcion(cuota) ? 'Inscripción' : 'Cuota' }}: {{ formatMonto(cuota.montoOriginal) }}</span>
                 </div>
               </div>
 
@@ -250,7 +261,9 @@
                   <span class="saldo-monto">{{ formatMonto(cuota.saldoPendiente) }}</span>
                 </div>
 
-                @if (pagandoId !== cuota.idPago) {
+                @if (!puedePagarSaldo(cuota)) {
+                  <span class="cuota-original">Se cobra después de la inscripción anterior</span>
+                } @else if (pagandoId !== cuota.idPago) {
                   <button type="button" class="boton boton-secundario pagar-button" (click)="abrirPago(cuota)">
                     <svg
                       viewBox="0 0 24 24"

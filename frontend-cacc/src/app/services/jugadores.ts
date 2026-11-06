@@ -24,6 +24,12 @@ export class JugadoresService {
     return this.http.post<{ mensaje: string }>(`${this.API_URL}/${id}/reactivar`, null);
   }
 
+  // Deshace un alta cargada por error (solo SuperAdmin): borra al jugador y sus cargos pendientes y deja libre su DNI.
+  // La API responde 409 si ya tiene pagos cobrados, becas, asistencias o ficha médica: ahí corresponde la baja.
+  anularAlta(id: number): Observable<{ mensaje: string; cargosEliminados: number }> {
+    return this.http.post<{ mensaje: string; cargosEliminados: number }>(`${this.API_URL}/${id}/anular-alta`, null);
+  }
+
   // Anula un abono del historial cargado por error (solo SuperAdmin). Su monto vuelve al saldo pendiente.
   anularPago(idPago: number, motivo: string): Observable<{ mensaje: string; saldoReabierto: number }> {
     return this.http.post<{ mensaje: string; saldoReabierto: number }>(`${API_BASE_URL}/pagos/${idPago}/anular`, { motivo });

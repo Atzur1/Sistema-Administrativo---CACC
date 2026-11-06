@@ -16,5 +16,9 @@ namespace DaoLibrary
 
         // false si el jugador no existe o no estaba dado de baja. Ver JugadoresDao.Reincorporar (HU-057).
         bool Reactivar(int idJugador);
+
+        // Deshace un alta cargada por error: borra al jugador, sus cuotas e inscripcion pendientes y su persona, y deja
+        // libre el DNI. Solo si nadie le cobro nada ni tiene becas, asistencias ni ficha medica. Ver JugadoresDao.AnularAlta.
+        ResultadoAnulacionAlta AnularAlta(int idJugador);
     }
 }

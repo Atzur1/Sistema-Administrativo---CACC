@@ -172,6 +172,54 @@ namespace ApiGestion.Controllers
             }
         }
 
+        // POST api/jugadores/{id}/anular-alta -> deshace un alta cargada por error (el jugador, sus cuotas e inscripción
+        // pendientes y su persona se borran y el DNI queda libre). Solo SuperAdmin. Solo si el jugador no tiene ningún pago
+        // cobrado, beca, asistencia ni ficha médica cargada: si los tiene (409) corresponde darlo de baja, que conserva todo.
+        [Authorize(Roles = "1")]
+        [HttpPost("{id:int}/anular-alta")]
+        public IActionResult AnularAlta(int id)
+        {
+            try
+            {
+                var anulacion = _jugadoresDao.AnularAlta(id);
+                return anulacion.Resultado switch
+                {
+                    AnularAltaResultado.NoEncontrado => NotFound(new { exito = false, mensaje = "Jugador no encontrado." }),
+                    AnularAltaResultado.TieneMovimientos => Conflict(new
+                    {
+                        exito = false,
+                        mensaje = $"No se puede anular el alta: el jugador ya tiene {string.Join(", ", anulacion.Motivos!)}. " +
+                                  "Si dejó el club, dalo de baja: así se conserva todo su historial.",
+                        motivos = anulacion.Motivos
+                    }),
+                    _ => Ok(new
+                    {
+                        exito = true,
+                        cargosEliminados = anulacion.CargosEliminados,
+                        mensaje = MensajeAnulacion(anulacion)
+                    })
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error interno al anular el alta del jugador {JugadorId}", id);
+                return StatusCode(500, new { exito = false, mensaje = "Error interno al anular el alta del jugador." });
+            }
+        }
+
+        internal static string MensajeAnulacion(ResultadoAnulacionAlta anulacion)
+        {
+            string cargos = anulacion.CargosEliminados switch
+            {
+                0 => "",
+                1 => " y su cargo pendiente",
+                var n => $" y sus {n} cargos pendientes"
+            };
+            return anulacion.PersonaEliminada
+                ? $"Alta anulada. Se eliminó al jugador{cargos}; su DNI quedó libre para volver a darlo de alta."
+                : $"Alta anulada. Se eliminó al jugador{cargos}. Su persona se conserva porque también figura como tutor o usuario.";
+        }
+
         // GET api/jugadores/{id}/historial-pagos?page=1&pageSize=10 -> historial paginado, más reciente primero
         [Authorize(Roles = "1")]
         [HttpGet("{id}/historial-pagos")]

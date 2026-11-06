@@ -221,6 +221,8 @@ builder.Services.AddScoped<ServiceLibrary.IInscripcionesService>(provider => new
     provider.GetRequiredService<DaoLibrary.EnrollmentDAO>(),
     provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
     provider.GetRequiredService<DaoLibrary.IJugadoresDao>()));
+// Red de seguridad de las bajas del Portal Deportivo: el generador completa las que quedaron a medias.
+builder.Services.AddScoped<DaoLibrary.IBajasPendientesDao>(provider => new DaoLibrary.JugadoresDao(conexionSql));
 // Fecha de negocio fija SOLO para pruebas de punta a punta (HU-060): permite probar las dos ramas del calendario de cuotas
 // (día 10) sin tocar la hora de la máquina. Afecta únicamente al alta de jugadores; fuera de Development y Testing la API no
 // arranca si está configurada, así que nunca llega a Producción.

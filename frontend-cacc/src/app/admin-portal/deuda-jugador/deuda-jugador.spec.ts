@@ -6,6 +6,8 @@ import { Observable, Subject, from, isObservable } from 'rxjs';
 
 import { DeudaJugador } from './deuda-jugador';
 import { JugadoresService } from '../../services/jugadores';
+import { EnrollmentService } from '../../services/enrollment';
+import { AuthService } from '../../services/auth';
 import { PagosService } from '../../services/pagos';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
@@ -109,6 +111,8 @@ function estadoDeCuenta(cuotas: PlayerFeeModel[]): PlayerStatementModel {
 }
 
 interface Opciones {
+  // Solo el SuperAdmin ve "Anular alta por error". Por defecto lo es.
+  esSuperAdmin?: boolean;
   // Una respuesta por cada lectura del estado de cuenta / de getDeuda (la última se repite). Un
   // Error o HttpErrorResponse simula que esa lectura falla. Un Observable controla cuándo responde.
   cuotas?: (PlayerFeeModel[] | Error | HttpErrorResponse | Observable<PlayerStatementModel>)[];
@@ -142,6 +146,10 @@ async function crear(opciones: Opciones = {}) {
   };
   const siguienteJugador = secuencia(opciones.jugador ?? [JUGADOR]);
   const jugadores = { getJugador: vi.fn(() => respuesta<PlayerSummaryModel>(siguienteJugador())) };
+  const inscripciones = {
+    registerEnrollmentPayment: vi.fn((_id: number, _pedido: { amount: number; paymentMethod: string }) =>
+      respuesta({ id: 1, amount: 70000, paymentMethod: 'Efectivo', paymentDate: '2026-10-31' })),
+  };
   const notificaciones = { notify: vi.fn() };
 
   await TestBed.configureTestingModule({
@@ -150,6 +158,8 @@ async function crear(opciones: Opciones = {}) {
       provideRouter([]),
       { provide: PagosService, useValue: pagos },
       { provide: JugadoresService, useValue: jugadores },
+      { provide: EnrollmentService, useValue: inscripciones },
+      { provide: AuthService, useValue: { isSuperAdmin: () => opciones.esSuperAdmin ?? true } },
       { provide: NotificationService, useValue: notificaciones },
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: '3' }) } } },
     ],
@@ -175,7 +185,7 @@ async function crear(opciones: Opciones = {}) {
     fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
     await refrescar();
   };
-  return { fixture, component: fixture.componentInstance, pagos, notificaciones, el, refrescar, elegirMetodo };
+  return { fixture, component: fixture.componentInstance, pagos, inscripciones, notificaciones, el, refrescar, elegirMetodo };
 }
 
 const texto = (el: Element | null) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
@@ -614,7 +624,7 @@ describe('DeudaJugador - estado de cuenta (HU-024)', () => {
   });
 
   it('el total es el del estado de cuenta: una inscripción pendiente no lo suma', async () => {
-    const inscripcion = { ...deudaDe(20, 'Octubre 2026', 50000), concepto: 'Inscripcion' };
+    const inscripcion = { ...deudaDe(20, 'Inscripción 2026', 50000), concepto: 'Inscripcion' as const };
     const { el } = await crear({ cuotas: [[MARZO, ABRIL]], deuda: [[...DEUDA_INICIAL.slice(0, 2), inscripcion]] });
 
     expect(totalAdeudado(el)).toMatch(/\$\s*170\.000/);
@@ -778,6 +788,91 @@ function vencimientoComoLaApi(primerDiaDelMes: string): string {
   return `${siguiente.getFullYear()}-${String(siguiente.getMonth() + 1).padStart(2, '0')}-10`;
 }
 
+// La inscripción (anual) y la cuota del mismo mes se distinguen en la deuda y la inscripción no se cobra como una cuota.
+describe('DeudaJugador - inscripción y cuota en la deuda pendiente', () => {
+  const cuotaDeOctubre = { ...deudaDe(30, 'Octubre 2026', 100000), montoOriginal: 100000, concepto: 'Cuota' as const };
+  const inscripcion = { ...deudaDe(31, 'Inscripción 2026', 70000), montoOriginal: 70000, concepto: 'Inscripcion' as const };
+
+  it('cada fila dice qué es: "Cuota" para la cuota e "Inscripción" para la inscripción', async () => {
+    const ctx = await crear({ deuda: [[cuotaDeOctubre, inscripcion]] });
+    const filas = Array.from(ctx.el.querySelectorAll('.cuota-row')).map((f) => texto(f));
+
+    const deLaCuota = filas.find((f) => f.includes('Octubre 2026'))!;
+    const deLaInscripcion = filas.find((f) => f.includes('Inscripción 2026'))!;
+    expect(deLaCuota).toContain('Cuota: $ 100.000');
+    expect(deLaInscripcion).toContain('Inscripción: $ 70.000');
+    expect(deLaInscripcion).not.toContain('Cuota:');
+  });
+
+  it('la inscripción y la cuota tienen "Pagar saldo", cada una por su propio cobro', async () => {
+    const ctx = await crear({ deuda: [[cuotaDeOctubre, inscripcion]] });
+    const filas = Array.from(ctx.el.querySelectorAll('.cuota-row'));
+
+    expect(filas.find((f) => texto(f).includes('Octubre 2026'))!.querySelector('.pagar-button')).not.toBeNull();
+    expect(filas.find((f) => texto(f).includes('Inscripción 2026'))!.querySelector('.pagar-button')).not.toBeNull();
+  });
+
+  it('pagar el saldo de la inscripción usa el cobro de inscripción y NO registra un pago de cuota', async () => {
+    const ctx = await crear({ deuda: [[cuotaDeOctubre, inscripcion]] });
+
+    ctx.component.abrirPago(inscripcion);
+    ctx.component.metodoPago = 'Efectivo';
+    ctx.component.confirmarPago(inscripcion);
+    await ctx.refrescar();
+
+    expect(ctx.inscripciones.registerEnrollmentPayment).toHaveBeenCalledWith(3, { amount: 70000, paymentMethod: 'Efectivo' });
+    expect(ctx.pagos.registrarPago).not.toHaveBeenCalled();
+  });
+
+  it('pagar el saldo de una cuota sigue registrando un pago de cuota del mes', async () => {
+    const ctx = await crear({ deuda: [[cuotaDeOctubre, inscripcion]] });
+    ctx.pagos.registrarPago.mockReturnValue(respuesta({ mensaje: 'ok' }));
+
+    ctx.component.abrirPago(cuotaDeOctubre);
+    ctx.component.metodoPago = 'Transferencia';
+    ctx.component.confirmarPago(cuotaDeOctubre);
+    await ctx.refrescar();
+
+    expect(ctx.pagos.registrarPago).toHaveBeenCalledWith(3, 'Octubre', 2026, 100000, 'Transferencia');
+    expect(ctx.inscripciones.registerEnrollmentPayment).not.toHaveBeenCalled();
+  });
+
+  it('con dos inscripciones pendientes solo se puede cobrar la más vieja: el cobro siempre salda esa', async () => {
+    const siguiente = { ...inscripcion, idPago: 32, periodo: 'Inscripción 2027' };
+    const ctx = await crear({ deuda: [[inscripcion, siguiente]] });
+    const filas = Array.from(ctx.el.querySelectorAll('.cuota-row'));
+
+    expect(filas.find((f) => texto(f).includes('Inscripción 2026'))!.querySelector('.pagar-button')).not.toBeNull();
+    const deLaSiguiente = filas.find((f) => texto(f).includes('Inscripción 2027'))!;
+    expect(deLaSiguiente.querySelector('.pagar-button')).toBeNull();
+    expect(texto(deLaSiguiente)).toContain('después de la inscripción anterior');
+  });
+
+  it('una inscripción pendiente no se marca como "Vencida" con la regla del día 10 de las cuotas', async () => {
+    const ctx = await crear({ deuda: [[inscripcion]] });
+
+    expect(texto(ctx.el.querySelector('.cuota-row'))).not.toContain('Vencida');
+  });
+});
+
+// "Anular alta por error": se pide desde la deuda y se confirma en el perfil del jugador (solo SuperAdmin).
+describe('DeudaJugador - anular alta por error', () => {
+  it('el SuperAdmin ve el botón y lo lleva al perfil con el cartel de anulación pedido', async () => {
+    const ctx = await crear();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+
+    ctx.el.querySelector<HTMLButtonElement>('.boton-anular-alta')!.click();
+
+    expect(navigate).toHaveBeenCalledWith(['/admin/portal/jugadores', 3], { queryParams: { accion: 'anular-alta' } });
+  });
+
+  it('quien no es SuperAdmin no lo ve', async () => {
+    const ctx = await crear({ esSuperAdmin: false });
+
+    expect(ctx.el.querySelector('.boton-anular-alta')).toBeNull();
+  });
+});
+
 // HU-096: misma cabecera que Perfil de Jugador, con los datos que esta pantalla ya cargó.
 describe('DeudaJugador - cabecera compartida (HU-096)', () => {
   it('usa la cabecera compartida con el jugador ya cargado, sin pedirlo dos veces', async () => {
@@ -832,7 +927,9 @@ describe('DeudaJugador - cabecera compartida (HU-096)', () => {
 
     expect(el.querySelector('.panel-cuotas .registrar-pago-button')).not.toBeNull();
     expect(el.querySelector('app-cabecera-jugador .registrar-pago-button')).toBeNull();
-    expect(el.querySelector('app-cabecera-jugador .cj-acciones')!.children.length).toBe(0);
+    // Lo único que la cabecera ofrece en esta pantalla es "Anular alta por error" (solo SuperAdmin); nada de cobranza.
+    const acciones = Array.from(el.querySelectorAll('app-cabecera-jugador .cj-acciones button'));
+    expect(acciones.map((a) => texto(a))).toEqual(['Anular alta por error']);
   });
 
   it('los indicadores de deuda siguen dentro de la tarjeta del jugador', async () => {

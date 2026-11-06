@@ -178,6 +178,12 @@ sigue siendo el mismo pedido.
 Nunca lleva montos ni cuántas cuotas se quitaron. **Reintentos:** si se pierde la respuesta, repetir el mismo pedido es seguro: responde `200` con
 `yaEstabaDadoDeBaja: true`. Dos pedidos simultáneos dejan una sola baja (se ordenan con el mismo bloqueo que la generación de cuotas).
 
+**Si el Administrativo no responde, la baja del Deportivo no se deshace.** Conviene que el Deportivo llame primero a esta ruta (así el Administrativo registra la
+baja y quita en el mismo paso las cuotas futuras sin pagos). Si no pudo, y grabó la baja directo en la base (`fecha_baja`), el jugador igual deja de recibir cuotas
+nuevas y no puede ingresar, y el Administrativo la completa solo: el mismo proceso automático que genera las cuotas (al iniciar la API y cada 6 horas) busca a los
+jugadores dados de baja que todavía tengan cuotas futuras sin pagos o becas vigentes y les aplica los efectos de la baja. Repetir la ruta con la misma fecha responde
+`yaEstabaDadoDeBaja: true` y **no** quita cuotas: esa tarea es del proceso automático.
+
 ## `POST /api/integracion/v1/jugadores/{idJugador}/reincorporacion`
 HU-057. Cuando un jugador dado de baja vuelve al club. Es un **reingreso** del mismo jugador: se reutilizan su `idJugador` y su persona, y conserva todo
 su historial (pagos, deuda anterior, auditoría). **No hay que llamar a `cargos-alta` después:** la reincorporación ya genera la cuota y la

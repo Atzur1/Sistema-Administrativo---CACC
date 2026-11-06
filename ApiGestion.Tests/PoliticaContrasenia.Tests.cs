@@ -165,6 +165,34 @@ public class PoliticaContraseniaTests
         Assert.Contains("Es una contraseña demasiado común. Elegí otra.", Validar(contrasenia));
     }
 
+    // HU-087 (QA 30/10): la sigla "cacc" solo cuenta cuando está sola o con puntos; no cuando es la unión de dos palabras.
+    [Theory]
+    [InlineData("Vaca-Ccuatro-7")]
+    [InlineData("Vaca Ccuatro 77")]
+    [InlineData("Argentina-campeon-2022")]
+    public void UnaContraseniaQueSoloJuntaLetrasDeOtrasPalabras_NoSeRechazaPorElClub(string contrasenia)
+    {
+        Assert.Empty(PoliticaContrasenia.Validar(contrasenia, Camila));
+    }
+
+    [Theory]
+    [InlineData("Camioneros-1931")]
+    [InlineData("C.A.C.C.2026")]
+    [InlineData("Qwerty12345")]
+    [InlineData("ClubCACC-77")]
+    public void LasContraseniasQueQAPidioRechazar_SeRechazan(string contrasenia)
+    {
+        Assert.NotEmpty(PoliticaContrasenia.Validar(contrasenia, Camila));
+    }
+
+    [Fact]
+    public void ElApellidoCompuestoConGuion_SeRechazaPorSusTramos()
+    {
+        var titular = new DatosTitular("Camila", "Pérez-Gómez", "30111222", null);
+
+        Assert.NotEmpty(PoliticaContrasenia.Validar("Gomez-norte-77", titular));
+    }
+
     [Fact]
     public void UnaPalabraComunDentroDeUnaFraseLarga_NoSeRechaza()
     {

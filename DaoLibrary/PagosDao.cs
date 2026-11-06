@@ -813,9 +813,19 @@ namespace DaoLibrary
 
         // Detalle de deuda de un jugador: cada cuota todavía pendiente (estado = 0), con lo que
         // ya abonó para ese período (estado = 1, mismo mes/año) y cuánto le sigue faltando.
+        // La inscripcion se nombra "Inscripcion 2026" (es anual) y no con el mes de su vencimiento: asi no se confunde con la
+        // cuota de ese mes ni se la cobra como si lo fuera.
         public IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalle(int idJugador)
         {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            return ObtenerDeudaDetalleCore(conexion, null, idJugador);
+        }
+
+        internal static IReadOnlyList<CuotaPendienteDetalle> ObtenerDeudaDetalleCore(SqlConnection conexion, SqlTransaction? transaccion, int idJugador)
+        {
             var pendientes = new List<CuotaPendienteDetalle>();
+            // Mes de vencimiento de cada cargo, para emparejarle sus abonos aunque el nombre mostrado sea otro.
+            var mesDe = new Dictionary<int, string>();
 
             // El saldo pendiente sale ya con el beneficio de Becados y Descuentos aplicado (si el
             // jugador tiene uno activo cuya vigencia cubre el mes de esta cuota) — no importa que
@@ -830,9 +840,7 @@ namespace DaoLibrary
                 WHERE pg.FK_id_jugador = @idJugador AND pg.estado = 0
                 ORDER BY pg.fecha_vencimiento, pg.concepto";
 
-            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
-
-            using (SqlCommand comando = new SqlCommand(queryPendientes, conexion))
+            using (SqlCommand comando = new SqlCommand(queryPendientes, conexion, transaccion))
             {
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
                 using SqlDataReader reader = comando.ExecuteReader();
@@ -841,12 +849,15 @@ namespace DaoLibrary
                     var periodoBase = Convert.ToDateTime(reader["fecha_vencimiento"]);
                     var tieneBeneficio = reader["motivo"] != DBNull.Value;
                     var saldoAjustado = Convert.ToDecimal(reader["saldo_ajustado"]);
+                    var conceptoPendiente = reader["concepto"].ToString()?.Trim() ?? "";
+                    var idPendiente = Convert.ToInt32(reader["PK_id_pago"]);
+                    mesDe[idPendiente] = CalendarioCuotas.NombreDelPeriodo(periodoBase);
 
                     pendientes.Add(new CuotaPendienteDetalle
                     {
-                        IdPago = Convert.ToInt32(reader["PK_id_pago"]),
-                        Periodo = CalendarioCuotas.NombreDelPeriodo(periodoBase),
-                        Concepto = reader["concepto"].ToString()?.Trim() ?? "",
+                        IdPago = idPendiente,
+                        Periodo = conceptoPendiente == "Inscripcion" ? $"Inscripción {periodoBase.Year}" : mesDe[idPendiente],
+                        Concepto = conceptoPendiente,
                         MontoOriginal = Convert.ToDecimal(reader["monto_base"]),
                         SaldoPendiente = saldoAjustado < 0 ? 0 : saldoAjustado,
                         TieneBeneficio = tieneBeneficio,
@@ -873,7 +884,7 @@ namespace DaoLibrary
                 WHERE FK_id_jugador = @idJugador AND estado = 1 AND fecha_vencimiento IS NOT NULL
                 ORDER BY fecha_pago";
 
-            using (SqlCommand comando = new SqlCommand(queryAbonos, conexion))
+            using (SqlCommand comando = new SqlCommand(queryAbonos, conexion, transaccion))
             {
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
                 using SqlDataReader reader = comando.ExecuteReader();
@@ -883,7 +894,7 @@ namespace DaoLibrary
                     var concepto = reader["concepto"].ToString()?.Trim() ?? "";
                     var cuota = pendientes.FirstOrDefault(c =>
                         c.Concepto == concepto
-                        && c.Periodo == CalendarioCuotas.NombreDelPeriodo(fechaVencimiento));
+                        && mesDe[c.IdPago] == CalendarioCuotas.NombreDelPeriodo(fechaVencimiento));
 
                     cuota?.Abonos.Add(new AbonoDetalle
                     {
@@ -1037,6 +1048,14 @@ namespace DaoLibrary
         // evitando un segundo round-trip solo para saber cuántas páginas hay.
         public HistorialPagosResultado ObtenerHistorialPagos(int idJugador, int page, int pageSize)
         {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            return ObtenerHistorialPagosCore(conexion, null, idJugador, page, pageSize);
+        }
+
+        // internal (no private) para que la prueba de integracion la corra dentro de una transaccion que revierte.
+        internal static HistorialPagosResultado ObtenerHistorialPagosCore(
+            SqlConnection conexion, SqlTransaction? transaccion, int idJugador, int page, int pageSize)
+        {
             // Es un REGISTRO: si una cuota se pagó en varios abonos (ej. $20.000 + $50.000),
             // los dos tienen que quedar listados — nada se resume en un solo número. Pero se
             // agrupan bajo el mismo período (mismo mes), así se ve claro que son parte de una
@@ -1075,9 +1094,7 @@ namespace DaoLibrary
             // completar cada uno con sus abonos sin perder el orden de fecha_grupo DESC.
             var itemsPorClave = new List<(DateTime clave, string concepto, PagoHistorialItem item)>();
 
-            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
-
-            using (SqlCommand comando = new SqlCommand(queryPeriodos, conexion))
+            using (SqlCommand comando = new SqlCommand(queryPeriodos, conexion, transaccion))
             {
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
                 comando.Parameters.AddWithValue("@offset", (page - 1) * pageSize);
@@ -1113,6 +1130,20 @@ namespace DaoLibrary
                 }
             }
 
+            // Una página fuera de rango no trae filas y entonces el total (que sale de COUNT(*) OVER() de esas filas)
+            // quedaba en 0 aunque el jugador sí tenga pagos: se cuenta aparte.
+            if (resultado.Items.Count == 0 && page > 1)
+            {
+                using SqlCommand contar = new SqlCommand(@"
+                    SELECT COUNT(*) FROM (
+                        SELECT 1 AS grupo FROM PAGOS
+                        WHERE FK_id_jugador = @idJugador AND estado = 1
+                        GROUP BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)), concepto
+                    ) grupos", conexion, transaccion);
+                contar.Parameters.AddWithValue("@idJugador", idJugador);
+                resultado.Total = Convert.ToInt32(contar.ExecuteScalar());
+            }
+
             // Los abonos de cada período de esta página, todos de una.
             foreach (var (clave, concepto, item) in itemsPorClave)
             {
@@ -1137,7 +1168,7 @@ namespace DaoLibrary
                       AND COALESCE(pg.fecha_vencimiento, CAST(pg.fecha_pago AS DATE)) = @clavePeriodo
                     ORDER BY pg.fecha_pago, pg.PK_id_pago";
 
-                using SqlCommand comando = new SqlCommand(queryAbonos, conexion);
+                using SqlCommand comando = new SqlCommand(queryAbonos, conexion, transaccion);
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
                 comando.Parameters.AddWithValue("@concepto", concepto);
                 comando.Parameters.AddWithValue("@clavePeriodo", clave);
