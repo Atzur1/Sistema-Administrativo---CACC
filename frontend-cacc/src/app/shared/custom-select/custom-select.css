@@ -109,5 +109,5 @@
     width: 14px;
     height: 14px;
     flex-shrink: 0;
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }

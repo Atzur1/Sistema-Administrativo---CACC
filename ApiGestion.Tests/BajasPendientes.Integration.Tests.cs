@@ -61,7 +61,7 @@ public class BajasPendientesIntegrationTests
             int activo = Crear(c, t, "99999932", dadoDeBaja: false, 0, 1, 2);
             int sinNada = Crear(c, t, "99999933", dadoDeBaja: true, -1, 0);
 
-            int completadas = JugadoresDao.CompletarBajasPendientesCore(c, t, Hoy);
+            int completadas = JugadoresDao.CompletarBajasPendientesCore(c, t);
 
             Assert.True(completadas >= 1);
             Assert.Equal(1, Pendientes(c, t, dadoDeBaja));   // queda solo la del mes en curso
@@ -80,9 +80,9 @@ public class BajasPendientesIntegrationTests
         {
             int id = Crear(c, t, "99999934", dadoDeBaja: true, 0, 1);
 
-            JugadoresDao.CompletarBajasPendientesCore(c, t, Hoy);
+            JugadoresDao.CompletarBajasPendientesCore(c, t);
             int pendientesTrasLaPrimera = Pendientes(c, t, id);
-            JugadoresDao.CompletarBajasPendientesCore(c, t, Hoy);
+            JugadoresDao.CompletarBajasPendientesCore(c, t);
 
             Assert.Equal(1, pendientesTrasLaPrimera);
             Assert.Equal(pendientesTrasLaPrimera, Pendientes(c, t, id));

@@ -1,0 +1,15 @@
+
+Sesiones                   : 8
+IteracionesPorSesion       : 50
+AltasEsperadasPorTabla     : 400
+Fase1_IdentitySequence     : 8 sesiones, 400 altas, 0 errores
+Fase1_Conteos              : PERSONAS 400 JUGADORES 400 PAGOS 400 USUARIOS 400 STAFF 400 CATEGORIAS 400 
+                             STAFF_CATEGORIAS 400 RESPONSABLES 400 JUGADORES_RESPONSABLES 400
+Fase1_IdsDistintosPorTabla : 400 400 400 400 400 400 400 400
+Fase1_Resultado            : PASS
+Fase2_MaxMasUno            : 8 sesiones, 400 intentos, 349 errores | Violation of PRIMARY KEY constraint 
+                             'PK_RESPONSABLES'. Cannot insert duplicate key in object 'dbo.RESPONSABLES'. The 
+                             duplicate key value is (451).
+Fase2_AltasLogradas        : 51 de 400
+Fase2_Conclusion           : MAX+1 choca bajo concurrencia (349 altas rechazadas por PK duplicada)
+

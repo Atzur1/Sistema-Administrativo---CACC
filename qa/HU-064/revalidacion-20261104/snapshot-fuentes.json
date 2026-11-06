@@ -1,0 +1,29 @@
+[
+  {
+    "name": "EstadoDeudaDao",
+    "source": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\DaoLibrary\\EstadoDeudaDao.cs",
+    "snapshot": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\nuestro\\DaoLibrary\\EstadoDeudaDao.cs",
+    "sourceSha256": "FF6DEF5CDB757F1DA4CD0B2F76D6FF2892CD2301E091CD2E81C930BBCCE410DB",
+    "snapshotSha256": "4950EAF24D30913AB6BE640AA3D65D1F6642848419878D7317238664637BFE71",
+    "equal": false,
+    "equalIgnoringLineEndings": true
+  },
+  {
+    "name": "BeneficiosService",
+    "source": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\ServiceLibrary\\BeneficiosService.cs",
+    "snapshot": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\nuestro\\ServiceLibrary\\BeneficiosService.cs",
+    "sourceSha256": "2A9F7B5F07AE032E109B58ABFBA0B09DE04CF3C4909CA0CD2B28C0E067D3FFB5",
+    "snapshotSha256": "B6601ABA88C1F04E5DD52CD87703CB40FC30D1E7C39F27B6B8DCE21F7053BDE5",
+    "equal": false,
+    "equalIgnoringLineEndings": true
+  },
+  {
+    "name": "EstadoDeudaClient",
+    "source": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\App-Club-Atletico-Camioneros\\BackEnd\\CACC.API\\Services\\EstadoDeudaClient.cs",
+    "snapshot": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion\\trabajo\\ellos\\BackEnd\\CACC.API\\Services\\EstadoDeudaClient.cs",
+    "sourceSha256": "7832F0FB50376289A0E3FFFE54A9DE4D03477512F2FF4FB794CF5A2101792595",
+    "snapshotSha256": "629688EA4737A9D840EC3744E640EF5E850ADCD50484A98DED3B51D895BA882A",
+    "equal": false,
+    "equalIgnoringLineEndings": false
+  }
+]

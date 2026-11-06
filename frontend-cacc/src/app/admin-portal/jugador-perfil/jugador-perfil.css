@@ -18,118 +18,15 @@
   overflow-x: hidden;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  animation: fadeSlideUp 0.4s ease both;
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: var(--font-base);
-  font-weight: 600;
-  color: var(--color-brand);
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.back-button svg {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-}
-
-.back-button:hover {
-  background: var(--color-brand-tint);
-  border-color: var(--color-brand);
-  transform: translateX(-2px);
-}
-
 .error-text {
   margin: 16px 0 0;
   font-size: var(--font-md);
   color: var(--color-danger-strong);
 }
 
-/* ===== TARJETA DE PERFIL ===== */
-/* Antes el avatar + nombre flotaban directo sobre el fondo de la página, sin ningún borde
-   ni sombra propios — quedaba desconectado del resto (que sí usa tarjetas .panel). Ahora
-   es una tarjeta más, con una franja superior de acento del color del estado. */
-.profile-card {
-  position: relative;
-  padding: var(--space-4) var(--space-4) var(--space-4);
-  margin-top: 16px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow:
-    var(--shadow-rest);
-  animation: fadeSlideUp 0.4s ease both;
-  animation-delay: 60ms;
-}
-
-.profile-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-brand), var(--color-brand-light));
-}
-
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.profile-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(150deg, var(--color-brand-tint) 0%, #d3f2e2 100%);
-  color: var(--color-brand);
-  font-size: var(--font-xl);
-  font-weight: 700;
-  flex-shrink: 0;
-  box-shadow:
-    var(--shadow-rest);
-}
-
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.profile-name {
-  margin: 0;
-  font-size: var(--font-xl);
-  font-weight: 700;
-}
-
-.profile-meta {
-  font-size: var(--font-base);
-  color: var(--color-text-muted);
-}
+/* ===== CABECERA ===== */
+/* Tarjeta, avatar, nombre, DNI, categoría, estado y Volver: viven en la cabecera compartida
+   (shared/cabecera-jugador, HU-096). Acá quedan solo los indicadores y acciones propios. */
 
 /* ===== STATS (cantidad de pagos registrados) ===== */
 .profile-stats {
@@ -314,7 +211,7 @@
 
 .periodo-cuota-original {
   font-size: var(--font-base);
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 .periodo-total-label {
@@ -322,13 +219,13 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 .periodo-total {
   font-size: var(--font-lg);
   font-weight: 700;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
 }
 
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
@@ -367,7 +264,7 @@
 .abono-monto {
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
 }
 
 /* ===== PAGINATION ===== */
@@ -389,7 +286,7 @@
   font-family: inherit;
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
   cursor: pointer;
   box-shadow: var(--shadow-rest);
   transition:
@@ -422,23 +319,7 @@
 }
 
 /* ===== BAJA / REACTIVACIÓN Y ANULACIÓN DE PAGOS (SuperAdmin) ===== */
-.profile-baja {
-  align-self: flex-start;
-  margin-top: 6px;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-pill);
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
-  font-size: var(--font-sm);
-  font-weight: 600;
-}
-
-.profile-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
+/* Las acciones se proyectan en el área de acciones de la cabecera compartida (cabeceraAcciones). */
 
 /* Misma forma que "Volver" (borde fino, 9px de radio, 12px), para que la cabecera se lea como un
    solo grupo de acciones. */
@@ -450,7 +331,7 @@
   font-family: inherit;
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -613,17 +494,6 @@
 
 .field-hint-error {
   color: var(--color-danger-strong);
-}
-
-@media (max-width: 640px) {
-  .profile-header {
-    flex-wrap: wrap;
-  }
-
-  .profile-actions {
-    margin-left: 0;
-    width: 100%;
-  }
 }
 
 @media (max-width: 480px) {

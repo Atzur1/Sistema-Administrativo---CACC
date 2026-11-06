@@ -4,22 +4,25 @@ import {
     OnInit,
     NgZone,
     DestroyRef,
+    ViewChild,
     inject,
     signal,
     WritableSignal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Subscription, debounceTime, timeout } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { timeout } from 'rxjs';
 import { animateCountUp } from '../../shared/count-up';
 import { formatElapsedPrecise } from '../../shared/format-elapsed';
 import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { Cargando } from '../../shared/cargando/cargando';
 import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
+import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
+import { LatestRequest } from '../../shared/latest-request';
 import { PagosService } from '../../services/pagos';
 import { RecentPaymentModel } from '../../models/PaymentModel';
+import { SECCIONES } from '../secciones';
 
 // One row in the "Pagos registrados" table
 interface PaymentRow {
@@ -66,18 +69,24 @@ const CURRENCY_FULL = new Intl.NumberFormat('es-AR', {
 @Component({
     selector: 'app-actividad-movimientos',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, CustomSelect, Cargando, EstadoVacio],
+    imports: [CommonModule, FormsModule, CustomSelect, Cargando, EstadoVacio, FilterBar],
     templateUrl: './actividad-movimientos.html',
     styleUrl: './actividad-movimientos.css',
 })
 export class ActividadMovimientos implements OnInit {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['actividad-movimientos'];
+
 
     private zone = inject(NgZone);
     private destroyRef = inject(DestroyRef);
     private pagosService = inject(PagosService);
     private router = inject(Router);
-    private fb = inject(FormBuilder);
     private cdr = inject(ChangeDetectorRef);
+
+    // La barra de filtros compartida (HU-097/HU-102), para descartar una búsqueda escrita y no aplicada al limpiar
+    // desde el estado vacío de resultados.
+    @ViewChild(FilterBar) private barraFiltros?: FilterBar;
 
     // Evita repintar una vista que ya se destruyó (el usuario salió antes de que llegara la respuesta).
     private destroyed = false;
@@ -107,7 +116,10 @@ export class ActividadMovimientos implements OnInit {
     activityLoaded = false;
     activityLoadError = false;
 
-    filterForm: FormGroup;
+    // HU-102: los filtros de "Pagos registrados" son estas dos propiedades (una sola fuente de verdad). La búsqueda
+    // llega de la barra compartida ya con su espera de 300 ms; el estado se aplica al instante.
+    busqueda = '';
+    estado: PaymentRow['status'] | null = null;
     estadoOptions: { value: PaymentRow['status']; label: string }[] = [
         { value: 'Pagado', label: 'Pagado' },
         { value: 'Parcial', label: 'Parcial' },
@@ -126,27 +138,12 @@ export class ActividadMovimientos implements OnInit {
         'domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado',
     ];
 
-    constructor() {
-        this.filterForm = this.fb.group({
-            busqueda: [''],
-            estado: [null as PaymentRow['status'] | null],
-        });
-
-        // Cualquier cambio de filtro vuelve a la página 1 y vuelve a consultar. La búsqueda espera a que se
-        // termine de escribir, para no pedir una página por cada tecla.
-        this.filterForm.valueChanges
-            .pipe(debounceTime(ActividadMovimientos.BUSQUEDA_DEBOUNCE_MS), takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => {
-                this.page = 1;
-                this.loadPagosRegistrados();
-            });
-    }
-
     ngOnInit() {
         this.currentDate = this.formatToday();
         this.destroyRef.onDestroy(() => {
             this.destroyed = true;
             this.cancelCountUp();
+            this.pedidoPagos.cancel();
         });
 
         this.loadResumenHoy();
@@ -158,19 +155,49 @@ export class ActividadMovimientos implements OnInit {
         this.router.navigate(['/admin/portal/jugadores', idJugador]);
     }
 
-    // ===== FILTROS Y PAGINACIÓN (mismo patrón que Becados y Descuentos) =====
+    // ===== FILTROS Y PAGINACIÓN (barra compartida, HU-097/HU-102) =====
 
     get totalPaginas(): number {
         return Math.max(1, Math.ceil(this.totalFiltrados / this.pageSize));
     }
 
-    get hayFiltrosActivos(): boolean {
-        const { busqueda, estado } = this.filterForm.value;
-        return !!(busqueda ?? '').trim() || !!estado;
+    onBusquedaChange(texto: string) {
+        this.busqueda = texto;
+        this.aplicarFiltros();
+    }
+
+    onEstadoChange(valor: string | number | null) {
+        this.estado = valor === 'Pagado' || valor === 'Parcial' ? valor : null;
+        this.aplicarFiltros();
+    }
+
+    // Cada filtro puesto, como etiqueta que se quita sola.
+    private readonly filtrosCache = new ActiveFiltersCache();
+    get filtrosActivos(): ActiveFilter[] {
+        const lista: ActiveFilter[] = [];
+        if (this.busqueda.trim()) lista.push({ key: 'busqueda', label: `Búsqueda: ${this.busqueda.trim()}` });
+        if (this.estado) lista.push({ key: 'estado', label: `Estado: ${this.estado}` });
+        return this.filtrosCache.get(lista);
+    }
+
+    quitarFiltro(key: string) {
+        if (key === 'busqueda') this.busqueda = '';
+        else if (key === 'estado') this.estado = null;
+        else return;
+        this.aplicarFiltros();
     }
 
     limpiarFiltros() {
-        this.filterForm.reset({ busqueda: '', estado: null });
+        this.barraFiltros?.reiniciarBusqueda();
+        this.busqueda = '';
+        this.estado = null;
+        this.aplicarFiltros();
+    }
+
+    // Todo cambio de filtros vuelve a la página 1 y consulta una sola vez.
+    private aplicarFiltros() {
+        this.page = 1;
+        this.loadPagosRegistrados();
     }
 
     irAPagina(nuevaPagina: number) {
@@ -223,8 +250,8 @@ export class ActividadMovimientos implements OnInit {
     // (ej. una transacción de cobro a mitad de camino), la pantalla se queda en blanco para
     // siempre en vez de mostrar el estado de error con "Reintentar".
     private static readonly LOAD_TIMEOUT_MS = 15000;
-    private static readonly BUSQUEDA_DEBOUNCE_MS = 300;
-    private pedidoPagos?: Subscription;
+    // Solo vale la respuesta del último pedido de pagos: uno nuevo cancela el anterior (y se cancela al salir).
+    private readonly pedidoPagos = new LatestRequest();
 
     private loadActivity() {
         this.activityLoadError = false;
@@ -252,12 +279,11 @@ export class ActividadMovimientos implements OnInit {
     // solo cuenta la del último pedido.
     private loadPagosRegistrados() {
         this.paymentsLoadError = false;
-        this.pedidoPagos?.unsubscribe();
-        const { busqueda, estado } = this.filterForm.value;
-        this.pedidoPagos = this.pagosService
-            .getPagosRegistrados({ pagina: this.page, tamanioPagina: this.pageSize, busqueda, estado })
-            .pipe(timeout(ActividadMovimientos.LOAD_TIMEOUT_MS))
-            .subscribe({
+        this.pedidoPagos.run(
+            this.pagosService
+                .getPagosRegistrados({ pagina: this.page, tamanioPagina: this.pageSize, busqueda: this.busqueda, estado: this.estado })
+                .pipe(timeout(ActividadMovimientos.LOAD_TIMEOUT_MS)),
+            {
                 next: (resultado) => {
                     this.pagedPayments = resultado.items.map(toPaymentRow);
                     this.totalFiltrados = resultado.total;

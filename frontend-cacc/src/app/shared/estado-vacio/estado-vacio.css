@@ -29,7 +29,7 @@
 /* Nada pendiente es una buena noticia: el ícono va en verde. */
 .vacio-icono-listo {
   background: var(--color-brand-tint);
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
 }
 
 .vacio-icono svg {

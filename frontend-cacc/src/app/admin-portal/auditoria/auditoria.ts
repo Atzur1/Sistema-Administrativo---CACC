@@ -11,6 +11,7 @@ import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { Ventana } from '../../shared/ventana/ventana';
 import { ActiveFilter, ActiveFiltersCache, FilterBar } from '../../shared/filter-bar/filter-bar';
 import { LatestRequest } from '../../shared/latest-request';
+import { SECCIONES as SECCIONES_PORTAL } from '../secciones';
 
 interface AuditEvent {
   id: number;
@@ -28,6 +29,9 @@ interface AuditEvent {
   // Los nombres de lo que el evento menciona solo por número, como "tipo:número" -> texto (por ejemplo
   // "jugador:3" -> "PRUEBA, NICOLAS (DNI 99000001)"). Lo que ya no existe en la base no figura.
   references?: Record<string, string>;
+  // HU-055: el sistema que hizo el pedido ("PortalDeportivo" por la API de integración, "PortalAdministrativo" por este
+  // portal). NULL: no pasó por la API del Portal Administrativo o es un evento anterior a HU-055.
+  sourceSystem?: string | null;
 }
 
 interface AuditResponse {
@@ -76,7 +80,8 @@ const SECCIONES: Record<string, string> = {
   JUGADORES_DESCUENTOS: 'Beneficio de jugador',
   JUGADORES: 'Ficha de jugador',
   PERSONA: 'Datos personales',
-  USUARIO: 'Cuenta administrativa',
+  // HU-105: el trigger de USUARIOS graba la sección como 'USUARIOS' (con 'USUARIO' el filtro no encontraba nada).
+  USUARIOS: 'Cuenta administrativa',
   CATEGORIAS: 'División',
   TIPO_DESCUENTO: 'Tipo de beneficio',
   TOKEN_ACCESO_CUENTA: 'Acceso a cuenta',
@@ -160,6 +165,9 @@ type Datos = Record<string, unknown>;
   styleUrl: './auditoria.css',
 })
 export class Auditoria {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES_PORTAL['auditoria'];
+
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly ngZone = inject(NgZone);
@@ -446,7 +454,8 @@ export class Auditoria {
         if (cambio('activo') && !siNo(despues?.['activo'])) return `Canceló ${cuyo}`;
         return `Modificó ${cuyo}`;
       }
-      case 'USUARIO': {
+      case 'USUARIO':
+      case 'USUARIOS': {
         const cuenta = quien ? `la cuenta de ${quien}` : 'una cuenta';
         if (item.action === 'INSERT') return quien ? `Creó la cuenta de ${quien}` : 'Creó una cuenta administrativa';
         if (cambio('credencialActualizada') || cambio('activacionPendiente')) {
@@ -503,6 +512,7 @@ export class Auditoria {
       case 'PERSONA':
         return nombre('persona', item.entityId);
       case 'USUARIO':
+      case 'USUARIOS':
         return nombre('usuario', item.entityId);
       case 'CATEGORIAS':
         return nombre('categoria', item.entityId);
@@ -546,6 +556,21 @@ export class Auditoria {
     return [event.userEmail || 'Usuario no identificado', event.userDni ? `DNI ${event.userDni}` : '']
       .filter(Boolean)
       .join(' · ');
+  }
+
+  // Desde qué sistema se hizo. Sin origen registrado no se inventa uno.
+  private static readonly ORIGENES: Record<string, string> = {
+    PortalDeportivo: 'Portal Deportivo (integración)',
+    PortalAdministrativo: 'Portal Administrativo',
+  };
+
+  origen(event: AuditEvent): string | null {
+    return event.sourceSystem ? (Auditoria.ORIGENES[event.sourceSystem] ?? event.sourceSystem) : null;
+  }
+
+  // En la lista solo se marca lo que llegó de otro sistema: lo hecho desde este portal es lo habitual.
+  vinoDeOtroSistema(event: AuditEvent): boolean {
+    return !!event.sourceSystem && event.sourceSystem !== 'PortalAdministrativo';
   }
 
   iniciales(event: AuditEvent): string {

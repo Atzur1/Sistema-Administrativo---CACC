@@ -1,0 +1,71 @@
+== Reset de la base ClubCamionerosUnificadaV2_HU059_Prueba (HU-059)
+  Esquema unificado creado en ClubCamionerosUnificadaV2_HU059_Prueba.
+  Migraciones al día (25 de database/migrations aplicadas).
+  Cuentas ficticias y fixtures: personas=5 jugadores=4 cuotas=5
+  Estado inicial verificado (5|4|5|0|1|1) en 2 s.
+  Precondiciones de HU-060: hu060: personas=2 jugadores=1 aranceles=4
+Fecha de negocio (club): 2026-10-29 | ¿el alta emite la cuota de 10/2026? True | salida: C:\Users\FramD\AppData\Local\Temp\cacc-hu060\ejecucion_20261029_162450
+== Levantando las APIs
+PASS    ENV-1    SQL Server responde y la base tiene las precondiciones de HU-059 y HU-060  [esperado: 2 personas 9860xxxx | obtenido: precondiciones 9860xxxx]
+PASS    ENV-2    API Administrativa lista (login: lee USUARIOS en SQL)  [esperado: 200 | obtenido: login -> 200]
+PASS    ENV-3    API Deportiva lista (GET /api/jugadores: lee JUGADORES en SQL)  [esperado: 200 | obtenido: GET /api/jugadores -> 200]
+PASS    ENV-4    Los fixtures cubren la jerarquía: cat. con arancel | fallback de género | cat. femenina | sin arancel | inscripción M | inscripción F  [esperado: monto|monto|monto|(vacío)|monto|(vacío) | obtenido: 1500.00|1000.00|800.00||500.00|]
+PASS    DEP-1    HU-056: el Administrativo ofrece POST /api/integracion/v1/jugadores  [esperado: ruta existente (400 con errorCode) | obtenido: 400 INVALID_INPUT]
+PASS    DEP-2    HU-054: el contrato documenta el alta (POST /api/integracion/v1/jugadores)  [esperado: sección en docs/integracion/README.md | obtenido: documentado]
+PASS    AUT-1    El alta del contrato sin credencial o con una inválida: 401 y no crea nada  [esperado: 401/401; personas sin cambio | obtenido: 401/401; personas 12 -> 12]
+PASS    AUT-2    Ningún frontend (Administrativo ni Deportivo) tiene la credencial ni llama a /api/integracion: el alta va backend a backend  [esperado: 0 archivos | obtenido: 0 archivos]
+PASS    ALT-1    POST /api/jugadores del Deportivo: 201 con el id del jugador  [esperado: 201; id 6; creado | obtenido: 201; id 6; creado True]
+PASS    ALT-2    Base: una PERSONA y un JUGADOR, con nombre, apellido, DNI, género, categoría y FK correctos  [esperado: Alta|Completa Hu|98600001|Masculino|4|2026-10-29|1|1; 1|1 | obtenido: Alta|Completa Hu|98600001|Masculino|4|2026-10-29|1|1; 1|1|1|1]
+PASS    ALT-3    Identidad compartida: el Deportivo y el Administrativo devuelven el MISMO jugador; no hay una persona equivalente duplicada  [esperado: 200/200 con el DNI; 1 persona | obtenido: 200/200; 1 persona(s); id jugador 6, persona 13]
+PASS    ALT-4    Padrón del Administrativo (GET /api/jugadores): aparece activo, con su DNI y categoría  [esperado: 200; activo, DNI, Masculino | obtenido: 200; {"idJugador":6,"nombre":"Alta","apellido":"Completa Hu","dni":"98600001","categoria":"Pt  AFA 2010","genero":"Masculino","fechaAlta":"2026-10-29T00:00:00","fechaBaja":null,"activo":true,"nombreCompleto":"Completa Hu, Alta"}]
+PASS    ALT-5    Búsqueda de Cuotas y Pagos (GET /api/players/search) lo encuentra por DNI  [esperado: 200; 1 resultado | obtenido: 200; [{"id":6,"firstName":"Alta","lastName":"Completa Hu","dni":"98600001","categoryName":"Pt  AFA 2010","leaveDate":null}]]
+PASS    ALT-6    Cobranzas: está en el padrón de cuentas (GET /api/pagos/player-accounts) y su cuenta se puede consultar  [esperado: 200 con el jugador; 200 | obtenido: 200; 200]
+PASS    CUO-1    Calendario HU-083 (alta el 2026-10-29): 1 cuota de 2026-10-01  [esperado: 1 cuota de 2026-10-01 | obtenido: 1500.00@2026-10-01]
+PASS    CUO-2    Calendario HU-083, la otra rama: alta antes del día 10 (2026-10-05): no emite la cuota  [esperado: 201; alta 2026-10-05|3; cuota ''; inscripción 500.00@2026-10-05 | obtenido: 201; alta 2026-10-05|3; cuota ''; inscripción 500.00@2026-10-05]
+PASS    REL-1    Con Pruebas:FechaNegocio en Production la API no arranca (la fecha fija no puede llegar a Producción)  [esperado: termina con error; mensaje de la guarda | obtenido: terminó: True; código -532462766; mensaje: True]
+PASS    CUO-3    HU-048 caso A: categoría con arancel propio -> el de la categoría  [esperado: 1500.00@2026-10-01 | obtenido: 1500.00@2026-10-01]
+PASS    CUO-4    HU-048 caso B: categoría sin arancel propio -> el de su género  [esperado: 1000.00@2026-10-01 | obtenido: 1000.00@2026-10-01]
+PASS    CUO-5    La cuota lleva el arancel vigente al emitir, no el último cargado (1800.00, futuro)  [esperado: distinto de 1800.00 | obtenido: 1500.00@2026-10-01]
+PASS    INS-1    Varón: UNA inscripción del jugador, con el arancel de inscripción vigente, separada de la cuota  [esperado: 500.00@2026-10-29 | obtenido: 500.00@2026-10-29]
+PASS    INS-2    Varón por el fallback de género: también UNA inscripción  [esperado: 500.00@2026-10-29 | obtenido: 500.00@2026-10-29]
+PASS    REI-1    La misma alta nueva dos veces más: 200 sin duplicar persona, jugador, cuota ni inscripción  [esperado: 200/200; 1|1|1|1 | obtenido: 200/200; 1|1|1|1]
+PASS    FEM-1    Jugadora: persona Femenino en la categoría 13  [esperado: 201; Femenino|13 | obtenido: 201; Femenino|13]
+PASS    FEM-2    Jugadora: NO recibe inscripción (ni masculina ni en $0)  [esperado: ninguna | obtenido: ninguna]
+PASS    FEM-3    Jugadora: la cuota sigue el calendario y el arancel de su categoría  [esperado: 800.00@2026-10-01 | obtenido: 800.00@2026-10-01]
+PASS    DNI-1    PERSONA existente sin JUGADOR: se reutiliza (misma PK, sin pisar sus datos) y el JUGADOR apunta a ella  [esperado: 1|11|Previa|Sin Jugador|11 | obtenido: 1|11|Previa|Sin Jugador|11]
+PASS    DNI-2    PERSONA + JUGADOR ya existentes: reenviar el alta no duplica persona, jugador, cuota ni inscripción  [esperado: 200; id 5; 1|1|0|0 | obtenido: 200; id 5; 1|1|0|0]
+PASS    REI-2    Reintento del alta con DNI existente: 200 y nada duplicado  [esperado: 200; 1|1|1|1 | obtenido: 200; 1|1|1|1]
+PASS    CAT-1    Deportivo: 400 (campo idCategoria), sin identidad ni cargos  [esperado: 400 idCategoria; 0|0|0|0 | obtenido: 400 idCategoria; 0|0|0|0]
+PASS    CAT-2    Contrato del Administrativo sin idCategoria: 400 INVALID_INPUT (field idCategoria), rechazo registrado, sin datos  [esperado: 400 INVALID_INPUT idCategoria; AltaJugador|INVALID_INPUT|PortalDeportivo|sin DNI; 0|0|0|0 | obtenido: 400 INVALID_INPUT idCategoria; AltaJugador|INVALID_INPUT|PortalDeportivo|sin DNI; 0|0|0|0]
+PASS    SDN-1    Deportivo: 400, sin crear una identidad sin DNI ni cargos  [esperado: 400; personas sin cambio | obtenido: 400; personas 16 -> 16]
+PASS    SDN-2    Contrato del Administrativo sin DNI: 400 INVALID_INPUT (field dni), rechazo registrado, sin datos  [esperado: 400 INVALID_INPUT dni; +1 rechazo; personas sin cambio | obtenido: 400 INVALID_INPUT dni; rechazos 2 -> 3]
+PASS    SAR-1    Jugadora en categoría sin arancel y género sin arancel: se registra (política de HU-056) sin cuota inventada ni cargos en $0  [esperado: 201; 1|1|0|0; 0 en $0 | obtenido: 201; 1|1|0|0; 0 en $0]
+PASS    SAR-2    Después del caso sin arancel, otra alta válida e independiente se procesa completa  [esperado: 201; 1000.00@2026-10-01 | obtenido: 201; 1000.00@2026-10-01]
+PASS    AUD-1    Alta exitosa auditada: PERSONAS y JUGADORES INSERT, origen PortalDeportivo, operador del token, fecha de hoy  [esperado: 1|1 | obtenido: 1|1]
+PASS    AUD-2    Altas rechazadas: ningún INSERT auditado como alta completada  [esperado: 0 | obtenido: 0]
+PASS    NOJ-1    El Deportivo crea DT, Médico y Administrador (POST /api/staff): PERSONA + USUARIO con su rol  [esperado: 201 x3; 98600010:4,98600011:3,98600012:1 | obtenido: 201/201/201; 98600010:4,98600011:3,98600012:1]
+PASS    NOJ-2    El Administrativo habilita al Administrador (candidatos + POST /api/usuarios/{id}/habilitar)  [esperado: 200 (candidato); 200; acceso 1|2 | obtenido: 200; 200; acceso 1|2]
+PASS    NOJ-3    Staff y cuentas de portal no son JUGADORES ni tienen cuotas o inscripciones, después de la generación manual y la automática  [esperado: generación 200 + automática; 0 jugadores|0 cargos | obtenido: 200 + cuota de control = 1; 0|0]
+PASS    NOJ-4    No aparecen en el padrón, en la búsqueda de Cuotas y Pagos ni en el padrón de cobranzas  [esperado: 0|0|0 | obtenido: 0|0|0]
+PASS    CUO-6    Tras la generación manual y la automática: la cuota del alta no se duplica y conserva su monto  [esperado: 1500.00@2026-10-01 | obtenido: 1500.00@2026-10-01]
+PASS    LOG-1    Los logs de las dos APIs no contienen la credencial, la clave JWT, contraseñas ni tokens  [esperado: 0 | obtenido: 0]
+
+== Resumen por grupo
+Auditoría: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Caso 1 alta completa: PASS (6 PASS, 0 FAIL, 0 BLOCKED)
+Caso 2 cuota y aranceles: PASS (7 PASS, 0 FAIL, 0 BLOCKED)
+Caso 3 inscripción masculina: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Caso 4 jugadora: PASS (3 PASS, 0 FAIL, 0 BLOCKED)
+Caso 5 DNI repetido: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Caso 6 sin categoría: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Caso 7 sin DNI: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Caso 8 no jugadores: PASS (4 PASS, 0 FAIL, 0 BLOCKED)
+Caso 9 sin arancel: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Dependencias: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Entorno: PASS (4 PASS, 0 FAIL, 0 BLOCKED)
+HU-055 autenticación: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+Logs: PASS (1 PASS, 0 FAIL, 0 BLOCKED)
+Reintentos: PASS (2 PASS, 0 FAIL, 0 BLOCKED)
+
+Total: 43 PASS | 0 FAIL | 0 BLOCKED   (14 s, fecha de negocio 2026-10-29, base ClubCamionerosUnificadaV2_HU059_Prueba)
+Evidencia: C:\Users\FramD\AppData\Local\Temp\cacc-hu060\ejecucion_20261029_162450

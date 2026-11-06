@@ -1,17 +1,24 @@
+import { ChangeDetectorRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { AvisoCuotasFaltantes } from './aviso-cuotas-faltantes';
 import { CuotasFaltantesService } from '../../../services/cuotas-faltantes';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { MonthWithMissingFeesModel } from '../../../models/MissingFeeModel';
+import { UsuariosPortalService } from '../../../services/usuarios-portal';
+import { AuthService } from '../../../services/auth';
+import { PendingActionsService } from '../../../services/pending-actions';
 
 const SEPTIEMBRE: MonthWithMissingFeesModel = { periodo: '2026-09-01', cantidad: 45, montoTotal: 4_140_000 };
 
 const JULIO: MonthWithMissingFeesModel = { periodo: '2026-07-01', cantidad: 5, montoTotal: 400_000 };
 
-async function create(meses: MonthWithMissingFeesModel[] = [SEPTIEMBRE]) {
-  const generar = vi.fn(() => of({ mensaje: 'Se generaron 2 cuotas de septiembre 2026.', creadas: 2 }));
+async function create(
+  meses: MonthWithMissingFeesModel[] = [SEPTIEMBRE],
+  generarRespuesta: () => Observable<{ mensaje: string; creadas: number }> = () => of({ mensaje: 'Se generaron 2 cuotas de septiembre 2026.', creadas: 2 }),
+) {
+  const generar = vi.fn(generarRespuesta);
   const getMeses = vi.fn(() => of(meses));
   const notify = vi.fn();
   await TestBed.configureTestingModule({
@@ -30,15 +37,27 @@ async function create(meses: MonthWithMissingFeesModel[] = [SEPTIEMBRE]) {
         },
       },
       { provide: NotificationService, useValue: { notify } },
+      // HU-104: los meses llegan del coordinador de pendientes (la misma consulta que usa la campanita).
+      { provide: UsuariosPortalService, useValue: { getCandidatos: () => of([]) } },
+      { provide: AuthService, useValue: { isSuperAdmin: () => true, getToken: () => 't' } },
     ],
   }).compileComponents();
 
   const fixture = TestBed.createComponent(AvisoCuotasFaltantes);
   fixture.detectChanges();
-  return { fixture, component: fixture.componentInstance, element: fixture.nativeElement as HTMLElement, generar, getMeses, notify };
+  const refrescar = () => {
+    fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+  };
+  return {
+    fixture, component: fixture.componentInstance, element: fixture.nativeElement as HTMLElement, generar, getMeses, notify,
+    refrescar, pendientes: TestBed.inject(PendingActionsService),
+  };
 }
 
 describe('AvisoCuotasFaltantes', () => {
+  afterEach(() => TestBed.inject(PendingActionsService).stop());
+
   it('no muestra nada si no falta ninguna cuota', async () => {
     const { element } = await create([]);
 
@@ -100,16 +119,45 @@ describe('AvisoCuotasFaltantes', () => {
     expect(generar).not.toHaveBeenCalled();
   });
 
-  it('al confirmar genera ese mes, avisa y vuelve a consultar los meses', async () => {
-    const { component, generar, notify, getMeses } = await create();
+  // HU-104: el mes generado desaparece al instante del aviso y de la campanita, sin volver a consultar los meses
+  // (se respeta el minuto entre consultas; la generación del mes es completa y transaccional).
+  it('al confirmar genera ese mes, avisa y lo quita sin volver a consultar los meses', async () => {
+    const { component, generar, notify, getMeses, element, refrescar, pendientes } = await create([JULIO, SEPTIEMBRE]);
 
     component.abrir(SEPTIEMBRE);
     component.confirmar();
+    refrescar();
 
     expect(generar).toHaveBeenCalledWith(2026, 9);
     expect(notify).toHaveBeenCalledWith('Se generaron 2 cuotas de septiembre 2026.', 'success');
     expect(component.mesElegido).toBeNull();
-    expect(getMeses).toHaveBeenCalledTimes(2);
+    expect(getMeses).toHaveBeenCalledTimes(1);
+    expect(component.meses).toEqual([JULIO]);
+    expect(pendientes.items().map((p) => p.key)).toEqual(['cuotas:2026-07']);
+    expect(element.querySelector('.aviso-resumen')!.textContent!.replace(/\s+/g, ' ')).toContain('1 mes con cuotas sin generar');
+  });
+
+  it('"creadas = 0" (ya estaban todas, por ejemplo por otra operación) también resuelve el mes', async () => {
+    const { component, pendientes, refrescar, element } = await create([SEPTIEMBRE], () =>
+      of({ mensaje: 'No había cuotas para generar en ese mes: ya estaban todas.', creadas: 0 }));
+
+    component.abrir(SEPTIEMBRE);
+    component.confirmar();
+    refrescar();
+
+    expect(pendientes.total()).toBe(0);
+    expect(element.querySelector('.aviso')).toBeNull();
+  });
+
+  it('si la generación falla, el mes sigue pendiente', async () => {
+    const { component, pendientes } = await create([SEPTIEMBRE], () =>
+      throwError(() => ({ error: { mensaje: 'No se pudieron generar las cuotas.' } })));
+
+    component.abrir(SEPTIEMBRE);
+    component.confirmar();
+
+    expect(pendientes.total()).toBe(1);
+    expect(component.errorDialogo).toBe('No se pudieron generar las cuotas.');
   });
 
   it('volver cierra sin generar', async () => {

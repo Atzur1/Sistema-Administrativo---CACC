@@ -421,7 +421,7 @@
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-pill);
     background: var(--color-info-bg);
-    color: var(--color-info);
+    color: var(--aviso-acento);
     font-size: var(--font-base);
     font-weight: 700;
 }
@@ -429,6 +429,14 @@
 .rol-select {
     display: inline-block;
     min-width: 150px;
+}
+
+/* HU-105: la cuenta tiene un cambio de rol guardándose o que todavía se puede deshacer. */
+.rol-estado {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: var(--font-sm, 0.8125rem);
+    color: var(--color-text-muted);
 }
 
 .role-pill {
@@ -442,12 +450,12 @@
 
 .role-superadmin {
     background: var(--color-brand-tint);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .role-admin {
     background: var(--color-info-bg);
-    color: var(--color-info);
+    color: var(--aviso-acento);
 }
 
 .cell-muted {
@@ -609,7 +617,7 @@
 .icon-button:hover:not(:disabled) {
     background: var(--color-brand-tint);
     border-color: var(--color-brand);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .icon-button:disabled {

@@ -1,5 +1,7 @@
 import { NgZone } from '@angular/core';
 
+import { prefiereMovimientoReducido } from './movimiento-reducido';
+
 // Variables de tema que usan los paneles flotantes. Cada pantalla puede redefinirlas en su
 // propio contenedor (ej. Becados y Descuentos usa otra paleta), así que se copian desde el
 // elemento ancla al sacar el panel de ahí.
@@ -24,10 +26,14 @@ export interface FloatingPanelOptions {
 // Mientras está abierto, la posición se recalcula en cada cuadro: así acompaña al ancla aunque la
 // pantalla se mueva sin que haya scroll ni resize (por ejemplo, cuando el menú lateral se expande
 // al pasar el mouse y corre el contenido).
+//
+// Con movimiento reducido (HU-098) no hay nada que corra cuadro por cuadro: el panel se ubica al
+// abrirse y se vuelve a ubicar solo cuando hay scroll, cambia el tamaño de la ventana o el del ancla.
 export class FloatingPanel {
   private panel: HTMLElement | null = null;
   private frame = 0;
   private lastPlacement = '';
+  private dejarDeEscuchar: (() => void) | null = null;
 
   constructor(
     private zone: NgZone,
@@ -56,6 +62,11 @@ export class FloatingPanel {
     document.body.appendChild(panel);
     this.position();
 
+    if (prefiereMovimientoReducido()) {
+      this.seguirSinAnimar(anchor);
+      return;
+    }
+
     if (typeof requestAnimationFrame === 'function') {
       // Fuera de la zona de Angular: solo se tocan estilos, no hace falta detección de cambios por cuadro.
       this.zone.runOutsideAngular(() => {
@@ -68,12 +79,33 @@ export class FloatingPanel {
     }
   }
 
+  // Con movimiento reducido: se reubica solo ante scroll (de la página o de un panel con scroll propio),
+  // cambio de tamaño de la ventana o del ancla. Fuera de la zona de Angular: solo se tocan estilos.
+  private seguirSinAnimar(anchor: HTMLElement | null | undefined): void {
+    this.zone.runOutsideAngular(() => {
+      const reubicar = () => this.position();
+      window.addEventListener('scroll', reubicar, { capture: true, passive: true });
+      window.addEventListener('resize', reubicar, { passive: true });
+      const observador = typeof ResizeObserver === 'function' && anchor ? new ResizeObserver(reubicar) : null;
+      if (observador && anchor) {
+        observador.observe(anchor);
+      }
+      this.dejarDeEscuchar = () => {
+        window.removeEventListener('scroll', reubicar, { capture: true });
+        window.removeEventListener('resize', reubicar);
+        observador?.disconnect();
+      };
+    });
+  }
+
   // Angular quita el nodo al cerrarse; el remove() cubre el caso de que el componente se destruya abierto.
   detach(): void {
     if (this.frame && typeof cancelAnimationFrame === 'function') {
       cancelAnimationFrame(this.frame);
     }
     this.frame = 0;
+    this.dejarDeEscuchar?.();
+    this.dejarDeEscuchar = null;
     this.panel?.remove();
     this.panel = null;
     this.lastPlacement = '';

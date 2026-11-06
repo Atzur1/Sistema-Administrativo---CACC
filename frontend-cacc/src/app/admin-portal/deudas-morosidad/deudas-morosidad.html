@@ -13,7 +13,7 @@
     </span>
 
     <div class="header-text">
-      <h1 class="header-title">Deudas y Morosidad</h1>
+      <h1 class="header-title">{{ tituloPantalla }}</h1>
       <span class="header-subtitle">Control de jugadores con cuotas impagas · Temporada 2026</span>
     </div>
 
@@ -28,6 +28,39 @@
   </header>
   <div class="header-divider"></div>
 
+  <!-- ===== BARRA DE FILTROS (compartida, HU-097/HU-102) =====
+       A ancho completo, antes de los paneles. Filtra "Lista de deudores" y "Jugadores inhabilitados"; la categoría
+       también acota las métricas del encabezado. "Deuda por categoría" tiene su propio período y no cambia. -->
+  <article class="panel panel-filtros">
+    <app-filter-bar etiqueta="Filtros de la lista de deudores" textoBusqueda="Buscar por nombre o DNI…"
+                    [busqueda]="busqueda" (busquedaChange)="onBusquedaChange($event)"
+                    [filtrosActivos]="filtrosActivos" (quitarFiltro)="quitarFiltro($event)"
+                    (limpiar)="limpiarFiltros()">
+      <div class="field filter-control">
+        <label class="field-label" for="filtro-categoria-deudores">Categoría</label>
+        <app-custom-select id="filtro-categoria-deudores" [options]="categoriaOptions" placeholder="Todas las categorías"
+                           [(ngModel)]="selectedCategoria"
+                           (ngModelChange)="onFiltrosChange()"></app-custom-select>
+      </div>
+
+      <div class="field filter-control">
+        <label class="field-label" for="filtro-estado-deudores">Estado</label>
+        <app-custom-select id="filtro-estado-deudores" [options]="estadoOptions" placeholder="Todos los estados"
+                           [(ngModel)]="selectedEstado"
+                           (ngModelChange)="onFiltrosChange()"></app-custom-select>
+      </div>
+
+      <div class="field filter-control">
+        <label class="field-label" for="filtro-situacion-deudores">Jugadores</label>
+        <app-custom-select id="filtro-situacion-deudores" [options]="situacionOptions" placeholder="Activos y dados de baja"
+                           [(ngModel)]="selectedSituacion"
+                           (ngModelChange)="onFiltrosChange()"></app-custom-select>
+      </div>
+
+      <span class="filter-scope" filterBarNote>Filtra la Lista de deudores y Jugadores inhabilitados. La categoría también acota las métricas de arriba; "Deuda por categoría" no cambia.</span>
+    </app-filter-bar>
+  </article>
+
   <!-- ===== MAIN GRID ===== -->
   <section class="main-grid">
 
@@ -41,32 +74,8 @@
           </div>
 
           <!-- HU-021: exporta la lista respetando el filtro de categoría activo (menú compartido, HU-097) -->
-          <app-export-menu [enCurso]="exportando" (exportar)="exportarDeudores($event)" />
+          <app-report-export-menu tipo="deudores" [idCategoria]="idCategoriaActivo" [enCurso]="exportando" (exportar)="exportarDeudores($event)" />
         </div>
-
-        <!-- Barra de filtros compartida (HU-097): la búsqueda espera 300 ms; los desplegables filtran al instante -->
-        <app-filter-bar class="filter-row" etiqueta="Filtros de deudores" textoBusqueda="Buscar por nombre o DNI…"
-                        [busqueda]="busqueda" (busquedaChange)="onBusquedaChange($event)"
-                        [filtrosActivos]="filtrosActivos" (quitarFiltro)="quitarFiltro($event)"
-                        (limpiar)="limpiarFiltros()">
-          <div class="filter-control">
-            <app-custom-select [options]="categoriaOptions" placeholder="Todas las categorías"
-                                [(ngModel)]="selectedCategoria"
-                                (ngModelChange)="onFiltrosChange()"></app-custom-select>
-          </div>
-
-          <div class="filter-control">
-            <app-custom-select [options]="estadoOptions" placeholder="Todos los estados"
-                                [(ngModel)]="selectedEstado"
-                                (ngModelChange)="onFiltrosChange()"></app-custom-select>
-          </div>
-
-          <div class="filter-control">
-            <app-custom-select [options]="situacionOptions" placeholder="Activos y dados de baja"
-                                [(ngModel)]="selectedSituacion"
-                                (ngModelChange)="onFiltrosChange()"></app-custom-select>
-          </div>
-        </app-filter-bar>
 
         @if (!cargando) {
           <p class="filter-count">Mostrando {{ debtors.length }} de {{ totalJugadores }} jugadores</p>
@@ -151,7 +160,11 @@
 
                 <div class="suspended-info">
                   <span class="suspended-name">{{ player.player }}</span>
-                  <span class="suspended-detail">{{ player.detail }}</span>
+                  <span class="suspended-detail">
+                    {{ player.category }}
+                    <!-- Lo urgente (cuotas vencidas) lleva texto y la etiqueta de peligro; el resto del panel es neutro -->
+                    <span class="etiqueta-estado tono-peligro">{{ player.overdue }}</span>
+                  </span>
                 </div>
 
                 <span class="suspended-amount">{{ player.amount }}</span>

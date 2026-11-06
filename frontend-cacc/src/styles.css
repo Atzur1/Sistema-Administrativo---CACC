@@ -83,6 +83,7 @@ html, body {
 
   --color-accent: #8b5cf6;
   --color-accent-bg: #f3eeff;
+  --color-accent-text: #6d28d9; /* violeta para TEXTO: el de arriba no llega a 4.5:1 (HU-098) */
 
   /* Vidrio esmerilado: el mismo fondo translúcido que ya usaban resumen-general,
      actividad-movimientos, portales y login, ahora disponible para cualquier caja. */
@@ -404,7 +405,7 @@ html, body {
 .tono-aviso { background: var(--aviso-bg); color: var(--aviso-texto); }
 .tono-peligro { background: var(--color-danger-bg); color: var(--color-danger); }
 .tono-neutro { background: var(--color-bg-page); color: var(--color-text-muted); }
-.tono-info { background: var(--color-info-bg); color: var(--color-info); }
+.tono-info { background: var(--color-info-bg); color: var(--aviso-acento); }
 
 /* =====================================================================
    ACCESIBILIDAD DEL PORTAL (HU-098)
@@ -423,11 +424,18 @@ app-admin-portal :is(a, button, input, select, textarea, summary, [tabindex]):fo
 }
 
 /* Contraste: el gris de los textos secundarios (#6b7280) no llega a 4.5:1 sobre los fondos claros del
-   portal. Adentro del portal se usa uno apenas más oscuro que sí cumple (5.1:1 en el peor fondo). */
+   portal. Adentro del portal se usa uno apenas más oscuro que sí cumple (5.1:1 en el peor fondo).
+   Tamaño mínimo (corrección de QA): ningún texto del portal baja de 12 px. Los dos tamaños chicos de la escala
+   (--font-xs 10 px y --font-sm 11 px: rótulos, etiquetas, encabezados de tabla, pills y ayudas) valen 12 px
+   adentro del portal y en sus menús, calendarios y ayudas, que se dibujan sobre <body>. Las pantallas de acceso
+   (login, portales, contraseña) no se tocan acá. */
 app-admin-portal,
 .cs-menu,
-.dp-panel {
+.dp-panel,
+.help-tooltip {
   --color-text-subtle: #5f6672;
+  --font-xs: var(--font-base);
+  --font-sm: var(--font-base);
 }
 
 /* Área táctil mínima de 40px para un botón de ícono chico (el "?" de ayuda, por ejemplo) sin agrandar
@@ -521,9 +529,9 @@ app-admin-portal,
    Cada pantalla pone su color con dos variables en su :host; sin ellas, verde:
      --section-accent     color del ícono
      --section-accent-bg  fondo suave del cuadro del ícono
-   Colores por sección: verde = plata (cuotas, aranceles, recaudación, actividad),
-   violeta = beneficios (becados), rojo = alerta (deudas), azul = control
-   (usuarios, reportes, auditoría).
+   Colores por sección: verde = plata (cuotas, aranceles, recaudación, actividad, deudas),
+   violeta = beneficios (becados), azul = control (usuarios, reportes, auditoría).
+   El rojo no es color de sección (HU-102): queda para lo urgente, como las etiquetas de cuotas vencidas.
    ===================================================================== */
 .page-header {
   display: flex;

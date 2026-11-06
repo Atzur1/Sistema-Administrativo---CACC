@@ -30,87 +30,16 @@
   --pending-shadow: var(--aviso-rgb);
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  animation: fadeSlideUp 0.4s ease both;
-}
-
 .error-text {
   margin: 16px 0 0;
   font-size: var(--font-md);
   color: var(--color-danger-strong);
 }
 
-/* ===== TARJETA DE PERFIL ===== */
-/* Antes el avatar + nombre flotaban directo sobre el fondo de la página, sin ningún borde
-   ni sombra propios — quedaba desconectado del resto (que sí usa tarjetas .panel). Ahora
-   es una tarjeta más, con una franja superior de acento del color del estado. */
-.profile-card {
-  position: relative;
-  padding: var(--space-4) var(--space-4) var(--space-4);
-  margin-top: 16px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow:
-    var(--shadow-rest);
-  animation: fadeSlideUp 0.4s ease both;
-  animation-delay: 60ms;
-}
-
-.profile-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--pending), var(--pending-soft));
-}
-
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.profile-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(150deg, var(--pending-bg) 0%, var(--pending-bg-alt) 100%);
-  color: var(--pending-strong);
-  font-size: var(--font-xl);
-  font-weight: 700;
-  flex-shrink: 0;
-  box-shadow:
-    var(--shadow-rest);
-}
-
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.profile-name {
-  margin: 0;
-  font-size: var(--font-xl);
-  font-weight: 700;
-}
-
-.profile-meta {
-  font-size: var(--font-base);
-  color: var(--color-text-muted);
-}
+/* ===== CABECERA ===== */
+/* Tarjeta, avatar, nombre, DNI, categoría, estado y Volver: viven en la cabecera compartida
+   (shared/cabecera-jugador, HU-096), igual que en Perfil de Jugador. Los indicadores de deuda
+   se proyectan dentro de esa tarjeta y conservan su estilo de acá. */
 
 /* ===== STATS (Total adeudado / cantidad de cuotas) ===== */
 .profile-stats {
@@ -309,7 +238,7 @@
 
 .cuota-original {
   font-size: var(--font-base);
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 /* ===== ABONOS YA REALIZADOS (fila completa, debajo de la principal) ===== */
@@ -338,7 +267,7 @@
 .abono-monto {
   font-size: var(--font-base);
   font-weight: 700;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
 }
 
 /* ===== BENEFICIO (Becados y Descuentos) ===== */
@@ -376,7 +305,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 /* Gris casi negro, no rojo: la seriedad la marca el pill de estado + la tipografía, no un
@@ -419,7 +348,7 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 .pagar-input {
@@ -497,7 +426,7 @@
   border-radius: var(--radius-md);
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--color-brand);
+  color: var(--color-brand-deep);
   animation: fadeSlideUp 0.3s ease both;
 }
 
@@ -511,10 +440,6 @@
 @media (max-width: 520px) {
   .dashboard {
     padding: var(--space-4);
-  }
-
-  .profile-header {
-    flex-wrap: wrap;
   }
 
   .cuota-row-saldo {
@@ -567,7 +492,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: left;
-  color: #6b7280;
+  color: var(--color-text-subtle);
   white-space: nowrap;
 }
 
@@ -603,7 +528,7 @@
 }
 
 .cuota-fila-pagada td {
-  color: #6b7280;
+  color: var(--color-text-subtle);
 }
 
 .sr-only {
@@ -729,18 +654,6 @@
   .registrar-pago-button {
     width: 100%;
   }
-}
-
-/* ===== JUGADOR DADO DE BAJA ===== */
-.profile-baja {
-  align-self: flex-start;
-  margin-top: 6px;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-pill);
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
-  font-size: var(--font-sm);
-  font-weight: 600;
 }
 
 /* Cuota que quedó pendiente porque la beca se canceló al dar de baja al jugador. */

@@ -1,17 +1,21 @@
 import { Component, NgZone, OnInit, DestroyRef, HostListener, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { RouterOutlet, RouterLink, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../services/auth';
+import { PORTAL_ADMINISTRATIVO, SECCIONES, Seccion, esSeccion } from './secciones';
 import { filter } from 'rxjs/operators';
 import { Toast } from '../shared/toast/toast';
 import { NotificationBell } from '../shared/notification-bell/notification-bell';
 import { DtAdminChat } from '../shared/dt-admin-chat/dt-admin-chat';
+import { PendingActionsService } from '../services/pending-actions';
+import { RoleChangesService } from '../services/role-changes';
+import { UndoNotices } from '../shared/undo-notices/undo-notices';
 
 @Component({
     selector: 'app-admin-portal',
     standalone: true,
-    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, Toast, NotificationBell, DtAdminChat],
+    imports: [CommonModule, RouterOutlet, RouterLink, Toast, NotificationBell, DtAdminChat, UndoNotices],
     templateUrl: './admin-portal.html',
     styleUrl: './admin-portal.css',
 })
@@ -30,21 +34,21 @@ get roleLabel(): string { return this.isSuperAdmin ? 'Superadmin' : 'Administrad
 
 // Off-canvas sidebar state, only meaningful under the 768px breakpoint
 sidebarOpen: boolean = false;
-// Maps each route segment to its display name
-private pageTitles: Record<string, string> = {
-    'resumen-general':        'Resumen General',
-    'actividad-movimientos':  'Actividad y Movimientos',
-    'auditoria': 'Auditoría',
-    'deudas-morosidad':       'Deudas y Morosidad',
-    'usuarios':               'Usuarios y Permisos',
-    'cuotas-pagos':           'Cuotas y Pagos',
-    'reportes':               'Reportes',
-    'actualizacion-aranceles': 'Actualización de Aranceles',
-    'becados-descuentos':     'Becados y Descuentos',
-    'recaudacion-mensual':    'Recaudación Mensual',
-};
+
+// Nombres de las secciones (HU-103): los mismos en el menú, la barra superior y el h1 de cada pantalla.
+readonly portal = PORTAL_ADMINISTRATIVO;
+readonly secciones = SECCIONES;
+// Ítem del menú que corresponde a la pantalla actual. Sale de la ruta activa, no de comparar textos de la URL:
+// así una pantalla de detalle (jugadores/:id/deuda) mantiene marcada su sección y nunca quedan dos ítems activos.
+seccionActiva: Seccion | null = null;
+// Último tramo de la barra superior en las pantallas de detalle ("Deuda Pendiente"); null en las secciones.
+subpagina: string | null = null;
 
 private destroyRef = inject(DestroyRef);
+// HU-104: pendientes de acción de la campanita (solo SuperAdmin; para otro rol no consulta nada).
+private pendientes = inject(PendingActionsService);
+// HU-105: cambios de rol que todavía se pueden deshacer. Sus avisos siguen al navegar dentro del portal.
+private cambiosDeRol = inject(RoleChangesService);
 
 constructor(
     private router: Router,
@@ -69,26 +73,30 @@ this.router.events
 
     // Set initial title on load
     this.updatePageTitle();
+
+    // HU-104: los pendientes arrancan al entrar al portal, entre por la pantalla que sea, sin frenar su carga (no es
+    // un resolver ni condiciona el router-outlet). Al salir del portal —cierre de sesión o sesión vencida, que
+    // navegan fuera— se detienen y se borran.
+    this.pendientes.start();
+    this.destroyRef.onDestroy(() => this.pendientes.stop());
+    // HU-105: al salir del portal (sesión vencida incluida) no queda ningún "Deshacer" de la sesión anterior.
+    this.destroyRef.onDestroy(() => this.cambiosDeRol.clear());
     }
 
-  // Reads the last URL segment and maps it to a display name.
-  // "jugadores/:id" has a numeric id as its last segment, so it's matched by the
-  // second-to-last segment instead — otherwise the topbar would show a raw id.
+  // La pantalla actual es la ruta hija más profunda. Su sección es data.seccion (pantallas de detalle) o su propio
+  // path (secciones); el id de un jugador, los query params o un #fragmento no cambian nada.
 private updatePageTitle() {
-    const urlSegments = this.router.url.split('/');
-    const lastSegment = urlSegments[urlSegments.length - 1];
+    let ruta = this.router.routerState.snapshot.root;
+    while (ruta.firstChild) ruta = ruta.firstChild;
 
-    if (lastSegment === 'deuda' && urlSegments[urlSegments.length - 3] === 'jugadores') {
-        this.currentPageTitle = 'Deuda Pendiente';
-        return;
-    }
+    const seccion = ruta.data['seccion'] ?? ruta.routeConfig?.path;
+    this.seccionActiva = esSeccion(seccion) ? seccion : null;
+    this.subpagina = typeof ruta.data['subpagina'] === 'string' ? ruta.data['subpagina'] : null;
+    this.currentPageTitle = this.seccionActiva ? SECCIONES[this.seccionActiva] : '';
+}
 
-    if (urlSegments[urlSegments.length - 2] === 'jugadores') {
-        this.currentPageTitle = 'Perfil de Jugador';
-        return;
-    }
-
-    this.currentPageTitle = this.pageTitles[lastSegment] ?? '';
+esActiva(seccion: Seccion): boolean {
+    return this.seccionActiva === seccion;
 }
 
 // Open/close the mobile sidebar drawer.
@@ -118,6 +126,8 @@ cambiarPortal() {
 
 // Log out and return to the login screen
 cerrarSesion() {
+    this.pendientes.stop();
+    this.cambiosDeRol.clear();
     this.authService.cerrarSesion();
     this.router.navigate(['/']);
     }

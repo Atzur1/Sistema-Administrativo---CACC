@@ -1,0 +1,5 @@
+{
+    "stack":  "en Save, C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\qa\\HU-064\\revalidacion-20261104\\hu064-revalidacion.ps1: línea 78\r\nen Case, C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\qa\\HU-064\\revalidacion-20261104\\hu064-revalidacion.ps1: línea 76\r\nen \u003cScriptBlock\u003e, C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC\\qa\\HU-064\\revalidacion-20261104\\hu064-revalidacion.ps1: línea 90",
+    "error":  "La operación solicitada no se puede realizar en un archivo con una sección asignada a usuario abierta.\r\n",
+    "at":  "2026-11-04T22:01:19.9291362Z"
+}

@@ -1,0 +1,48 @@
+
+[32;1mCaso                                                                                          [0m[32;1m Esperado[0m
+[32;1m----                                                                                          [0m [32;1m--------                [0m
+S1. Baja sin credencial (token v lido)                                                         401
+S2. Baja con credencial inv lida                                                               401
+S3. Baja con credencial v lida SIN token                                                       401
+S4. Baja con un rol sin permiso (M‚dica)                                                       403
+S5. Reincorporaci¢n sin credencial                                                             401
+S6. Ning£n rechazo de seguridad toc¢ al jugador                                                fecha_baja NULL
+V1. Jugador inexistente                                                                        404
+V2. Id de jugador 0                                                                            400
+V3. Sin cuerpo (falta la fecha)                                                                400
+V4. Fecha con otro formato (15/10/2026)                                                        400
+V5. Fecha futura (2026-10-30)                                                                  400
+V6. JSON mal formado                                                                           400
+V7. Baja anterior al alta (B entr¢ el 20/10)                                                   422
+V8. Ninguna validaci¢n registr¢ una baja                                                       0 bajas
+B1. Baja de A con fecha efectiva 2026-10-15                                                    200
+B2. Reintento id‚ntico (respuesta perdida)                                                     200
+B3. Otra baja con otra fecha                                                                   409
+B4. estado-deuda informa la baja al QR                                                         200
+B5. Baja l¢gica: mismo jugador y persona, fecha efectiva y activo=0                            1148|1249|2026-10-15|0
+B6. Deuda y pagos hasta el mes de la baja intactos (ago vencida, sep parcial + abono, oct)     sin cambios
+B7. La cuota de noviembre sin pagos (posterior a la baja) se quit¢                             0
+B8. Deudas y Morosidad sigue mostrando a A con su deuda y su fecha de baja                     200
+B9. JUGADORES_PERIODOS cierra la permanencia                                                   2026-08-01..2026-10-15
+B10. Un solo evento de baja, origen PortalDeportivo y operador del token                       1|PortalDeportivo|6
+B11. La baja rechazada de B no dej¢ eventos                                                    0
+C1. Seis bajas simult neas: todas 200, una sola efectiva, un solo evento                       200x6, 1, 1
+R1. Categor¡a inexistente                                                                      422
+R2. Categor¡a 0                                                                                400
+R3. Reincorporar a un jugador activo (B)                                                       409
+R4. Reincorporaci¢n de A (sin cuerpo: conserva categor¡a)                                      200
+R5. Reintento de la reincorporaci¢n                                                            409
+R6. Mismo jugador y persona; fecha_baja NULL; fecha_alta = hoy; misma categor¡a                1148|1249|NULL|2026-10-2
+                                                                                               9|249
+R7. Reingreso el d¡a 29 (>= 10): la cuota de octubre ya exist¡a, no se duplica; nada posterior 4|1|0
+R8. La deuda anterior sigue igual despu‚s del reingreso                                        sin cambios
+R9. Historial: la baja queda y se abre un per¡odo nuevo                                        2026-08-01..2026-10-15|2
+                                                                                               026-10-29..
+R10. Reincorporaci¢n auditada una vez con origen PortalDeportivo                               1|PortalDeportivo
+R11. estado-deuda vuelve a evaluar la deuda (ya no 'baja')                                     200
+R12. Reincorporaci¢n de C con otra categor¡a                                                   200
+R13. C queda en la categor¡a nueva (cobro y pertenencia)                                       1|1
+L1. La credencial y los tokens no aparecen en el log                                           0
+L2. Los rechazos quedan en el log con la plantilla del endpoint                                presente
+
+Total: 41 | PASS: 41 | FAIL: 0

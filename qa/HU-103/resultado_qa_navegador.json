@@ -1,0 +1,968 @@
+{
+  "matriz": {
+    "SuperAdmin": [
+      {
+        "url": "/admin/portal/resumen-general",
+        "menu": "Resumen General",
+        "barra": "Portal administrativo · Resumen General",
+        "h1": "Resumen General",
+        "activos": [
+          "Resumen General"
+        ]
+      },
+      {
+        "url": "/admin/portal/cuotas-pagos",
+        "menu": "Cuotas y Pagos",
+        "barra": "Portal administrativo · Cuotas y Pagos",
+        "h1": "Cuotas y Pagos",
+        "activos": [
+          "Cuotas y Pagos"
+        ]
+      },
+      {
+        "url": "/admin/portal/deudas-morosidad",
+        "menu": "Deudas y Morosidad",
+        "barra": "Portal administrativo · Deudas y Morosidad",
+        "h1": "Deudas y Morosidad",
+        "activos": [
+          "Deudas y Morosidad"
+        ]
+      },
+      {
+        "url": "/admin/portal/becados-descuentos",
+        "menu": "Becados y Descuentos",
+        "barra": "Portal administrativo · Becados y Descuentos",
+        "h1": "Becados y Descuentos",
+        "activos": [
+          "Becados y Descuentos"
+        ]
+      },
+      {
+        "url": "/admin/portal/recaudacion-mensual",
+        "menu": "Recaudación Mensual",
+        "barra": "Portal administrativo · Recaudación Mensual",
+        "h1": "Recaudación Mensual",
+        "activos": [
+          "Recaudación Mensual"
+        ]
+      },
+      {
+        "url": "/admin/portal/actividad-movimientos",
+        "menu": "Actividad y Movimientos",
+        "barra": "Portal administrativo · Actividad y Movimientos",
+        "h1": "Actividad y Movimientos",
+        "activos": [
+          "Actividad y Movimientos"
+        ]
+      },
+      {
+        "url": "/admin/portal/reportes",
+        "menu": "Reportes",
+        "barra": "Portal administrativo · Reportes",
+        "h1": "Reportes",
+        "activos": [
+          "Reportes"
+        ]
+      },
+      {
+        "url": "/admin/portal/actualizacion-aranceles",
+        "menu": "Actualización de Aranceles",
+        "barra": "Portal administrativo · Actualización de Aranceles",
+        "h1": "Actualización de Aranceles",
+        "activos": [
+          "Actualización de Aranceles"
+        ]
+      },
+      {
+        "url": "/admin/portal/usuarios",
+        "menu": "Usuarios y Permisos",
+        "barra": "Portal administrativo · Usuarios y Permisos",
+        "h1": "Usuarios y Permisos",
+        "activos": [
+          "Usuarios y Permisos"
+        ]
+      },
+      {
+        "url": "/admin/portal/auditoria",
+        "menu": "Auditoría",
+        "barra": "Portal administrativo · Auditoría",
+        "h1": "Auditoría",
+        "activos": [
+          "Auditoría"
+        ]
+      }
+    ],
+    "Administrador": [
+      {
+        "url": "/admin/portal/cuotas-pagos",
+        "menu": "Cuotas y Pagos",
+        "barra": "Portal administrativo · Cuotas y Pagos",
+        "h1": "Cuotas y Pagos",
+        "activos": [
+          "Cuotas y Pagos"
+        ]
+      },
+      {
+        "url": "/admin/portal/deudas-morosidad",
+        "menu": "Deudas y Morosidad",
+        "barra": "Portal administrativo · Deudas y Morosidad",
+        "h1": "Deudas y Morosidad",
+        "activos": [
+          "Deudas y Morosidad"
+        ]
+      },
+      {
+        "url": "/admin/portal/becados-descuentos",
+        "menu": "Becados y Descuentos",
+        "barra": "Portal administrativo · Becados y Descuentos",
+        "h1": "Becados y Descuentos",
+        "activos": [
+          "Becados y Descuentos"
+        ]
+      }
+    ]
+  },
+  "hijas": {
+    "SuperAdmin": [
+      {
+        "url": "/admin/portal/jugadores/1",
+        "menu": "Actividad y Movimientos",
+        "barra": "Portal administrativo · Actividad y Movimientos · Perfil de Jugador",
+        "h1": "Baja Contrato, Prueba",
+        "activos": [
+          "Actividad y Movimientos"
+        ]
+      },
+      {
+        "url": "/admin/portal/jugadores/1/deuda",
+        "menu": "Cuotas y Pagos",
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "h1": "Baja Contrato, Prueba",
+        "activos": [
+          "Cuotas y Pagos"
+        ]
+      }
+    ],
+    "Administrador": [
+      {
+        "url": "/admin/portal/jugadores/1/deuda",
+        "menu": "Cuotas y Pagos",
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "h1": "Baja Contrato, Prueba",
+        "activos": [
+          "Cuotas y Pagos"
+        ]
+      }
+    ]
+  },
+  "prohibidas": [
+    {
+      "s": "resumen-general",
+      "url": "/admin/portal/cuotas-pagos",
+      "dialogo": "No tienes permisos para acceder a esta sección."
+    },
+    {
+      "s": "reportes",
+      "url": "/admin/portal/cuotas-pagos",
+      "dialogo": "No tienes permisos para acceder a esta sección."
+    },
+    {
+      "s": "usuarios",
+      "url": "/admin/portal/cuotas-pagos",
+      "dialogo": "No tienes permisos para acceder a esta sección."
+    },
+    {
+      "s": "auditoria",
+      "url": "/admin/portal/cuotas-pagos",
+      "dialogo": "No tienes permisos para acceder a esta sección."
+    },
+    {
+      "s": "recaudacion-mensual",
+      "url": "/admin/portal/cuotas-pagos",
+      "dialogo": "No tienes permisos para acceder a esta sección."
+    },
+    {
+      "s": "actividad-movimientos",
+      "url": "/admin/portal/cuotas-pagos",
+      "dialogo": "No tienes permisos para acceder a esta sección."
+    },
+    {
+      "s": "actualizacion-aranceles",
+      "url": "/admin/portal/cuotas-pagos",
+      "dialogo": "No tienes permisos para acceder a esta sección."
+    },
+    {
+      "s": "jugadores/1",
+      "url": "/admin/portal/cuotas-pagos",
+      "dialogo": "No tienes permisos para acceder a esta sección."
+    }
+  ],
+  "resultados": [
+    {
+      "rol": "SuperAdmin",
+      "id": "MENU",
+      "caso": "opciones visibles (en orden)",
+      "estado": "PASS",
+      "obtenido": [
+        "Resumen General",
+        "Cuotas y Pagos",
+        "Deudas y Morosidad",
+        "Becados y Descuentos",
+        "Recaudación Mensual",
+        "Actividad y Movimientos",
+        "Reportes",
+        "Actualización de Aranceles",
+        "Usuarios y Permisos",
+        "Auditoría"
+      ]
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "TOOLTIP",
+      "caso": "title de cada ítem = su texto",
+      "estado": "PASS",
+      "obtenido": []
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "PIE",
+      "caso": "acciones del pie",
+      "estado": "PASS",
+      "obtenido": [
+        "Cambiar portal",
+        "Cerrar sesión"
+      ]
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Resumen General: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Resumen General",
+        "h1": [
+          "Resumen General"
+        ],
+        "activos": [
+          "Resumen General"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Cuotas y Pagos: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos",
+        "h1": [
+          "Cuotas y Pagos"
+        ],
+        "activos": [
+          "Cuotas y Pagos"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Deudas y Morosidad: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Deudas y Morosidad",
+        "h1": [
+          "Deudas y Morosidad"
+        ],
+        "activos": [
+          "Deudas y Morosidad"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Becados y Descuentos: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Becados y Descuentos",
+        "h1": [
+          "Becados y Descuentos"
+        ],
+        "activos": [
+          "Becados y Descuentos"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Recaudación Mensual: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Recaudación Mensual",
+        "h1": [
+          "Recaudación Mensual"
+        ],
+        "activos": [
+          "Recaudación Mensual"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Actividad y Movimientos: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Actividad y Movimientos",
+        "h1": [
+          "Actividad y Movimientos"
+        ],
+        "activos": [
+          "Actividad y Movimientos"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Reportes: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Reportes",
+        "h1": [
+          "Reportes"
+        ],
+        "activos": [
+          "Reportes"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Actualización de Aranceles: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Actualización de Aranceles",
+        "h1": [
+          "Actualización de Aranceles"
+        ],
+        "activos": [
+          "Actualización de Aranceles"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Usuarios y Permisos: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Usuarios y Permisos",
+        "h1": [
+          "Usuarios y Permisos"
+        ],
+        "activos": [
+          "Usuarios y Permisos"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "SEC",
+      "caso": "Auditoría: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Auditoría",
+        "h1": [
+          "Auditoría"
+        ],
+        "activos": [
+          "Auditoría"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "HOVER",
+      "caso": "colapsado 72px -> mouse entra: 252px y texto visible -> sale: 72px",
+      "estado": "PASS",
+      "obtenido": "72px (texto 0) -> 252px (texto 1) -> 72px"
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "FOCO",
+      "caso": "Tab al primer ítem: sidebar expandido y contorno blanco hacia adentro",
+      "estado": "PASS",
+      "obtenido": {
+        "texto": "Resumen General",
+        "clase": "nav-item",
+        "outline": "solid rgb(255, 255, 255) 2px",
+        "offset": "-2px",
+        "ancho": 252
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "HIJA",
+      "caso": "/admin/portal/jugadores/1: activo Actividad y Movimientos, barra con \"Perfil de Jugador\", h1 = nombre del jugador",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Actividad y Movimientos · Perfil de Jugador",
+        "h1": [
+          "Baja Contrato, Prueba"
+        ],
+        "activos": [
+          "Actividad y Movimientos"
+        ]
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "HIJA",
+      "caso": "/admin/portal/jugadores/1/deuda: activo Cuotas y Pagos, barra con \"Deuda Pendiente\", h1 = nombre del jugador",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "h1": [
+          "Baja Contrato, Prueba"
+        ],
+        "activos": [
+          "Cuotas y Pagos"
+        ]
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "QUERY",
+      "caso": "URL con ?query y #fragmento",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Deudas y Morosidad",
+        "activos": [
+          "Deudas y Morosidad"
+        ]
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "desktop 1920x1080 actualizacion-aranceles: barra \"Portal administrativo · Actualización de Aranceles\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Actualización de Aranceles",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "desktop 1920x1080 deuda: barra \"Portal administrativo · Cuotas y Pagos · Deuda Pendiente\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "notebook 1366x768 actualizacion-aranceles: barra \"Portal administrativo · Actualización de Aranceles\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Actualización de Aranceles",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "notebook 1366x768 deuda: barra \"Portal administrativo · Cuotas y Pagos · Deuda Pendiente\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "tablet-h 1024x768 actualizacion-aranceles: barra \"Portal administrativo · Actualización de Aranceles\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Actualización de Aranceles",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "tablet-h 1024x768 deuda: barra \"Portal administrativo · Cuotas y Pagos · Deuda Pendiente\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "tablet-v 768x1024 actualizacion-aranceles: barra \"Portal administrativo · Actualización de Aranceles\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Actualización de Aranceles",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "tablet-v 768x1024 deuda: barra \"Portal administrativo · Cuotas y Pagos\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "tablet-chica 600x960 actualizacion-aranceles: barra \"Portal administrativo · Actualización de Aranceles\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Actualización de Aranceles",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "tablet-chica 600x960 deuda: barra \"Portal administrativo · Cuotas y Pagos\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "mobile 375x812 actualizacion-aranceles: barra \"Portal administrativo\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "RESP",
+      "caso": "mobile 375x812 deuda: barra \"Portal administrativo\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "SuperAdmin",
+      "id": "DRAWER",
+      "caso": "cerrado -> hamburguesa abre (aria-expanded, overlay) -> opción navega y cierra -> overlay cierra -> Esc cierra; hover no lo abre",
+      "estado": "PASS",
+      "obtenido": {
+        "cerrado": true,
+        "abierto": true,
+        "aria": "true",
+        "scroll": "auto",
+        "trasNavegar": [
+          "/admin/portal/deudas-morosidad",
+          [
+            "Deudas y Morosidad"
+          ]
+        ],
+        "trasFondo": false,
+        "trasEsc": false,
+        "hoverMovil": -253
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "MENU",
+      "caso": "opciones visibles (en orden)",
+      "estado": "PASS",
+      "obtenido": [
+        "Cuotas y Pagos",
+        "Deudas y Morosidad",
+        "Becados y Descuentos"
+      ]
+    },
+    {
+      "rol": "Administrador",
+      "id": "TOOLTIP",
+      "caso": "title de cada ítem = su texto",
+      "estado": "PASS",
+      "obtenido": []
+    },
+    {
+      "rol": "Administrador",
+      "id": "PIE",
+      "caso": "acciones del pie",
+      "estado": "PASS",
+      "obtenido": [
+        "Cerrar sesión"
+      ]
+    },
+    {
+      "rol": "Administrador",
+      "id": "SEC",
+      "caso": "Cuotas y Pagos: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos",
+        "h1": [
+          "Cuotas y Pagos"
+        ],
+        "activos": [
+          "Cuotas y Pagos"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "SEC",
+      "caso": "Deudas y Morosidad: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Deudas y Morosidad",
+        "h1": [
+          "Deudas y Morosidad"
+        ],
+        "activos": [
+          "Deudas y Morosidad"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "SEC",
+      "caso": "Becados y Descuentos: barra/h1/activo/tooltip",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Becados y Descuentos",
+        "h1": [
+          "Becados y Descuentos"
+        ],
+        "activos": [
+          "Becados y Descuentos"
+        ],
+        "fondo": "rgb(0, 77, 37)",
+        "borde": "rgb(0, 179, 85) 3px"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "HOVER",
+      "caso": "colapsado 72px -> mouse entra: 252px y texto visible -> sale: 72px",
+      "estado": "PASS",
+      "obtenido": "72px (texto 0) -> 252px (texto 1) -> 72px"
+    },
+    {
+      "rol": "Administrador",
+      "id": "FOCO",
+      "caso": "Tab al primer ítem: sidebar expandido y contorno blanco hacia adentro",
+      "estado": "PASS",
+      "obtenido": {
+        "texto": "Cuotas y Pagos",
+        "clase": "nav-item",
+        "outline": "solid rgb(255, 255, 255) 2px",
+        "offset": "-2px",
+        "ancho": 252
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "HIJA",
+      "caso": "/admin/portal/jugadores/1/deuda: activo Cuotas y Pagos, barra con \"Deuda Pendiente\", h1 = nombre del jugador",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "h1": [
+          "Baja Contrato, Prueba"
+        ],
+        "activos": [
+          "Cuotas y Pagos"
+        ]
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "QUERY",
+      "caso": "URL con ?query y #fragmento",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Deudas y Morosidad",
+        "activos": [
+          "Deudas y Morosidad"
+        ]
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "RESP",
+      "caso": "desktop 1920x1080 deuda: barra \"Portal administrativo · Cuotas y Pagos · Deuda Pendiente\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "RESP",
+      "caso": "notebook 1366x768 deuda: barra \"Portal administrativo · Cuotas y Pagos · Deuda Pendiente\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "RESP",
+      "caso": "tablet-h 1024x768 deuda: barra \"Portal administrativo · Cuotas y Pagos · Deuda Pendiente\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos · Deuda Pendiente",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "0/72"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "RESP",
+      "caso": "tablet-v 768x1024 deuda: barra \"Portal administrativo · Cuotas y Pagos\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "RESP",
+      "caso": "tablet-chica 600x960 deuda: barra \"Portal administrativo · Cuotas y Pagos\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo · Cuotas y Pagos",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "RESP",
+      "caso": "mobile 375x812 deuda: barra \"Portal administrativo\", sin scroll horizontal, texto cortado ni desborde",
+      "estado": "PASS",
+      "obtenido": {
+        "barra": "Portal administrativo",
+        "scrollH": false,
+        "cortado": [],
+        "desborda": false,
+        "unaLinea": true,
+        "sidebar": "-253/253"
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "DRAWER",
+      "caso": "cerrado -> hamburguesa abre (aria-expanded, overlay) -> opción navega y cierra -> overlay cierra -> Esc cierra; hover no lo abre",
+      "estado": "PASS",
+      "obtenido": {
+        "cerrado": true,
+        "abierto": true,
+        "aria": "true",
+        "scroll": "auto",
+        "trasNavegar": [
+          "/admin/portal/deudas-morosidad",
+          [
+            "Deudas y Morosidad"
+          ]
+        ],
+        "trasFondo": false,
+        "trasEsc": false,
+        "hoverMovil": -253
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "GUARD",
+      "caso": "/admin/portal/resumen-general por URL: no entra (guard sin cambios)",
+      "estado": "PASS",
+      "obtenido": {
+        "quedó": "/admin/portal/cuotas-pagos",
+        "aviso": "No tienes permisos para acceder a esta sección."
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "GUARD",
+      "caso": "/admin/portal/reportes por URL: no entra (guard sin cambios)",
+      "estado": "PASS",
+      "obtenido": {
+        "quedó": "/admin/portal/cuotas-pagos",
+        "aviso": "No tienes permisos para acceder a esta sección."
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "GUARD",
+      "caso": "/admin/portal/usuarios por URL: no entra (guard sin cambios)",
+      "estado": "PASS",
+      "obtenido": {
+        "quedó": "/admin/portal/cuotas-pagos",
+        "aviso": "No tienes permisos para acceder a esta sección."
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "GUARD",
+      "caso": "/admin/portal/auditoria por URL: no entra (guard sin cambios)",
+      "estado": "PASS",
+      "obtenido": {
+        "quedó": "/admin/portal/cuotas-pagos",
+        "aviso": "No tienes permisos para acceder a esta sección."
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "GUARD",
+      "caso": "/admin/portal/recaudacion-mensual por URL: no entra (guard sin cambios)",
+      "estado": "PASS",
+      "obtenido": {
+        "quedó": "/admin/portal/cuotas-pagos",
+        "aviso": "No tienes permisos para acceder a esta sección."
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "GUARD",
+      "caso": "/admin/portal/actividad-movimientos por URL: no entra (guard sin cambios)",
+      "estado": "PASS",
+      "obtenido": {
+        "quedó": "/admin/portal/cuotas-pagos",
+        "aviso": "No tienes permisos para acceder a esta sección."
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "GUARD",
+      "caso": "/admin/portal/actualizacion-aranceles por URL: no entra (guard sin cambios)",
+      "estado": "PASS",
+      "obtenido": {
+        "quedó": "/admin/portal/cuotas-pagos",
+        "aviso": "No tienes permisos para acceder a esta sección."
+      }
+    },
+    {
+      "rol": "Administrador",
+      "id": "GUARD",
+      "caso": "/admin/portal/jugadores/1 por URL: no entra (guard sin cambios)",
+      "estado": "PASS",
+      "obtenido": {
+        "quedó": "/admin/portal/cuotas-pagos",
+        "aviso": "No tienes permisos para acceder a esta sección."
+      }
+    }
+  ]
+}

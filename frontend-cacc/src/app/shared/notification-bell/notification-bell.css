@@ -55,8 +55,8 @@
     top: calc(100% + 10px);
     right: 0;
     z-index: 60;
-    width: 320px;
-    max-height: 380px;
+    width: 340px;
+    max-height: min(480px, calc(100vh - 90px));
     display: flex;
     flex-direction: column;
     background: linear-gradient(160deg, #ffffff 0%, #f9fbf9 100%);
@@ -77,6 +77,110 @@
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+}
+
+/* Todo el contenido del panel se desplaza junto: con muchos pendientes o un historial largo no se recorta nada. */
+.bell-scroll {
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* ===== PENDIENTES DE ACCIÓN (HU-104) ===== */
+.bell-pending {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.bell-pending-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-md);
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.bell-pending-count {
+    min-width: 22px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
+    font-size: var(--font-sm);
+    text-align: center;
+}
+
+.bell-group {
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.bell-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.bell-links a {
+    display: block;
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: var(--font-base);
+    font-weight: 600;
+    color: var(--color-brand-deep);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.bell-links a:hover {
+    background: var(--color-bg-hover);
+    text-decoration: underline;
+}
+
+.bell-warning,
+.bell-note {
+    margin: var(--space-2) 0 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
+    line-height: 1.4;
+}
+
+.bell-warning {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-strong);
+}
+
+.bell-note {
+    background: var(--color-bg-page);
+    color: var(--color-text-muted);
+}
+
+.bell-history-title {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+/* Texto solo para lectores de pantalla (el aviso de cambios en la cantidad de pendientes). */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .bell-panel-head {
@@ -119,7 +223,6 @@
     margin: 0;
     padding: var(--space-2);
     list-style: none;
-    overflow-y: auto;
 }
 
 .bell-item {
@@ -181,5 +284,6 @@
         right: 12px;
         left: 12px;
         width: auto;
+        max-height: calc(100vh - 80px);
     }
 }

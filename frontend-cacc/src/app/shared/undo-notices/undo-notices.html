@@ -1,0 +1,13 @@
+<div class="undo-notices" aria-live="polite" aria-relevant="additions">
+  @for (aviso of avisos.notices(); track aviso.id) {
+    <div class="undo-notice">
+      <span class="undo-notice-message">{{ aviso.message }}</span>
+      <button type="button" class="undo-notice-action"
+              [attr.aria-label]="aviso.undoLabel"
+              [attr.aria-disabled]="aviso.state === 'undoing' ? 'true' : null"
+              (click)="avisos.undo(aviso.id)">
+        {{ aviso.state === 'undoing' ? 'Deshaciendo…' : 'Deshacer' }}
+      </button>
+    </div>
+  }
+</div>

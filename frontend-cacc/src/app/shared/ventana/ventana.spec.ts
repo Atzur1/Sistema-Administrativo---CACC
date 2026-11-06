@@ -229,3 +229,70 @@ describe('Ventana abierta desde un menú', () => {
     expect(document.activeElement).toBe(el.querySelector('.menu'));
   });
 });
+
+// Como Becados: la misma ventana pasa de "Bonificación activa" a "Cancelar bonificación". El botón que se tocó
+// desaparece con la vista vieja (QA, HU-094: el foco quedaba en <body>).
+@Component({
+  standalone: true,
+  imports: [Ventana],
+  template: `
+    <button type="button" class="abrir" (click)="abierta.set(true)">Abrir</button>
+    @if (abierta()) {
+      <app-ventana titulo="Bonificación activa" [conAcciones]="false" (cerrar)="abierta.set(false)">
+        @if (vista() === 'activa') {
+          <p>Beca del 50 %</p>
+          <button type="button" class="pasar" (click)="vista.set('cancelar')">Cancelar bonificación</button>
+        } @else {
+          <p class="pregunta">¿Cancelar esta bonificación?</p>
+          <button type="button" class="si">Sí, cancelar</button>
+        }
+      </app-ventana>
+    }
+  `,
+})
+class PantallaConDosVistas {
+  readonly abierta = signal(false);
+  readonly vista = signal<'activa' | 'cancelar'>('activa');
+}
+
+describe('Ventana que cambia de vista', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('si el botón con el foco desaparece al cambiar de vista, el foco vuelve a entrar en la ventana', async () => {
+    await TestBed.configureTestingModule({ imports: [PantallaConDosVistas] }).compileComponents();
+    const fixture = TestBed.createComponent(PantallaConDosVistas);
+    fixture.autoDetectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    el.querySelector<HTMLButtonElement>('.abrir')!.click();
+    fixture.detectChanges();
+    const pasar = el.querySelector<HTMLButtonElement>('.pasar')!;
+    pasar.focus();
+    pasar.click();
+    fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver));
+
+    expect(el.querySelector('.pregunta')).not.toBeNull();
+    const dialogo = el.querySelector('[role="dialog"]')!;
+    expect(document.activeElement).not.toBe(document.body);
+    expect(dialogo.contains(document.activeElement)).toBe(true);
+  });
+
+  it('no le saca el foco a un campo de la ventana cuando el contenido cambia', async () => {
+    await TestBed.configureTestingModule({ imports: [PantallaConDosVistas] }).compileComponents();
+    const fixture = TestBed.createComponent(PantallaConDosVistas);
+    fixture.autoDetectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    el.querySelector<HTMLButtonElement>('.abrir')!.click();
+    fixture.detectChanges();
+    const pasar = el.querySelector<HTMLButtonElement>('.pasar')!;
+    const cerrar = el.querySelector<HTMLButtonElement>('.ventana-cerrar')!;
+    cerrar.focus();
+    pasar.click();
+    fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver));
+
+    expect(document.activeElement).toBe(cerrar);
+  });
+});

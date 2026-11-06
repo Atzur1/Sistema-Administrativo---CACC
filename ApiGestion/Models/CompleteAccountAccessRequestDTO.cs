@@ -4,10 +4,11 @@ namespace ApiGestion.Models;
 
 public sealed class CompleteAccountAccessRequestDTO
 {
-    [Required, MinLength(40), MaxLength(200)]
+    [Required(ErrorMessage = "El enlace no es válido."), MinLength(40, ErrorMessage = "El enlace no es válido."), MaxLength(200, ErrorMessage = "El enlace no es válido.")]
     public string Token { get; init; } = string.Empty;
 
-    // El resto de la política (letras y números, sin datos personales, no común) la controla PoliticaContrasenia.
-    [Required, MinLength(10), MaxLength(128)]
-    public string Password { get; init; } = string.Empty;
+    // HU-087: sin validaciones acá. Toda la política (largo, letras y números, datos personales, comunes, club) la juzga
+    // PoliticaContrasenia: si el DTO cortara una contraseña corta antes, la respuesta no traería "problemas" y la pantalla
+    // la tomaría por un enlace vencido. Una contraseña faltante también llega a la política (y se informa como corta).
+    public string? Password { get; init; }
 }

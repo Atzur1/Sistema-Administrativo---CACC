@@ -35,3 +35,14 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+.fake
+
+# Docker deployment secrets (only the example is versioned)
+.env.docker
+.env.docker.*
+!.env.docker.example
+
+# Python bytecode (scripts de QA en Python, p. ej. qa/HU-007, qa/HU-061)
+__pycache__/
+*.pyc

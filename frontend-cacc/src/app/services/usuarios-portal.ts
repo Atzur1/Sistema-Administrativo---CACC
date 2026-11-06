@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from './api-url';
-import { ChangeRoleRequestModel, EditCandidateRequestModel, EnableUserRequestModel, PortalUserCandidateModel, PortalUserModel, RolPortal } from '../models/PortalUserModel';
+import { ChangeRoleRequestModel, ChangeRoleResultModel, EditCandidateRequestModel, EnableUserRequestModel, PortalUserCandidateModel, PortalUserModel, RolPortal } from '../models/PortalUserModel';
 
 @Injectable({
   providedIn: 'root',
@@ -37,8 +37,8 @@ export class UsuariosPortalService {
     return this.http.post<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/habilitar`, request);
   }
 
-  cambiarRol(idUsuario: number, request: ChangeRoleRequestModel): Observable<{ mensaje: string }> {
-    return this.http.put<{ mensaje: string }>(`${this.API_URL}/${idUsuario}/rol`, request);
+  cambiarRol(idUsuario: number, request: ChangeRoleRequestModel): Observable<ChangeRoleResultModel> {
+    return this.http.put<ChangeRoleResultModel>(`${this.API_URL}/${idUsuario}/rol`, request);
   }
 
   // El SuperAdmin le manda a una cuenta habilitada el enlace para elegir una contraseña nueva (o para crearla, si

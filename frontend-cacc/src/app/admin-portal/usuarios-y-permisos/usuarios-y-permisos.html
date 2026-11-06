@@ -15,7 +15,7 @@
     </span>
 
     <div class="header-text">
-      <h1 class="header-title">Usuarios y Permisos</h1>
+      <h1 class="header-title">{{ tituloPantalla }}</h1>
       <span class="header-subtitle">Quién tiene acceso al Portal Administrativo y con qué rol</span>
     </div>
 
@@ -143,7 +143,7 @@
                 </td>
               </tr>
             } @else {
-              @for (usuario of habilitadosVisibles(); track usuario.idUsuario + '-' + refrescoRoles()) {
+              @for (usuario of habilitadosVisibles(); track usuario.idUsuario) {
                 <tr [class.row-menu-open]="menuAbierto() === usuario.idUsuario">
                   <td>
                     <div class="cell-user">
@@ -167,11 +167,16 @@
                   </td>
                   <td>
                     <app-custom-select
+                      #rolSelect
+                      #rolModelo="ngModel"
                       class="rol-select"
                       [options]="rolOptions"
                       [ngModel]="usuario.rolPortal"
-                      (ngModelChange)="onRolHabilitadoChange(usuario, $event)"
+                      (ngModelChange)="onRolHabilitadoChange(usuario, $event, rolModelo, rolSelect)"
                     ></app-custom-select>
+                    @if (estadoDelRol(usuario); as estado) {
+                      <span class="rol-estado">{{ estado }}</span>
+                    }
                   </td>
                   <td>
                     <span class="etiqueta-estado"
@@ -367,6 +372,7 @@
       textoConfirmar="Confirmar cambio"
       textoEnCurso="Guardando…"
       [enCurso]="rolSubmitting()"
+      [focoAlCerrar]="cambio.selector?.elementoFoco ?? null"
       (confirmar)="confirmarCambioDeRol()"
       (cerrar)="cancelarCambioDeRol()"
     >

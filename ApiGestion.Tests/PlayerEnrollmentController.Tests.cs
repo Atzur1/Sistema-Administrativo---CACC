@@ -110,6 +110,32 @@ public class PlayerEnrollmentControllerTests
         Assert.Null(dao.LastAmount);
     }
 
+    // HU-090: el saldo del mensaje sale como en el resto del portal ($30.000), aunque el servidor corra en otra cultura.
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("de-CH")]
+    public void CreateEnrollmentPayment_AboveTheBalance_ShowsTheBalanceInPesos(string culture)
+    {
+        System.Globalization.CultureInfo previous = System.Globalization.CultureInfo.CurrentCulture;
+        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo(culture);
+        try
+        {
+            (PlayerEnrollmentController controller, FakeEnrollmentDAO dao) = CreateController();
+            dao.Enrollment = PendingEnrollment(30000);
+
+            var result = Assert.IsType<BadRequestObjectResult>(
+                controller.CreateEnrollmentPayment(PlayerId, new EnrollmentPaymentRequestDTO { Amount = 30000.01m, PaymentMethod = "Efectivo" }));
+
+            Assert.Equal(400, result.StatusCode);
+            Assert.Equal("El monto supera el saldo pendiente de la inscripción ($30.000).",
+                result.Value?.GetType().GetProperty("mensaje")?.GetValue(result.Value));
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = previous;
+        }
+    }
+
     [Fact]
     public void CreateEnrollmentPayment_WhenAlreadyFullyPaid_IsRefused()
     {

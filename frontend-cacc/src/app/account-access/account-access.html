@@ -88,12 +88,20 @@
 
             <ul class="requirements">
               @for (requisito of requisitos; track requisito.id) {
+                <!-- HU-087: el estado no depende solo del color: cambia el ícono (tilde / círculo vacío) y se dice en texto. -->
                 <li [class.is-met]="requisito.cumplido">
                   <span class="requirement-check" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                    @if (requisito.cumplido) {
+                      <svg data-icono="cumplido" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    } @else {
+                      <svg data-icono="pendiente" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="7"></circle>
+                      </svg>
+                    }
                   </span>
+                  <span class="visually-hidden">{{ requisito.cumplido ? 'Cumplido:' : 'Pendiente:' }}</span>
                   <span>{{ requisito.texto }}</span>
                   @if (!requisito.obligatorio) {
                     <em class="requirement-tag">recomendado</em>
@@ -101,7 +109,7 @@
                 </li>
               }
             </ul>
-            <p class="requirements-note">Tampoco puede contener tu DNI, tu nombre ni tu correo, ni ser una contraseña muy común.</p>
+            <p class="requirements-note">Tampoco puede contener tu DNI, tu nombre, tu apellido, el usuario de tu correo ni el nombre del club, ni ser una contraseña muy común.</p>
           </div>
         </div>
 
@@ -130,7 +138,7 @@
               type="button"
               class="eye-icon"
               (click)="toggleConfirmacionVisibility()"
-              [attr.aria-label]="mostrarConfirmacion ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.aria-label]="mostrarConfirmacion ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'"
               [attr.aria-pressed]="mostrarConfirmacion"
             >
               @if (!mostrarConfirmacion) {
@@ -153,6 +161,26 @@
             <p class="field-ok">Las contraseñas coinciden.</p>
           }
         </div>
+
+        <!-- HU-087: lo que respondió la API ("problemas"), un motivo por línea. El mismo enlace sirve para corregir. -->
+        @if (problemasPassword.length) {
+          <div class="alert-banner alert-banner-error password-problems" role="alert">
+            <span class="alert-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </span>
+            <div class="alert-text">
+              <p class="password-problems-title">La contraseña no cumple los requisitos:</p>
+              <ul class="password-problems-list">
+                @for (problema of problemasPassword; track problema) {
+                  <li>{{ problema }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
 
         @if (mensajeError) {
           <div class="alert-banner alert-banner-error" role="alert">

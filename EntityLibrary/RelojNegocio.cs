@@ -16,6 +16,18 @@ namespace EntityLibrary
         public static DateTime FechaDelClub(DateTime utc)
             => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), ZonaClub).Date;
 
+        // Identificador de la zona del club, para dejarlo escrito en las exportaciones.
+        public static string Zona => ZonaClub.Id;
+
+        // Una hora que ya está en hora del club (como PAGOS.fecha_hora_registro, que la base graba con
+        // SqlReloj.Ahora) con su corrimiento explícito: viaja como "2026-10-31T14:35:00-03:00" y nadie
+        // tiene que adivinar en qué zona está. El corrimiento sale de la zona, no de un "-3" fijo.
+        public static DateTimeOffset EnHoraDelClub(DateTime horaDelClub)
+        {
+            var local = DateTime.SpecifyKind(horaDelClub, DateTimeKind.Unspecified);
+            return new DateTimeOffset(local, ZonaClub.GetUtcOffset(local));
+        }
+
         // .NET 6+ acepta el id IANA también en Windows; el id de Windows queda de respaldo por si el
         // sistema no tiene los datos de ICU. Argentina no tiene horario de verano desde 2009.
         private static TimeZoneInfo ResolverZona()
@@ -26,7 +38,7 @@ namespace EntityLibrary
                 catch (TimeZoneNotFoundException) { }
                 catch (InvalidTimeZoneException) { }
             }
-            return TimeZoneInfo.CreateCustomTimeZone("ART", TimeSpan.FromHours(-3), "Argentina", "Argentina");
+            throw new TimeZoneNotFoundException("No se encontró la zona horaria del club: America/Argentina/Buenos_Aires o Argentina Standard Time.");
         }
     }
 }

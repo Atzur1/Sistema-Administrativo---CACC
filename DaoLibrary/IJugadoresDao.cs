@@ -14,7 +14,7 @@ namespace DaoLibrary
         // programadas. Ver JugadoresDao.DarDeBaja.
         ResultadoBajaJugador DarDeBaja(int idJugador, DateTime fechaBaja);
 
-        // false si el jugador no existe o no estaba dado de baja.
+        // false si el jugador no existe o no estaba dado de baja. Ver JugadoresDao.Reincorporar (HU-057).
         bool Reactivar(int idJugador);
 
         // Deshace un alta cargada por error: borra al jugador, sus cuotas e inscripcion pendientes y su persona, y deja

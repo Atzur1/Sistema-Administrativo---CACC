@@ -1,8 +1,5 @@
-﻿/* Color de la sección en el encabezado compartido (ver styles.css): rojo, alerta de deuda. */
-:host {
-  --section-accent: var(--color-danger);
-  --section-accent-bg: var(--color-danger-bg);
-}
+﻿/* Encabezado compartido (ver styles.css) con el color por defecto, verde: es una pantalla de plata como Cuotas y Pagos.
+   HU-102: el rojo queda para lo urgente (las etiquetas de cuotas vencidas e inhabilitado), no para decorar la sección. */
 
 /* ===== ANIMATIONS ===== */
 /* fadeSlideUp y growWidth (antes "barGrow") viven ahora en styles.css (global) */
@@ -58,17 +55,10 @@
     animation-delay: 80ms;
 }
 
-/* Jugadores inhabilitados: caja en rojo, para que se distinga a simple vista
-   como algo grave y no como un panel informativo más. */
+/* Jugadores inhabilitados: panel neutro como los demás (HU-102). Lo grave se lee en cada fila, en la etiqueta
+   "N cuotas vencidas", con texto y color de peligro. */
 .panel-suspended {
     animation-delay: 160ms;
-    background: var(--glass-bg-danger);
-    border-color: var(--glass-border-danger);
-    box-shadow: var(--shadow-rest);
-}
-
-.panel-suspended .panel-title {
-    color: var(--color-danger);
 }
 
 .panel-categorias {
@@ -93,16 +83,39 @@
     flex-wrap: wrap;
 }
 
-/* El menú Exportar (app-export-menu) y la barra de filtros (app-filter-bar) son compartidos (HU-097): acá solo
-   el espacio y el ancho de los desplegables de esta pantalla. */
-.filter-row {
-    display: block;
-    margin-top: 12px;
+/* ===== BARRA DE FILTROS (app-filter-bar, HU-097/HU-102) =====
+   A ancho completo, debajo del encabezado y antes de los paneles, como en Recaudación Mensual y Auditoría. El
+   buscador, las etiquetas y "Limpiar filtros" son de la barra compartida: acá solo el panel y los desplegables. */
+.panel-filtros {
+    margin-bottom: 16px;
+    padding: var(--space-4) var(--space-5);
+    /* Hilo verde arriba: marca que este panel es el que controla la lista */
+    border-top: 3px solid var(--color-brand);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.field-label {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
 }
 
 .filter-control {
-    width: 170px;
+    width: 200px;
     flex-shrink: 0;
+}
+
+.filter-scope {
+    font-size: var(--font-base);
+    color: var(--color-text-muted);
 }
 
 .filter-count {
@@ -192,7 +205,7 @@
     width: 40px;
 }
 
-/* Numbered circle; the top three debtors are highlighted */
+/* Numbered circle; the top three debtors are highlighted (en verde: un puesto alto no es un vencimiento, HU-102) */
 .rank-badge {
     display: flex;
     align-items: center;
@@ -207,8 +220,8 @@
 }
 
 .rank-badge.rank-top {
-    background: var(--color-danger-bg);
-    color: var(--color-danger);
+    background: var(--color-brand-tint);
+    color: var(--color-brand-deep);
 }
 
 .cell-player {
@@ -256,8 +269,8 @@
     width: 32px;
     height: 32px;
     border-radius: var(--radius-pill);
-    background: var(--color-danger-bg);
-    color: var(--color-danger);
+    background: var(--color-bg-page);
+    color: var(--color-text-muted);
     font-size: var(--font-sm);
     font-weight: 700;
     flex-shrink: 0;
@@ -280,14 +293,17 @@
 }
 
 .suspended-detail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
     font-size: var(--font-base);
     color: var(--color-text-muted);
-    white-space: nowrap;
 }
 
 .suspended-amount {
     margin-left: auto;
-    color: var(--color-danger);
+    color: var(--color-text);
     font-size: var(--font-md);
     font-weight: 700;
     white-space: nowrap;
@@ -376,7 +392,7 @@
 .categoria-total {
     font-size: var(--font-md);
     font-weight: 700;
-    color: var(--color-danger);
+    color: var(--color-text);
     white-space: nowrap;
     flex-shrink: 0;
 }

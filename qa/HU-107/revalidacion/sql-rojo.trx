@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="e5b75d21-d1e6-402c-aa0a-95e88b5b8fa3" name="FramD@GABINETE1 2026-10-31 19:06:22" runUser="GABINETE1\FramD" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-31T19:06:22.4293923-03:00" queuing="2026-10-31T19:06:22.4293925-03:00" start="2026-10-31T19:06:21.5045362-03:00" finish="2026-10-31T19:06:22.4355757-03:00" />
+  <TestSettings name="default" id="d7230796-43e5-4ac0-bb93-3c4d3872a0b1">
+    <Deployment runDeploymentRoot="FramD_GABINETE1_2026-10-31_19_06_22" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="70a32e56-3025-40f2-9af6-b18efbcf8b05" testId="c7cf6d9e-3210-3eb8-7004-adae778e4de4" testName="ApiGestion.Tests.RecaudacionDaoIntegrationTests.PorFecha_PriorizaRegistroRealAunqueDifieraDelDiaImputado" computerName="GABINETE1" duration="00:00:00.2998394" startTime="2026-10-31T19:06:22.3379707-03:00" endTime="2026-10-31T19:06:22.3379841-03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70a32e56-3025-40f2-9af6-b18efbcf8b05">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Equal() Failure: Collections differ&#xD;
+                                                    ↓ (pos 0)&#xD;
+Expected: long[]                                   [5837, 5838]&#xD;
+Actual:   ListSelectIterator&lt;PagoDelPeriodo, long&gt; [5838, 5837]&#xD;
+                                                    ↑ (pos 0)</Message>
+          <StackTrace>   at ApiGestion.Tests.RecaudacionDaoIntegrationTests.&lt;&gt;c.&lt;PorFecha_PriorizaRegistroRealAunqueDifieraDelDiaImputado&gt;b__12_0(SqlConnection connection, SqlTransaction transaction) in C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionDao.Integration.Tests.cs:line 187&#xD;
+   at ApiGestion.Tests.RecaudacionDaoIntegrationTests.EnTransaccion(Action`2 prueba) in C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionDao.Integration.Tests.cs:line 63&#xD;
+   at ApiGestion.Tests.RecaudacionDaoIntegrationTests.PorFecha_PriorizaRegistroRealAunqueDifieraDelDiaImputado() in C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionDao.Integration.Tests.cs:line 179&#xD;
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="ApiGestion.Tests.RecaudacionDaoIntegrationTests.PorFecha_PriorizaRegistroRealAunqueDifieraDelDiaImputado" storage="c:\users\framd\documents\tesis\sisterrma cacc\sistema-administrativo---cacc\apigestion.tests\bin\debug\net9.0\apigestion.tests.dll" id="c7cf6d9e-3210-3eb8-7004-adae778e4de4">
+      <Execution id="70a32e56-3025-40f2-9af6-b18efbcf8b05" />
+      <TestMethod codeBase="C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ApiGestion.Tests.RecaudacionDaoIntegrationTests" name="PorFecha_PriorizaRegistroRealAunqueDifieraDelDiaImputado" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="c7cf6d9e-3210-3eb8-7004-adae778e4de4" executionId="70a32e56-3025-40f2-9af6-b18efbcf8b05" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Resultados sin formato de lista" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Todos los resultados cargados" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="1" executed="1" passed="0" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.19)&#xD;
+[xUnit.net 00:00:00.07]   Discovering: ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.15]   Discovered:  ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.16]   Starting:    ApiGestion.Tests&#xD;
+[xUnit.net 00:00:00.49]       Assert.Equal() Failure: Collections differ&#xD;
+[xUnit.net 00:00:00.49]                                                           ↓ (pos 0)&#xD;
+[xUnit.net 00:00:00.49]       Expected: long[]                                   [5837, 5838]&#xD;
+[xUnit.net 00:00:00.49]       Actual:   ListSelectIterator&lt;PagoDelPeriodo, long&gt; [5838, 5837]&#xD;
+[xUnit.net 00:00:00.49]                                                           ↑ (pos 0)&#xD;
+[xUnit.net 00:00:00.49]       Stack Trace:&#xD;
+[xUnit.net 00:00:00.49]         C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionDao.Integration.Tests.cs(187,0): at ApiGestion.Tests.RecaudacionDaoIntegrationTests.&lt;&gt;c.&lt;PorFecha_PriorizaRegistroRealAunqueDifieraDelDiaImputado&gt;b__12_0(SqlConnection connection, SqlTransaction transaction)&#xD;
+[xUnit.net 00:00:00.49]         C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionDao.Integration.Tests.cs(63,0): at ApiGestion.Tests.RecaudacionDaoIntegrationTests.EnTransaccion(Action`2 prueba)&#xD;
+[xUnit.net 00:00:00.49]         C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\RecaudacionDao.Integration.Tests.cs(179,0): at ApiGestion.Tests.RecaudacionDaoIntegrationTests.PorFecha_PriorizaRegistroRealAunqueDifieraDelDiaImputado()&#xD;
+[xUnit.net 00:00:00.49]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+[xUnit.net 00:00:00.49]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)&#xD;
+[xUnit.net 00:00:00.50]   Finished:    ApiGestion.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="GABINETE1" outcome="Error" timestamp="2026-10-31T19:06:22.3362866-03:00">
+        <Text>[xUnit.net 00:00:00.49]     ApiGestion.Tests.RecaudacionDaoIntegrationTests.PorFecha_PriorizaRegistroRealAunqueDifieraDelDiaImputado [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

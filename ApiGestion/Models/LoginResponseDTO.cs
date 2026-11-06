@@ -10,4 +10,6 @@ public class LoginResponseDTO
     public string Dni { get; set; } = "";
     public int Role { get; set; }
     public string Token { get; set; } = "";
+    // HU-007: a qué portales puede entrar (ver PortalesDeLaCuenta). El frontend navega con esto.
+    public IReadOnlyList<string> Portales { get; set; } = Array.Empty<string>();
 }

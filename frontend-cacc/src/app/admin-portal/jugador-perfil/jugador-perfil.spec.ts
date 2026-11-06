@@ -1,3 +1,4 @@
+import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { from, throwError } from 'rxjs';
@@ -134,9 +135,44 @@ describe('JugadorPerfil - historial de pagos', () => {
     it('muestra los datos básicos del jugador en el encabezado', async () => {
       const { el } = await crear();
 
-      expect(texto(el.querySelector('.profile-name'))).toBe('PRUEBA, MATIAS');
-      expect(texto(el.querySelector('.profile-meta'))).toBe('DNI 99000003 · AFA 20067');
-      expect(texto(el.querySelector('.profile-avatar'))).toBe('PM');
+      expect(texto(el.querySelector('h1'))).toBe('PRUEBA, MATIAS');
+      expect(texto(el.querySelector('.cj-meta'))).toBe('DNI 99000003 · AFA 20067');
+      expect(texto(el.querySelector('.cj-iniciales'))).toBe('PM');
+    });
+
+    // HU-096: la cabecera es la compartida con Deuda, con el jugador que la pantalla ya cargó.
+    it('usa la cabecera compartida con el jugador ya cargado, sin pedirlo dos veces', async () => {
+      const { el, servicio } = await crear();
+
+      expect(el.querySelector('app-cabecera-jugador .cj-tarjeta')).not.toBeNull();
+      expect(servicio.getJugador).toHaveBeenCalledTimes(1);
+    });
+
+    it('tiene un único h1 y es el nombre del jugador', async () => {
+      const { el } = await crear();
+
+      const h1 = el.querySelectorAll('h1');
+      expect(h1.length).toBe(1);
+      expect(texto(h1[0])).toBe('PRUEBA, MATIAS');
+    });
+
+    it('muestra el estado deportivo que informa el backend', async () => {
+      const { el } = await crear({ jugador: { ...JUGADOR, estadoDeportivo: 'solo_entrenamientos' } });
+
+      expect(texto(el.querySelector('.cj-estado'))).toContain('Solo entrenamientos');
+    });
+
+    it('mientras carga el jugador muestra Volver pero ni h1 ni iniciales', async () => {
+      const { el, fixture, component } = await crear();
+      component.jugador = null;
+      component.cargandoJugador = true;
+      fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cj-volver')).not.toBeNull();
+      expect(el.querySelector('h1')).toBeNull();
+      expect(el.querySelector('.cj-iniciales')).toBeNull();
+      expect(el.querySelector('app-cargando')).not.toBeNull();
     });
 
     it('muestra la sección "Historial de Pagos"', async () => {
@@ -175,7 +211,7 @@ describe('JugadorPerfil - historial de pagos', () => {
     it('el botón Volver regresa a Actividad y Movimientos', async () => {
       const { el, navigate } = await crear();
 
-      (el.querySelector('.back-button') as HTMLButtonElement).click();
+      (el.querySelector('.cj-volver') as HTMLButtonElement).click();
 
       expect(navigate).toHaveBeenCalledWith(['/admin/portal/actividad-movimientos']);
     });
@@ -457,19 +493,22 @@ describe('JugadorPerfil - historial de pagos', () => {
       const clases = Array.from(el.querySelectorAll('button')).map(
         (b) => b.className.split(' ')[0],
       );
-      const permitidas = ['back-button', 'pagination-button', 'profile-action', 'help-trigger', 'abono-anular'];
+      // "boton" es Volver de la cabecera compartida (.boton .boton-secundario .cj-volver).
+      const permitidas = ['boton', 'pagination-button', 'profile-action', 'help-trigger', 'abono-anular'];
+      expect(el.querySelectorAll('button.boton').length).toBe(1);
+      expect(el.querySelector('button.boton')!.classList).toContain('cj-volver');
       expect(clases.every((c) => permitidas.includes(c))).toBe(true);
       expect(el.querySelectorAll('.abono-anular').length).toBe(DIEZ_PERIODOS.length);
     });
 
     it('un jugador dado de baja muestra la fecha y ofrece Reactivar en vez de Dar de baja', async () => {
       const { el } = await crear({
-        jugador: { ...JUGADOR, fechaBaja: '2026-09-30T00:00:00' },
+        jugador: { ...JUGADOR, fechaBaja: '2026-09-30T00:00:00', estadoDeportivo: 'baja' },
         historialPorPagina: () => historial([]),
       });
 
-      expect(el.querySelector('.profile-baja')?.textContent).toContain('30/09/2026');
-      expect(el.querySelector('.profile-action')?.textContent?.trim()).toBe('Reactivar');
+      expect(texto(el.querySelector('.cj-estado'))).toContain('Dado de baja el 30/09/2026');
+      expect(el.querySelector('.cj-acciones .profile-action')?.textContent?.trim()).toBe('Reactivar');
     });
   });
 

@@ -1,0 +1,4 @@
+A. Deportivo con la credencial correcta => PASS
+B. Deportivo con una credencial equivocada => PASS
+C. Deportivo sin credencial => PASS
+D. La credencial no aparece en los logs de ninguna de las dos APIs => PASS

@@ -1,0 +1,18 @@
+{
+  "status": "BLOCKED",
+  "reason": "Ring buffer retained only last 1000 of 17638 processed events; first payment window 22:01:06.0114858Z..22:01:06.0432669Z has no retained events; retained interval starts 22:01:32.526Z. No unique transaction-to-HTTP correlation was captured.",
+  "eventCount": "1000",
+  "totalEventsProcessed": "17638",
+  "firstEventUtc": "2026-11-04T22:01:32.526Z",
+  "lastEventUtc": "2026-11-04T22:01:32.964Z",
+  "truncated": "0",
+  "droppedCount": "0",
+  "commitAt": null,
+  "codeEvidence": {
+    "conclusion": "Successful service completion occurs after synchronous Commit returns; this supports HTTP response after commit, but does not provide exact commit timestamp.",
+    "service": "ServiceLibrary/PagosService.cs:232 uses ExecuteInTransaction",
+    "runner": "DaoLibrary/SqlTransactionRunner.cs:29 Commit then :30 return resultado",
+    "dao": "DaoLibrary/PaymentTransactionDao.cs:20 delegates SqlTransactionRunner"
+  },
+  "fnDblog": "Not used: without retained application transaction correlation, arbitrary log timestamps cannot safely identify request commit"
+}

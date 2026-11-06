@@ -1,0 +1,4 @@
+Serie de pruebas para C:\Users\FramD\Documents\Tesis\Sisterrma CACC\Sistema-Administrativo---CACC\ApiGestion.Tests\bin\Debug\net9.0\ApiGestion.Tests.dll (.NETCoreApp,Version=v9.0)
+1 archivos de prueba en total coincidieron con el patrón especificado.
+
+Correctas! - Con error:     0, Superado:   682, Omitido:    11, Total:   693, Duración: 6 s - ApiGestion.Tests.dll (net9.0)

@@ -1,26 +1,10 @@
-// HU-069: how the "Programar nueva cuota mensual" form turns what the operator typed into the final amount.
-// The API keeps receiving an absolute amount; the conversion happens only here.
-//  - absolute:   the operator types the final amount.
-//  - percentage: current tariff + that percentage, rounded to the nearest whole peso (no cents in a fee).
-//  - fixed:      current tariff + that amount.
+// HU-069: how the "Programar nueva cuota mensual" form reads what the operator typed.
+//  - absolute:   the final amount.
+//  - percentage: a percentage over the current tariff.
+//  - fixed:      an amount added to the current tariff.
+// HU-106: the final amount is worked out by the backend (ArancelesService.CalcularMontoNuevo), the same code that
+// schedules it; the portal only sends the mode and the typed value and shows the result of the simulation.
 export type IncreaseMode = 'absolute' | 'percentage' | 'fixed';
-
-// Final amount to schedule, or null when it cannot be worked out: nothing typed yet, or a relative mode
-// over a destination that has no current tariff to start from.
-export function calculateNewTariff(mode: IncreaseMode, value: number | null, currentTariff: number | null): number | null {
-    if (value == null || !Number.isFinite(value)) {
-        return null;
-    }
-    if (mode === 'absolute') {
-        return value;
-    }
-    if (currentTariff == null) {
-        return null;
-    }
-    return mode === 'percentage'
-        ? Math.round(currentTariff * (1 + value / 100))
-        : currentTariff + value;
-}
 
 // Only the absolute mode can be used on a destination that has never had a tariff.
 export function needsCurrentTariff(mode: IncreaseMode): boolean {

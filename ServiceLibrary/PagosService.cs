@@ -81,7 +81,7 @@ namespace ServiceLibrary
                 if (request.Monto > saldoAjustado)
                 {
                     throw new CobroInvalidoException(
-                        $"El monto supera el saldo pendiente (${saldoAjustado:N0}, ya con el beneficio de Becados y Descuentos aplicado) de este jugador para {request.Periodo} {anio}.");
+                        $"El monto supera el saldo pendiente ({FormatoVisible.Pesos(saldoAjustado)}, ya con el beneficio de Becados y Descuentos aplicado) de este jugador para {request.Periodo} {anio}.");
                 }
 
                 // montoBaseCuota: se guarda el ORIGINAL de la cuota (no lo que se paga en este

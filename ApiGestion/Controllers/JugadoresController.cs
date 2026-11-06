@@ -16,17 +16,26 @@ namespace ApiGestion.Controllers
         private readonly IJugadoresDao _jugadoresDao;
         private readonly IPagosDao _pagosDao;
         private readonly ILogger<JugadoresController> _logger;
+        // HU-096: fuente única del estado deportivo (la misma de Deudas y Morosidad y de la API de integración).
+        private readonly IEstadoDeudaDao? _estadoDeudaDao;
 
         [ActivatorUtilitiesConstructor]
-        public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao, ILogger<JugadoresController> logger)
+        public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao, IEstadoDeudaDao estadoDeudaDao,
+            ILogger<JugadoresController> logger)
         {
             _jugadoresDao = jugadoresDao;
             _pagosDao = pagosDao;
+            _estadoDeudaDao = estadoDeudaDao;
             _logger = logger;
         }
 
-        public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao)
-            : this(jugadoresDao, pagosDao, Microsoft.Extensions.Logging.Abstractions.NullLogger<JugadoresController>.Instance) { }
+        public JugadoresController(IJugadoresDao jugadoresDao, IPagosDao pagosDao, IEstadoDeudaDao? estadoDeudaDao = null)
+        {
+            _jugadoresDao = jugadoresDao;
+            _pagosDao = pagosDao;
+            _estadoDeudaDao = estadoDeudaDao;
+            _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<JugadoresController>.Instance;
+        }
 
         // GET api/jugadores -> lista completa (nombre, dni, categoría). La usan el
         // buscador de Cuotas y Pagos y el de Becados y Descuentos (rol 1 y 2).
@@ -59,12 +68,32 @@ namespace ApiGestion.Controllers
                     return NotFound(new { exito = false, mensaje = "Jugador no encontrado." });
                 }
 
-                return Ok(PlayerSummaryResponseDTO.FromEntity(jugador));
+                var dto = PlayerSummaryResponseDTO.FromEntity(jugador);
+                dto.EstadoDeportivo = EstadoDeportivoDe(jugador);
+                return Ok(dto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error interno al obtener el jugador {JugadorId}", id);
                 return StatusCode(500, new { exito = false, mensaje = "Error interno al obtener el jugador." });
+            }
+        }
+
+        // HU-096: el estado lo resuelve EstadoDeudaJugador.Estado; acá solo se lee. Es un dato secundario de la cabecera:
+        // si no se puede leer, el jugador se devuelve igual sin estado (la pantalla muestra "Estado no disponible").
+        private string? EstadoDeportivoDe(EntityLibrary.JugadorResumen jugador)
+        {
+            if (_estadoDeudaDao is null || string.IsNullOrWhiteSpace(jugador.Dni)) return null;
+            try
+            {
+                var estado = _estadoDeudaDao.ObtenerPorDni(new[] { jugador.Dni.Trim() }, null)
+                    .FirstOrDefault(e => e.IdJugador == jugador.IdJugador);
+                return estado is null ? null : EntityLibrary.EstadoDeportivoTexto.De(estado.Estado);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo leer el estado deportivo del jugador {JugadorId}", jugador.IdJugador);
+                return null;
             }
         }
 

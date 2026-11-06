@@ -8,7 +8,8 @@ namespace ServiceLibrary
     //  - Al menos 10 caracteres (y no más de 128).
     //  - Letras y números.
     //  - No puede contener el DNI, el nombre, el apellido ni el usuario del correo de la persona.
-    //  - No puede contener el nombre del club ("camioneros", "cacc") ni ser una de las contraseñas más usadas
+    //  - No puede contener el nombre del club ("camioneros", o la sigla "cacc" como palabra o con puntos) ni ser
+    //    una de las contraseñas más usadas
     //    (con o sin números al final).
     public static class PoliticaContrasenia
     {
@@ -33,14 +34,14 @@ namespace ServiceLibrary
             "welcome123", "letmein123", "monkey12345", "dragon12345", "sunshine12", "princess12", "master12345",
         };
 
-        // El nombre del club, en cualquier parte de la contraseña ("Camioneros-1931", "ClubCamioneros-99").
-        // "camioneros" se busca sin separadores: es una palabra larga y no aparece por casualidad.
-        private const string NombreDelClub = "camioneros";
+        // El nombre del club. "camioneros" es largo y no aparece por casualidad: se busca en toda la contraseña ya
+        // normalizada, con cualquier separador ("Camioneros-1931", "Camio-neros-77").
+        private static readonly string NombreDelClub = Normalizar(EntityLibrary.Club.Nombre);
 
-        // La sigla "cacc" es corta: buscarla juntando todas las palabras rechazaría contraseñas que no tienen nada que ver
-        // ("Vaca-Ccuatro-7"). Se busca en el texto con solo los puntos sacados: "C.A.C.C.2026" y "Mi-cacc-Norte-77" caen,
-        // "Vaca-Ccuatro-7" no.
-        private const string SiglaDelClub = "cacc";
+        // La sigla, en cambio, es corta: buscada sin separadores daría falsos rechazos al unir dos palabras
+        // ("Vaca-Ccuatro-7" -> "vacaccuatro"). Se busca dentro de cada tramo ("Mi-cacc-Norte", "Cacc2026") y en las
+        // letras sueltas seguidas, que es como se escribe con puntos ("C.A.C.C.2026").
+        private static readonly string SiglaDelClub = Normalizar(EntityLibrary.Club.Sigla);
 
         // Palabras de las listas de contraseñas más usadas. Se comparan contra la contraseña sin los números del
         // final, así "Qwerty12345" y "Argentina2027" caen igual que "qwerty1234" o "argentina2026".
@@ -61,15 +62,29 @@ namespace ServiceLibrary
 
             if (valor.Length < LongitudMinima)
                 problemas.Add($"Tiene que tener al menos {LongitudMinima} caracteres.");
+            // Tope que ya existía (no lo agrega HU-087): limita el costo del hash ante un pedido malicioso.
             if (valor.Length > LongitudMaxima)
                 problemas.Add($"No puede superar los {LongitudMaxima} caracteres.");
-            if (!valor.Any(char.IsLetter) || !valor.Any(char.IsDigit))
-                problemas.Add("Tiene que combinar letras y números.");
+            if (!valor.Any(char.IsLetter))
+                problemas.Add("Tiene que contener al menos una letra.");
+            if (!valor.Any(char.IsDigit))
+                problemas.Add("Tiene que contener al menos un número.");
 
+            // Un problema por tipo de dato: es la propia persona la que está eligiendo su contraseña, así que decirle
+            // cuál de sus datos aparece no revela nada que no sepa.
             string normalizada = Normalizar(valor);
-            if (titular.DatosPersonales().Select(Normalizar).Any(dato => dato.Length >= LargoMinimoDeDatoPersonal && normalizada.Contains(dato)))
-                problemas.Add("No puede contener tu DNI, tu nombre, tu apellido ni tu correo.");
-            if (normalizada.Contains(NombreDelClub) || NormalizarSoloPuntos(valor).Contains(SiglaDelClub))
+            foreach (var (tipo, datos) in titular.DatosPersonales())
+            {
+                if (datos.Select(Normalizar).Any(dato => dato.Length >= LargoMinimoDeDatoPersonal && normalizada.Contains(dato, StringComparison.Ordinal)))
+                    problemas.Add(tipo switch
+                    {
+                        TipoDatoPersonal.Dni => "No puede contener tu DNI.",
+                        TipoDatoPersonal.Nombre => "No puede contener tu nombre.",
+                        TipoDatoPersonal.Apellido => "No puede contener tu apellido.",
+                        _ => "No puede contener el usuario de tu correo."
+                    });
+            }
+            if (ContieneNombreDelClub(valor, normalizada))
                 problemas.Add("No puede contener el nombre del club.");
             if (Comunes.Contains(normalizada) || BasesComunes.Contains(normalizada.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')))
                 problemas.Add("Es una contraseña demasiado común. Elegí otra.");
@@ -77,21 +92,57 @@ namespace ServiceLibrary
             return problemas;
         }
 
-        // Minúsculas, sin acentos y sin puntos, conservando el resto de los separadores: "C.A.C.C.2026" -> "cacc2026",
-        // "Vaca-Ccuatro-7" -> "vaca-ccuatro-7".
-        internal static string NormalizarSoloPuntos(string texto)
+        private static bool ContieneNombreDelClub(string valor, string normalizada)
         {
-            var sb = new StringBuilder(texto.Length);
-            foreach (char c in texto.Normalize(NormalizationForm.FormD))
+            if (normalizada.Contains(NombreDelClub)) return true;
+
+            var tramos = Tramos(valor);
+            if (tramos.Any(tramo => tramo.Contains(SiglaDelClub))) return true;
+
+            // Letras sueltas seguidas: "C.A.C.C.2026" -> tramos "c", "a", "c", "c", "2026" -> sigla "cacc".
+            var sigla = new StringBuilder();
+            foreach (var tramo in tramos)
             {
-                if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark || c == '.') continue;
-                sb.Append(char.ToLowerInvariant(c));
+                if (tramo.Length == 1 && char.IsLetter(tramo[0]))
+                {
+                    sigla.Append(tramo);
+                    if (sigla.ToString().Contains(SiglaDelClub)) return true;
+                }
+                else
+                {
+                    sigla.Clear();
+                }
             }
-            return sb.ToString();
+            return false;
         }
 
-        // Minúsculas, sin acentos y solo letras y dígitos: "Pérez-Gómez" -> "perezgomez", "30.111.222" -> "30111222".
-        internal static string Normalizar(string texto)
+        // La contraseña cortada en cada símbolo o espacio, con cada tramo normalizado: "Vaca-Ccuatro-7" -> "vaca",
+        // "ccuatro", "7".
+        private static List<string> Tramos(string texto)
+        {
+            var tramos = new List<string>();
+            var actual = new StringBuilder();
+            foreach (char c in texto.Normalize(NormalizationForm.FormD))
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark) continue;
+                if (char.IsLetterOrDigit(c))
+                {
+                    actual.Append(char.ToLowerInvariant(c));
+                }
+                else if (actual.Length > 0)
+                {
+                    tramos.Add(actual.ToString());
+                    actual.Clear();
+                }
+            }
+            if (actual.Length > 0) tramos.Add(actual.ToString());
+            return tramos;
+        }
+
+        // Única normalización de la política, solo para COMPARAR (la contraseña se hashea tal cual se escribió).
+        // Minúsculas, sin acentos y solo letras y dígitos: "Pérez-Gómez" -> "perezgomez", "30.111.222" -> "30111222",
+        // "juan.perez" -> "juanperez".
+        public static string Normalizar(string texto)
         {
             var sb = new StringBuilder(texto.Length);
             foreach (char c in texto.Normalize(NormalizationForm.FormD))
@@ -103,16 +154,25 @@ namespace ServiceLibrary
         }
     }
 
+    internal enum TipoDatoPersonal { Dni, Nombre, Apellido, UsuarioDelCorreo }
+
     // Lo que se sabe de la persona dueña de la cuenta, para que la contraseña no lo contenga.
     public sealed record DatosTitular(string? Nombre, string? Apellido, string? Dni, string? Email)
     {
-        internal IEnumerable<string> DatosPersonales()
+        internal IEnumerable<(TipoDatoPersonal Tipo, IEnumerable<string> Datos)> DatosPersonales()
         {
-            if (!string.IsNullOrWhiteSpace(Dni)) yield return Dni;
-            if (!string.IsNullOrWhiteSpace(Email)) yield return Email.Split('@')[0];
-            // Cada palabra del nombre y del apellido por separado ("Juan Pablo" -> "juan", "pablo"), y también cada
-            // tramo de un apellido compuesto con guion ("Pérez-Gómez" -> "perez", "gomez").
-            foreach (var parte in $"{Nombre} {Apellido}".Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            if (!string.IsNullOrWhiteSpace(Dni)) yield return (TipoDatoPersonal.Dni, new[] { Dni });
+            yield return (TipoDatoPersonal.Nombre, Partes(Nombre));
+            yield return (TipoDatoPersonal.Apellido, Partes(Apellido));
+            // Solo lo anterior a la "@": el dominio no es un dato de la persona.
+            if (!string.IsNullOrWhiteSpace(Email)) yield return (TipoDatoPersonal.UsuarioDelCorreo, new[] { Email.Split('@')[0] });
+        }
+
+        // Cada palabra por separado ("Juan Pablo" -> "juan", "pablo") y también cada tramo de un apellido compuesto con
+        // guion ("Pérez-Gómez" -> "perez", "gomez"). Las partes de menos de 3 letras no se controlan (ver Validar).
+        private static IEnumerable<string> Partes(string? texto)
+        {
+            foreach (var parte in (texto ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 yield return parte;
                 foreach (var tramo in parte.Split(new[] { '-', '\'', '’' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))

@@ -1,5 +1,16 @@
-import { A11yModule } from '@angular/cdk/a11y';
-import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { A11yModule, CdkTrapFocus } from '@angular/cdk/a11y';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
 
 let siguienteId = 0;
 
@@ -11,7 +22,8 @@ const MENUS_FLOTANTES = '.cs-menu, .dp-panel, .help-tooltip';
 // y la ventana resuelve la forma y el comportamiento comunes:
 //   - título, subtítulo, cuerpo, mensaje de error y acciones Volver / Confirmar (o botones propios);
 //   - se cierra con Esc, con la × y al tocar el fondo, salvo mientras la operación está en curso;
-//   - el foco queda adentro mientras está abierta y vuelve al botón que la abrió al cerrarse;
+//   - el foco queda adentro mientras está abierta y vuelve al botón que la abrió al cerrarse; si la ventana
+//     cambia de contenido (otra vista en la misma ventana) y el botón con el foco desaparece, el foco vuelve a entrar;
 //   - la acción de riesgo va con el tono de peligro;
 //   - fondo oscurecido sin desenfoque (blur), por costo de render.
 //
@@ -28,7 +40,7 @@ const MENUS_FLOTANTES = '.cs-menu, .dp-panel, .help-tooltip';
   templateUrl: './ventana.html',
   styleUrl: './ventana.css',
 })
-export class Ventana implements OnInit, OnDestroy {
+export class Ventana implements OnInit, AfterViewInit, OnDestroy {
   @Input({ required: true }) titulo = '';
   @Input() subtitulo: string | null | undefined = '';
   @Input() error: string | null | undefined = null;
@@ -67,11 +79,38 @@ export class Ventana implements OnInit, OnDestroy {
   // Lo que tenía el foco al abrirse. cdkTrapFocus le devuelve el foco solo; esto es para saber si ya no existe.
   private abridor: Element | null = null;
 
+  @ViewChild('cuadro', { static: true }) private cuadro!: ElementRef<HTMLElement>;
+  @ViewChild(CdkTrapFocus, { static: true }) private trampa!: CdkTrapFocus;
+  private observador: MutationObserver | null = null;
+
   ngOnInit(): void {
     this.abridor = document.activeElement;
   }
 
+  // Una pantalla puede cambiar lo que muestra la ventana sin cerrarla (Becados: de "Bonificación activa" a
+  // "Cancelar bonificación"). El botón que se tocó desaparece con la vista vieja y el navegador deja el foco en
+  // <body>, fuera de la ventana (QA, HU-094). Cada vez que cambia el contenido, si el foco quedó suelto, vuelve
+  // a entrar en la ventana, igual que al abrirse.
+  ngAfterViewInit(): void {
+    this.observador = new MutationObserver(() => this.recuperarFoco());
+    this.observador.observe(this.cuadro.nativeElement, { childList: true, subtree: true });
+  }
+
+  private recuperarFoco(): void {
+    const activo = document.activeElement;
+    if (activo && activo !== document.body) {
+      return;
+    }
+    // Si la trampa de foco no encuentra a qué darle el foco, queda la cruz, que siempre está en la ventana.
+    if (!this.trampa.focusTrap.focusInitialElement()) {
+      this.cuadro.nativeElement.querySelector<HTMLButtonElement>('.ventana-cerrar:not(:disabled)')?.focus();
+    }
+  }
+
   ngOnDestroy(): void {
+    this.observador?.disconnect();
+    this.observador = null;
+
     const abridor = this.abridor;
     const respaldo = this.focoAlCerrar;
     if (!respaldo) {

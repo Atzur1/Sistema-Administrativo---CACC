@@ -1,0 +1,153 @@
+/* Cabecera única de jugador (HU-096). Antes Perfil (verde) y Deuda (azul de "pendiente") tenían cada una su copia
+   de esta tarjeta con colores distintos; ahora las dos usan el verde institucional y el mismo botón Volver
+   (.boton .boton-secundario de styles.css). El resto de cada pantalla conserva su propia paleta. */
+
+:host {
+  display: block;
+}
+
+.cj-barra {
+  display: flex;
+  align-items: center;
+  animation: fadeSlideUp 0.4s ease both;
+}
+
+.cj-tarjeta {
+  position: relative;
+  padding: var(--space-4);
+  margin-top: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-rest);
+  animation: fadeSlideUp 0.4s ease both;
+  animation-delay: 60ms;
+}
+
+.cj-tarjeta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-brand-light));
+}
+
+.cj-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.cj-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(150deg, var(--color-brand-tint) 0%, #d3f2e2 100%);
+  color: var(--color-brand-deep);
+  font-size: var(--font-xl);
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-rest);
+}
+
+.cj-foto {
+  object-fit: cover;
+}
+
+.cj-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Un nombre largo baja de renglón en vez de cortarse o empujar las acciones fuera de la pantalla. */
+.cj-nombre {
+  margin: 0;
+  font-size: var(--font-xl);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* Texto corrido: en pantallas angostas la categoría baja de renglón sin cortar el DNI. */
+.cj-meta {
+  margin: 0;
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
+}
+
+.cj-dni {
+  white-space: nowrap;
+}
+
+.cj-estados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 6px;
+}
+
+.cj-baja {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.cj-acciones {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cj-acciones:empty {
+  display: none;
+}
+
+/* Texto solo para lectores de pantalla ("Estado deportivo: …"). */
+.cj-solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Tablet y mobile: las acciones pasan debajo de los datos, a todo el ancho. */
+@media (max-width: 640px) {
+  .cj-fila {
+    flex-wrap: wrap;
+  }
+
+  .cj-acciones {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .cj-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: var(--font-lg);
+  }
+
+  .cj-nombre {
+    font-size: var(--font-lg);
+  }
+}

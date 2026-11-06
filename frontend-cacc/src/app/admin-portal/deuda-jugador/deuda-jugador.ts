@@ -15,6 +15,7 @@ import { estaVencida, vencimientoDelPeriodo } from '../../shared/calendario-cuot
 import { Ventana } from '../../shared/ventana/ventana';
 import { Cargando } from '../../shared/cargando/cargando';
 import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
+import { CabeceraJugador } from '../../shared/cabecera-jugador/cabecera-jugador';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 import { PendingFeeDetailModel, PlayerFeeModel, PlayerStatementModel } from '../../models/PaymentModel';
 
@@ -47,7 +48,7 @@ export type EstadoCuota = 'vencida' | 'parcial' | 'proxima';
 @Component({
   selector: 'app-deuda-jugador',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelect, Ventana, Cargando, EstadoVacio],
+  imports: [CommonModule, FormsModule, CustomSelect, Ventana, Cargando, EstadoVacio, CabeceraJugador],
   templateUrl: './deuda-jugador.html',
   styleUrl: './deuda-jugador.css',
 })
@@ -122,13 +123,6 @@ export class DeudaJugador implements OnInit, OnDestroy {
     this.cargarCuotas();
   }
 
-  get iniciales(): string {
-    if (!this.jugador) {
-      return '';
-    }
-    return `${this.jugador.apellido[0] ?? ''}${this.jugador.nombre[0] ?? ''}`.toUpperCase();
-  }
-
   // HU-024: lo calcula el backend (saldo de las cuotas Pendientes y Vencidas).
   get montoTotalAdeudado(): number {
     return this.totalAAbonar;
@@ -150,6 +144,19 @@ export class DeudaJugador implements OnInit, OnDestroy {
         this.errorMessage = 'No se encontró el jugador solicitado.';
         this.cdr.detectChanges();
       },
+    });
+  }
+
+  // HU-096: el estado deportivo de la cabecera depende de las cuotas vencidas, así que después de releer el estado
+  // de cuenta se vuelve a leer el jugador (lo resuelve el backend; acá no se recalcula). Si falla, queda la
+  // cabecera que ya se mostraba: el cobro ya está registrado y no se muestra un error de carga por esto.
+  private refrescarJugador() {
+    this.jugadoresService.getJugador(this.idJugador).subscribe({
+      next: (jugador) => {
+        this.jugador = jugador;
+        this.cdr.detectChanges();
+      },
+      error: () => {},
     });
   }
 
@@ -223,6 +230,7 @@ export class DeudaJugador implements OnInit, OnDestroy {
         this.avisoActualizacion = '';
         this.actualizandoEstadoCuenta = false;
         this.cdr.detectChanges();
+        this.refrescarJugador();
       },
       error: () => {
         this.actualizandoEstadoCuenta = false;

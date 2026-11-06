@@ -55,7 +55,7 @@ export const TEXTOS_POR_MODO: Record<ModoAcceso, TextosModo> = {
 };
 
 export interface Requisito {
-  id: 'largo' | 'letrasYNumeros' | 'mayusculasMinusculas' | 'simbolo';
+  id: 'largo' | 'letras' | 'numeros' | 'mayusculasMinusculas' | 'simbolo';
   texto: string;
   cumplido: boolean;
   // Los obligatorios bloquean el envío; los demás son recomendaciones.
@@ -71,19 +71,26 @@ export interface Fortaleza {
 export function evaluarRequisitos(password: string): Requisito[] {
   return [
     { id: 'largo', texto: `Al menos ${PASSWORD_MIN_LENGTH} caracteres`, cumplido: password.length >= PASSWORD_MIN_LENGTH, obligatorio: true },
-    { id: 'letrasYNumeros', texto: 'Letras y números', cumplido: tieneLetrasYNumeros(password), obligatorio: true },
+    { id: 'letras', texto: 'Contiene letras', cumplido: tieneLetras(password), obligatorio: true },
+    { id: 'numeros', texto: 'Contiene números', cumplido: tieneNumeros(password), obligatorio: true },
     { id: 'mayusculasMinusculas', texto: 'Mayúsculas y minúsculas', cumplido: /[a-záéíóúñ]/.test(password) && /[A-ZÁÉÍÓÚÑ]/.test(password), obligatorio: false },
     { id: 'simbolo', texto: 'Un símbolo (por ejemplo ! ? # $)', cumplido: /[^A-Za-z0-9áéíóúñÁÉÍÓÚÑ\s]/.test(password), obligatorio: false },
   ];
 }
 
-function tieneLetrasYNumeros(password: string): boolean {
-  return /\p{L}/u.test(password) && /\d/.test(password);
+// Las mismas definiciones que la API (char.IsLetter / char.IsDigit): cualquier letra, con acentos y ñ, y un dígito.
+function tieneLetras(password: string): boolean {
+  return /\p{L}/u.test(password);
 }
 
+function tieneNumeros(password: string): boolean {
+  return /\d/.test(password);
+}
+
+// Solo ayuda a no enviar algo que seguro se rechaza: la validación definitiva es la de la API (PoliticaContrasenia).
 function letrasYNumeros(control: AbstractControl): ValidationErrors | null {
   const valor = control.value ?? '';
-  return !valor || tieneLetrasYNumeros(valor) ? null : { letrasYNumeros: true };
+  return !valor || (tieneLetras(valor) && tieneNumeros(valor)) ? null : { letrasYNumeros: true };
 }
 
 export function calcularFortaleza(password: string): Fortaleza {
@@ -128,6 +135,8 @@ export class AccountAccess implements OnInit, OnDestroy {
   token = '';
   estado: EstadoPantalla = 'formulario';
   mensajeError = '';
+  // HU-087: los motivos por los que la API rechazó la contraseña ("problemas"), uno por línea.
+  problemasPassword: string[] = [];
   submitting = false;
   mostrarPassword = false;
   mostrarConfirmacion = false;
@@ -208,6 +217,7 @@ export class AccountAccess implements OnInit, OnDestroy {
 
     this.submitting = true;
     this.mensajeError = '';
+    this.problemasPassword = [];
 
     this.auth.completeAccountAccess(this.token, password).subscribe({
       next: () => {
@@ -223,11 +233,12 @@ export class AccountAccess implements OnInit, OnDestroy {
       error: (error) => {
         this.ngZone.run(() => {
           this.submitting = false;
-          const problemas: string[] | undefined = error.error?.problemas;
-          if (error.status === 400 && problemas?.length) {
-            // El enlace sirve pero la contraseña no cumple la política (por ejemplo, contiene el DNI): se
-            // explica por qué y se deja elegir otra.
-            this.mensajeError = `Elegí otra contraseña: ${problemas.join(' ')}`;
+          const problemas: unknown = error.error?.problemas;
+          const motivos = Array.isArray(problemas) ? problemas.filter((p): p is string => typeof p === 'string' && !!p.trim()) : [];
+          if (error.status === 400 && motivos.length) {
+            // HU-087: el enlace sigue sirviendo y la contraseña no cumple la política (por ejemplo, contiene el
+            // apellido): se listan todos los motivos y se deja elegir otra con el mismo enlace.
+            this.problemasPassword = motivos;
           } else if (error.status === 400) {
             // El token no sirve (vencido, ya usado o inexistente): no tiene sentido seguir escribiendo.
             this.estado = 'enlaceInvalido';

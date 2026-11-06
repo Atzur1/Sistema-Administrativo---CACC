@@ -1,0 +1,76 @@
+Esquema creado: ClubCamionerosUnificadaV2_HU107_Prueba
+      Migraciones aplicadas. Ejecut  database/produccion/03_permisos_usuario_api.sql y 04_verificar_permisos.sql.
+HU-059 01_cuentas_prueba.sql: usuarios=4
+HU-059 02_fixtures_e2e.sql: fixtures: personas=5 jugadores=4 cuotas=5
+cuentas QA HU-107 creadas
+cobros sep=126 oct=7 ago=0 jul=5001
+Septiembre esperado (SQL): 126 cobros, total 7749000.00
+PASS  PAG-1    Primera p gina: 10 filas, total = cobros del per¡odo (SQL), 13 p ginas | items=10 total=126 paginas=13 (SQL 126)
+PASS  PAG-2    P gina intermedia (7): 10 filas, mismo total | items=10 total=126
+PASS  PAG-3    éltima p gina: el resto exacto | p gina 13: 6 filas
+PASS  PAG-4    Despu‚s de la £ltima: sin filas, el total sigue siendo el del per¡odo | items=0 total=126
+PASS  PAG-5    Recorrer todas las p ginas (fecha desc): 126 filas, sin repetidas ni perdidas (= ids de SQL) | filas=126 £nicas=126 igualSQL=True
+PASS  ORD-fecha-desc Orden fecha desc sobre TODO el per¡odo (cruza p ginas), desempate por id | primeras: 131@2026-09-30T23:59:30-03:00, 129@2026-09-30T20:30:30-03:00, 130@2026-09-30T16:00:00-03:00, 128@2026-09-30T11:00:00-03:00
+PASS  PAG-5    Recorrer todas las p ginas (fecha asc): 126 filas, sin repetidas ni perdidas (= ids de SQL) | filas=126 £nicas=126 igualSQL=True
+PASS  ORD-fecha-asc Orden fecha asc sobre TODO el per¡odo (cruza p ginas), desempate por id | primeras: 9@2026-09-01T08:37:07-03:00, 6@2026-09-01T09:07:00-03:00, 8@2026-09-01T09:07:00-03:00, 10@2026-09-01T12:07:37-03:00
+PASS  PAG-5    Recorrer todas las p ginas (monto desc): 126 filas, sin repetidas ni perdidas (= ids de SQL) | filas=126 £nicas=126 igualSQL=True
+PASS  ORD-monto-desc Orden monto desc sobre TODO el per¡odo (cruza p ginas), desempate por id | primeras: 119=100000, 118=100000, 117=100000, 116=100000
+PASS  PAG-5    Recorrer todas las p ginas (monto asc): 126 filas, sin repetidas ni perdidas (= ids de SQL) | filas=126 £nicas=126 igualSQL=True
+PASS  ORD-monto-asc Orden monto asc sobre TODO el per¡odo (cruza p ginas), desempate por id | primeras: 31=9000, 32=9000, 33=9000, 34=9000
+PASS  ORD-NUM  Monto ordena como n£mero (9000 < 20000 < 60000 < 85000 < 95000 < 100000), no como texto | 9000,20000,60000,85000,95000,100000
+PASS  ORD-DIA  Mismo d¡a (01/09): ordena por la hora real; misma hora exacta -> por id | horas=08:37:07, 09:07:00, 09:07:00, 12:07:37, 13:37:07 mismaHora=6,8
+PASS  FEC-1    Cada fila trae fechaPago y fechaHoraRegistro = PAGOS.fecha_hora_registro, con corrimiento -03:00 de la zona | API 2026-09-30 2026-09-30T23:59:30-03:00 | base 2026-09-30|2026-09-30T23:59:30
+PASS  FEC-2    Pagos sin hora de registro: fechaHoraRegistro null, solo el d¡a | API 6 / base 6
+PASS  FEC-3    El 30/09 23:59:30 est  en septiembre y es el primero por fecha desc | 131 2026-09-30T23:59:30-03:00
+PASS  TOT-1    Tarjetas = SQL del per¡odo completo (total, efectivo, transferencia, cantidades) | API {"total":7749000.00,"efectivo":5460000.00,"transferencia":2289000.00,"pagos":126,"pagosEfectivo":84,"pagosTransferencia":42} | SQL 126/7749000.00/5460000.00/2289000.00
+PASS  TOT-2    Pedir otras p ginas u otro orden no cambia los totales (respuesta id‚ntica) | iguales=True
+PASS  TOT-3    Los totales ya no traen el detalle de filas | 124 bytes
+PASS  TOT-4    Suma de todas las p ginas = total de la tarjeta; la p gina sola no lo es | todas=7749000 p gina1=536000 tarjeta=7749000
+PASS  CAT-1    Con categor¡a: total de la tabla = tarjetas = SQL, y todas las filas son de esa categor¡a | tabla=63 tarjetas=63 SQL=63
+PASS  CHI-1    Mes con pocos pagos (octubre): una p gina, total correcto, tarjetas = SQL | total=7 p ginas=1 filas=7 SQL=7/525000.00
+PASS  CHI-2    01/10 00:01 queda en octubre (£ltimo por fecha desc) | 2026-10-01T00:01:00-03:00
+PASS  VAC-1    Mes vac¡o (agosto): 0 pagos, 1 p gina, sin filas, tarjetas en 0 (el 31/07 23:59 queda en julio) | total=0 p ginas=1 tarjetas=0/0
+PASS  VAL-1    P gina, tama¤o, orden, direcci¢n y per¡odo inv lidos -> 400 (sin SQL inyectado; PAGOS intacta) | page=0->400 page=-3->400 pageSize=0->400 pageSize=101->400 sortBy=PK_id_pago->400 sortBy=fecha_pago%3B%20DROP%20TABLE%20PAGOS--->400 sortDirection=arriba->400 sortDirection=desc%2C%20PK_id_pago->400 mes=13->400 anio=1999->400
+PASS  VAL-3    sortBy y sortDirection vac¡os = no enviados: 200 con el orden por defecto (fecha desc) | 200, mismas filas que fecha desc
+PASS  VAL-2    sortBy/sortDirection sin distinguir may£sculas | 200 primero=9000
+PASS  AUT-1    Administrador: 403 en tabla, tarjetas y exportaci¢n; sin sesi¢n 401 | 403/403/403/401
+PASS  CSV-1    CSV: BOM UTF-8, separador ';', columna Fecha primera, zona en el encabezado | Fecha;Jugador;DNI;Categor¡a;Medio de pago;Monto ($) | Fechas;Hora del club (America/Argentina/Buenos_Aires)
+PASS  CSV-2    CSV: TODO el per¡odo (126 filas, no 10), fechas ISO, montos num‚ricos que suman el total | filas=126 ISO=True suma=7749000 | TOTAL RECAUDADO;126;7749000 | ej. 2026-09-30 23:59;HU107 30, Cobro;96000030;Pt  AFA 2008;Transferencia;9000
+PASS  CSV-3    CSV en el mismo orden que la tabla por defecto (fecha desc) y con la misma fecha | igual=True
+PASS  PDF-1    PDF: columna Fecha, una fila por cobro del per¡odo (126, no 10), en dd/MM/yyyy | filas con fecha=126, 136763 bytes
+PASS  PDF-2    PDF: aclara la zona horaria y el total del per¡odo | Hora del club (America/ | Total recaudado (126 cobros)
+PASS  VOL-1    Julio (5001 cobros): total y p ginas correctos, £ltima p gina con el resto | total=5001 p ginas=501 £ltima=1
+PASS  PERF-1   P gina de la tabla < 1 s aun con 5.000 cobros (10 pedidos por caso) | pagos sep p1: mediana 4 ms, m x 4.7 ms; pagos jul p1 fecha: mediana 13.7 ms, m x 18.5 ms; pagos jul p250 monto: mediana 29 ms, m x 39.8 ms; totales jul: mediana 19.4 ms, m x 26 ms; csv jul: mediana 81.6 ms, m x 89.8 ms
+PASS  PERF-2   La p gina viaja con 10 filas, no con el mes entero | 2077 bytes por p gina (julio)
+Levantando ng serve.
+ú conectado a Chrome (usuario 95900001, clave definida, 28 caracteres)
+ú septiembre cargado
+PASS  NAV-1    Septiembre: 10 filas, columna Fecha primera en dd/MM/yyyy HH:mm, "126 pagos" y "P gina 1 de 13" | {"conteo":"126 pagos en Septiembre 2026 ú P gina 1 de 13","paginas":"P gina 1 de 13","encabezados":["Fecha","Jugador","DNI","Categor¡a","Tipo de pago","Monto"],"primera":["30/09/2026 23:59","HU107 30, Cobro","96000030","Pt AFA 2008","Transferencia","$ 9.000"]}
+PASS  NAV-1b   El donut muestra los pagos de TODO el per¡odo (126), igual que el encabezado | {"centro":"126","header":"126"}
+PASS  NAV-2    Siguiente: p gina 2, otras filas; tarjetas, encabezado y donut id‚nticos; solo se pidi¢ /pagos | {"paginas":"P gina 2 de 13","pedidas":["http://localhost:4200/api/recaudacion/pagos?anio=2026&mes=9&page=2&pageSize=10&sortBy=fecha&sortDirection=desc"],"donut":"111.96636217394023 339.29200658769764","tarjetasIguales":true}
+PASS  NAV-3    Recorrer las 13 p ginas con "Siguiente": 126 filas, 126 distintas; en la £ltima "Siguiente" se deshabilita | {"filasVistas":126,"distintas":126,"ultima":6}
+PASS  NAV-4    Clic en Fecha: ascendente, p gina 1, empieza el 01/09 | {"ariaSort":"ascending","paginas":"P gina 1 de 13","primeras":["01/09/2026 08:37","01/09/2026 09:07","01/09/2026 09:07","01/09/2026 12:07"]}
+PASS  NAV-5    Clic en Monto: $100.000 primero; otro clic: $9.000 primero (orden num‚rico, no de texto) | {"desc":[100000,100000,100000],"asc":[9000,9000,9000],"ariaSort":["none",null,null,null,null,"ascending"]}
+PASS  NAV-6    Teclado: Enter sobre el encabezado Fecha ordena (desc) y el foco sigue en el bot¢n | {"ariaSort":"descending","foco":"Fecha "}
+PASS  NAV-7    Navegador en Asia/Tokyo (+12 h), pantalla recargada: fechas y horas id‚nticas a las del club (30/09/2026 23:59 sigue en 30/09) | {"zona":"Asia/Tokyo","primera":"30/09/2026 23:59","iguales":true}
+PASS  NAV-8    Exportar CSV y PDF desde la p gina 3: piden mes y a¤o, sin page/pageSize | ["http://localhost:4200/api/reportes/recaudacion/csv?anio=2026&mes=9","http://localhost:4200/api/reportes/recaudacion/pdf?anio=2026&mes=9"]
+PASS  NAV-9    Octubre (pocos pagos): p gina 1, "7 pagos", sin paginador, tarjetas del mes nuevo | {"conteo":"7 pagos en Octubre 2026","filas":7,"header":"$ 525.000Total del per¡odo7Pagos procesados"}
+PASS  NAV-10   Agosto (vac¡o): "0 pagos", estado vac¡o, sin tabla ni paginador, tarjetas en $0 | {"conteo":"0 pagos en Agosto 2026","vacio":"No hay cobros en Agosto 2026","header":"$ 0Total del per¡odo0Pagos procesados"}
+PASS  NAV-11   tablet (820px): sin scroll horizontal de p gina; paginador entero en pantalla; fechas legibles | {"scrollWidth":820,"innerWidth":820,"paginador":{"izq":113,"der":779},"fecha":"30/09/2026 23:59"}
+PASS  NAV-12   celular (390px): sin scroll horizontal de p gina; paginador entero en pantalla; fechas legibles | {"scrollWidth":390,"innerWidth":390,"paginador":{"izq":41,"der":349},"fecha":"30/09/2026 23:59"}
+
+PASS  NAV-1    Septiembre: 10 filas, columna Fecha primera en dd/MM/yyyy HH:mm, "126 pagos" y "P gina 1 de 13" | {"conteo":"126 pagos en Septiembre 2026 ú P gina 1 de 13","paginas":"P gina 1 de 13","encabezados":["Fecha","Jugador","DNI","Categor¡a","Tipo de pago","Monto"],"primera":["30/09/2026 23:59","HU107 30, Cobro","96000030","Pt AFA 2008","Transferencia","$ 9.000"]}
+PASS  NAV-1b   El donut muestra los pagos de TODO el per¡odo (126), igual que el encabezado | {"centro":"126","header":"126"}
+PASS  NAV-2    Siguiente: p gina 2, otras filas; tarjetas, encabezado y donut id‚nticos; solo se pidi¢ /pagos | {"paginas":"P gina 2 de 13","pedidas":["http://localhost:4200/api/recaudacion/pagos?anio=2026&mes=9&page=2&pageSize=10&sortBy=fecha&sortDirection=desc"],"donut":"111.96636217394023 339.29200658769764","tarjetasIguales":true}
+PASS  NAV-3    Recorrer las 13 p ginas con "Siguiente": 126 filas, 126 distintas; en la £ltima "Siguiente" se deshabilita | {"filasVistas":126,"distintas":126,"ultima":6}
+PASS  NAV-4    Clic en Fecha: ascendente, p gina 1, empieza el 01/09 | {"ariaSort":"ascending","paginas":"P gina 1 de 13","primeras":["01/09/2026 08:37","01/09/2026 09:07","01/09/2026 09:07","01/09/2026 12:07"]}
+PASS  NAV-5    Clic en Monto: $100.000 primero; otro clic: $9.000 primero (orden num‚rico, no de texto) | {"desc":[100000,100000,100000],"asc":[9000,9000,9000],"ariaSort":["none",null,null,null,null,"ascending"]}
+PASS  NAV-6    Teclado: Enter sobre el encabezado Fecha ordena (desc) y el foco sigue en el bot¢n | {"ariaSort":"descending","foco":"Fecha "}
+PASS  NAV-7    Navegador en Asia/Tokyo (+12 h), pantalla recargada: fechas y horas id‚nticas a las del club (30/09/2026 23:59 sigue en 30/09) | {"zona":"Asia/Tokyo","primera":"30/09/2026 23:59","iguales":true}
+PASS  NAV-8    Exportar CSV y PDF desde la p gina 3: piden mes y a¤o, sin page/pageSize | ["http://localhost:4200/api/reportes/recaudacion/csv?anio=2026&mes=9","http://localhost:4200/api/reportes/recaudacion/pdf?anio=2026&mes=9"]
+PASS  NAV-9    Octubre (pocos pagos): p gina 1, "7 pagos", sin paginador, tarjetas del mes nuevo | {"conteo":"7 pagos en Octubre 2026","filas":7,"header":"$ 525.000Total del per¡odo7Pagos procesados"}
+PASS  NAV-10   Agosto (vac¡o): "0 pagos", estado vac¡o, sin tabla ni paginador, tarjetas en $0 | {"conteo":"0 pagos en Agosto 2026","vacio":"No hay cobros en Agosto 2026","header":"$ 0Total del per¡odo0Pagos procesados"}
+PASS  NAV-11   tablet (820px): sin scroll horizontal de p gina; paginador entero en pantalla; fechas legibles | {"scrollWidth":820,"innerWidth":820,"paginador":{"izq":113,"der":779},"fecha":"30/09/2026 23:59"}
+PASS  NAV-12   celular (390px): sin scroll horizontal de p gina; paginador entero en pantalla; fechas legibles | {"scrollWidth":390,"innerWidth":390,"paginador":{"izq":41,"der":349},"fecha":"30/09/2026 23:59"}
+
+Resultado: 50 PASS / 0 FAIL

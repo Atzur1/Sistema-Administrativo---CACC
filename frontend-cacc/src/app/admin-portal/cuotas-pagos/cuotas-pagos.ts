@@ -17,12 +17,13 @@ import { CustomSelect } from '../../shared/custom-select/custom-select';
 import { Cargando } from '../../shared/cargando/cargando';
 import { EstadoVacio } from '../../shared/estado-vacio/estado-vacio';
 import { NotificationService } from '../../shared/notifications/notification.service';
-import { financialLoadErrorMessage } from '../../shared/http-error-message';
+import { financialLoadErrorMessage, mensajeDeError } from '../../shared/http-error-message';
 import { DIA_DE_CORTE } from '../../shared/calendario-cuotas';
 import { LatestRequest } from '../../shared/latest-request';
 import { MEDIOS_DE_PAGO, guardarUltimoMedioPago, leerUltimoMedioPago } from '../../shared/ultimo-medio-pago';
 import { PlayerSummaryModel } from '../../models/PlayerSummaryModel';
 import { PaymentSummaryModel, PendingDebtorModel, PendingFeeDetailModel } from '../../models/PaymentModel';
+import { SECCIONES } from '../secciones';
 
 const CURRENCY_ARANCEL = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -73,6 +74,9 @@ const MESES = [
   styleUrl: './cuotas-pagos.css',
 })
 export class CuotasPagos implements OnInit, OnDestroy {
+  // Nombre oficial de la sección (HU-103): el mismo del menú lateral y de la barra superior.
+  readonly tituloPantalla = SECCIONES['cuotas-pagos'];
+
 
   @ViewChild('buscador') private buscador?: ElementRef<HTMLInputElement>;
   @ViewChild('montoCuota') private montoCuota?: ElementRef<HTMLInputElement>;
@@ -521,10 +525,8 @@ export class CuotasPagos implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.enviandoInscripcion = false;
-        const mensaje =
-          (typeof err.error === 'string' ? err.error : null) ??
-          err.error?.mensaje ??
-          'No se pudo registrar el pago de inscripción. Intentá de nuevo.';
+        // HU-090: el { mensaje } de la API tal cual; un cuerpo crudo nunca llega al toast.
+        const mensaje = mensajeDeError(err, 'No se pudo registrar el pago de inscripción. Intentá de nuevo.');
         this.notifications.notify(mensaje, 'error');
         this.cdr.detectChanges();
       },
@@ -682,7 +684,7 @@ export class CuotasPagos implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.enviando = false;
-        const mensaje = err.error?.mensaje ?? 'No se pudo registrar el pago. Intentá de nuevo.';
+        const mensaje = mensajeDeError(err, 'No se pudo registrar el pago. Intentá de nuevo.');
         this.notifications.notify(mensaje, 'error');
         this.cdr.detectChanges();
       },

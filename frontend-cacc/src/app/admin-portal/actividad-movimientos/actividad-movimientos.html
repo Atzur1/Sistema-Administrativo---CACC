@@ -11,7 +11,7 @@
     </span>
 
     <div class="header-text">
-      <h1 class="header-title">Actividad y Movimientos</h1>
+      <h1 class="header-title">{{ tituloPantalla }}</h1>
       <span class="header-subtitle">Pagos y eventos del sistema · {{ currentDate }}</span>
     </div>
 
@@ -26,6 +26,22 @@
   </header>
   <div class="header-divider"></div>
 
+  <!-- ===== BARRA DE FILTROS (compartida, HU-097/HU-102) =====
+       Filtra solo "Pagos registrados": las métricas del día y la actividad reciente son independientes. -->
+  <article class="panel panel-filtros">
+    <app-filter-bar etiqueta="Filtros de pagos registrados" textoBusqueda="Buscar jugador…"
+                    [busqueda]="busqueda" (busquedaChange)="onBusquedaChange($event)"
+                    [filtrosActivos]="filtrosActivos" (quitarFiltro)="quitarFiltro($event)"
+                    (limpiar)="limpiarFiltros()">
+      <div class="field filter-control">
+        <label class="field-label" for="filtro-estado-pagos">Estado</label>
+        <app-custom-select id="filtro-estado-pagos" [options]="estadoOptions" placeholder="Todos los estados"
+                           [ngModel]="estado" (ngModelChange)="onEstadoChange($event)"></app-custom-select>
+      </div>
+      <span class="filter-scope" filterBarNote>Filtra la tabla "Pagos registrados". Las métricas del día y la actividad reciente no cambian.</span>
+    </app-filter-bar>
+  </article>
+
   <!-- ===== MAIN GRID ===== -->
   <section class="main-grid">
 
@@ -37,31 +53,6 @@
           <span class="panel-subtitle">Historial completo de pagos</span>
         </div>
       </header>
-
-      <form class="filter-row" [formGroup]="filterForm">
-        <div class="search-control">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input type="text" placeholder="Buscar jugador…" formControlName="busqueda" />
-        </div>
-
-        <div class="filter-control">
-          <app-custom-select
-            [options]="estadoOptions"
-            placeholder="Todos los estados"
-            formControlName="estado"
-          ></app-custom-select>
-        </div>
-
-        @if (hayFiltrosActivos) {
-          <button type="button" class="clear-filter-btn" (click)="limpiarFiltros()">
-            Limpiar filtros
-          </button>
-        }
-      </form>
 
       @if (paymentsLoaded) {
         <p class="filter-count">

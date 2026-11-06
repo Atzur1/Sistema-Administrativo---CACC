@@ -1,0 +1,18 @@
+[
+  {
+    "path": "BackEnd\\CACC.API\\Services\\EstadoDeudaClient.cs",
+    "status": "different",
+    "sourceSha256": "7832F0FB50376289A0E3FFFE54A9DE4D03477512F2FF4FB794CF5A2101792595",
+    "snapshotSha256": "629688EA4737A9D840EC3744E640EF5E850ADCD50484A98DED3B51D895BA882A"
+  },
+  {
+    "path": "BackEnd\\CACC.API\\Services\\ClienteAdministrativo.cs",
+    "status": "missing-in-snapshot"
+  },
+  {
+    "path": "BackEnd\\CACC.API\\Program.cs",
+    "status": "different",
+    "sourceSha256": "7DDB874B3AF37D93A4337A35380C036005D2BD945D0F2F79CE634243FBFFA958",
+    "snapshotSha256": "6CC013E13BC1D60D28EC36DDB6ED6AC6FEB677B58B5013BF82144CCB83C7EC37"
+  }
+]

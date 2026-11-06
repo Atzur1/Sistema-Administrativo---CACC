@@ -307,52 +307,178 @@
     border-color: var(--color-danger);
 }
 
-/* Vista previa: "Arancel vigente: $85.000 ➔ Nuevo arancel a aplicar: $95.625" */
-.tariff-preview {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2) var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    background: var(--color-info-bg);
-    border: 1px solid var(--action-border);
-    border-left: 4px solid var(--color-info);
+/* ===== HU-106: RESUMEN DE IMPACTO (dentro de <app-ventana forma="ancha">) =====
+   La suba o la baja se dice con signo y con palabras ("+$8.500 (aumento)"); el color solo acompaña. */
+.impacto-aviso {
+    margin: 0 0 var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
     border-radius: var(--radius-md);
     font-size: var(--font-base);
-    color: var(--color-text);
-    animation: fadeIn 0.2s ease both;
 }
 
-.preview-item {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px;
+.impacto-datos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2) var(--space-4);
+    margin: 0 0 var(--space-4);
 }
 
-.preview-label {
-    color: var(--color-text-muted);
+.impacto-dato dt {
+    font-size: var(--font-sm);
+    color: var(--color-text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
-.preview-current {
+.impacto-dato dd {
+    margin: 2px 0 0;
+    color: var(--color-text-dark);
+    overflow-wrap: anywhere;
+}
+
+.impacto-sube {
+    color: var(--action-accent);
+}
+
+.impacto-baja {
+    color: var(--color-danger);
+}
+
+.impacto-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-base);
+    margin-bottom: var(--space-3);
+}
+
+.impacto-tabla caption {
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-text-dark);
+    padding-bottom: var(--space-2);
+}
+
+.impacto-tabla th,
+.impacto-tabla td {
+    padding: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.impacto-tabla thead th {
+    font-size: var(--font-sm);
+    color: var(--color-text-subtle);
     font-weight: 600;
 }
 
-.preview-next {
-    font-size: var(--font-lg);
+.impacto-tabla tbody th {
+    font-weight: 600;
+}
+
+.impacto-tabla .num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.impacto-tabla tfoot th,
+.impacto-tabla tfoot td {
     font-weight: 700;
+    border-bottom: none;
+}
+
+.impacto-por-jugador {
+    display: block;
+    font-size: var(--font-sm);
+    color: var(--color-text-subtle);
+}
+
+.impacto-nota,
+.impacto-notas {
+    font-size: var(--font-base);
+    color: var(--color-text-subtle);
+}
+
+.impacto-cero {
     color: var(--color-text-dark);
 }
 
-.preview-difference {
-    font-size: var(--font-base);
-    color: var(--color-text-muted);
+.impacto-notas {
+    margin: 0 0 var(--space-3);
+    padding-left: var(--space-4);
 }
 
 .preview-arrow {
-    color: var(--color-info);
+    color: var(--aviso-acento);
     font-size: var(--font-lg);
+}
+
+.impacto-confirmacion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-page-alt);
+}
+
+.impacto-confirmacion-input {
+    max-width: 160px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+    font-variant-numeric: tabular-nums;
+}
+
+.impacto-confirmacion-input[aria-invalid="true"] {
+    border-color: var(--color-danger);
+}
+
+/* Celular: los datos en una columna y cada fila del desglose como una tarjeta con sus etiquetas (no se oculta nada). */
+@media (max-width: 640px) {
+    .impacto-datos {
+        grid-template-columns: 1fr;
+    }
+
+    .impacto-tabla thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
+    .impacto-tabla tr {
+        display: block;
+        padding: var(--space-2) 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .impacto-tabla th,
+    .impacto-tabla td {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: 2px 0;
+        border-bottom: none;
+        text-align: right;
+    }
+
+    .impacto-tabla th::before,
+    .impacto-tabla td::before {
+        content: attr(data-label);
+        color: var(--color-text-subtle);
+        font-weight: 500;
+        text-align: left;
+    }
+
+    .impacto-tabla .num {
+        white-space: normal;
+    }
 }
 
 /* ===== SUBMIT ===== */
@@ -554,90 +680,15 @@
     background: var(--color-danger-bg);
 }
 
-.confirm-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 900;
-    display: grid;
-    place-items: center;
-    padding: var(--space-4);
-    background: rgba(15, 23, 42, 0.45);
-    animation: fadeIn 0.15s ease both;
-}
-
-.confirm-dialog {
-    width: min(440px, 100%);
-    padding: var(--space-5) var(--space-5) var(--space-4);
-    box-sizing: border-box;
-    background: var(--action-bg);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-floating);
-}
-
-.confirm-title {
-    margin: 0 0 6px;
-    font-size: var(--font-lg);
-    font-weight: 700;
-    color: var(--color-text);
-}
-
-.confirm-detail {
-    margin: 0 0 12px;
-    font-size: var(--font-md);
-    color: var(--color-text-muted);
-}
-
+/* Lista de consecuencias dentro de la ventana "¿Cancelar este arancel?" (la ventana es app-ventana, HU-094). */
 .confirm-list {
-    margin: 0 0 18px;
+    margin: 0;
     padding-left: var(--space-4);
     display: grid;
     gap: var(--space-2);
     font-size: var(--font-md);
     line-height: 1.4;
     color: var(--color-text);
-}
-
-.confirm-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-3);
-}
-
-.confirm-back,
-.confirm-danger {
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-md);
-    font-family: inherit;
-    font-size: var(--font-md);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s ease, opacity 0.15s ease;
-}
-
-.confirm-back {
-    border: 1px solid var(--action-border-strong);
-    background: transparent;
-    color: var(--color-text);
-}
-
-.confirm-back:hover:not(:disabled) {
-    background: var(--color-bg-hover);
-}
-
-.confirm-danger {
-    border: 0;
-    background: var(--color-danger-strong);
-    color: #ffffff;
-}
-
-.confirm-danger:hover:not(:disabled) {
-    background: var(--color-danger);
-}
-
-.confirm-back:disabled,
-.confirm-danger:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 /* ===== PILLS ===== */
@@ -653,17 +704,17 @@
 
 .category-male {
     background: var(--color-info-bg);
-    color: var(--color-info);
+    color: var(--aviso-acento);
 }
 
 .category-female {
     background: var(--color-accent-bg);
-    color: var(--color-accent);
+    color: var(--color-accent-text);
 }
 
 .category-category {
     background: var(--color-brand-tint);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .category-enrollment {
@@ -674,7 +725,7 @@
 /* The fee charged today, one waiting to start, and one already replaced */
 .status-current {
     background: var(--color-brand-tint);
-    color: var(--color-brand);
+    color: var(--color-brand-deep);
 }
 
 .status-scheduled {
@@ -753,10 +804,6 @@
     .segmented {
         flex-direction: column;
         align-self: stretch;
-    }
-
-    .preview-arrow {
-        transform: rotate(90deg);
     }
 
     .submit-button,

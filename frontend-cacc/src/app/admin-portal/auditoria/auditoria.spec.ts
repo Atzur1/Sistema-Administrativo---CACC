@@ -49,6 +49,7 @@ interface Evento {
   timestampUtc: string;
   beforeJson: string | null;
   afterJson: string | null;
+  sourceSystem?: string | null;
 }
 
 const ENLACE: Evento = {
@@ -473,5 +474,85 @@ describe('Auditoria - filtros', () => {
     component.entity = 'USUARIO';
     fixture.detectChanges();
     expect(el.querySelector('.scope-note')).toBeNull();
+  });
+});
+
+// HU-105: el trigger de USUARIOS graba la sección como 'USUARIOS'. Un cambio de rol y su "Deshacer" son dos
+// modificaciones reales de la cuenta, con quién las hizo y el rol de antes y de después.
+describe('Auditoria - cuentas administrativas (HU-105)', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const cambioDeRol = (antes: number, despues: number, id: number): Evento => evento({
+    id, entity: 'USUARIOS', entityId: '4', action: 'UPDATE',
+    beforeJson: `{"email":"camila@cacc.test","idRol":2,"activo":true,"activacionPendiente":false,"accesoPortal":true,"rolPortal":${antes},"credencialActualizada":false}`,
+    afterJson: `{"email":"camila@cacc.test","idRol":2,"activo":true,"activacionPendiente":false,"accesoPortal":true,"rolPortal":${despues},"credencialActualizada":false}`,
+  });
+
+  it('la sección "Cuenta administrativa" filtra por USUARIOS, que es lo que graba la base', async () => {
+    const { component, http } = await create();
+
+    expect(component.secciones).toContainEqual({ value: 'USUARIOS', label: 'Cuenta administrativa' });
+    expect(component.secciones.some((s) => s.value === 'USUARIO')).toBe(false);
+
+    component.entity = 'USUARIOS';
+    component.buscarAhora();
+    http.expectOne((r) => r.url.endsWith('/auditoria/cambios') && r.params.get('entidad') === 'USUARIOS')
+      .flush({ page: 1, pageSize: 50, total: 0, items: [] });
+  });
+
+  it('el cambio de rol y su deshacer se leen como dos cambios de rol de la misma cuenta, con quién los hizo', async () => {
+    const { component } = await create();
+    const nombres = { 'usuario:4': 'Candidata, Camila' };
+    const cambio = { ...cambioDeRol(2, 1, 10), references: nombres };
+    const deshacer = { ...cambioDeRol(1, 2, 11), references: nombres };
+
+    expect(component.resumen(cambio)).toBe('Cambió el rol de la cuenta de Candidata, Camila');
+    expect(component.resumen(deshacer)).toBe('Cambió el rol de la cuenta de Candidata, Camila');
+    expect(component.contexto(cambio)).toBe('Cuenta administrativa n.º 4');
+    expect(component.sujeto(deshacer)).toBe('Candidata, Camila');
+  });
+});
+
+// HU-055: una escritura que entra por la API de integración la hace el Portal Deportivo en nombre de un usuario. Sin el
+// origen, en la lista se ve igual que un cambio hecho desde este portal.
+describe('Auditoria - sistema de origen', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  const DESDE_DEPORTIVO = evento({ ...PAGO, id: 30, sourceSystem: 'PortalDeportivo' });
+  const DESDE_ADMINISTRATIVO = evento({ ...PAGO, id: 31, sourceSystem: 'PortalAdministrativo' });
+  const SIN_ORIGEN = evento({ ...PAGO, id: 32, sourceSystem: null });
+
+  it('marca en la lista lo que llegó desde el Portal Deportivo, y no lo hecho desde este portal', async () => {
+    const { el } = await create([DESDE_DEPORTIVO, DESDE_ADMINISTRATIVO]);
+
+    const filas = el.querySelectorAll('tbody tr');
+    expect(filas[0].textContent).toContain('Desde el Portal Deportivo');
+    expect(filas[1].textContent).not.toContain('Desde el Portal');
+  });
+
+  for (const [caso, item, esperado] of [
+    ['el Portal Deportivo', DESDE_DEPORTIVO, 'Portal Deportivo (integración)'],
+    ['este portal', DESDE_ADMINISTRATIVO, 'Portal Administrativo'],
+  ] as const) {
+    it(`el panel dice que se hizo desde ${caso}`, async () => {
+      const { fixture, el, component } = await create([item]);
+
+      component.abrirDetalle(item);
+      fixture.detectChanges();
+      expect(el.querySelector('[role="dialog"]')!.textContent).toContain(`Desde${esperado}`);
+    });
+  }
+
+  // NULL: no pasó por la API del Portal Administrativo (otro sistema sobre la base compartida, un script) o es un evento
+  // anterior a HU-055. No se sabe de dónde vino: no se inventa un origen.
+  it('sin origen registrado no muestra ninguno', async () => {
+    const { fixture, el, component } = await create([SIN_ORIGEN]);
+
+    expect(el.querySelector('tbody tr')!.textContent).not.toContain('Desde el Portal');
+    component.abrirDetalle(SIN_ORIGEN);
+    fixture.detectChanges();
+    const panel = el.querySelector('[role="dialog"]')!.textContent!;
+    expect(panel).not.toContain('Portal Deportivo');
+    expect(panel).not.toContain('Portal Administrativo');
   });
 });

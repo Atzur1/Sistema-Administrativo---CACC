@@ -89,6 +89,38 @@ describe('FilterBar - búsqueda con espera', () => {
     expect(host.buscadas).toEqual([]);
   });
 
+  // HU-102: el texto escrito y todavía no aplicado no tiene que volver después de "Limpiar filtros". Acá la búsqueda
+  // aplicada no cambia ("" -> ""), así que no alcanza con que la pantalla vuelva a pasar la entrada [busqueda].
+  it('"Limpiar filtros" drops a search still waiting, even if the applied search did not change', async () => {
+    const { host, el, refrescar } = await crear();
+    host.filtros = [{ key: 'estado', label: 'Estado: Parcial' }];
+    refrescar();
+    vi.useFakeTimers();
+
+    escribir(el, 'ab');
+    el.querySelector<HTMLButtonElement>('.filter-bar-clear')!.click();
+    vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
+
+    expect(host.limpiezas).toBe(1);
+    expect(host.buscadas).toEqual([]);
+    expect(el.querySelector<HTMLInputElement>('.filter-bar-search input')!.value).toBe('');
+  });
+
+  // Para los "Limpiar filtros" que viven fuera de la barra (por ejemplo, el del estado vacío de resultados).
+  it('reiniciarBusqueda() empties the box and drops the pending search', async () => {
+    const { host, el, fixture } = await crear();
+    vi.useFakeTimers();
+    const barra = fixture.debugElement.children[0].componentInstance as FilterBar;
+
+    escribir(el, 'ab');
+    barra.reiniciarBusqueda();
+    fixture.detectChanges();
+    vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
+
+    expect(host.buscadas).toEqual([]);
+    expect(el.querySelector<HTMLInputElement>('.filter-bar-search input')!.value).toBe('');
+  });
+
   it('without a search text there is no search box', async () => {
     const { host, el, refrescar } = await crear();
     host.textoBusqueda = '';

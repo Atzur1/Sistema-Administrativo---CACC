@@ -6,6 +6,6 @@ namespace ApiGestion.Models;
 // llega al correo que la cuenta tiene cargado, nunca a lo que se escriba acá.
 public sealed class PasswordRecoveryRequestDTO
 {
-    [Required, MaxLength(254)]
+    [Required(ErrorMessage = "Indicá tu usuario o correo electrónico."), MaxLength(254, ErrorMessage = "El usuario no puede superar los 254 caracteres.")]
     public string Usuario { get; init; } = string.Empty;
 }

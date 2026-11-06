@@ -1,0 +1,228 @@
+[
+  {
+    "case": "2-a-1",
+    "operationStart": "2026-11-04T22:03:07.7484962Z",
+    "adminResponse": "2026-11-04T22:03:07.7761265Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:07.752Z",
+        "state": "Begin",
+        "transactionId": "163906",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:07.762Z",
+        "state": "Commit",
+        "transactionId": "163906",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": "2026-11-04T22:03:07.762Z",
+    "correlation": "Unique User BEGIN/COMMIT pair matched transaction_id within sequential HTTP operation window"
+  },
+  {
+    "case": "3-a-0",
+    "operationStart": "2026-11-04T22:03:08.2117375Z",
+    "adminResponse": "2026-11-04T22:03:08.2506213Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:08.215Z",
+        "state": "Begin",
+        "transactionId": "164391",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:08.237Z",
+        "state": "Commit",
+        "transactionId": "164391",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": "2026-11-04T22:03:08.237Z",
+    "correlation": "Unique User BEGIN/COMMIT pair matched transaction_id within sequential HTTP operation window"
+  },
+  {
+    "case": "1-a-0",
+    "operationStart": "2026-11-04T22:03:08.6062805Z",
+    "adminResponse": "2026-11-04T22:03:08.6317543Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:08.608Z",
+        "state": "Begin",
+        "transactionId": "164971",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:08.618Z",
+        "state": "Commit",
+        "transactionId": "164971",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": "2026-11-04T22:03:08.618Z",
+    "correlation": "Unique User BEGIN/COMMIT pair matched transaction_id within sequential HTTP operation window"
+  },
+  {
+    "case": "parcial",
+    "operationStart": "2026-11-04T22:03:08.9872678Z",
+    "adminResponse": "2026-11-04T22:03:09.0163542Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:08.990Z",
+        "state": "Begin",
+        "transactionId": "165470",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:09.001Z",
+        "state": "Commit",
+        "transactionId": "165470",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": "2026-11-04T22:03:09.001Z",
+    "correlation": "Unique User BEGIN/COMMIT pair matched transaction_id within sequential HTTP operation window"
+  },
+  {
+    "case": "beca-exacta",
+    "operationStart": "2026-11-04T22:03:09.4032040Z",
+    "adminResponse": "2026-11-04T22:03:09.4298159Z",
+    "events": [],
+    "commitAt": null,
+    "correlation": "Ambiguous or absent; no commit assigned"
+  },
+  {
+    "case": "HU083-no-vencida",
+    "operationStart": "2026-11-04T22:03:09.8185559Z",
+    "adminResponse": "2026-11-04T22:03:09.8361218Z",
+    "events": [],
+    "commitAt": null,
+    "correlation": "Ambiguous or absent; no commit assigned"
+  },
+  {
+    "case": "beca-preventiva-suplemento",
+    "operationStart": "2026-11-04T22:03:10.2028051Z",
+    "adminResponse": "2026-11-04T22:03:10.2238594Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:10.208Z",
+        "state": "Begin",
+        "transactionId": "166802",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:10.209Z",
+        "state": "Commit",
+        "transactionId": "166802",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": "2026-11-04T22:03:10.209Z",
+    "correlation": "Unique User BEGIN/COMMIT pair matched transaction_id within sequential HTTP operation window"
+  },
+  {
+    "case": "rechazo-lote-prevalidacion",
+    "operationStart": "2026-11-04T22:03:10.6148277Z",
+    "adminResponse": "2026-11-04T22:03:10.6219410Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:10.617Z",
+        "state": "Begin",
+        "transactionId": "167267",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:10.621Z",
+        "state": "Rollback",
+        "transactionId": "167267",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": null,
+    "correlation": "Ambiguous or absent; no commit assigned"
+  },
+  {
+    "case": "rollback-escritura-trigger",
+    "operationStart": "2026-11-04T22:03:11.1672178Z",
+    "adminResponse": "2026-11-04T22:03:11.1953279Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:11.170Z",
+        "state": "Begin",
+        "transactionId": "168424",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:11.192Z",
+        "state": "Rollback",
+        "transactionId": "168424",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": null,
+    "correlation": "Ambiguous or absent; no commit assigned"
+  },
+  {
+    "case": "anulacion",
+    "operationStart": "2026-11-04T22:03:11.7018228Z",
+    "adminResponse": "2026-11-04T22:03:11.7397486Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:11.704Z",
+        "state": "Begin",
+        "transactionId": "169919",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:11.726Z",
+        "state": "Commit",
+        "transactionId": "169919",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": "2026-11-04T22:03:11.726Z",
+    "correlation": "Unique User BEGIN/COMMIT pair matched transaction_id within sequential HTTP operation window"
+  },
+  {
+    "case": "0-a-1-generacion",
+    "operationStart": "2026-11-04T22:03:12.1906391Z",
+    "adminResponse": "2026-11-04T22:03:12.2342703Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:12.193Z",
+        "state": "Begin",
+        "transactionId": "170617",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:12.221Z",
+        "state": "Commit",
+        "transactionId": "170617",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": "2026-11-04T22:03:12.221Z",
+    "correlation": "Unique User BEGIN/COMMIT pair matched transaction_id within sequential HTTP operation window"
+  },
+  {
+    "case": "1-a-2-generacion",
+    "operationStart": "2026-11-04T22:03:12.5817198Z",
+    "adminResponse": "2026-11-04T22:03:12.5962536Z",
+    "events": [
+      {
+        "at": "2026-11-04T22:03:12.583Z",
+        "state": "Begin",
+        "transactionId": "171147",
+        "sessionId": "68"
+      },
+      {
+        "at": "2026-11-04T22:03:12.584Z",
+        "state": "Commit",
+        "transactionId": "171147",
+        "sessionId": "68"
+      }
+    ],
+    "commitAt": "2026-11-04T22:03:12.584Z",
+    "correlation": "Unique User BEGIN/COMMIT pair matched transaction_id within sequential HTTP operation window"
+  }
+]

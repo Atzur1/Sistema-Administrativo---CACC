@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 
 import { BecadosDescuentos } from './becados-descuentos';
 import { DiscountService } from '../../services/discounts';
 import { PagosService } from '../../services/pagos';
 import { AuthService } from '../../services/auth';
+import { NotificationService } from '../../shared/notifications/notification.service';
 import { DiscountModel, FirstPeriodModel } from '../../models/DiscountModel';
 
 // El formulario de bonificación se completa por cuota ("desde la cuota de" / "hasta la cuota de"), y la primera
@@ -204,5 +206,78 @@ describe('BecadosDescuentos - pestañas Vigentes / Historial', () => {
     const tonos = BENEFICIOS.map((row) => component.statusClassOf(row));
     expect(new Set(tonos).size).toBe(5);
     expect(BENEFICIOS.map((row) => component.statusOf(row))).toEqual(['Activa', 'Programada', 'Finalizada', 'Cancelada', 'Anulada']);
+  });
+});
+
+// HU-090: el error de la API se muestra tal cual (en español, con la bonificación y el período ya formateados por el
+// servidor). La pantalla no interpreta el texto: si no hay mensaje, usa uno propio.
+describe('BecadosDescuentos - errores de la API (HU-090)', () => {
+  const SUPERPOSICION =
+    'El jugador ya tiene la bonificación "Beca Completa" vigente del 01/10/2026 al 31/12/2026. Ajustá las fechas o cancelá la existente.';
+
+  async function guardarConError(cuerpo: unknown, status: number) {
+    const notify = vi.fn();
+    await TestBed.configureTestingModule({
+      imports: [BecadosDescuentos],
+      providers: [
+        {
+          provide: DiscountService,
+          useValue: {
+            getDiscountMap: () => of(new Map<number, DiscountModel>()),
+            getAllDiscounts: () => of([]),
+            getDiscountTypes: () => of(['Becado', 'Descuento']),
+            getDiscountsByPlayer: () => of([]),
+            getFirstPeriod: () => of({ period: '2026-11-01', issueDate: '2026-11-10', alreadyIssued: false }),
+            assignDiscount: vi.fn(() => throwError(() => new HttpErrorResponse({ status, error: cuerpo }))),
+          },
+        },
+        { provide: PagosService, useValue: { getJugadores: () => of([]) } },
+        { provide: AuthService, useValue: { isSuperAdmin: () => true } },
+        { provide: NotificationService, useValue: { notify } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BecadosDescuentos);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.selectedPlayer = JUGADOR;
+    component.openDialogForSelectedPlayer();
+    component.benefitForm.patchValue({ reason: 'Becado', valueType: '%', percentage: 50 });
+    component.onSubmit();
+    fixture.detectChanges();
+    return { component, notify, el: fixture.nativeElement as HTMLElement };
+  }
+
+  it('un 409 de superposición muestra el mensaje de la API tal cual, con la bonificación y su período', async () => {
+    const { component, notify } = await guardarConError({ exito: false, mensaje: SUPERPOSICION }, 409);
+
+    expect(component.dialogError()).toBe(SUPERPOSICION);
+    expect(notify).toHaveBeenCalledWith(SUPERPOSICION, 'error');
+  });
+
+  it('una validación 400 muestra el mensaje de la API', async () => {
+    const { component } = await guardarConError({ exito: false, mensaje: 'La fecha de fin debe ser posterior a la de inicio.' }, 400);
+
+    expect(component.dialogError()).toBe('La fecha de fin debe ser posterior a la de inicio.');
+  });
+
+  it('un 409 sin mensaje usa el texto propio, sin inventar fechas', async () => {
+    const { component } = await guardarConError({}, 409);
+
+    expect(component.dialogError()).toBe(
+      'El jugador ya tiene una bonificación que se superpone con ese período. Ajustá las fechas o cancelá la existente.',
+    );
+  });
+
+  it('nunca muestra un cuerpo crudo, un objeto ni textos en inglés', async () => {
+    for (const cuerpo of ['<html>502 Bad Gateway</html>', { mensaje: { a: 1 } }, { message: 'Player not found' }]) {
+      TestBed.resetTestingModule();
+      const { component } = await guardarConError(cuerpo, 400);
+
+      expect(component.dialogError()).toBe(
+        'Los datos de la bonificación no son válidos. Revisá el motivo, el valor y las fechas de vigencia.',
+      );
+      expect(component.dialogError()).not.toContain('[object Object]');
+    }
   });
 });

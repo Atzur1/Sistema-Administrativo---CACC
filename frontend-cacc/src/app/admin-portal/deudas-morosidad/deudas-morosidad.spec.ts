@@ -1,7 +1,7 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { NEVER, from } from 'rxjs';
+import { NEVER, from, of } from 'rxjs';
 
 import { DeudasMorosidad } from './deudas-morosidad';
 import { PagosService } from '../../services/pagos';
@@ -68,7 +68,7 @@ async function create(
     providers: [
       provideRouter([]),
       { provide: PagosService, useValue: pagosService },
-      { provide: ReportesService, useValue: {} },
+      { provide: ReportesService, useValue: { contar: vi.fn(() => of({tipo: 'deudores', cantidadFilas: debtors.length})) } },
       { provide: NotificationService, useValue: { notify: vi.fn() } },
     ],
   }).compileComponents();
@@ -199,7 +199,7 @@ describe('DeudasMorosidad - jugadores dados de baja (HU-081)', () => {
 // vencidas. Quien debe la cuota del mes pero todavía no venció sigue habilitado ("En término").
 describe('DeudasMorosidad - estado deportivo por cuotas vencidas', () => {
   const pills = (fixture: Awaited<ReturnType<typeof create>>) =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.etiqueta-estado')).map((p) => p.textContent?.trim());
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.debtors-table .etiqueta-estado')).map((p) => p.textContent?.trim());
 
   it('sin cuotas vencidas está en término; con 1 solo entrena; con 2 o más inhabilitado', async () => {
     const fixture = await create([
@@ -338,5 +338,105 @@ describe('DeudasMorosidad - filtros y exportación compartidos (HU-097)', () => 
     component.exportarDeudores('csv');
 
     expect(exportarDeudoresCsv).toHaveBeenCalledWith(5);
+  });
+});
+
+// HU-102: encabezado y barra de filtros unificados, y el rojo reservado a lo urgente.
+describe('DeudasMorosidad - encabezado y filtros unificados (HU-102)', () => {
+  const refrescar = (fixture: ComponentFixture<DeudasMorosidad>) => {
+    fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+  };
+
+  // El conteo animado del encabezado corre con requestAnimationFrame: acá se controla a mano para ver lo que
+  // vería la persona (valor final, o el "$0" desde el que vuelve a contar).
+  let cuadros: FrameRequestCallback[] = [];
+  const originalRaf = window.requestAnimationFrame;
+  beforeEach(() => {
+    cuadros = [];
+    window.requestAnimationFrame = ((cb: FrameRequestCallback) => cuadros.push(cb)) as typeof window.requestAnimationFrame;
+  });
+  afterEach(() => {
+    window.requestAnimationFrame = originalRaf;
+    vi.useRealTimers();
+  });
+  const terminarAnimaciones = () => {
+    while (cuadros.length) cuadros.shift()!(performance.now() + 5000);
+  };
+  const metricas = (fixture: ComponentFixture<DeudasMorosidad>) =>
+    Object.fromEntries(fixture.componentInstance.bannerMetrics.map((m) => [m.label, m.value]));
+
+  const RESUMEN: PaymentSummaryModel = { ...EMPTY_SUMMARY, deudaGlobalTotal: 276000, jugadoresMorosos: 2 };
+
+  it('buscar, elegir estado o situación no cambia ni reinicia las métricas del encabezado', async () => {
+    const fixture = await create(
+      [debtor(1, 'SANTIAGO', 1, 92000), debtor(2, 'NICOLAS', 2, 184000)], [], RESUMEN);
+    terminarAnimaciones();
+    const antes = metricas(fixture);
+    expect(antes['Deuda total']).toBe('$276 k');
+
+    const component = fixture.componentInstance;
+    component.onBusquedaChange('nico');
+    component.selectedEstado = 'Inhabilitado';
+    component.onFiltrosChange();
+    component.selectedSituacion = 'Activos';
+    component.onFiltrosChange();
+
+    expect(metricas(fixture)).toEqual(antes);              // no volvió a contar desde $0
+    expect(tablePlayers(fixture)).toEqual(['PRUEBA, NICOLAS']);
+  });
+
+  it('la barra va a ancho completo debajo del encabezado, antes de los paneles, y aclara qué filtra', async () => {
+    const fixture = await create([debtor(1, 'SANTIAGO', 1, 92000)]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    const barra = el.querySelector('.dashboard > .panel-filtros app-filter-bar');
+    expect(barra).not.toBeNull();
+    expect(el.querySelector('.main-grid app-filter-bar')).toBeNull();
+    expect(barra!.compareDocumentPosition(el.querySelector('.main-grid')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(el.querySelector('.panel-filtros [filterBarNote]')!.textContent).toContain('Lista de deudores');
+    // El contador de resultados sigue con su lista.
+    expect(el.querySelector('.panel-ranking .filter-count')).not.toBeNull();
+  });
+
+  it('cada desplegable tiene una etiqueta que llega al botón del desplegable', async () => {
+    const fixture = await create([debtor(1, 'SANTIAGO', 1, 92000)]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    for (const [id, texto] of [['filtro-categoria-deudores', 'Categoría'], ['filtro-estado-deudores', 'Estado'], ['filtro-situacion-deudores', 'Jugadores']]) {
+      expect(el.querySelector(`.panel-filtros label[for="${id}"]`)!.textContent!.trim()).toBe(texto);
+      expect(el.querySelector(`button#${id}`)).not.toBeNull();
+    }
+  });
+
+  it('"Limpiar filtros" no borra el período de "Deuda por categoría" ni deja una búsqueda escrita pendiente', async () => {
+    const fixture = await create([debtor(1, 'SANTIAGO', 1, 92000), debtor(2, 'NICOLAS', 2, 184000)]);
+    const component = fixture.componentInstance;
+    const el = fixture.nativeElement as HTMLElement;
+    component.cambiarPeriodo('anio');
+    component.selectedEstado = 'Inhabilitado';
+    component.onFiltrosChange();
+    refrescar(fixture);
+    vi.useFakeTimers();
+
+    const input = el.querySelector<HTMLInputElement>('app-filter-bar input[type="search"]')!;
+    input.value = 'zzz';
+    input.dispatchEvent(new Event('input'));
+    el.querySelector<HTMLButtonElement>('.filter-bar-clear')!.click();
+    vi.advanceTimersByTime(300);
+    refrescar(fixture);
+
+    expect(component.periodoModo).toBe('anio');
+    expect(component.busqueda).toBe('');
+    expect(tablePlayers(fixture)).toHaveLength(2);
+  });
+
+  it('en "Jugadores inhabilitados" lo urgente se lee con texto: la cantidad de cuotas vencidas', async () => {
+    const fixture = await create([debtor(2, 'NICOLAS', 3, 276000)]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    const etiqueta = el.querySelector('.panel-suspended .etiqueta-estado')!;
+    expect(etiqueta.textContent!.trim()).toBe('3 cuotas vencidas');
+    expect(etiqueta.classList).toContain('tono-peligro');
   });
 });

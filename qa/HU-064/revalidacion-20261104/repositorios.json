@@ -1,0 +1,20 @@
+[
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\Sisterrma CACC\\Sistema-Administrativo---CACC",
+    "branch": "FramD",
+    "commit": "f9d45140957e5dfa2b7752bee8dd3b931e665549",
+    "remote": "https://github.com/Atzur1/Sistema-Administrativo---CACC.git"
+  },
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\App-Club-Atletico-Camioneros",
+    "branch": "fix/SCRUM-805-credencial-integracion",
+    "commit": "a9e690f50d0c17fd828dfd916c2814d1f81624ea",
+    "remote": "https://github.com/Atzur1/App-Club-Atletico-Camioneros.git"
+  },
+  {
+    "path": "C:\\Users\\FramD\\Documents\\Tesis\\HU-064-entorno\\cacc-unificacion",
+    "branch": "fix/SCRUM-805-credencial-integracion",
+    "commit": "61e1030cd0119c2059520a03c7b8c5556211e79c",
+    "remote": "https://github.com/Atzur1/cacc-unificacion.git"
+  }
+]

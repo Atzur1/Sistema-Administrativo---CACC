@@ -16,18 +16,28 @@ namespace ServiceLibrary
         public TipoResultado Tipo { get; }
         public T? Valor { get; }
         public string? Mensaje { get; }
+        // Dato de entrada al que se refiere la falla (el "field" del error de integración). Null si no aplica a uno solo.
+        public string? Campo { get; }
+        // HU-087: cada regla que no se cumplió, para mostrarlas todas juntas (por ejemplo, la política de contraseñas).
+        // Vacía cuando la falla es una sola y ya la explica el mensaje.
+        public IReadOnlyList<string> Problemas { get; }
 
-        private ResultadoOperacion(TipoResultado tipo, T? valor, string? mensaje)
+        private ResultadoOperacion(TipoResultado tipo, T? valor, string? mensaje, string? campo = null, IReadOnlyList<string>? problemas = null)
         {
             Tipo = tipo;
             Valor = valor;
             Mensaje = mensaje;
+            Campo = campo;
+            Problemas = problemas ?? Array.Empty<string>();
         }
 
         public bool Exito => Tipo == TipoResultado.Ok;
 
         public static ResultadoOperacion<T> Ok(T valor) => new(TipoResultado.Ok, valor, null);
 
-        public static ResultadoOperacion<T> Falla(TipoResultado tipo, string mensaje) => new(tipo, default, mensaje);
+        public static ResultadoOperacion<T> Falla(TipoResultado tipo, string mensaje, string? campo = null) => new(tipo, default, mensaje, campo);
+
+        public static ResultadoOperacion<T> Falla(TipoResultado tipo, string mensaje, IReadOnlyList<string> problemas) =>
+            new(tipo, default, mensaje, problemas: problemas);
     }
 }

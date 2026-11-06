@@ -1,70 +1,44 @@
 <!-- Perfil de jugador: datos básicos + historial de pagos paginado -->
 <div class="dashboard">
-  <!-- ===== HEADER ===== -->
-  <header class="page-header">
-    <button type="button" class="back-button" (click)="volver()">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <polyline points="15 18 9 12 15 6"></polyline>
-      </svg>
-      Volver
+  <!-- ===== CABECERA (HU-096): la misma que Deuda de Jugador. Contiene Volver y el h1 de la pantalla. ===== -->
+  <app-cabecera-jugador [jugador]="jugador" (volver)="volver()">
+    @if (dadoDeBaja) {
+      <button cabeceraAcciones type="button" class="profile-action" (click)="abrirReactivar()">Reactivar</button>
+    } @else {
+      <button cabeceraAcciones type="button" class="profile-action profile-action-danger" (click)="abrirBaja()">
+        Dar de baja
+      </button>
+    }
+    <app-help-hint
+      cabeceraAcciones
+      label="Baja del jugador"
+      text="Dar de baja deja de generarle cuotas a partir del mes siguiente a la baja. Las cuotas sin pagos de meses posteriores se quitan; la deuda anterior se mantiene. Reactivar vuelve a generarle cuotas desde el mes en curso. Anular alta por error borra al jugador y sus cargos pendientes (solo si no tiene pagos cobrados, becas ni asistencias)."
+    />
+    <button
+      cabeceraAcciones
+      type="button"
+      class="profile-action profile-action-anular"
+      title="Solo si se cargó por error y todavía no tiene pagos cobrados"
+      (click)="abrirAnularAlta()"
+    >
+      Anular alta por error
     </button>
-  </header>
+
+    @if (historial && historial.total > 0) {
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <span class="profile-stat-value">{{ historial.total }}</span>
+          <span class="profile-stat-label">{{
+            historial.total === 1 ? 'Pago registrado' : 'Pagos registrados'
+          }}</span>
+        </div>
+      </div>
+    }
+  </app-cabecera-jugador>
 
   @if (cargandoJugador) {
     <app-cargando texto="Cargando el jugador…" forma="tarjetas" [filas]="3" />
-  } @else if (jugador) {
-    <div class="profile-card">
-      <div class="profile-header">
-        <span class="profile-avatar">{{ iniciales }}</span>
-        <div class="profile-info">
-          <h1 class="profile-name">{{ jugador.nombreCompleto }}</h1>
-          <span class="profile-meta">DNI {{ jugador.dni }} · {{ jugador.categoria }}</span>
-          @if (dadoDeBaja) {
-            <span class="profile-baja">Dado de baja el {{ formatFecha(jugador.fechaBaja!) }}</span>
-          }
-        </div>
-        <div class="profile-actions">
-          @if (dadoDeBaja) {
-            <button type="button" class="profile-action" (click)="abrirReactivar()">Reactivar</button>
-          } @else {
-            <button type="button" class="profile-action profile-action-danger" (click)="abrirBaja()">
-              Dar de baja
-            </button>
-          }
-          <button
-            type="button"
-            class="profile-action profile-action-anular"
-            title="Solo si se cargó por error y todavía no tiene pagos cobrados"
-            (click)="abrirAnularAlta()"
-          >
-            Anular alta por error
-          </button>
-          <app-help-hint
-            label="Baja del jugador"
-            text="Dar de baja deja de generarle cuotas a partir del mes siguiente a la baja. Las cuotas sin pagos de meses posteriores se quitan; la deuda anterior se mantiene. Reactivar vuelve a generarle cuotas desde el mes en curso. Anular alta por error borra al jugador y sus cargos pendientes (solo si no tiene pagos cobrados, becas ni asistencias)."
-          />
-        </div>
-      </div>
-
-      @if (historial && historial.total > 0) {
-        <div class="profile-stats">
-          <div class="profile-stat">
-            <span class="profile-stat-value">{{ historial.total }}</span>
-            <span class="profile-stat-label">{{
-              historial.total === 1 ? 'Pago registrado' : 'Pagos registrados'
-            }}</span>
-          </div>
-        </div>
-      }
-    </div>
-  } @else if (errorMessage) {
+  } @else if (!jugador && errorMessage) {
     <p class="error-text">{{ errorMessage }}</p>
   }
 

@@ -12,7 +12,7 @@
     </span>
 
     <div class="header-text">
-      <h1 class="header-title">Actualización de Aranceles</h1>
+      <h1 class="header-title">{{ tituloPantalla }}</h1>
       <span class="header-subtitle">{{ vista === 'inscripcion'
         ? 'Definí y programá el valor de la inscripción: se cobra una vez por año a cada jugador'
         : 'Definí y programá los valores de la cuota mensual del club' }}</span>
@@ -124,26 +124,14 @@
         }
       </div>
 
-      @if (tariffPreview; as preview) {
-        <div class="tariff-preview" aria-live="polite">
-          <span class="preview-item">
-            <span class="preview-label">Arancel vigente:</span>
-            <strong class="preview-current">{{ preview.current }}</strong>
-          </span>
-          <span class="preview-arrow" aria-hidden="true">➔</span>
-          <span class="preview-item">
-            <span class="preview-label">Nuevo arancel a aplicar:</span>
-            <strong class="preview-next">{{ preview.next }}</strong>
-            @if (preview.difference) {
-              <span class="preview-difference">({{ preview.difference }})</span>
-            }
-          </span>
-        </div>
-      }
-
       <div class="submit-row action-with-help">
-        <button type="submit" class="submit-button" [disabled]="feeForm.invalid || enviando || resultingAmount == null">
-          {{ vista === 'inscripcion' ? 'Programar inscripción' : 'Programar actualización' }}
+        <!-- HU-106: en la cuota mensual este botón no graba: calcula el impacto (backend) y abre el resumen para confirmar. -->
+        <button type="submit" class="submit-button" [disabled]="feeForm.invalid || enviando || simulandoImpacto">
+          @if (vista === 'inscripcion') {
+            Programar inscripción
+          } @else {
+            {{ simulandoImpacto ? 'Calculando impacto…' : 'Revisar impacto' }}
+          }
         </button>
         @if (vista === 'inscripcion') {
           <app-help-hint
@@ -152,8 +140,8 @@
           />
         } @else {
           <app-help-hint
-            label="Programar actualización"
-            text="Carga el nuevo monto de la cuota desde la fecha elegida. Podés escribir el monto final, un porcentaje o un monto a sumar sobre el arancel vigente; se programa siempre el monto que muestra la vista previa. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago. No se pueden programar fechas pasadas. Solo puede haber un arancel por mes para el mismo género o categoría."
+            label="Revisar impacto"
+            text="Calcula, sin guardar nada, a cuántos jugadores alcanza el cambio y cuánto cambia la recaudación mensual, con el monto final que se va a programar. Podés escribir el monto final, un porcentaje o un monto a sumar sobre el arancel vigente. Recién al confirmar el resumen se programa. Si es un mes futuro, las cuotas se emiten cuando empieza ese mes. Si es el mes en curso, se vuelven a emitir las cuotas del mes con el monto nuevo, salvo las que ya tienen algún pago; las de meses anteriores no cambian. No se pueden programar fechas pasadas. Solo puede haber un arancel por mes para el mismo género o categoría."
           />
         }
       </div>
@@ -167,7 +155,7 @@
     <!-- Every fee change, newest first, both categories in a single table -->
     <article class="panel panel-history">
       <header class="panel-head">
-        <h2 class="panel-title">{{ vista === 'inscripcion' ? 'Historial de la inscripción' : 'Historial y aranceles programados' }}</h2>
+        <h2 class="panel-title" #tituloHistorial tabindex="-1">{{ vista === 'inscripcion' ? 'Historial de la inscripción' : 'Historial y aranceles programados' }}</h2>
         <span class="panel-subtitle">{{ vista === 'inscripcion'
           ? 'Todos los cambios de la inscripción por género, del más reciente al más antiguo'
           : 'Todos los cambios de cuota (por género y por categoría), del más reciente al más antiguo' }}</span>
@@ -255,27 +243,165 @@
     }
   </section>
 
-  <!-- ===== CONFIRMAR CANCELACIÓN DE UN ARANCEL ===== -->
-  @if (cancelTarget) {
-    <div class="confirm-overlay" (click)="closeCancel()">
-      <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="cancel-title" (click)="$event.stopPropagation()">
-        <h3 id="cancel-title" class="confirm-title">¿Cancelar este arancel?</h3>
-        <p class="confirm-detail">
-          <strong>{{ cancelTarget.categoryLabel }}</strong> · {{ cancelTarget.amount }} · desde el {{ formatDate(cancelTarget.validFrom) }}
-        </p>
-        <ul class="confirm-list">
-          <li>Se quita este arancel de todos los jugadores a los que alcanza.</li>
-          <li>Se eliminan las cuotas pendientes sin pagos emitidas con él.</li>
-          <li>Si alguna de esas cuotas ya tiene un pago, no se puede cancelar.</li>
-          <li>Las cuotas se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.</li>
-        </ul>
-        <div class="confirm-actions">
-          <button type="button" class="confirm-back" (click)="closeCancel()" [disabled]="cancelando">Volver</button>
-          <button type="button" class="confirm-danger" (click)="confirmCancel()" [disabled]="cancelando">
-            {{ cancelando ? 'Cancelando…' : 'Cancelar arancel' }}
-          </button>
+  <!-- ===== HU-106: RESUMEN DE IMPACTO ANTES DE CONFIRMAR =====
+       Todos los números vienen del backend (POST /aranceles/simular). Volver / Esc / × descartan el resumen sin grabar
+       nada. Si alcanza a más de una categoría, Confirmar se habilita solo con la cantidad exacta de jugadores escrita. -->
+  @if (impacto; as imp) {
+    <app-ventana titulo="Revisá el impacto del cambio"
+                 [subtitulo]="'Nuevo arancel del ' + destinoImpacto(imp) + ' desde el ' + formatDate(imp.vigenteDesde)"
+                 forma="ancha" textoConfirmar="Confirmar actualización" textoEnCurso="Confirmando…"
+                 [enCurso]="confirmandoImpacto" [confirmarDeshabilitado]="!confirmacionValida" [error]="errorImpacto"
+                 (confirmar)="confirmarImpacto()" (cerrar)="cerrarImpacto()">
+
+      @if (avisoImpactoActualizado) {
+        <p class="impacto-aviso" role="alert">{{ avisoImpactoActualizado }}</p>
+      }
+
+      <dl class="impacto-datos">
+        <div class="impacto-dato">
+          <dt>Cambio</dt>
+          <dd>{{ cambioImpactoTexto(imp) }}</dd>
         </div>
-      </div>
-    </div>
+        <div class="impacto-dato">
+          <dt>Alcance</dt>
+          <dd>
+            {{ imp.genero ? 'Género ' + imp.genero : 'Categoría ' + (imp.nombreCategoria ?? imp.idCategoria) }}
+            @if (imp.lineas.length > 0) {
+              · {{ imp.categorias === 1 ? 'categoría' : imp.categorias + ' categorías' }}: {{ categoriasImpactoTexto }}
+            }
+          </dd>
+        </div>
+        <!-- También en el cuerpo: el subtítulo de la ventana se corta en celulares y la fecha no se puede perder. -->
+        <div class="impacto-dato">
+          <dt>Rige desde</dt>
+          <dd>{{ formatDate(imp.vigenteDesde) }}</dd>
+        </div>
+        <div class="impacto-dato">
+          <dt>Arancel vigente hoy</dt>
+          <dd>{{ moneda(imp.montoBase) }}</dd>
+        </div>
+        <div class="impacto-dato">
+          <dt>Nuevo arancel</dt>
+          <dd><strong>{{ moneda(imp.montoNuevo) }}</strong></dd>
+        </div>
+        <div class="impacto-dato">
+          <dt>Jugadores afectados</dt>
+          <dd><strong>{{ imp.jugadores }}</strong></dd>
+        </div>
+        <div class="impacto-dato">
+          <dt>Diferencia mensual estimada</dt>
+          <dd><strong [class]="diferenciaClase(imp.diferenciaMensual)">{{ diferenciaTexto(imp.diferenciaMensual) }}</strong></dd>
+        </div>
+      </dl>
+
+      @if (imp.lineas.length > 0) {
+        <table class="impacto-tabla">
+          <caption>Desglose de la cuota de {{ mesTexto(imp.mesDeAplicacion) }}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Categoría</th>
+              <th scope="col">Género</th>
+              <th scope="col">Cuota actual → nueva</th>
+              <th scope="col" class="num">Jugadores</th>
+              <th scope="col" class="num">Diferencia mensual</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (linea of imp.lineas; track $index) {
+              <tr>
+                <th scope="row" data-label="Categoría">{{ linea.nombreCategoria ?? 'Sin categoría' }}</th>
+                <td data-label="Género">{{ linea.genero }}</td>
+                <td data-label="Cuota actual → nueva">
+                  {{ moneda(linea.montoActual) }} → {{ moneda(linea.montoNuevo) }}
+                  <span class="impacto-por-jugador">({{ diferenciaTexto(linea.diferenciaPorJugador) }} c/u)</span>
+                </td>
+                <td data-label="Jugadores" class="num">{{ linea.jugadores }}</td>
+                <td data-label="Diferencia mensual" class="num">
+                  <span [class]="diferenciaClase(linea.diferenciaTotal)">{{ diferenciaTexto(linea.diferenciaTotal) }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" colspan="3" data-label="">Total</th>
+              <td data-label="Jugadores" class="num">{{ imp.jugadores }}</td>
+              <td data-label="Diferencia mensual" class="num">
+                <span [class]="diferenciaClase(imp.diferenciaMensual)">{{ diferenciaTexto(imp.diferenciaMensual) }}</span>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      } @else {
+        <p class="impacto-nota impacto-cero">
+          Jugadores afectados: 0. Hoy ningún jugador en el club usaría este arancel en la cuota de {{ mesTexto(imp.mesDeAplicacion) }},
+          así que no cambia la recaudación de ese mes. Igual queda programado para quien lo use después.
+        </p>
+      }
+
+      <ul class="impacto-notas">
+        @if (imp.excluidos.length > 0) {
+          <li>
+            No cambian
+            @for (excluido of imp.excluidos; track $index) {
+              {{ $first ? '' : ($last ? ' y ' : ', ') }}{{ excluido.jugadores }} {{ excluido.jugadores === 1 ? 'jugador' : 'jugadores' }} de {{ excluido.nombreCategoria ?? 'Sin categoría' }}
+            }: su categoría tiene arancel propio, que tiene prioridad sobre el del género.
+          </li>
+        }
+        @if (imp.mesEnCurso) {
+          <li>
+            Cuotas de este mes:
+            {{ imp.cuotasDelMesPendientesSinPagos }} pendiente{{ imp.cuotasDelMesPendientesSinPagos === 1 ? '' : 's' }} sin pagos
+            {{ imp.seEmiteElDia ? 'se quitan y el ' + formatDate(imp.seEmiteElDia) + ' se emiten con el monto nuevo' : 'se vuelven a emitir con el monto nuevo' }};
+            {{ imp.cuotasDelMesConPagos }} con pagos se conservan sin cambios.
+          </li>
+        } @else if (imp.seEmiteElDia) {
+          <li>No cambia ninguna cuota emitida: las de {{ mesTexto(imp.mesDeAplicacion) }} se generan el {{ formatDate(imp.seEmiteElDia) }} con este monto.</li>
+        }
+        <li>Las cuotas de meses anteriores conservan su monto.</li>
+        @if (imp.reemplazadoDesde) {
+          <li>Rige hasta el {{ formatDate(imp.reemplazadoDesde) }}, cuando lo reemplaza el arancel ya programado.</li>
+        }
+      </ul>
+
+      @if (imp.requiereConfirmacionReforzada) {
+        <div class="impacto-confirmacion">
+          <label class="field-label" for="impacto-confirmacion">
+            El cambio alcanza a {{ imp.categorias }} categorías. Escribí {{ imp.jugadores }} para confirmar
+          </label>
+          <input id="impacto-confirmacion" class="impacto-confirmacion-input" type="text" inputmode="numeric" autocomplete="off"
+                 [value]="confirmacionEscrita" (input)="onConfirmacionEscrita($any($event.target))"
+                 aria-describedby="impacto-confirmacion-ayuda" [attr.aria-invalid]="confirmacionEscrita !== '' && !confirmacionValida" />
+          <span id="impacto-confirmacion-ayuda" class="field-hint">
+            Es la cantidad de jugadores afectados. "Confirmar actualización" se habilita cuando coincide.
+          </span>
+        </div>
+      }
+    </app-ventana>
+  }
+
+  <!-- ===== CONFIRMAR CANCELACIÓN DE UN ARANCEL =====
+       Ventana común del portal (shared/ventana, HU-094): cruz, Esc, foco atrapado y tono de peligro. Si el arancel se
+       cancela, su fila desaparece de la tabla: el foco vuelve al título del historial. -->
+  @if (cancelTarget) {
+    <app-ventana
+      titulo="¿Cancelar este arancel?"
+      [subtitulo]="cancelTarget.categoryLabel + ' · ' + cancelTarget.amount + ' · desde el ' + formatDate(cancelTarget.validFrom)"
+      [peligro]="true"
+      textoVolver="Volver"
+      textoConfirmar="Cancelar arancel"
+      textoEnCurso="Cancelando…"
+      [enCurso]="cancelando"
+      [focoAlCerrar]="tituloHistorial"
+      (confirmar)="confirmCancel()"
+      (cerrar)="closeCancel()"
+    >
+      <ul class="confirm-list">
+        <li>Se quita este arancel de todos los jugadores a los que alcanza.</li>
+        <li>Se eliminan las cuotas pendientes sin pagos emitidas con él.</li>
+        <li>Si alguna de esas cuotas ya tiene un pago, no se puede cancelar.</li>
+        <li>Las cuotas se vuelven a emitir al programar un arancel nuevo o en la próxima ejecución automática.</li>
+      </ul>
+    </app-ventana>
   }
 </div>

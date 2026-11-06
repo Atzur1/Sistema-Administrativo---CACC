@@ -101,7 +101,7 @@ public sealed class GeneradorCuotasMensuales : BackgroundService
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            int completadas = scope.ServiceProvider.GetRequiredService<IBajaInformadaDao>().CompletarBajasPendientes();
+            int completadas = scope.ServiceProvider.GetRequiredService<IBajasPendientesDao>().CompletarBajasPendientes();
             if (completadas > 0) _logger.LogInformation("Se completaron los efectos de la baja de {Cantidad} jugador(es).", completadas);
         }
         catch (Exception ex)

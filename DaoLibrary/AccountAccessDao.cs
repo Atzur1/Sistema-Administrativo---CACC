@@ -11,7 +11,7 @@ public sealed record EstadoAcceso(string Email, bool ActivacionPendiente, string
 // (null si la cuenta no lo tiene cargado).
 public sealed record DestinatarioCorreo(string Email, string? Nombre);
 
-public sealed class AccountAccessDao(string connectionString)
+public sealed class AccountAccessDao(string connectionString) : ITokensAccesoCuenta
 {
     // ===== Recuperación de contraseña (olvidé mi contraseña) =====
 

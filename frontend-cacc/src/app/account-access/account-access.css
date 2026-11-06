@@ -182,8 +182,9 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Gris del sistema (4.8:1 sobre blanco): el anterior (#a9b0b8) no llegaba a 4.5:1 (QA, HU-109). */
 .form-control::placeholder {
-  color: #a9b0b8;
+  color: var(--text-muted);
 }
 
 .form-control:focus {
@@ -346,12 +347,41 @@
   color: var(--color-bg-card);
 }
 
+/* HU-087: "Cumplido:" / "Pendiente:" para lectores de pantalla (a la vista ya cambia el ícono). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* HU-087: los motivos de la API, uno por línea. */
+.password-problems-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.password-problems-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.password-problems-list li + li {
+  margin-top: 2px;
+}
+
 .requirement-tag {
   margin-left: auto;
   font-style: normal;
   font-size: 10.5px;
   font-weight: 600;
-  color: #9aa1a9;
+  /* Mismo gris que las reglas: el anterior (#9aa1a9) no llegaba a 4.5:1 (QA, HU-109). */
+  color: var(--text-muted);
 }
 
 /* Lo que controla el servidor (no se conocen acá los datos de la cuenta): se avisa antes de enviar. */

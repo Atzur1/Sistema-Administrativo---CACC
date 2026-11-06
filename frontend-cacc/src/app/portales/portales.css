@@ -85,6 +85,8 @@
   border: 1px solid rgba(255, 255, 255, 0.25);
   padding: 9px 20px;
   border-radius: 30px;
+  /* Un <button> no hereda la letra: sin esto salía en Arial (QA, HU-109). */
+  font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -336,6 +338,8 @@
   border: none;
   padding: 16px 12px;
   border-radius: 12px;
+  /* Un <button> no hereda la letra: sin esto salía en Arial (QA, HU-109). */
+  font-family: inherit;
   font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
