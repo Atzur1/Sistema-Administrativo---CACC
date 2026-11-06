@@ -79,6 +79,31 @@ las mujeres en $0) o que todavía no se generan las cuotas del mes.
 **Si la llamada falla, el alta del Deportivo no se deshace.** La cuota sale con la próxima generación mensual (al iniciar la API del Administrativo y cada
 6 horas) y la inscripción se genera al registrar el primer pago, con el monto correcto. Cuando el Administrativo vuelve, se puede repetir la llamada.
 
+## `POST /api/integracion/v1/jugadores/{idJugador}/baja`
+Cuando el Portal Deportivo da de baja a un jugador con historial (la baja lógica) lo graba directo en la base compartida (`fecha_baja`). Después llama acá, con el
+token del usuario, para que el Administrativo haga lo que hace siempre una baja, con la misma lógica de su propia baja (`DarDeBaja`): **quita las cuotas pendientes sin
+pagos de los meses posteriores al de la baja** y **cancela las becas y descuentos vigentes o programados**. La deuda anterior a la baja se mantiene y una cuota futura que ya
+recibió algún pago no se toca. Si el jugador todavía no figuraba dado de baja, la registra con la fecha de hoy. Se puede llamar más de una vez: repetirla no tiene efecto.
+
+Pueden llamarla los mismos roles que `cargos-alta`; el resto recibe 403.
+
+| Respuesta | Cuándo |
+|---|---|
+| `200` | Se aplicó (aunque no hubiera nada para quitar). |
+| `400` | El id no es válido. |
+| `404` | No existe el jugador (con cuerpo, igual que en `cargos-alta`). |
+| `422` | La fecha de baja no puede ser anterior a la de alta del jugador. |
+| `401` / `403` | Sin token (o sesión cerrada) / el rol no puede. |
+
+```json
+{ "idJugador": 42, "cuotasFuturasQuitadas": 3, "beneficiosCancelados": 1 }
+```
+Solo cantidades; nunca montos.
+
+**Si la llamada falla, la baja del Deportivo no se deshace** (el jugador ya no recibe cuotas nuevas ni puede ingresar). El Administrativo la completa solo: el mismo proceso
+automático que genera las cuotas (al iniciar la API y cada 6 horas) busca a los jugadores dados de baja que todavía tengan cuotas futuras sin pagos o becas vigentes y les
+aplica los efectos de la baja. Eso también cubre una baja grabada directo en la base sin avisar.
+
 ## La inscripción es anual
 Cada jugador paga **una inscripción por año**. Su año empieza el día en que se le asignó la inscripción (su alta) y se renueva sola en cada aniversario, con el arancel de
 inscripción de su género que rige ese día (con $0 o sin arancel no se cobra). La emite el mismo proceso automático que genera las cuotas (al iniciar la API y cada 6 horas),

@@ -16,26 +16,36 @@ public class AuthDao
     // El usuario es el DNI; mientras dura la transición también se acepta el correo de la cuenta.
     public Usuario? ValidarLogin(string identificador, string contrasenia)
     {
+        if (IdentificadorCuenta.Interpretar(identificador) is null) return null;
+
+        using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
+        return ValidarLoginCore(conexion, null, identificador, contrasenia);
+    }
+
+    // internal (no private) para que la prueba de integración la corra dentro de una transacción que revierte.
+    internal Usuario? ValidarLoginCore(SqlConnection conexion, SqlTransaction? transaccion, string identificador, string contrasenia)
+    {
         var buscado = IdentificadorCuenta.Interpretar(identificador);
         if (buscado is null) return null;
 
-        using var conexion = SqlConnectionFactory.Open(_cadenaConexion);
-        // acceso_portal es el gate real de ingreso: FK_id_rol es del otro equipo y no
+        // acceso_portal es el gate real de ingreso al Administrativo: FK_id_rol es del otro equipo y no
         // autoriza nada acá. rol_portal (propio, 1 = SuperAdmin, 2 = Administrador) es
         // el único valor que se usa para el claim de rol del JWT. activacion_pendiente = 1
-        // significa que UsuariosPortalDao.Habilitar ya dio el acceso pero la persona
-        // todavía no completó el enlace de activación: sin esto, una contraseña vieja
-        // que el otro equipo haya dejado cargada serviría para entrar antes de tiempo.
+        // significa que UsuariosPortalDao.Habilitar ya dio el acceso Administrativo pero la persona
+        // todavía no completó el enlace de activación: hasta entonces NO tiene acceso al Administrativo (una contraseña
+        // vieja que el otro equipo haya dejado cargada no sirve para entrar antes de tiempo). El acceso al Deportivo es
+        // independiente: quien ya tiene un rol deportivo entra igual, sin activación, con el token de solo Deportivo.
         // TOP (2): si dos cuentas respondieran al mismo identificador no se adivina cuál es; no se deja entrar a ninguna.
         // Unificada: nombre, apellido y DNI viven en PERSONAS. Entra quien tiene acceso al Portal Administrativo o un rol del
         // Portal Deportivo (FK_id_rol); el Administrativo sigue autorizando solo con acceso_portal / rol_portal.
         string query = $@"SELECT TOP (2) PK_id_usuario, email, nombre, apellido, dni, contrasenia, token_version, acceso_portal, rol_portal,
-                   FK_id_rol, ROLES.nombre_rol AS nombre_rol_deportivo
+                   activacion_pendiente, FK_id_rol, ROLES.nombre_rol AS nombre_rol_deportivo
             FROM USUARIOS JOIN PERSONAS ON PERSONAS.PK_id_persona = USUARIOS.FK_id_persona
                  LEFT JOIN ROLES ON ROLES.PK_id_rol = USUARIOS.FK_id_rol
             WHERE {(buscado.Value.EsCorreo ? "email = @valor" : DniNormalizadoSql + " = @valor")}
-              AND activo = 1 AND (acceso_portal = 1 OR FK_id_rol IS NOT NULL) AND activacion_pendiente = 0";
-        using var comando = new SqlCommand(query, conexion);
+              AND activo = 1 AND (acceso_portal = 1 OR FK_id_rol IS NOT NULL)
+              AND (activacion_pendiente = 0 OR FK_id_rol IS NOT NULL)";
+        using var comando = new SqlCommand(query, conexion, transaccion);
         comando.Parameters.Add("@valor", System.Data.SqlDbType.NVarChar, 254).Value = buscado.Value.Valor;
         using var reader = comando.ExecuteReader();
         if (!reader.Read())
@@ -48,6 +58,8 @@ public class AuthDao
 
         var hash = reader["contrasenia"] as string;
 
+        // Con la activación pendiente el acceso Administrativo todavía no rige: la cuenta entra solo como Deportivo.
+        bool activacionPendiente = Convert.ToBoolean(reader["activacion_pendiente"]);
         var usuario = new Usuario
         {
             IdUsuario = Convert.ToInt32(reader["PK_id_usuario"]),
@@ -55,8 +67,8 @@ public class AuthDao
             Nombre = reader["nombre"] as string ?? string.Empty,
             Apellido = reader["apellido"] as string ?? string.Empty,
             Dni = reader["dni"] as string ?? string.Empty,
-            AccesoPortal = Convert.ToBoolean(reader["acceso_portal"]),
-            RolPortal = reader["rol_portal"] != DBNull.Value ? Convert.ToInt32(reader["rol_portal"]) : null,
+            AccesoPortal = Convert.ToBoolean(reader["acceso_portal"]) && !activacionPendiente,
+            RolPortal = !activacionPendiente && reader["rol_portal"] != DBNull.Value ? Convert.ToInt32(reader["rol_portal"]) : null,
             TokenVersion = Convert.ToInt32(reader["token_version"]),
             IdRolDeportivo = reader["FK_id_rol"] != DBNull.Value ? Convert.ToInt32(reader["FK_id_rol"]) : null,
             NombreRolDeportivo = reader["nombre_rol_deportivo"] as string

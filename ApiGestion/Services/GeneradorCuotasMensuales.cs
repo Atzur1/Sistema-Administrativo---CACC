@@ -89,6 +89,25 @@ public sealed class GeneradorCuotasMensuales : BackgroundService
         {
             _logger.LogError(ex, "No se pudieron generar las inscripciones anuales; se reintenta en el próximo turno.");
         }
+
+        CompletarBajasPendientes();
+    }
+
+    // Red de seguridad de las bajas del Portal Deportivo: si el aviso de baja no llegó (el Administrativo estaba caído) o la baja
+    // se grabó directo en la base, a quien está dado de baja y todavía tiene cuotas futuras sin pagos o becas vigentes se le aplican
+    // los efectos de la baja. Es idempotente.
+    internal void CompletarBajasPendientes()
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            int completadas = scope.ServiceProvider.GetRequiredService<IBajaInformadaDao>().CompletarBajasPendientes();
+            if (completadas > 0) _logger.LogInformation("Se completaron los efectos de la baja de {Cantidad} jugador(es).", completadas);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "No se pudieron completar las bajas pendientes; se reintenta en el próximo turno.");
+        }
     }
 
     private static async Task<bool> SiguienteTurnoAsync(PeriodicTimer timer, CancellationToken cancellationToken)

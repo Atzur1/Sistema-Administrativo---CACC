@@ -204,6 +204,10 @@ builder.Services.AddScoped<ServiceLibrary.IInscripcionesService>(provider => new
     provider.GetRequiredService<DaoLibrary.EnrollmentDAO>(),
     provider.GetRequiredService<DaoLibrary.EnrollmentFeeDAO>(),
     provider.GetRequiredService<DaoLibrary.IJugadoresDao>()));
+// Baja informada por el Portal Deportivo (contrato v1): reutiliza la lógica de la baja del Administrativo.
+builder.Services.AddScoped<DaoLibrary.IBajaInformadaDao>(provider => new DaoLibrary.JugadoresDao(conexionSql));
+builder.Services.AddScoped<ServiceLibrary.IJugadoresBajaService>(provider => new ServiceLibrary.JugadoresBajaService(
+    provider.GetRequiredService<DaoLibrary.IBajaInformadaDao>()));
 builder.Services.AddScoped<ServiceLibrary.IJugadoresAltaService>(provider => new ServiceLibrary.JugadoresAltaService(
     provider.GetRequiredService<DaoLibrary.PlayerDAO>(),
     provider.GetRequiredService<DaoLibrary.ICategoriasDao>(),

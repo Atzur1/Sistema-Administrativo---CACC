@@ -15,7 +15,7 @@ namespace DaoLibrary
     public sealed record ResultadoAnulacionAlta(
         AnularAltaResultado Resultado, IReadOnlyList<string>? Motivos = null, int CargosEliminados = 0, bool PersonaEliminada = false);
 
-    public class JugadoresDao : IJugadoresDao
+    public class JugadoresDao : IJugadoresDao, IBajaInformadaDao
     {
         private readonly string _cadenaConexion;
 
@@ -111,6 +111,15 @@ namespace DaoLibrary
                 baja.ExecuteNonQuery();
             }
 
+            var (eliminadas, cancelados) = LimpiarEfectosDeLaBajaCore(conexion, transaccion, idJugador, fechaBaja);
+
+            return new ResultadoBajaJugador(BajaJugadorResultado.Ok, eliminadas, cancelados);
+        }
+
+        // Lo que provoca una baja sobre la deuda y las becas, con la fecha de baja ya fijada. Es idempotente: una segunda
+        // corrida no encuentra nada más para quitar ni cancelar.
+        private static (int Eliminadas, int Cancelados) LimpiarEfectosDeLaBajaCore(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime fechaBaja)
+        {
             int eliminadas;
             using (var limpiar = new SqlCommand(@"
                 DELETE p
@@ -145,6 +154,106 @@ namespace DaoLibrary
                 cancelados = cancelar.ExecuteNonQuery();
             }
 
+            return (eliminadas, cancelados);
+        }
+
+        // Baja informada por el Portal Deportivo (contrato de integración v1). El Deportivo graba la baja directo en la base
+        // (fecha_baja) y avisa acá para que el Administrativo haga lo que hace siempre una baja, con la misma lógica de
+        // DarDeBaja: quitar las cuotas pendientes SIN pagos de los meses posteriores a la baja (la deuda anterior se mantiene) y
+        // cancelar las becas vigentes o programadas. Si todavía no figura dado de baja, la registra con la fecha de hoy.
+        // Se puede repetir sin efecto.
+        public ResultadoBajaJugador AplicarBajaInformada(int idJugador)
+        {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            using SqlTransaction transaccion = conexion.BeginTransaction(System.Data.IsolationLevel.Serializable);
+            BloqueoEscrituraPagos.Tomar(conexion, transaccion);
+            try
+            {
+                var resultado = AplicarBajaInformadaCore(conexion, transaccion, idJugador, RelojNegocio.Hoy);
+                if (resultado.Resultado == BajaJugadorResultado.Ok) transaccion.Commit(); else transaccion.Rollback();
+                return resultado;
+            }
+            catch
+            {
+                transaccion.Rollback();
+                throw;
+            }
+        }
+
+        public int CompletarBajasPendientes()
+        {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            using SqlTransaction transaccion = conexion.BeginTransaction(System.Data.IsolationLevel.Serializable);
+            BloqueoEscrituraPagos.Tomar(conexion, transaccion);
+            try
+            {
+                int completadas = CompletarBajasPendientesCore(conexion, transaccion, RelojNegocio.Hoy);
+                transaccion.Commit();
+                return completadas;
+            }
+            catch
+            {
+                transaccion.Rollback();
+                throw;
+            }
+        }
+
+        // internal (no private) para que la prueba de integración la corra dentro de una transacción que revierte.
+        internal static int CompletarBajasPendientesCore(SqlConnection conexion, SqlTransaction transaccion, DateTime hoy)
+        {
+            var pendientes = new List<int>();
+            using (var buscar = new SqlCommand(@"
+                SELECT j.PK_id_jugador
+                FROM JUGADORES j
+                WHERE j.fecha_baja IS NOT NULL
+                  AND (
+                      EXISTS (
+                          SELECT 1 FROM PAGOS p
+                          WHERE p.FK_id_jugador = j.PK_id_jugador AND p.concepto = 'Cuota' AND p.estado = 0
+                            AND p.fecha_vencimiento > EOMONTH(j.fecha_baja)
+                            AND NOT EXISTS (
+                                SELECT 1 FROM PAGOS q
+                                WHERE q.FK_id_jugador = p.FK_id_jugador AND q.concepto = 'Cuota' AND q.estado = 1
+                                  AND YEAR(q.fecha_vencimiento) = YEAR(p.fecha_vencimiento)
+                                  AND MONTH(q.fecha_vencimiento) = MONTH(p.fecha_vencimiento)))
+                      OR EXISTS (
+                          SELECT 1 FROM JUGADORES_DESCUENTOS d
+                          WHERE d.FK_id_jugador = j.PK_id_jugador AND d.estado_activo = 1 AND d.fecha_fin >= j.fecha_baja))
+                ORDER BY j.PK_id_jugador", conexion, transaccion))
+            {
+                using var reader = buscar.ExecuteReader();
+                while (reader.Read()) pendientes.Add(reader.GetInt32(0));
+            }
+
+            foreach (int idJugador in pendientes)
+            {
+                AplicarBajaInformadaCore(conexion, transaccion, idJugador, hoy);
+            }
+            return pendientes.Count;
+        }
+
+        // internal (no private) para que la prueba de integración la corra dentro de una transacción que revierte.
+        internal static ResultadoBajaJugador AplicarBajaInformadaCore(SqlConnection conexion, SqlTransaction transaccion, int idJugador, DateTime hoy)
+        {
+            DateTime? fechaBaja;
+            using (var buscar = new SqlCommand(
+                "SELECT fecha_baja FROM JUGADORES WITH (UPDLOCK, HOLDLOCK) WHERE PK_id_jugador = @id", conexion, transaccion))
+            {
+                buscar.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = idJugador;
+                using var reader = buscar.ExecuteReader();
+                if (!reader.Read())
+                {
+                    return new ResultadoBajaJugador(BajaJugadorResultado.NoEncontrado);
+                }
+                fechaBaja = reader["fecha_baja"] != DBNull.Value ? Convert.ToDateTime(reader["fecha_baja"]) : null;
+            }
+
+            if (fechaBaja is null)
+            {
+                return DarDeBajaCore(conexion, transaccion, idJugador, hoy);
+            }
+
+            var (eliminadas, cancelados) = LimpiarEfectosDeLaBajaCore(conexion, transaccion, idJugador, fechaBaja.Value);
             return new ResultadoBajaJugador(BajaJugadorResultado.Ok, eliminadas, cancelados);
         }
 

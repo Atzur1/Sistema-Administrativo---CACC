@@ -492,10 +492,14 @@ public class PagosSinEscrituraCruzadaTests
     //  - estado-deuda/lote (PorLote): es una consulta (POST solo para mandar la lista de DNI).
     //  - cargos-alta: contrato de integración v1. Genera la inscripción y la cuota PENDIENTES de un jugador que el
     //    Deportivo dio de alta; no cobra ni toca pagos existentes.
+    //  - baja: contrato de integración v1 (SCRUM-757). El Deportivo da de baja a un jugador y avisa; el Administrativo aplica la
+    //    misma lógica de su propia baja: quita las cuotas PENDIENTES sin pagos de los meses posteriores a la baja y cancela las
+    //    becas. Nunca toca un pago cobrado (ni parcial) ni la deuda anterior a la baja.
     private static readonly string[] EscriturasPermitidasAlDeportivo =
     {
         $"{nameof(EstadoDeudaController)}.{nameof(EstadoDeudaController.PorLote)}",
-        $"{nameof(IntegracionJugadoresController)}.{nameof(IntegracionJugadoresController.CargosDeAlta)}"
+        $"{nameof(IntegracionJugadoresController)}.{nameof(IntegracionJugadoresController.CargosDeAlta)}",
+        $"{nameof(IntegracionBajasController)}.{nameof(IntegracionBajasController.Baja)}"
     };
 
     private static IEnumerable<(Type Controlador, MethodInfo Accion)> AccionesQueEscriben() =>
