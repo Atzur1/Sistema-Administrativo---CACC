@@ -209,7 +209,8 @@ public class PagosServiceCobroTests
         Assert.Equal(Jugador, marcado.IdJugador);
         Assert.Equal(Operador, marcado.IdUsuario);
         Assert.Equal("Transferencia", marcado.Metodo);
-        Assert.Equal(DateTime.Today, marcado.FechaPago);
+        // La fecha del club (Argentina), no la de la máquina: en un servidor en UTC, de 21 a 24 h en Argentina ya es "mañana".
+        Assert.Equal(RelojNegocio.Hoy.Date, marcado.FechaPago);
 
         Assert.Equal(170_000m, resultado.MontoTotal);
         Assert.Equal(Jugador, resultado.IdJugador);
