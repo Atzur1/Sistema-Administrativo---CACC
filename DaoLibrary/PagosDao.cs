@@ -1028,6 +1028,14 @@ namespace DaoLibrary
         // evitando un segundo round-trip solo para saber cuántas páginas hay.
         public HistorialPagosResultado ObtenerHistorialPagos(int idJugador, int page, int pageSize)
         {
+            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
+            return ObtenerHistorialPagosCore(conexion, null, idJugador, page, pageSize);
+        }
+
+        // internal (no private) para que la prueba de integracion la corra dentro de una transaccion que revierte.
+        internal static HistorialPagosResultado ObtenerHistorialPagosCore(
+            SqlConnection conexion, SqlTransaction? transaccion, int idJugador, int page, int pageSize)
+        {
             // Es un REGISTRO: si una cuota se pagó en varios abonos (ej. $20.000 + $50.000),
             // los dos tienen que quedar listados — nada se resume en un solo número. Pero se
             // agrupan bajo el mismo período (mismo mes), así se ve claro que son parte de una
@@ -1066,9 +1074,7 @@ namespace DaoLibrary
             // completar cada uno con sus abonos sin perder el orden de fecha_grupo DESC.
             var itemsPorClave = new List<(DateTime clave, string concepto, PagoHistorialItem item)>();
 
-            using SqlConnection conexion = SqlConnectionFactory.Open(_cadenaConexion);
-
-            using (SqlCommand comando = new SqlCommand(queryPeriodos, conexion))
+            using (SqlCommand comando = new SqlCommand(queryPeriodos, conexion, transaccion))
             {
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
                 comando.Parameters.AddWithValue("@offset", (page - 1) * pageSize);
@@ -1104,6 +1110,20 @@ namespace DaoLibrary
                 }
             }
 
+            // Una página fuera de rango no trae filas y entonces el total (que sale de COUNT(*) OVER() de esas filas)
+            // quedaba en 0 aunque el jugador sí tenga pagos: se cuenta aparte.
+            if (resultado.Items.Count == 0 && page > 1)
+            {
+                using SqlCommand contar = new SqlCommand(@"
+                    SELECT COUNT(*) FROM (
+                        SELECT 1 AS grupo FROM PAGOS
+                        WHERE FK_id_jugador = @idJugador AND estado = 1
+                        GROUP BY COALESCE(fecha_vencimiento, CAST(fecha_pago AS DATE)), concepto
+                    ) grupos", conexion, transaccion);
+                contar.Parameters.AddWithValue("@idJugador", idJugador);
+                resultado.Total = Convert.ToInt32(contar.ExecuteScalar());
+            }
+
             // Los abonos de cada período de esta página, todos de una.
             foreach (var (clave, concepto, item) in itemsPorClave)
             {
@@ -1128,7 +1148,7 @@ namespace DaoLibrary
                       AND COALESCE(pg.fecha_vencimiento, CAST(pg.fecha_pago AS DATE)) = @clavePeriodo
                     ORDER BY pg.fecha_pago, pg.PK_id_pago";
 
-                using SqlCommand comando = new SqlCommand(queryAbonos, conexion);
+                using SqlCommand comando = new SqlCommand(queryAbonos, conexion, transaccion);
                 comando.Parameters.AddWithValue("@idJugador", idJugador);
                 comando.Parameters.AddWithValue("@concepto", concepto);
                 comando.Parameters.AddWithValue("@clavePeriodo", clave);

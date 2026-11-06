@@ -704,3 +704,38 @@ describe('JugadorPerfil - anular alta por error', () => {
   });
 });
 
+// SCRUM-132: si falla la carga del historial NO se muestra "no hay pagos" (diría que el jugador no pagó nada).
+describe('JugadorPerfil - falla la carga del historial', () => {
+  it('muestra el error con "Reintentar" y no el estado vacío', async () => {
+    const { el } = await crear({ historialPorPagina: () => 'error' });
+
+    expect(texto(el.querySelector('.historial-error'))).toContain('No se pudo cargar el historial de pagos');
+    expect(texto(el.querySelector('.historial-error'))).toContain('no significa que el jugador no tenga pagos');
+    expect(el.querySelector('.historial-reintentar')).not.toBeNull();
+    expect(texto(el)).not.toContain('No hay pagos registrados para este jugador');
+  });
+
+  it('"Reintentar" vuelve a pedir el historial y, si responde, lo muestra y saca el error', async () => {
+    let llamadas = 0;
+    const { el, fixture, servicio } = await crear({
+      historialPorPagina: () => (llamadas++ === 0 ? 'error' : historial([periodo('Septiembre 2026', 85000)])),
+    });
+    expect(servicio.getHistorialPagos).toHaveBeenCalledTimes(1);
+
+    (el.querySelector('.historial-reintentar') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(servicio.getHistorialPagos).toHaveBeenCalledTimes(2);
+    expect(el.querySelector('.historial-error')).toBeNull();
+    expect(texto(el.querySelector('.periodo-list'))).toContain('Septiembre 2026');
+  });
+
+  it('un historial realmente vacío sigue mostrando el estado vacío, sin error', async () => {
+    const { el } = await crear({ historialPorPagina: () => historial([]) });
+
+    expect(el.querySelector('.historial-error')).toBeNull();
+    expect(texto(el)).toContain('No hay pagos registrados para este jugador');
+  });
+});
+

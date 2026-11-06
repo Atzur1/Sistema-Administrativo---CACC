@@ -51,14 +51,18 @@ public class PlayersControllerVoidDiscountTests
 
     // Regla del club: nadie (ni SuperAdmin ni Administrador) asigna becas o descuentos que empiecen con una
     // cuota que ya no se puede becar, porque eso borraría deuda ya vencida. Se rechaza antes de tocar la base.
-    // Siempre es anterior a la última cuota emitida, ya sea que hoy sea antes o después del día 10.
+    // Siempre es anterior a la última cuota emitida, ya sea que hoy sea antes o después del día 10. Se cuenta hacia atrás
+    // desde esa cuota (la del mes en curso desde el día 10, la del mes anterior antes del 10), no desde hoy: antes del día 10,
+    // "hoy menos un mes" cae justo en la última cuota emitida, que sí se puede becar.
     [Theory]
     [InlineData(-1)]
     [InlineData(-13)]
     public void AssignDiscount_StartingWithAnOldFee_IsRefused(int mesesAtras)
     {
         var (controller, _) = CreateController();
-        DateTime inicio = RelojNegocio.Hoy.AddMonths(mesesAtras);
+        DateTime ultimaEmitida = CalendarioCuotas.PrimerDiaDelMes(RelojNegocio.Hoy);
+        if (!CalendarioCuotas.YaSeGeneraElMesEnCurso(RelojNegocio.Hoy)) ultimaEmitida = ultimaEmitida.AddMonths(-1);
+        DateTime inicio = ultimaEmitida.AddMonths(mesesAtras);
 
         IActionResult result = controller.AssignDiscount(PlayerId, new DiscountRequestDTO
         {

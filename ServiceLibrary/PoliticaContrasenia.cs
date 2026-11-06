@@ -33,9 +33,14 @@ namespace ServiceLibrary
             "welcome123", "letmein123", "monkey12345", "dragon12345", "sunshine12", "princess12", "master12345",
         };
 
-        // El nombre del club, en cualquier parte de la contraseña y con cualquier separador ("Camioneros-1931",
-        // "C.A.C.C.2026"): se busca ya normalizada, sin símbolos.
-        private static readonly string[] NombresDelClub = { "camioneros", "cacc" };
+        // El nombre del club, en cualquier parte de la contraseña ("Camioneros-1931", "ClubCamioneros-99").
+        // "camioneros" se busca sin separadores: es una palabra larga y no aparece por casualidad.
+        private const string NombreDelClub = "camioneros";
+
+        // La sigla "cacc" es corta: buscarla juntando todas las palabras rechazaría contraseñas que no tienen nada que ver
+        // ("Vaca-Ccuatro-7"). Se busca en el texto con solo los puntos sacados: "C.A.C.C.2026" y "Mi-cacc-Norte-77" caen,
+        // "Vaca-Ccuatro-7" no.
+        private const string SiglaDelClub = "cacc";
 
         // Palabras de las listas de contraseñas más usadas. Se comparan contra la contraseña sin los números del
         // final, así "Qwerty12345" y "Argentina2027" caen igual que "qwerty1234" o "argentina2026".
@@ -64,12 +69,25 @@ namespace ServiceLibrary
             string normalizada = Normalizar(valor);
             if (titular.DatosPersonales().Select(Normalizar).Any(dato => dato.Length >= LargoMinimoDeDatoPersonal && normalizada.Contains(dato)))
                 problemas.Add("No puede contener tu DNI, tu nombre, tu apellido ni tu correo.");
-            if (NombresDelClub.Any(normalizada.Contains))
+            if (normalizada.Contains(NombreDelClub) || NormalizarSoloPuntos(valor).Contains(SiglaDelClub))
                 problemas.Add("No puede contener el nombre del club.");
             if (Comunes.Contains(normalizada) || BasesComunes.Contains(normalizada.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')))
                 problemas.Add("Es una contraseña demasiado común. Elegí otra.");
 
             return problemas;
+        }
+
+        // Minúsculas, sin acentos y sin puntos, conservando el resto de los separadores: "C.A.C.C.2026" -> "cacc2026",
+        // "Vaca-Ccuatro-7" -> "vaca-ccuatro-7".
+        internal static string NormalizarSoloPuntos(string texto)
+        {
+            var sb = new StringBuilder(texto.Length);
+            foreach (char c in texto.Normalize(NormalizationForm.FormD))
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark || c == '.') continue;
+                sb.Append(char.ToLowerInvariant(c));
+            }
+            return sb.ToString();
         }
 
         // Minúsculas, sin acentos y solo letras y dígitos: "Pérez-Gómez" -> "perezgomez", "30.111.222" -> "30111222".

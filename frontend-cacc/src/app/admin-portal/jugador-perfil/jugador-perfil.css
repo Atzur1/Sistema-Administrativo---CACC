@@ -631,3 +631,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Falló la carga del historial: aviso con "Reintentar", distinto del estado vacío. */
+.historial-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+

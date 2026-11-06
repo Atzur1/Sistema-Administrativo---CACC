@@ -36,6 +36,8 @@ export class JugadorPerfil implements OnInit {
 
   cargandoJugador = true;
   cargandoHistorial = true;
+  // La consulta del historial falló: se muestra un error con "Reintentar", nunca el estado vacío (que diría que no tiene pagos).
+  errorHistorial = false;
   errorMessage = '';
 
   page = 1;
@@ -97,6 +99,7 @@ export class JugadorPerfil implements OnInit {
 
   private cargarHistorial() {
     this.cargandoHistorial = true;
+    this.errorHistorial = false;
     this.jugadoresService.getHistorialPagos(this.idJugador, this.page, this.pageSize).subscribe({
       next: (historial) => {
         this.historial = historial;
@@ -105,10 +108,16 @@ export class JugadorPerfil implements OnInit {
       },
       error: () => {
         this.cargandoHistorial = false;
+        this.errorHistorial = true;
+        this.historial = null;
         this.errorMessage = 'No se pudo cargar el historial de pagos.';
         this.cdr.detectChanges();
       },
     });
+  }
+
+  reintentarHistorial() {
+    this.cargarHistorial();
   }
 
   irAPagina(nuevaPagina: number) {
